@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Checkstar</title>
+<style>
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+    background: #1a1a1a;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .wrap {
+    width: 100%;
+    max-width: 720px;
+    padding: 24px;
+  }
+  .logo {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <!--
+      Checkstar text logo
+      - Background: black
+      - "Check" in warm orange
+      - "star" in white
+      - "cares enough" in white handwritten/italic script beneath "star"
+      All rendering is inline SVG; no external resources.
+    -->
+    <svg
+      class="logo"
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 310 100"
+      role="img"
+      aria-label="Checkstar cares enough"
+      preserveAspectRatio="xMidYMid meet"
+    >
+      <!-- Background -->
+      <rect x="0" y="0" width="310" height="100" fill="#000000" />
+
+      <!-- "Check" in warm orange -->
+      <text
+        x="6"
+        y="70"
+        font-family="'Helvetica Neue', 'Arial Narrow', Arial, sans-serif"
+        font-size="66"
+        font-weight="500"
+        fill="#E87722"
+        letter-spacing="-1.2"
+        >Check</text
+      >
+
+      <!-- "star" in white, tightly aligned to "Check" -->
+      <text
+        x="175"
+        y="70"
+        font-family="'Helvetica Neue', 'Arial Narrow', Arial, sans-serif"
+        font-size="66"
+        font-weight="500"
+        fill="#FFFFFF"
+        letter-spacing="-0.8"
+        >star</text
+      >
+
+      <!-- "cares enough" handwritten italic script, positioned beneath "star" -->
+      <text
+        x="214"
+        y="92"
+        font-family="'Brush Script MT', 'Segoe Script', 'Comic Sans MS', cursive"
+        font-size="20"
+        font-style="italic"
+        font-weight="400"
+        fill="#FFFFFF"
+        letter-spacing="0.3"
+        >cares enough</text
+      >
+    </svg>
+  </div>
+</body>
+</html>

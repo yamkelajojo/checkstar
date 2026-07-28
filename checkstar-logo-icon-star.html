@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checkstar</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: #000000;
+      overflow: hidden;
+    }
+
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .logo-wrap {
+      width: min(78vmin, 520px);
+      animation: logo-in 900ms cubic-bezier(0.22, 1, 0.36, 1) both;
+      transition: transform 450ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .logo-wrap:hover {
+      transform: scale(1.03);
+    }
+
+    .logo-wrap svg {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    /* Subtle life: the orange check settles in just after the white wings */
+    .wing  { animation: wing-in 700ms cubic-bezier(0.22, 1, 0.36, 1) 120ms both; }
+    .check { animation: check-in 750ms cubic-bezier(0.22, 1, 0.36, 1) 320ms both; }
+
+    @keyframes logo-in {
+      from { opacity: 0; transform: scale(0.94); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes wing-in {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    @keyframes check-in {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .logo-wrap, .wing, .check { animation: none; transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="logo-wrap">
+    <svg viewBox="0 0 300 400" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Checkstar logo" xmlns="http://www.w3.org/2000/svg">
+      <!-- Background -->
+      <rect x="0" y="0" width="300" height="400" fill="#000000"></rect>
+
+      <!-- White underlay: horizontal wing/star, split visually by the orange check -->
+      <path class="wing" fill="#FFFFFF" d="
+        M 18 252
+        C 68 226, 108 214, 150 214
+        C 192 214, 234 232, 258 262
+        C 224 248, 188 241, 150 241
+        C 112 241, 64 247, 18 252
+        Z
+      "></path>
+
+      <!-- Orange overlay: asymmetrical checkmark/V layered on top -->
+      <path class="check" fill="#F47721" d="
+        M 108 348
+        C 99 262, 91 170, 93 86
+        C 105 128, 119 152, 133 173
+        C 172 118, 222 58, 277 15
+        C 214 98, 149 222, 108 348
+        Z
+      "></path>
+    </svg>
+  </div>
+</body>
+</html>

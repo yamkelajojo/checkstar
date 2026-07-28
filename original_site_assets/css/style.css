@@ -1,0 +1,85 @@
+html {
+	  padding: 0;
+
+}
+
+
+
+
+a:link{text-decoration: none; color: #cc0000; font-family: Lucida Sans Unicode, Lucida Grande, sans-serif; FONT-SIZE: 13px; }
+a:visited{ text-decoration: none; color: #cc0000; font-family: Lucida Sans Unicode, Lucida Grande, sans-serif; FONT-SIZE: 13px; }
+a:hover {text-decoration: none; color: #000000; font-family: Lucida Sans Unicode, Lucida Grande, sans-serif; FONT-SIZE: 13px;}
+.webco:link{text-decoration: none; color: #999999; font-family: Lucida Sans Unicode, Lucida Grande, sans-serif; FONT-SIZE: 9px; }
+.webco:visited{ text-decoration: none; color: #999999; font-family: Lucida Sans Unicode, Lucida Grande, sans-serif; FONT-SIZE: 9px; }
+.webco:hover {text-decoration: none; color: #999999; font-family: Lucida Sans Unicode, Lucida Grande, sans-serif; FONT-SIZE: 9px;}
+.b:link{text-decoration: none; FONT-SIZE: 11px; FONT-FAMILY: Verdana; color: #333333}
+.b:visited{ text-decoration: none; FONT-SIZE: 11px; FONT-FAMILY: Verdana; color: #333333}
+.b:hover {FONT-SIZE: 11px; FONT-FAMILY: Verdana; color: #333333;text-transform:uppercase;}
+.mainbdr{BACKGROUND-COLOR: white}
+.linkblockbdr{ border: solid #cccccc 1px}
+.servicesbdr{ border: solid #e1e1e1 1px;BACKGROUND-COLOR: #f9f9f9}
+
+.miniservicesbdr{ border: dashed #d1d1d1 1px;BACKGROUND-COLOR: #ffffff}
+.miniservicesbdr:hover{ border: solid #c7c7c7 1px;BACKGROUND-COLOR: #ffffff}
+
+.subbdr{ BORDER-RIGHT: #999999 1px dotted; BORDER-TOP: #999999 1px dotted; BORDER-LEFT: #999999 1px dotted; BORDER-BOTTOM: #999999 1px dotted; BACKGROUND-COLOR: #CDDFC6}
+ 
+ 
+ 
+}
+img {
+border: none;
+} 
+td{color: #333333;
+ font-family: Lucida Sans Unicode, Lucida Grande, sans-serif; FONT-SIZE: 13px; 
+ }  
+.LeftMenuBG { 
+background-image : url('images/menu seperator.gif'); 
+background-repeat: no-repeat; 
+background-position: center bottom; 
+height:100%; 
+}
+hr {
+  border: 0;
+  width: 90%;
+  color: #cccccc;
+height: 1px;
+}
+
+.links {
+	
+	height:32px; /*This Will Make Fixes Size Link (Use Image height)*/
+	width:169px; /*This Will Make Fixes Size Link (Use Image width)*/
+	line-height:25px;
+	text-align:center;	
+	text-decoration:none;}
+.links:hover {background:url(images/servicebubble.jpg) center top no-repeat;}
+.links2 {
+	display: block;
+	height:32px; /*This Will Make Fixes Size Link (Use Image height)*/
+	width:169px; /*This Will Make Fixes Size Link (Use Image width)*/
+	line-height:25px;
+	text-align:right;	
+	text-decoration:none;}
+.links2:hover {background:url(images/servicebubble.png) center top no-repeat;text-align:center;}
+
+
+
+.webdesignbg {background:url(images/webdesignbg.jpg) center top no-repeat;}
+.smsbg {background:url(images/smsbg.jpg) center top no-repeat;}
+.bulkemailbg {background:url(images/bulkemailbg.jpg) center top no-repeat;}
+.emailadlbg {background:url(images/emailadlbg.jpg) center top no-repeat;}
+.graphicbg {background:url(images/graphicbg.jpg) center top no-repeat;}
+.webportbg {background:url(images/web_portfolio/bg.jpg) center top no-repeat;}
+
+.dropshadowclass {
+        border: solid 1px #CCC;
+	-moz-box-shadow: 5px 5px 0px #999;
+	-webkit-box-shadow: 5px 5px 0px #999;
+        box-shadow: 5px 5px 0px #999;
+        }
+
+.contactbg{background-image:url('image/contactbg2.jpg');
+ background-repeat:no-repeat;}
+ 
+ 
