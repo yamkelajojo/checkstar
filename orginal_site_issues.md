@@ -10,7 +10,7 @@
 
 ---
 
-1. i feel like the consumer service can be put somewhere on a bage or as a section on a relevant tab and not have its own tab. or a light always moving to the left banner with gray/light gray icons then changes to color on hover.
+1. i feel like the consumer service can be put somewhere on a page or as a section on a relevant tab's page and not have its own tab. or a small always moving to the left banner with gray/light gray icons then changes to color on hover.
 
 2. as i was doing some research i passed by a website called https://international.eco-eyewear.com/, i really like the spacing on the website or of their design systems much as im not sure if it would work for the type of website i have which is supermarket/store.
 
