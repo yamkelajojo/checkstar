@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { motion } from 'motion/react'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
-import { api } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth-store'
+import { useProducts, useCategories, useOrders, useStores, useSpecials, useRecipes } from '@/lib/query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import type { Order } from '@/types'
 import {
   ShoppingBag, Package, Store, Tags, Sparkles,
@@ -37,61 +37,50 @@ const managementLinks = [
   { href: '/admin/riders', label: 'Riders', icon: Bike, desc: 'Manage delivery riders' },
 ]
 
-interface AdminStats {
-  products: number
-  categories: number
-  orders: number
-  stores: number
-  specials: number
-  recipes: number
-}
-
 export default function AdminDashboardClient() {
   const { user } = useAuthStore()
-  const [stats, setStats] = useState<AdminStats | null>(null)
-  const [recentOrders, setRecentOrders] = useState<Order[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [contactCount, setContactCount] = useState<number | null>(null)
+  const queryClient = useQueryClient()
 
-  const fetchData = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const [products, categories, orders, stores, specials, recipes] = await Promise.all([
-        api.getProducts().catch(() => ({ data: [] as any[] })),
-        api.getCategories().catch(() => ({ data: [] as any[] })),
-        api.getOrders().catch(() => ({ data: [] as Order[] })),
-        api.getStores().catch(() => ({ data: [] as any[] })),
-        api.getSpecials().catch(() => ({ data: [] as any[] })),
-        api.getRecipes().catch(() => ({ data: [] as any[] })),
-      ])
-      setStats({
-        products: products.data.length,
-        categories: categories.data.length,
-        orders: orders.data.length,
-        stores: stores.data.length,
-        specials: specials.data.length,
-        recipes: recipes.data.length,
-      })
-      setRecentOrders((orders.data as Order[]).slice(0, 5).reverse())
+  const { data: products = [], isLoading: productsLoading, error: productsError } = useProducts()
+  const { data: categories = [], isLoading: categoriesLoading, error: categoriesError } = useCategories()
+  const { data: orders = [], isLoading: ordersLoading, error: ordersError } = useOrders()
+  const { data: stores = [], isLoading: storesLoading, error: storesError } = useStores()
+  const { data: specials = [], isLoading: specialsLoading, error: specialsError } = useSpecials()
+  const { data: recipes = [], isLoading: recipesLoading, error: recipesError } = useRecipes()
 
-      try {
-        const res = await fetch('/api/contact-messages', { credentials: 'include' })
-        if (res.ok) {
-          const body = await res.json()
-          setContactCount(body.data?.length ?? body.length ?? null)
-        }
-      } catch {
-      }
-    } catch (err: any) {
-      setError(err.message)
-    } finally {
-      setLoading(false)
-    }
-  }, [])
+  const { data: contactData, isLoading: contactLoading, error: contactError } = useQuery({
+    queryKey: ['contact-messages'],
+    queryFn: () => fetch('/api/contact-messages', { credentials: 'include' }).then(r => r.json()),
+  })
 
-  useEffect(() => { fetchData() }, [fetchData])
+  const { data: healthData, isLoading: healthLoading, error: healthError } = useQuery({
+    queryKey: ['admin-health'],
+    queryFn: () => fetch('/api/admin/health', { credentials: 'include' }).then(r => r.json()),
+  })
+
+  const productsCount = products.length || 0
+  const categoriesCount = categories.length || 0
+  const ordersCount = orders.length || 0
+  const storesCount = stores.length || 0
+  const specialsCount = specials.length || 0
+  const recipesCount = recipes.length || 0
+  const contactCount = contactData?.data?.length ?? contactData?.length ?? null
+
+  const loading = productsLoading || categoriesLoading || ordersLoading || storesLoading || specialsLoading || recipesLoading || contactLoading || healthLoading
+  const error = productsError?.message || categoriesError?.message || ordersError?.message || storesError?.message || specialsError?.message || recipesError?.message || contactError?.message || healthError?.message || null
+  const stats = { products: productsCount, categories: categoriesCount, orders: ordersCount, stores: storesCount, specials: specialsCount, recipes: recipesCount }
+  const recentOrders = (orders as Order[]).slice(0, 5).reverse()
+
+  const fetchData = () => {
+    queryClient.invalidateQueries({ queryKey: ['products'] })
+    queryClient.invalidateQueries({ queryKey: ['categories'] })
+    queryClient.invalidateQueries({ queryKey: ['orders'] })
+    queryClient.invalidateQueries({ queryKey: ['stores'] })
+    queryClient.invalidateQueries({ queryKey: ['specials'] })
+    queryClient.invalidateQueries({ queryKey: ['recipes'] })
+    queryClient.invalidateQueries({ queryKey: ['contact-messages'] })
+    queryClient.invalidateQueries({ queryKey: ['admin-health'] })
+  }
 
   const roleBadge = user?.role?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 

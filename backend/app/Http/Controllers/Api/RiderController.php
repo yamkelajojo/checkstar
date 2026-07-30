@@ -2,29 +2,21 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Enums\EventType;
-use App\Enums\GameEvent;
 use App\Enums\OrderStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
-use App\Models\OrderActivityLog;
 use App\Models\Rider;
-use App\Models\StoreProduct;
-use App\Services\GamificationService;
-use App\Services\OrderStateMachine;
-use DB;
+use App\Services\RiderOrderService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class RiderController extends Controller
 {
-    private OrderStateMachine $stateMachine;
-    private GamificationService $gamification;
+    private RiderOrderService $riderOrderService;
 
-    public function __construct(OrderStateMachine $stateMachine, GamificationService $gamification)
+    public function __construct(RiderOrderService $riderOrderService)
     {
-        $this->stateMachine = $stateMachine;
-        $this->gamification = $gamification;
+        $this->riderOrderService = $riderOrderService;
     }
 
     private function getRider(Request $request): Rider
@@ -48,31 +40,7 @@ class RiderController extends Controller
     public function claim(Request $request, int $orderId): JsonResponse
     {
         $rider = $this->getRider($request);
-
-        $claimed = DB::transaction(function () use ($orderId, $rider, $request) {
-            $order = Order::where('id', $orderId)
-                ->whereNull('rider_id')
-                ->where('status', OrderStatus::Confirmed->value)
-                ->lockForUpdate()
-                ->first();
-
-            if (!$order) {
-                return null;
-            }
-
-            if ($order->store_id !== $rider->store_id) {
-                return null;
-            }
-
-            $this->stateMachine->transition($order, OrderStatus::Preparing, $request->user(), [
-                'rider_id' => $rider->id,
-            ]);
-
-            $order->rider_id = $rider->id;
-            $order->save();
-
-            return $order;
-        });
+        $claimed = $this->riderOrderService->claim($rider, $orderId);
 
         if (!$claimed) {
             return response()->json(['message' => 'Order already claimed or unavailable'], 409);
@@ -99,26 +67,7 @@ class RiderController extends Controller
     public function itemsBought(Request $request, int $orderId): JsonResponse
     {
         $rider = $this->getRider($request);
-        $order = Order::where('id', $orderId)
-            ->where('rider_id', $rider->id)
-            ->firstOrFail();
-
-        foreach ($order->items as $item) {
-            if ($item->store_product_id) {
-                $sp = StoreProduct::find($item->store_product_id);
-                if ($sp) {
-                    $sp->decrement('stock_quantity', $item->quantity);
-                }
-            }
-        }
-
-        $order->activityLogs()->create([
-            'event_type' => EventType::ItemsBought->value,
-            'user_id' => $rider->user_id,
-            'old_status' => $order->status->value,
-            'new_status' => $order->status->value,
-            'created_at' => now(),
-        ]);
+        $this->riderOrderService->markItemsBought($rider, $orderId);
 
         return response()->json(['message' => 'Items marked as bought']);
     }
@@ -126,27 +75,17 @@ class RiderController extends Controller
     public function outForDelivery(Request $request, int $orderId): JsonResponse
     {
         $rider = $this->getRider($request);
-        $order = Order::where('id', $orderId)
-            ->where('rider_id', $rider->id)
-            ->firstOrFail();
+        $order = $this->riderOrderService->advanceStatus($rider, $orderId, OrderStatus::OutForDelivery);
 
-        $this->stateMachine->transition($order, OrderStatus::OutForDelivery, $request->user());
-
-        return response()->json(['data' => $order->fresh()]);
+        return response()->json(['data' => $order]);
     }
 
     public function delivered(Request $request, int $orderId): JsonResponse
     {
         $rider = $this->getRider($request);
-        $order = Order::where('id', $orderId)
-            ->where('rider_id', $rider->id)
-            ->firstOrFail();
+        $order = $this->riderOrderService->advanceStatus($rider, $orderId, OrderStatus::Delivered);
 
-        $this->stateMachine->transition($order, OrderStatus::Delivered, $request->user());
-
-        $this->gamification->handleEvent($rider, GameEvent::DeliveryCompleted);
-
-        return response()->json(['data' => $order->fresh()]);
+        return response()->json(['data' => $order]);
     }
 
     public function toggleAvailability(Request $request): JsonResponse

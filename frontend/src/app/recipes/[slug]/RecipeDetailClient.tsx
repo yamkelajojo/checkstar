@@ -1,25 +1,17 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'motion/react'
 import { Clock, Users, ChefHat, ChevronLeft, Check, ListOrdered } from 'lucide-react'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
-import { api } from '@/lib/api'
-import type { Recipe } from '@/types'
+import { useRecipe } from '@/lib/query'
 
 export default function RecipeDetailClient({ slug }: { slug: string }) {
-  const [recipe, setRecipe] = useState<Recipe | null>(null)
-  const [loading, setLoading] = useState(true)
+  const { data: recipe, isLoading: loading, error } = useRecipe(slug)
+  const fetchError = error ? 'Failed to load recipe' : null
   const [checked, setChecked] = useState<Set<number>>(new Set())
-
-  useEffect(() => {
-    api.getRecipe(slug)
-      .then(data => setRecipe((data as any).data ?? data))
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [slug])
 
   const toggleIngredient = (idx: number) => {
     setChecked(prev => {
@@ -42,6 +34,20 @@ export default function RecipeDetailClient({ slug }: { slug: string }) {
     : Array.isArray(recipe?.method)
       ? recipe.method
       : []
+
+  if (fetchError) {
+    return (
+      <>
+        <Header />
+        <main className="max-w-4xl mx-auto px-4 py-16 text-center">
+          <p className="text-red-500 text-lg font-medium">{fetchError}</p>
+          <p className="text-sm text-gray-400 mt-1">Please try again later.</p>
+          <Link href="/recipes" className="text-primary hover:underline mt-4 inline-block">Back to recipes</Link>
+        </main>
+        <Footer />
+      </>
+    )
+  }
 
   if (loading) {
     return (

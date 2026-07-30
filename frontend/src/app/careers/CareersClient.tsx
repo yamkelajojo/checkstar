@@ -1,12 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import { motion } from 'motion/react'
 import { Briefcase, MapPin, Clock, Calendar, ArrowRight, Building } from 'lucide-react'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
-import { api } from '@/lib/api'
-import type { CareerListing } from '@/types'
+import { useCareers } from '@/lib/query'
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
@@ -14,17 +12,10 @@ const fadeUp = {
 }
 
 export default function CareersClient() {
-  const [listings, setListings] = useState<CareerListing[]>([])
-  const [loading, setLoading] = useState(true)
+  const { data: listings = [], isLoading: loading, error } = useCareers()
+  const fetchError = error ? 'Failed to load career listings' : null
 
-  useEffect(() => {
-    api.getCareers()
-      .then(res => setListings(res.data))
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [])
-
-  const grouped: Record<string, CareerListing[]> = {}
+  const grouped: Record<string, (typeof listings)[number][]> = {}
   listings.forEach(l => {
     const dept = l.department || 'General'
     if (!grouped[dept]) grouped[dept] = []
@@ -40,7 +31,12 @@ export default function CareersClient() {
           <p className="text-gray-500 mb-12">Join the Checkstar team — view current job openings in Durban.</p>
         </motion.div>
 
-        {loading ? (
+        {fetchError ? (
+          <div className="text-center py-16 text-red-500">
+            <p className="text-lg font-medium">{fetchError}</p>
+            <p className="text-sm mt-1">Please try again later.</p>
+          </div>
+        ) : loading ? (
           <div className="space-y-8">
             {Array.from({ length: 3 }).map((_, i) => (
               <div key={i} className="space-y-3">

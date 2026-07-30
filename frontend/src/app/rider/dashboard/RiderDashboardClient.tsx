@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { motion } from 'motion/react'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
@@ -8,7 +9,11 @@ import OrderTimeline from '@/components/OrderTimeline'
 import StarRating from '@/components/StarRating'
 import { api } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth-store'
-import type { Order, Rider } from '@/types'
+import type { Order } from '@/types'
+import {
+  useRiderProfile, useAvailableOrders, useActiveDeliveries,
+  useRiderStats, useRiderHistory, useClaimOrder, useAdvanceOrder, useStores,
+} from '@/lib/query'
 import {
   Clock, Truck, TrendingUp, History, MapPin, Store,
   AlertCircle, ChevronRight, Loader2,
@@ -46,14 +51,6 @@ const tabs = [
 
 type TabId = (typeof tabs)[number]['id']
 
-interface RiderStats {
-  xp: number
-  level: number
-  total_deliveries: number
-  average_rating: number
-  badges: any[]
-}
-
 function Skeleton({ className = '' }: { className?: string }) {
   return <div className={`animate-pulse bg-gray-100 rounded ${className}`} />
 }
@@ -89,145 +86,53 @@ function ErrorState({ message, onRetry }: { message: string; onRetry: () => void
 
 export default function RiderDashboardClient() {
   const { user } = useAuthStore()
+  const qc = useQueryClient()
   const [activeTab, setActiveTab] = useState<TabId>('available')
-  const [rider, setRider] = useState<Rider | null>(null)
-  const [storeNames, setStoreNames] = useState<Record<number, string>>({})
-  const [availableOrders, setAvailableOrders] = useState<Order[]>([])
-  const [activeDeliveries, setActiveDeliveries] = useState<Order[]>([])
-  const [riderStats, setRiderStats] = useState<RiderStats | null>(null)
-  const [history, setHistory] = useState<Order[]>([])
-  const [loading, setLoading] = useState({
-    rider: true, stores: true, available: false,
-    active: false, stats: false, history: false, toggle: false,
-  })
-  const [error, setError] = useState<Record<string, string | null>>({
-    rider: null, available: null, active: null, stats: null, history: null,
-  })
+  const [toggleLoading, setToggleLoading] = useState(false)
 
-  useEffect(() => {
-    fetchRiderProfile()
-    fetchStores()
-    fetchAvailableOrders()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  const { data: rider, isLoading: riderLoading, error: riderError } = useRiderProfile()
+  const { data: stores } = useStores()
+  const { data: availableOrders = [], isLoading: availableLoading, error: availableError, refetch: refetchAvailable } = useAvailableOrders()
+  const { data: activeDeliveries = [], isLoading: activeLoading, error: activeError, refetch: refetchActive } = useActiveDeliveries()
+  const { data: riderStats, isLoading: statsLoading, error: statsError, refetch: refetchStats } = useRiderStats()
+  const { data: history = [], isLoading: historyLoading, error: historyError, refetch: refetchHistory } = useRiderHistory()
+  const claimMutation = useClaimOrder()
+  const advanceMutation = useAdvanceOrder()
 
-  useEffect(() => {
-    if (activeTab === 'active') fetchActiveDeliveries()
-    if (activeTab === 'stats') fetchRiderStats()
-    if (activeTab === 'history') fetchRiderHistory()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab])
+  const storeNames: Record<number, string> = {}
+  stores?.forEach((s: { id: number; name: string }) => { storeNames[s.id] = s.name })
 
-  const fetchRiderProfile = useCallback(async () => {
-    try {
-      setLoading(l => ({ ...l, rider: true }))
-      const res = await api.getRiderProfile()
-      setRider(res)
-    } catch (err: any) {
-      setError(e => ({ ...e, rider: err.message }))
-    } finally {
-      setLoading(l => ({ ...l, rider: false }))
-    }
-  }, [])
+  const loading = {
+    rider: riderLoading, stores: false, available: availableLoading,
+    active: activeLoading, stats: statsLoading, history: historyLoading, toggle: toggleLoading,
+  }
 
-  const fetchStores = useCallback(async () => {
-    try {
-      setLoading(l => ({ ...l, stores: true }))
-      const res = await api.getStores()
-      const map: Record<number, string> = {}
-      res.data.forEach(s => { map[s.id] = s.name })
-      setStoreNames(map)
-    } catch {
-    } finally {
-      setLoading(l => ({ ...l, stores: false }))
-    }
-  }, [])
-
-  const fetchAvailableOrders = useCallback(async () => {
-    try {
-      setLoading(l => ({ ...l, available: true }))
-      setError(e => ({ ...e, available: null }))
-      const res = await api.getAvailableOrders()
-      setAvailableOrders(res.data)
-    } catch (err: any) {
-      setError(e => ({ ...e, available: err.message }))
-    } finally {
-      setLoading(l => ({ ...l, available: false }))
-    }
-  }, [])
-
-  const fetchActiveDeliveries = useCallback(async () => {
-    try {
-      setLoading(l => ({ ...l, active: true }))
-      setError(e => ({ ...e, active: null }))
-      const res = await api.getActiveDeliveries()
-      setActiveDeliveries(res.data)
-    } catch (err: any) {
-      setError(e => ({ ...e, active: err.message }))
-    } finally {
-      setLoading(l => ({ ...l, active: false }))
-    }
-  }, [])
-
-  const fetchRiderStats = useCallback(async () => {
-    try {
-      setLoading(l => ({ ...l, stats: true }))
-      setError(e => ({ ...e, stats: null }))
-      const res = await api.getRiderStats()
-      setRiderStats(res.data)
-    } catch (err: any) {
-      setError(e => ({ ...e, stats: err.message }))
-    } finally {
-      setLoading(l => ({ ...l, stats: false }))
-    }
-  }, [])
-
-  const fetchRiderHistory = useCallback(async () => {
-    try {
-      setLoading(l => ({ ...l, history: true }))
-      setError(e => ({ ...e, history: null }))
-      const res = await api.getRiderHistory()
-      setHistory(res.data)
-    } catch (err: any) {
-      setError(e => ({ ...e, history: err.message }))
-    } finally {
-      setLoading(l => ({ ...l, history: false }))
-    }
-  }, [])
+  const error: Record<string, string | null> = {
+    rider: riderError ? 'Failed to load profile' : null,
+    available: availableError ? 'Failed to load available orders' : null,
+    active: activeError ? 'Failed to load active deliveries' : null,
+    stats: statsError ? 'Failed to load stats' : null,
+    history: historyError ? 'Failed to load history' : null,
+  }
 
   const handleToggleAvailability = useCallback(async () => {
+    setToggleLoading(true)
     try {
-      setLoading(l => ({ ...l, toggle: true }))
-      const updated = await api.toggleAvailability()
-      setRider(updated)
+      await api.toggleAvailability()
+      await qc.invalidateQueries({ queryKey: ['rider-profile'] })
     } catch {
     } finally {
-      setLoading(l => ({ ...l, toggle: false }))
+      setToggleLoading(false)
     }
-  }, [])
+  }, [qc])
 
   const handleClaimOrder = useCallback(async (orderId: number) => {
-    try {
-      await api.claimOrder(orderId)
-      setAvailableOrders(o => o.filter(o => o.id !== orderId))
-      fetchActiveDeliveries()
-    } catch {
-    }
-  }, [fetchActiveDeliveries])
+    await claimMutation.mutateAsync(orderId)
+  }, [claimMutation])
 
   const advanceOrder = useCallback(async (orderId: number, action: string) => {
-    try {
-      if (action === 'items_bought') await api.markItemsBought(orderId)
-      else if (action === 'out_for_delivery') await api.markOutForDelivery(orderId)
-      else if (action === 'delivered') await api.markDelivered(orderId)
-      fetchActiveDeliveries()
-      if (action === 'delivered') {
-        fetchRiderStats()
-        fetchRiderHistory()
-      }
-    } catch {
-    }
-  }, [fetchActiveDeliveries, fetchRiderStats, fetchRiderHistory])
+    await advanceMutation.mutateAsync({ orderId, action })
+  }, [advanceMutation])
 
   const storeName = rider?.store_id ? storeNames[rider.store_id] : null
 
@@ -394,7 +299,7 @@ export default function RiderDashboardClient() {
                   ))}
                 </div>
               ) : error.available ? (
-                <ErrorState message={error.available} onRetry={fetchAvailableOrders} />
+                <ErrorState message={error.available} onRetry={refetchAvailable} />
               ) : availableOrders.length === 0 ? (
                 <EmptyState icon={Clock} title="No available orders" description="Check back soon for new delivery requests." />
               ) : (
@@ -472,7 +377,7 @@ export default function RiderDashboardClient() {
                   ))}
                 </div>
               ) : error.active ? (
-                <ErrorState message={error.active} onRetry={fetchActiveDeliveries} />
+                <ErrorState message={error.active} onRetry={refetchActive} />
               ) : activeDeliveries.length === 0 ? (
                 <EmptyState icon={Truck} title="No active deliveries" description="Claim an order to start delivering." />
               ) : (
@@ -497,7 +402,7 @@ export default function RiderDashboardClient() {
                   ))}
                 </div>
               ) : error.stats ? (
-                <ErrorState message={error.stats} onRetry={fetchRiderStats} />
+                <ErrorState message={error.stats} onRetry={refetchStats} />
               ) : !riderStats ? (
                 <EmptyState icon={TrendingUp} title="No stats available" description="Complete deliveries to see your stats." />
               ) : (
@@ -603,7 +508,7 @@ export default function RiderDashboardClient() {
                   ))}
                 </div>
               ) : error.history ? (
-                <ErrorState message={error.history} onRetry={fetchRiderHistory} />
+                <ErrorState message={error.history} onRetry={refetchHistory} />
               ) : history.length === 0 ? (
                 <EmptyState icon={History} title="No delivery history" description="Your completed deliveries will appear here." />
               ) : (

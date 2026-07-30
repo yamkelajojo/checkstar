@@ -26,8 +26,7 @@ export default function LoginClient() {
     if (isAuthenticated && user) {
       const role = user.role
       if (role === 'rider') router.push('/rider/dashboard')
-      else if (role === 'store_owner' || role === 'store_manager' || role === 'logistics_officer') router.push('/admin/dashboard')
-      else if (role === 'developer') router.push('/developer/dashboard')
+      else if (role === 'store_owner' || role === 'store_manager' || role === 'logistics_officer' || role === 'developer') router.push('/admin/dashboard')
       else router.push('/')
     }
   }, [isAuthenticated, user, router])

@@ -12,8 +12,8 @@ interface Props {
 
 export default function ProductCard({ product }: Props) {
   const addItem = useCartStore(s => s.addItem)
-  const price = product.sale_price ?? product.price
-  const hasSale = product.sale_price !== null
+  const price = Number(product.sale_price ?? product.price)
+  const hasSale = product.sale_price !== null && product.sale_price !== undefined
 
   return (
     <motion.div
@@ -43,7 +43,7 @@ export default function ProductCard({ product }: Props) {
           <div className="flex items-center gap-2">
             <span className="font-bold text-lg text-gray-900">R{price.toFixed(2)}</span>
             {hasSale && (
-              <span className="text-sm text-gray-400 line-through">R{product.price.toFixed(2)}</span>
+              <span className="text-sm text-gray-400 line-through">R{Number(product.price).toFixed(2)}</span>
             )}
           </div>
 

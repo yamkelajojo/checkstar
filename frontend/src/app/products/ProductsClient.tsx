@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { motion } from 'motion/react'
 import { Search, SlidersHorizontal } from 'lucide-react'
 import Header from '@/components/Header'
@@ -8,24 +8,17 @@ import Footer from '@/components/Footer'
 import ProductCard from '@/components/ProductCard'
 import CategoryGrid from '@/components/CategoryGrid'
 import type { Product, Category } from '@/types'
-import { api } from '@/lib/api'
+import { useProducts, useCategories } from '@/lib/query'
 
 export default function ProductsClient() {
-  const [products, setProducts] = useState<Product[]>([])
-  const [categories, setCategories] = useState<Category[]>([])
-  const [loading, setLoading] = useState(true)
   const [activeCategory, setActiveCategory] = useState<number | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
 
-  useEffect(() => {
-    Promise.all([api.getProducts(), api.getCategories()])
-      .then(([prodRes, catRes]) => {
-        setProducts(prodRes.data)
-        setCategories(catRes.data)
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [])
+  const { data: products = [], isLoading: productsLoading, error: productsError } = useProducts()
+  const { data: categories = [], isLoading: categoriesLoading, error: categoriesError } = useCategories()
+
+  const loading = productsLoading || categoriesLoading
+  const fetchError = productsError || categoriesError ? 'Failed to load products' : null
 
   const filtered = products.filter(p => {
     const matchesCategory = activeCategory ? p.category_id === activeCategory : true
@@ -87,7 +80,12 @@ export default function ProductsClient() {
             ))}
           </div>
 
-          {loading ? (
+          {fetchError ? (
+            <div className="text-center py-16 text-red-500">
+              <p className="text-lg font-medium">{fetchError}</p>
+              <p className="text-sm mt-1">Please try again later.</p>
+            </div>
+          ) : loading ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {Array.from({ length: 8 }).map((_, i) => (
                 <div key={i} className="bg-gray-50 rounded-xl aspect-square animate-pulse" />

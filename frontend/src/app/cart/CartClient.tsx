@@ -8,23 +8,23 @@ import { Minus, Plus, Trash2, ShoppingBag, ArrowRight, Loader2, MapPin, CheckCir
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import { useCartStore } from '@/stores/cart-store'
-import { api } from '@/lib/api'
+import { usePlaceOrder } from '@/lib/query'
 
 export default function CartClient() {
   const router = useRouter()
   const { items, total, removeItem, updateQuantity, decrementItem, addItem, clearCart } = useCartStore()
   const [deliveryAddress, setDeliveryAddress] = useState('')
   const [showCheckoutForm, setShowCheckoutForm] = useState(false)
-  const [placing, setPlacing] = useState(false)
   const [placeError, setPlaceError] = useState('')
   const [placedOrder, setPlacedOrder] = useState<{ order_number: string; id: number } | null>(null)
+
+  const placeOrderMutation = usePlaceOrder()
 
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault()
     setPlaceError('')
-    setPlacing(true)
     try {
-      const order = await api.placeOrder({
+      const order = await placeOrderMutation.mutateAsync({
         store_id: 1,
         items: items.map(i => ({ product_id: i.product.id, quantity: i.quantity })),
         delivery_address: deliveryAddress || undefined,
@@ -33,8 +33,6 @@ export default function CartClient() {
       setPlacedOrder({ order_number: order.order_number, id: order.id })
     } catch (err: any) {
       setPlaceError(err.message || 'Failed to place order.')
-    } finally {
-      setPlacing(false)
     }
   }
 
@@ -106,7 +104,7 @@ export default function CartClient() {
               <div className="lg:col-span-2 space-y-1">
                 <AnimatePresence initial={false}>
                   {items.map(item => {
-                    const price = item.product.sale_price ?? item.product.price
+                    const price = Number(item.product.sale_price ?? item.product.price)
                     return (
                       <motion.div
                         key={item.product.id}
@@ -231,12 +229,12 @@ export default function CartClient() {
                         </button>
                         <motion.button
                           type="submit"
-                          disabled={placing}
+                          disabled={placeOrderMutation.isPending}
                           whileTap={{ scale: 0.98 }}
                           className="flex-1 bg-primary text-white py-2.5 rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
                         >
-                          {placing ? <Loader2 size={16} className="animate-spin" /> : null}
-                          {placing ? 'Placing...' : 'Place Order'}
+                          {placeOrderMutation.isPending ? <Loader2 size={16} className="animate-spin" /> : null}
+                          {placeOrderMutation.isPending ? 'Placing...' : 'Place Order'}
                         </motion.button>
                       </div>
                     </motion.form>

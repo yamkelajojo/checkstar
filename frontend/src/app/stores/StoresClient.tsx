@@ -7,26 +7,23 @@ import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import StoreCard from '@/components/StoreCard'
 import type { Store } from '@/types'
-import { api } from '@/lib/api'
+import { useStores } from '@/lib/query'
 
 export default function StoresClient() {
-  const [stores, setStores] = useState<Store[]>([])
-  const [loading, setLoading] = useState(true)
+  const { data: stores = [], isLoading: loading, error } = useStores()
+  const fetchError = error ? 'Failed to load stores' : null
   const [mapReady, setMapReady] = useState(false)
   const mapRef = useRef<HTMLDivElement>(null)
   const mapInstance = useRef<any>(null)
   const markersRef = useRef<any[]>([])
   const leafletRef = useRef<any>(null)
 
-  useEffect(() => {
-    api.getStores()
-      .then(res => setStores(res.data))
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [])
+  const initializedRef = useRef(false)
 
   useEffect(() => {
-    if (!mapRef.current || mapRef.current.dataset.initialized) return
+    const el = mapRef.current
+    if (!el || initializedRef.current) return
+    initializedRef.current = true
 
     async function initMap() {
       const L = await import('leaflet')
@@ -38,17 +35,23 @@ export default function StoresClient() {
         shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
       })
 
-      const map = L.map(mapRef.current!).setView([-29.8587, 31.0218], 11)
+      const map = L.map(el).setView([-29.8587, 31.0218], 11)
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap contributors',
       }).addTo(map)
 
       mapInstance.current = map
-      mapRef.current!.dataset.initialized = 'true'
       setMapReady(true)
     }
 
     initMap()
+
+    return () => {
+      if (mapInstance.current) {
+        mapInstance.current.remove()
+        mapInstance.current = null
+      }
+    }
   }, [])
 
   useEffect(() => {
@@ -93,7 +96,12 @@ export default function StoresClient() {
           <div ref={mapRef} className="w-full h-full" />
         </motion.div>
 
-        {loading ? (
+        {fetchError ? (
+          <div className="text-center py-16 text-red-500">
+            <p className="text-lg font-medium">{fetchError}</p>
+            <p className="text-sm mt-1">Please try again later.</p>
+          </div>
+        ) : loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {Array.from({ length: 3 }).map((_, i) => (
               <div key={i} className="bg-gray-50 rounded-xl h-64 animate-pulse" />

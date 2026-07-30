@@ -9,6 +9,8 @@ import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import { useAuthStore } from '@/stores/auth-store'
 import { api } from '@/lib/api'
+import { useOrder } from '@/lib/query'
+import { useQueryClient } from '@tanstack/react-query'
 import type { Order, OrderActivityLog } from '@/types'
 
 const statusConfig: Record<string, { color: string; bg: string; icon: any; label: string }> = {
@@ -68,9 +70,10 @@ function StarRating({ value, onChange }: { value: number; onChange: (v: number) 
 export default function OrderDetailClient({ id }: { id: string }) {
   const router = useRouter()
   const { isAuthenticated, isLoading: authLoading, checkAuth } = useAuthStore()
-  const [order, setOrder] = useState<Order | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const { data: order, isLoading: loading, error } = useOrder(id)
+  const queryClient = useQueryClient()
+  const [mutationError, setMutationError] = useState('')
+  const displayError = error?.message || mutationError
   const [cancelling, setCancelling] = useState(false)
   const [confirming, setConfirming] = useState(false)
   const [rating, setRating] = useState(0)
@@ -85,24 +88,18 @@ export default function OrderDetailClient({ id }: { id: string }) {
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       router.push('/auth/login')
-      return
     }
-    if (!authLoading && isAuthenticated) {
-      api.getOrder(Number(id))
-        .then(setOrder)
-        .catch(err => setError(err.message))
-        .finally(() => setLoading(false))
-    }
-  }, [authLoading, isAuthenticated, id, router])
+  }, [authLoading, isAuthenticated, router])
 
   const handleCancel = async () => {
     if (!confirm('Are you sure you want to cancel this order?')) return
     setCancelling(true)
+    setMutationError('')
     try {
-      const updated = await api.cancelOrder(Number(id))
-      setOrder(updated)
+      await api.cancelOrder(Number(id))
+      queryClient.invalidateQueries({ queryKey: ['order', id] })
     } catch (err: any) {
-      setError(err.message)
+      setMutationError(err.message)
     } finally {
       setCancelling(false)
     }
@@ -110,11 +107,12 @@ export default function OrderDetailClient({ id }: { id: string }) {
 
   const handleConfirmDelivery = async () => {
     setConfirming(true)
+    setMutationError('')
     try {
-      const updated = await api.confirmDelivery(Number(id))
-      setOrder(updated)
+      await api.confirmDelivery(Number(id))
+      queryClient.invalidateQueries({ queryKey: ['order', id] })
     } catch (err: any) {
-      setError(err.message)
+      setMutationError(err.message)
     } finally {
       setConfirming(false)
     }
@@ -124,11 +122,12 @@ export default function OrderDetailClient({ id }: { id: string }) {
     e.preventDefault()
     if (rating === 0) return
     setSubmittingReview(true)
+    setMutationError('')
     try {
       await api.reviewRider(Number(id), { rating, comment: reviewComment || undefined })
       setReviewSubmitted(true)
     } catch (err: any) {
-      setError(err.message)
+      setMutationError(err.message)
     } finally {
       setSubmittingReview(false)
     }
@@ -151,7 +150,7 @@ export default function OrderDetailClient({ id }: { id: string }) {
       <>
         <Header />
         <main className="max-w-4xl mx-auto px-4 py-16">
-          <div className="bg-accent/10 border border-accent/30 text-accent text-sm rounded-lg px-4 py-3">{error}</div>
+          <div className="bg-accent/10 border border-accent/30 text-accent text-sm rounded-lg px-4 py-3">{error?.message || 'Something went wrong'}</div>
           <Link href="/account/orders" className="mt-4 inline-flex items-center gap-1 text-sm text-primary hover:underline">
             <ArrowLeft size={14} /> Back to orders
           </Link>
@@ -180,8 +179,8 @@ export default function OrderDetailClient({ id }: { id: string }) {
             <ArrowLeft size={14} /> Back to orders
           </Link>
 
-          {error && (
-            <div className="bg-accent/10 border border-accent/30 text-accent text-sm rounded-lg px-4 py-3 mb-6">{error}</div>
+          {displayError && (
+            <div className="bg-accent/10 border border-accent/30 text-accent text-sm rounded-lg px-4 py-3 mb-6">{displayError}</div>
           )}
 
           <div className="bg-white border border-gray-100 rounded-xl p-6 mb-6">

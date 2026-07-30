@@ -16,14 +16,13 @@ use App\Http\Controllers\Api\SpecialController;
 use App\Http\Controllers\Api\StoreController;
 use App\Http\Controllers\Api\StoreOrderController;
 use Illuminate\Support\Facades\Route;
+use Laravel\Sanctum\Http\Controllers\CsrfCookieController;
 
 // Auth
+Route::get('/sanctum/csrf-cookie', [CsrfCookieController::class, 'show']);
 Route::post('/auth/register', [AuthController::class, 'register']);
 Route::post('/auth/register/rider', [AuthController::class, 'registerRider']);
 Route::post('/auth/login', [AuthController::class, 'login']);
-Route::get('/sanctum/csrf-cookie', function () {
-    return response()->json(['message' => 'CSRF cookie set']);
-});
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout']);

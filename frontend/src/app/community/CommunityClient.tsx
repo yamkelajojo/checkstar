@@ -1,12 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { motion } from 'motion/react'
 import { Image, Heart, Calendar } from 'lucide-react'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
-import { api } from '@/lib/api'
-import type { CommunityPost } from '@/types'
+import { useCommunityPosts } from '@/lib/query'
 
 const tabs = [
   { value: null, label: 'All' },
@@ -20,16 +19,9 @@ const fadeUp = {
 }
 
 export default function CommunityClient() {
-  const [posts, setPosts] = useState<CommunityPost[]>([])
-  const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<string | null>(null)
-
-  useEffect(() => {
-    api.getCommunityPosts(activeTab || undefined)
-      .then(res => setPosts(res.data))
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [activeTab])
+  const { data: posts = [], isLoading: loading, error } = useCommunityPosts(activeTab || undefined)
+  const fetchError = error ? 'Failed to load posts' : null
 
   return (
     <>
@@ -48,10 +40,7 @@ export default function CommunityClient() {
           {tabs.map(tab => (
             <button
               key={tab.label}
-              onClick={() => {
-                setActiveTab(tab.value)
-                setLoading(true)
-              }}
+              onClick={() => setActiveTab(tab.value)}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 activeTab === tab.value
                   ? 'bg-primary text-white'
@@ -69,6 +58,12 @@ export default function CommunityClient() {
               <div key={i} className="bg-gray-50 rounded-xl h-72 animate-pulse" />
             ))}
           </div>
+        ) : fetchError ? (
+          <div className="text-center py-16 text-gray-400">
+            <Heart size={40} className="mx-auto mb-3 opacity-50" />
+            <p className="text-lg">{fetchError}</p>
+            <p className="text-sm mt-1">Please try again later.</p>
+          </div>
         ) : posts.length === 0 ? (
           <div className="text-center py-16 text-gray-400">
             <Heart size={40} className="mx-auto mb-3 opacity-50" />
@@ -81,9 +76,9 @@ export default function CommunityClient() {
             animate="show"
             variants={{ hidden: {}, show: { transition: { staggerChildren: 0.08 } } }}
           >
-            {activeTab === 'gallery' || (activeTab === null && posts.some(p => p.category === 'gallery')) ? (
-              <div className="columns-1 sm:columns-2 lg:columns-3 gap-4 space-y-4">
-                {(activeTab ? posts : posts.filter(p => p.category === 'gallery')).map(post => (
+            {(activeTab === null || activeTab === 'gallery') && (
+              <div className={`${activeTab === null ? 'mb-8' : ''} columns-1 sm:columns-2 lg:columns-3 gap-4 space-y-4`}>
+                {posts.filter(p => p.category === 'gallery').map(post => (
                   <motion.div
                     key={post.id}
                     variants={fadeUp}
@@ -110,9 +105,10 @@ export default function CommunityClient() {
                   </motion.div>
                 ))}
               </div>
-            ) : (
+            )}
+            {(activeTab === null || activeTab === 'csr') && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {(activeTab ? posts : posts.filter(p => p.category === 'csr')).map(post => (
+                {posts.filter(p => p.category === 'csr').map(post => (
                   <motion.div key={post.id} variants={fadeUp} className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm">
                     {post.image && (
                       <div className="aspect-video overflow-hidden">

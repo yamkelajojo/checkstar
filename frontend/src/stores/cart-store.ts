@@ -47,7 +47,7 @@ export const useCartStore = create<CartState>()(
         set({ items: get().items.map(i => i.product.id === productId ? { ...i, quantity: Math.min(Math.max(quantity, 1), 8) } : i) })
       },
       clearCart: () => set({ items: [] }),
-      total: () => get().items.reduce((sum, i) => sum + (i.product.sale_price ?? i.product.price) * i.quantity, 0),
+      total: () => get().items.reduce((sum, i) => sum + Number(i.product.sale_price ?? i.product.price) * i.quantity, 0),
       itemCount: () => get().items.length,
       syncToServer: async () => {
         const items = get().items

@@ -18,14 +18,17 @@ export const useAuthStore = create<AuthState>()((set) => ({
   user: null, isAuthenticated: false, isLoading: true,
   setUser: (user) => set({ user, isAuthenticated: !!user }),
   login: async (email, password) => {
+    await api.getCsrfCookie()
     const res = await api.login({ email, password })
     set({ user: res.user, isAuthenticated: true })
   },
   register: async (data) => {
+    await api.getCsrfCookie()
     const res = await api.register(data)
     set({ user: res.user, isAuthenticated: true })
   },
   registerRider: async (data) => {
+    await api.getCsrfCookie()
     const res = await api.registerRider(data)
     set({ user: res.user, isAuthenticated: true })
   },

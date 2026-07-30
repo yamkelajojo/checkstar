@@ -1,30 +1,33 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { motion } from 'motion/react'
 import { ShoppingCart, ChevronLeft, Tag, Package } from 'lucide-react'
 import Link from 'next/link'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import { useCartStore } from '@/stores/cart-store'
-import { api } from '@/lib/api'
-import type { Product } from '@/types'
+import { useProduct } from '@/lib/query'
 
 export default function ProductDetailClient({ slug }: { slug: string }) {
-  const [product, setProduct] = useState<Product | null>(null)
-  const [loading, setLoading] = useState(true)
+  const { data: product, isLoading: loading, error } = useProduct(slug)
+  const fetchError = error ? 'Failed to load product' : null
   const [added, setAdded] = useState(false)
   const addItem = useCartStore(s => s.addItem)
 
-  useEffect(() => {
-    api.getProduct(slug)
-      .then(data => {
-        // data could be Product directly or { data: Product }
-        setProduct((data as any).data ?? data)
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [slug])
+  if (fetchError) {
+    return (
+      <>
+        <Header />
+        <main className="max-w-7xl mx-auto px-4 py-16 text-center">
+          <p className="text-red-500 text-lg font-medium">{fetchError}</p>
+          <p className="text-sm text-gray-400 mt-1">Please try again later.</p>
+          <Link href="/products" className="text-primary hover:underline mt-4 inline-block">Back to products</Link>
+        </main>
+        <Footer />
+      </>
+    )
+  }
 
   if (loading) {
     return (
@@ -61,8 +64,8 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
     )
   }
 
-  const price = product.sale_price ?? product.price
-  const hasSale = product.sale_price !== null
+  const price = Number(product.sale_price ?? product.price)
+  const hasSale = product.sale_price !== null && product.sale_price !== undefined
 
   const handleAddToCart = () => {
     addItem(product)

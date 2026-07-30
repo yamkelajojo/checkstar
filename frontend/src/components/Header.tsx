@@ -53,7 +53,7 @@ export default function Header() {
               <Link href={user?.role === 'rider' ? '/rider/dashboard' : '/account/orders'} className="p-2 text-gray-600 hover:text-primary transition-colors">
                 <User size={20} />
               </Link>
-              <button onClick={logout} className="p-2 text-gray-600 hover:text-accent transition-colors">
+              <button onClick={() => { logout().catch(() => {}) }} className="p-2 text-gray-600 hover:text-accent transition-colors">
                 <LogOut size={20} />
               </button>
             </div>

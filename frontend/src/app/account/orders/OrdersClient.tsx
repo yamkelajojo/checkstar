@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'motion/react'
@@ -8,8 +8,7 @@ import { Package, ChevronRight, Loader2, ShoppingBag, Clock, CheckCircle, XCircl
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import { useAuthStore } from '@/stores/auth-store'
-import { api } from '@/lib/api'
-import type { Order } from '@/types'
+import { useOrders } from '@/lib/query'
 
 const statusConfig: Record<string, { color: string; bg: string; icon: any; label: string }> = {
   pending: { color: 'text-yellow-600', bg: 'bg-yellow-100', icon: Clock, label: 'Pending' },
@@ -23,9 +22,7 @@ const statusConfig: Record<string, { color: string; bg: string; icon: any; label
 export default function OrdersClient() {
   const router = useRouter()
   const { isAuthenticated, isLoading: authLoading, checkAuth } = useAuthStore()
-  const [orders, setOrders] = useState<Order[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const { data: orders = [], isLoading: loading, error } = useOrders()
 
   useEffect(() => {
     checkAuth()
@@ -34,13 +31,6 @@ export default function OrdersClient() {
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       router.push('/auth/login')
-      return
-    }
-    if (!authLoading && isAuthenticated) {
-      api.getOrders()
-        .then(res => setOrders(res.data))
-        .catch(err => setError(err.message))
-        .finally(() => setLoading(false))
     }
   }, [authLoading, isAuthenticated, router])
 
@@ -64,7 +54,7 @@ export default function OrdersClient() {
           <h1 className="font-display text-3xl font-bold mb-8">My Orders</h1>
 
           {error && (
-            <div className="bg-accent/10 border border-accent/30 text-accent text-sm rounded-lg px-4 py-3 mb-6">{error}</div>
+            <div className="bg-accent/10 border border-accent/30 text-accent text-sm rounded-lg px-4 py-3 mb-6">{error.message}</div>
           )}
 
           {orders.length === 0 ? (

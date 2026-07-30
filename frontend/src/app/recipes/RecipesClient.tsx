@@ -1,13 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'motion/react'
 import { Clock, Users, ChefHat, ArrowRight } from 'lucide-react'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
-import { api } from '@/lib/api'
-import type { Recipe } from '@/types'
+import { useRecipes } from '@/lib/query'
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
@@ -15,16 +14,9 @@ const fadeUp = {
 }
 
 export default function RecipesClient() {
-  const [recipes, setRecipes] = useState<Recipe[]>([])
-  const [loading, setLoading] = useState(true)
+  const { data: recipes = [], isLoading: loading, error } = useRecipes()
+  const fetchError = error ? 'Failed to load recipes' : null
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
-
-  useEffect(() => {
-    api.getRecipes()
-      .then(res => setRecipes(res.data))
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [])
 
   const categories = [...new Set(recipes.map(r => r.category).filter(Boolean))] as string[]
   const filtered = activeCategory
@@ -72,7 +64,12 @@ export default function RecipesClient() {
           </motion.div>
         )}
 
-        {loading ? (
+        {fetchError ? (
+          <div className="text-center py-16 text-red-500">
+            <p className="text-lg font-medium">{fetchError}</p>
+            <p className="text-sm mt-1">Please try again later.</p>
+          </div>
+        ) : loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="bg-gray-50 rounded-xl h-80 animate-pulse" />

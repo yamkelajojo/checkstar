@@ -1,13 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import { motion } from 'motion/react'
 import { Calendar, Clock, Tag } from 'lucide-react'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import ProductCard from '@/components/ProductCard'
-import type { Special } from '@/types'
-import { api } from '@/lib/api'
+import { useSpecials } from '@/lib/query'
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
@@ -24,15 +22,8 @@ function formatDate(d: string) {
 }
 
 export default function SpecialsClient() {
-  const [specials, setSpecials] = useState<Special[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    api.getSpecials()
-      .then(res => setSpecials(res.data))
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [])
+  const { data: specials = [], isLoading: loading, error } = useSpecials()
+  const fetchError = error ? 'Failed to load specials' : null
 
   return (
     <>
@@ -43,7 +34,12 @@ export default function SpecialsClient() {
           <p className="text-gray-500 mb-12">Limited-time offers on your favourite products.</p>
         </motion.div>
 
-        {loading ? (
+        {fetchError ? (
+          <div className="text-center py-16 text-red-500">
+            <p className="text-lg font-medium">{fetchError}</p>
+            <p className="text-sm mt-1">Please try again later.</p>
+          </div>
+        ) : loading ? (
           <div className="space-y-12">
             {Array.from({ length: 2 }).map((_, i) => (
               <div key={i} className="space-y-4">

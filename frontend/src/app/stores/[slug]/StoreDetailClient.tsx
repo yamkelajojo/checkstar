@@ -1,25 +1,18 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { motion } from 'motion/react'
 import { MapPin, Phone, Clock, ChevronLeft, Navigation, Mail } from 'lucide-react'
 import Link from 'next/link'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
-import { api } from '@/lib/api'
-import type { Store } from '@/types'
+import { useStore } from '@/lib/query'
 
 export default function StoreDetailClient({ slug }: { slug: string }) {
-  const [store, setStore] = useState<Store | null>(null)
-  const [loading, setLoading] = useState(true)
   const mapRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    api.getStore(slug)
-      .then(data => setStore((data as any).data ?? data))
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [slug])
+  const { data: store, isLoading: loading, error } = useStore(slug)
+  const fetchError = error ? 'Failed to load store' : null
 
   useEffect(() => {
     if (!store || !mapRef.current || mapRef.current.dataset.initialized) return
@@ -68,6 +61,20 @@ export default function StoreDetailClient({ slug }: { slug: string }) {
       )
     }
     return <p className="text-gray-500">{String(store.trading_hours)}</p>
+  }
+
+  if (fetchError) {
+    return (
+      <>
+        <Header />
+        <main className="max-w-4xl mx-auto px-4 py-16 text-center">
+          <p className="text-red-500 text-lg font-medium">{fetchError}</p>
+          <p className="text-sm text-gray-400 mt-1">Please try again later.</p>
+          <Link href="/stores" className="text-primary hover:underline mt-4 inline-block">Back to stores</Link>
+        </main>
+        <Footer />
+      </>
+    )
   }
 
   if (loading) {
