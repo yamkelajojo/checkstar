@@ -3,7 +3,7 @@
 **Date:** 2026-07-30
 **Author:** Test Engineering (8+ years experience)
 **Reference Architecture:** DB Architect + UX Designer + UI Designer (concurrent design)
-**Source of Truth:** `.opensrc` cached packages, Laravel 11 skeleton, motion.dev v12.42.2
+**Source of Truth:** `.opensrc` cached packages, Laravel 11 skeleton, motion (core library, MIT, v12.42.2), shadcn/ui v4.10.0
 
 ---
 

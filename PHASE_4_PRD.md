@@ -147,7 +147,7 @@ checkstar/
 ├── frontend/         # Next.js App Router + React 19
 │   ├── src/
 │   │   ├── app/                # App Router pages
-│   │   ├── components/         # Shared components (motion.dev/ui wrapped)
+│   │   ├── components/         # Shared components (motion/react + shadcn/ui)
 │   │   ├── stores/             # Zustand stores
 │   │   ├── lib/                # API client, utilities
 │   │   └── types/              # TypeScript types
@@ -164,7 +164,7 @@ checkstar/
 | Backend | Laravel 11 API-only | No Blade, no Inertia — pure API with Sanctum SPA auth |
 | Auth | Laravel Sanctum (cookie-based) | SPA authentication; Next.js does not store tokens, just proxies cookies |
 | Proxy | Next.js rewrites `/api/*` to Laravel | Single origin, no CORS issues in production |
-| UI Animation | motion.dev (package: `motion`, entry: `motion/react`) | All custom components use it — no hand-rolled CSS animations |
+| UI Animation | motion (core library, MIT, entry: `motion/react`) + shadcn/ui base components | All custom components use motion/react primitives — no hand-rolled CSS animations |
 | CSS | Tailwind v3 + Josh Comeau CSS reset | Utility-first, consistent with design tokens |
 | State | Zustand v5 with persist middleware | Client-side cart persists to localStorage |
 | Database | SQLite (dev) → PostgreSQL (prod) | Zero-setup dev, robust prod |
@@ -393,7 +393,7 @@ A comprehensive testing plan is documented in `PHASE_4_TESTING_PLAN.md` (separat
 
 ## Further Notes
 
-- **Source of truth**: `C:\Users\Acer\.opensrc\sources.json` indexes all cached packages. Laravel 11 skeleton at `repos/github.com/laravel/laravel/11.x`. Motion package (v12.42.2) at `repos/github.com/motiondivision/motion/main/packages/motion`. Consult local cache before any external resource.
+- **Source of truth**: `C:\Users\Acer\.opensrc\sources.json` indexes all cached packages. Laravel 11 skeleton at `repos/github.com/laravel/laravel/11.x`. Motion (core library, MIT, v12.42.2) at `repos/github.com/motiondivision/motion/main/packages/motion`. shadcn/ui (v4.10.0) at `repos/github.com/shadcn-ui/ui/4.10.0`. Consult local cache before any external resource.
 - **Brand colors**: Primary `#EB6522`, PrimaryDark `#CC4400`, PrimaryLight `#FFE0CC`, Accent `#CC0000`. Design tokens in Tailwind config.
 - **Typography**: Inter for body, Figtree for headings. Lucide icons.
 - **Pricing rule**: Product-level `sale_price` takes priority over Collection Special pricing — enforced in PricingService.

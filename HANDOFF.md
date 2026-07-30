@@ -29,7 +29,7 @@
 | **Frontend**       | Next.js (App Router) + React 19                                               |
 | **Backend**        | Laravel 11 (API-only)                                                         |
 | **Auth**           | Laravel Sanctum (cookie-based SPA auth; Next.js proxies `/api/*` to Laravel)  |
-| **UI Kit**         | motion.dev/ui (strictly, all custom components use it)                        |
+| **UI Kit**         | motion (core library, MIT) + shadcn/ui — all custom components use motion/react primitives |
 | **CSS**            | Tailwind v3 + Josh Comeau CSS reset (`modern-css-reset.md`)                   |
 | **State**          | Zustand v5                                                                    |
 | **Database**       | SQLite (dev) → PostgreSQL (prod)                                              |
@@ -50,7 +50,7 @@
   - Laravel 13.x skeleton at `repos/github.com/laravel/laravel/13.x/` — reference for config, structure, migrations patterns
   - SQLite (kriasoft/node-sqlite 5.1.1), pg (node-postgres 8.21.0) cached
   - Firecrawl Redis config at `repos/github.com/firecrawl/firecrawl/4.30.1/apps/redis/`
-- `C:\Users\Acer\.opensrc\repos\github.com\motiondivision\motion\main\` — motion.dev source
+- `C:\Users\Acer\.opensrc\repos\github.com\motiondivision\motion\main\packages\motion\` — motion (core library, MIT) source
 - Reference repos: GreenBidder, Runnar v2 (for patterns only)
 - `C:\Users\Acer\Documents\Software\2026\checkstar\original_site_issues.md` — user flow decisions
 - `C:\Users\Acer\Documents\Software\2026\checkstar\PHASE_ONE_SPEC.md` — original spec (overridden by CONTEXT.md where they conflict)
@@ -66,7 +66,7 @@ These are the remaining gaps that need to be built:
 3. **Auth flow** — Register with role selection, login, protected routes, role-based redirects
 4. **Seeders** — Demo data (3 stores, 13 categories, products, Riders)
 5. **Zustand stores** — Auth store, cart store (persist middleware), order tracking store
-6. **Page components** — All public pages built with motion.dev/ui:
+6. **Page components** — All public pages built with motion/react + shadcn/ui:
    - Home (hero carousel, category grid, best deals)
    - About (brand story, stakeholders)
    - Products (13 categories → product listing → product detail)
@@ -97,7 +97,7 @@ Tech stack decisions (already settled):
 - Next.js (App Router) + React 19 (not Vue)
 - Laravel 11 API backend (not full-stack Laravel)
 - Laravel Sanctum for auth (cookie-based, Next.js proxies /api/* to Laravel)
-- motion.dev/ui for ALL custom components (strict, no exceptions)
+- motion (core library, MIT) + shadcn/ui for all custom components — no hand-rolled CSS animations
 - Tailwind v3 + Josh Comeau CSS reset
 - Zustand v5 for state (with persist middleware for cart)
 - SQLite (dev) → PostgreSQL (prod) with Redis for cache, sessions, and queues
@@ -125,5 +125,5 @@ The remaining gaps to implement (in order):
 8. Delivery system (order lifecycle, dispatch)
 9. Tests (TDD approach)
 
-Using the motion.dev/ui kit is STRICTLY required for every custom component — do not hand-roll animations or component styling that motion.dev/ui provides. Check .opensrc/repos/github.com/motiondivision/motion/main/packages/ for the source.
+The core `motion` library (MIT, cached at `.opensrc/repos/github.com/motiondivision/motion/main/packages/motion/`) is STRICTLY required for every animation — do not hand-roll CSS animations. Use shadcn/ui (cached at `.opensrc/repos/github.com/shadcn-ui/ui/4.10.0/`) for base components. Every custom component uses `motion/react` primitives (`motion.div`, `motion.button`, `AnimatePresence`, etc.).
 ```
