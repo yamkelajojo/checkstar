@@ -4,6 +4,7 @@ namespace Tests\Unit;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\Special;
 use App\Services\PricingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -67,7 +68,17 @@ class PricingServiceTest extends TestCase
             'sale_price' => null,
         ]);
 
-        $price = $this->service->effectivePrice($product);
+        $special = Special::create([
+            'title' => 'Winter Warmers',
+            'slug' => 'winter-warmers',
+            'start_date' => now()->subDay(),
+            'end_date' => now()->addDays(30),
+            'is_active' => true,
+        ]);
+
+        $special->products()->attach($product->id);
+
+        $price = $this->service->effectivePrice($product, collect([$special]));
 
         $this->assertSame(22.00, $price);
     }
@@ -84,7 +95,17 @@ class PricingServiceTest extends TestCase
             'sale_price' => 18.00,
         ]);
 
-        $price = $this->service->effectivePrice($product);
+        $special = Special::create([
+            'title' => 'Winter Warmers',
+            'slug' => 'winter-warmers',
+            'start_date' => now()->subDay(),
+            'end_date' => now()->addDays(30),
+            'is_active' => true,
+        ]);
+
+        $special->products()->attach($product->id);
+
+        $price = $this->service->effectivePrice($product, collect([$special]));
 
         $this->assertSame(18.00, $price);
     }

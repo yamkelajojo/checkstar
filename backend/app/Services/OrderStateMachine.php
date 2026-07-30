@@ -23,7 +23,7 @@ class OrderStateMachine
             OrderStatus::Pending->value => [OrderStatus::Confirmed->value, OrderStatus::Cancelled->value],
             OrderStatus::Confirmed->value => [OrderStatus::Preparing->value, OrderStatus::Cancelled->value],
             OrderStatus::Preparing->value => [OrderStatus::OutForDelivery->value, OrderStatus::Cancelled->value],
-            OrderStatus::OutForDelivery->value => [OrderStatus::Delivered->value],
+            OrderStatus::OutForDelivery->value => [OrderStatus::Delivered->value, OrderStatus::Cancelled->value],
             OrderStatus::Delivered->value => [],
             OrderStatus::Cancelled->value => [],
         ];

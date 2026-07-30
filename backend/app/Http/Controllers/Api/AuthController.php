@@ -31,6 +31,11 @@ class AuthController extends Controller
             'is_active' => true,
         ]);
 
+        if ($request->hasSession()) {
+            Auth::guard('web')->login($user);
+            $request->session()->regenerate();
+        }
+
         return response()->json(['user' => $user], 201);
     }
 
@@ -59,6 +64,11 @@ class AuthController extends Controller
             'banking_details' => $validated['banking_details'] ?? null,
         ]);
 
+        if ($request->hasSession()) {
+            Auth::guard('web')->login($user);
+            $request->session()->regenerate();
+        }
+
         return response()->json(['user' => $user->load('rider')], 201);
     }
 
@@ -86,9 +96,7 @@ class AuthController extends Controller
             $request->session()->regenerate();
         }
 
-        $token = $user->createToken('api-token')->plainTextToken;
-
-        return response()->json(['user' => $user, 'token' => $token]);
+        return response()->json(['user' => $user->load(['rider', 'store'])]);
     }
 
     public function logout(Request $request): JsonResponse
@@ -99,14 +107,12 @@ class AuthController extends Controller
             $request->session()->regenerateToken();
         }
 
-        $request->user()->currentAccessToken()->delete();
-
         return response()->json(['message' => 'Logged out']);
     }
 
     public function user(Request $request): JsonResponse
     {
-        $user = $request->user()->load(['rider', 'store']);
+        $user = $request->user()->load(['rider', 'store', 'storeStaff.store']);
 
         return response()->json(['user' => $user]);
     }

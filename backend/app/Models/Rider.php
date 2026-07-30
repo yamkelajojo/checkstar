@@ -56,4 +56,11 @@ class Rider extends Model
     {
         return $this->hasMany(Review::class);
     }
+
+    public function recalculateStats(): void
+    {
+        $this->average_rating = round((float) $this->reviews()->avg('rating'), 2);
+        $this->total_deliveries = $this->reviews()->count();
+        $this->save();
+    }
 }

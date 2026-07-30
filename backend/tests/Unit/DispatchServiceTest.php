@@ -12,6 +12,7 @@ use App\Models\Rider;
 use App\Models\Store;
 use App\Models\User;
 use App\Services\DispatchService;
+use App\Services\OrderStateMachine;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
 use Tests\TestCase;
@@ -29,7 +30,7 @@ class DispatchServiceTest extends TestCase
     {
         parent::setUp();
 
-        $this->service = new DispatchService;
+        $this->service = new DispatchService(new OrderStateMachine);
 
         Config::set('dispatch.max_fallback_stores', 10);
 

@@ -42,7 +42,7 @@ class AuthTest extends TestCase
         ]);
 
         $response->assertStatus(200)
-            ->assertJsonStructure(['user', 'token']);
+            ->assertJsonStructure(['user']);
     }
 
     public function test_login_fails_with_invalid_credentials(): void
@@ -65,10 +65,7 @@ class AuthTest extends TestCase
             'is_active' => true,
         ]);
 
-        $token = $user->createToken('test-token')->plainTextToken;
-
-        $response = $this->withHeader('Authorization', "Bearer {$token}")
-            ->getJson('/api/auth/user');
+        $response = $this->actingAs($user)->getJson('/api/auth/user');
 
         $response->assertStatus(200)
             ->assertJsonStructure(['user']);

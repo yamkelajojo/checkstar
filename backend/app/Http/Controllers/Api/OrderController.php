@@ -9,8 +9,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\Review;
+use App\Models\Rider;
 use App\Services\DispatchService;
 use App\Services\OrderStateMachine;
+use App\Services\PricingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -18,6 +20,17 @@ use Illuminate\Support\Str;
 
 class OrderController extends Controller
 {
+    private OrderStateMachine $stateMachine;
+    private DispatchService $dispatchService;
+    private PricingService $pricingService;
+
+    public function __construct(OrderStateMachine $stateMachine, DispatchService $dispatchService, PricingService $pricingService)
+    {
+        $this->stateMachine = $stateMachine;
+        $this->dispatchService = $dispatchService;
+        $this->pricingService = $pricingService;
+    }
+
     public function index(Request $request): JsonResponse
     {
         $orders = $request->user()->orders()
@@ -46,7 +59,7 @@ class OrderController extends Controller
 
         foreach ($validated['items'] as $item) {
             $product = Product::findOrFail($item['product_id']);
-            $price = (float) ($product->sale_price ?? $product->price);
+            $price = $this->pricingService->effectivePrice($product);
             $total = $price * $item['quantity'];
             $subtotal += $total;
 
@@ -69,7 +82,7 @@ class OrderController extends Controller
         $order = Order::create([
             'order_number' => 'CS-' . now()->format('Ymd') . '-' . strtoupper(Str::random(4)),
             'customer_id' => $user->id,
-            'store_id' => 1,
+            'store_id' => null,
             'status' => OrderStatus::Pending,
             'payment_status' => PaymentStatus::Pending,
             'delivery_address' => $validated['delivery_address'],
@@ -85,13 +98,11 @@ class OrderController extends Controller
             $order->items()->create($oi);
         }
 
-        $stateMachine = new OrderStateMachine;
-        $stateMachine->transition($order, OrderStatus::Confirmed, null, [
+        $this->stateMachine->transition($order, OrderStatus::Confirmed, null, [
             'event_type' => EventType::OrderPlaced->value,
         ]);
 
-        $dispatch = new DispatchService;
-        $dispatch->dispatch($order->fresh());
+        $this->dispatchService->dispatch($order->fresh());
 
         return response()->json(['data' => $order->fresh()->load('items')], 201);
     }
@@ -108,8 +119,7 @@ class OrderController extends Controller
     {
         $order = Order::findOrFail($id);
 
-        $stateMachine = new OrderStateMachine;
-        $stateMachine->transition(
+        $this->stateMachine->transition(
             $order,
             OrderStatus::Cancelled,
             $request->user(),
@@ -123,9 +133,7 @@ class OrderController extends Controller
     {
         $order = Order::findOrFail($id);
 
-        if ($order->status !== OrderStatus::Delivered) {
-            return response()->json(['message' => 'Order must be delivered before confirming receipt'], 422);
-        }
+        $this->stateMachine->canTransition($order->status, OrderStatus::Delivered);
 
         $order->customer_confirmed_at = now();
         $order->payment_status = PaymentStatus::Paid;
@@ -134,8 +142,8 @@ class OrderController extends Controller
         $order->activityLogs()->create([
             'event_type' => EventType::CustomerConfirmed->value,
             'user_id' => $request->user()->id,
-            'old_status' => OrderStatus::Delivered->value,
-            'new_status' => OrderStatus::Delivered->value,
+            'old_status' => $order->status->value,
+            'new_status' => $order->status->value,
             'metadata' => json_encode(['payment_status' => PaymentStatus::Paid->value]),
             'created_at' => now(),
         ]);
@@ -156,12 +164,12 @@ class OrderController extends Controller
             return response()->json(['message' => 'Not your order'], 403);
         }
 
-        if ($order->payment_status !== PaymentStatus::Paid) {
-            return response()->json(['message' => 'Order must be paid before reviewing'], 422);
-        }
-
         if (!$order->rider_id) {
             return response()->json(['message' => 'No rider assigned to this order'], 422);
+        }
+
+        if ($order->review) {
+            return response()->json(['message' => 'Already reviewed'], 422);
         }
 
         Review::create([
@@ -176,16 +184,7 @@ class OrderController extends Controller
         $order->rider_review = $validated['comment'] ?? null;
         $order->save();
 
-        $avg = DB::table('reviews')
-            ->where('rider_id', $order->rider_id)
-            ->avg('rating');
-        $count = DB::table('reviews')
-            ->where('rider_id', $order->rider_id)
-            ->count();
-
-        $order->rider->average_rating = round((float) $avg, 2);
-        $order->rider->total_deliveries = $count;
-        $order->rider->save();
+        $order->rider->recalculateStats();
 
         return response()->json(['data' => $order->fresh()], 201);
     }

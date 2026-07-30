@@ -5,19 +5,21 @@ namespace App\Services;
 use App\Enums\EventType;
 use App\Enums\OrderStatus;
 use App\Models\Order;
-use App\Models\OrderActivityLog;
 use App\Models\Rider;
 use App\Models\Store;
+use App\Services\OrderStateMachine;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Redis;
 
 class DispatchService
 {
     private OrderStateMachine $stateMachine;
 
-    public function __construct()
+    public function __construct(OrderStateMachine $stateMachine)
     {
-        $this->stateMachine = new OrderStateMachine;
+        $this->stateMachine = $stateMachine;
     }
 
     public function dispatch(Order $order): array
@@ -28,7 +30,7 @@ class DispatchService
 
         if ($order->delivery_latitude === null || $order->delivery_longitude === null) {
             $this->cancelOrder($order, 'Delivery coordinates missing');
-            return ['store_id' => null, 'rider_id' => null, 'status' => 'cancelled', 'claim_latency_seconds' => null, 'reason' => 'Delivery coordinates missing'];
+            return $this->result(null, null, 'cancelled', null, 'Delivery coordinates missing');
         }
 
         $stores = Store::where('is_active', true)->get();
@@ -66,12 +68,13 @@ class DispatchService
                 ->first();
 
             if (!$rider) {
+                $attempts++;
                 continue;
             }
 
             $result = $this->claimOrder($order, $rider, $store);
             if ($result) {
-                $claimLatency = $result['claim_latency_seconds'];
+                $claimLatency = $result['claim_latency_ms'];
                 $riderId = $rider->id;
                 $storeId = $store->id;
                 $status = 'assigned';
@@ -85,17 +88,14 @@ class DispatchService
             $this->cancelOrder($order, 'No available riders at any store');
         }
 
-        return [
-            'store_id' => $storeId,
-            'rider_id' => $riderId,
-            'status' => $status,
-            'claim_latency_seconds' => $claimLatency,
-        ];
+        return $this->result($storeId, $riderId, $status, $claimLatency);
     }
 
     private function claimOrder(Order $order, Rider $rider, Store $store): ?array
     {
-        $claimed = DB::transaction(function () use ($order, $rider, $store) {
+        $start = microtime(true);
+
+        $claimed = DB::transaction(function () use ($order, $rider, $store, $start) {
             $fresh = Order::where('id', $order->id)
                 ->whereNull('rider_id')
                 ->lockForUpdate()
@@ -105,30 +105,27 @@ class DispatchService
                 return false;
             }
 
-            $start = microtime(true);
+            $this->stateMachine->transition($fresh, OrderStatus::Preparing, $rider->user, [
+                'rider_id' => $rider->id,
+                'store_id' => $store->id,
+            ]);
+
             $fresh->rider_id = $rider->id;
             $fresh->store_id = $store->id;
-            $fresh->status = OrderStatus::Preparing;
             $fresh->save();
 
             $this->syncStoreProductIds($fresh);
 
-            $claimLatency = round((microtime(true) - $start) * 1000);
-
-            OrderActivityLog::create([
-                'order_id' => $fresh->id,
-                'user_id' => $rider->user_id,
-                'event_type' => EventType::RiderAssigned->value,
-                'old_status' => OrderStatus::Confirmed->value,
-                'new_status' => OrderStatus::Preparing->value,
-                'metadata' => json_encode(['claim_latency_ms' => $claimLatency]),
-                'created_at' => now(),
-            ]);
-
             return true;
         });
 
-        return $claimed ? ['claim_latency_seconds' => 0] : null;
+        if (!$claimed) {
+            return null;
+        }
+
+        $elapsed = (int) round((microtime(true) - $start) * 1000);
+
+        return ['claim_latency_ms' => $elapsed];
     }
 
     private function syncStoreProductIds(Order $order): void
@@ -146,19 +143,24 @@ class DispatchService
 
     private function cancelOrder(Order $order, string $reason): void
     {
-        $oldStatus = $order->status->value;
-
-        $order->status = OrderStatus::Cancelled;
-        $order->save();
-
-        OrderActivityLog::create([
-            'order_id' => $order->id,
-            'event_type' => EventType::Cancelled->value,
-            'old_status' => $oldStatus,
-            'new_status' => OrderStatus::Cancelled->value,
-            'metadata' => json_encode(['reason' => $reason]),
-            'created_at' => now(),
+        $this->stateMachine->transition($order, OrderStatus::Cancelled, null, [
+            'reason' => $reason,
+            'source' => 'dispatch',
         ]);
+    }
+
+    private function result(?int $storeId, ?int $riderId, string $status, ?int $claimLatencyMs = null, ?string $reason = null): array
+    {
+        $result = [
+            'store_id' => $storeId,
+            'rider_id' => $riderId,
+            'status' => $status,
+            'claim_latency_ms' => $claimLatencyMs,
+        ];
+        if ($reason !== null) {
+            $result['reason'] = $reason;
+        }
+        return $result;
     }
 
     private function haversine(float $lat1, float $lng1, float $lat2, float $lng2): float

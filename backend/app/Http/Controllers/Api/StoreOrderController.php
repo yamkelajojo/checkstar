@@ -13,6 +13,13 @@ use Illuminate\Http\Request;
 
 class StoreOrderController extends Controller
 {
+    private OrderStateMachine $stateMachine;
+
+    public function __construct(OrderStateMachine $stateMachine)
+    {
+        $this->stateMachine = $stateMachine;
+    }
+
     private function getStoreId(Request $request): int
     {
         $user = $request->user();
@@ -46,8 +53,7 @@ class StoreOrderController extends Controller
             'status' => 'required|string|in:pending,confirmed,preparing,out_for_delivery,delivered,cancelled',
         ]);
 
-        $stateMachine = new OrderStateMachine;
-        $stateMachine->transition($order, OrderStatus::from($validated['status']), $request->user());
+        $this->stateMachine->transition($order, OrderStatus::from($validated['status']), $request->user());
 
         return response()->json(['data' => $order->fresh()->load('items', 'rider.user')]);
     }

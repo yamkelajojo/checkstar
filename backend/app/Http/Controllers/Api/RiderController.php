@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderActivityLog;
 use App\Models\Rider;
+use App\Models\StoreProduct;
 use App\Services\GamificationService;
 use App\Services\OrderStateMachine;
 use DB;
@@ -17,6 +18,15 @@ use Illuminate\Http\Request;
 
 class RiderController extends Controller
 {
+    private OrderStateMachine $stateMachine;
+    private GamificationService $gamification;
+
+    public function __construct(OrderStateMachine $stateMachine, GamificationService $gamification)
+    {
+        $this->stateMachine = $stateMachine;
+        $this->gamification = $gamification;
+    }
+
     private function getRider(Request $request): Rider
     {
         return $request->user()->rider;
@@ -39,7 +49,7 @@ class RiderController extends Controller
     {
         $rider = $this->getRider($request);
 
-        $claimed = DB::transaction(function () use ($orderId, $rider) {
+        $claimed = DB::transaction(function () use ($orderId, $rider, $request) {
             $order = Order::where('id', $orderId)
                 ->whereNull('rider_id')
                 ->where('status', OrderStatus::Confirmed->value)
@@ -54,8 +64,7 @@ class RiderController extends Controller
                 return null;
             }
 
-            $stateMachine = new OrderStateMachine;
-            $stateMachine->transition($order, OrderStatus::Preparing, $request->user(), [
+            $this->stateMachine->transition($order, OrderStatus::Preparing, $request->user(), [
                 'rider_id' => $rider->id,
             ]);
 
@@ -96,17 +105,16 @@ class RiderController extends Controller
 
         foreach ($order->items as $item) {
             if ($item->store_product_id) {
-                $sp = \App\Models\StoreProduct::find($item->store_product_id);
+                $sp = StoreProduct::find($item->store_product_id);
                 if ($sp) {
                     $sp->decrement('stock_quantity', $item->quantity);
                 }
             }
         }
 
-        OrderActivityLog::create([
-            'order_id' => $order->id,
-            'user_id' => $rider->user_id,
+        $order->activityLogs()->create([
             'event_type' => EventType::ItemsBought->value,
+            'user_id' => $rider->user_id,
             'old_status' => $order->status->value,
             'new_status' => $order->status->value,
             'created_at' => now(),
@@ -122,8 +130,7 @@ class RiderController extends Controller
             ->where('rider_id', $rider->id)
             ->firstOrFail();
 
-        $stateMachine = new OrderStateMachine;
-        $stateMachine->transition($order, OrderStatus::OutForDelivery, $request->user());
+        $this->stateMachine->transition($order, OrderStatus::OutForDelivery, $request->user());
 
         return response()->json(['data' => $order->fresh()]);
     }
@@ -135,11 +142,9 @@ class RiderController extends Controller
             ->where('rider_id', $rider->id)
             ->firstOrFail();
 
-        $stateMachine = new OrderStateMachine;
-        $stateMachine->transition($order, OrderStatus::Delivered, $request->user());
+        $this->stateMachine->transition($order, OrderStatus::Delivered, $request->user());
 
-        $gamification = new GamificationService;
-        $gamification->handleEvent($rider, GameEvent::DeliveryCompleted);
+        $this->gamification->handleEvent($rider, GameEvent::DeliveryCompleted);
 
         return response()->json(['data' => $order->fresh()]);
     }

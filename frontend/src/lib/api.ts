@@ -1,13 +1,9 @@
 import type { Category, Product, Store, Order, Rider, Special, Recipe, CommunityPost, CareerListing, User, CartItem } from '@/types'
 
 const BASE = '/api'
-let token: string | null = null
-
-export function setApiToken(t: string | null) { token = t }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json', 'Accept': 'application/json', ...init?.headers as Record<string, string> }
-  if (token) headers['Authorization'] = `Bearer ${token}`
   const res = await fetch(`${BASE}${path}`, { credentials: 'include', headers, ...init })
   if (!res.ok) { const err = await res.json().catch(() => ({ message: res.statusText })); throw new Error(err.message || `Request failed: ${res.status}`) }
   return res.json()
@@ -27,11 +23,11 @@ export const api = {
   getCareers: () => request<{ data: CareerListing[] }>('/careers'),
   // Auth
   getCsrfCookie: () => request<void>('/sanctum/csrf-cookie'),
-  register: (data: { name: string; email: string; password: string; password_confirmation: string; phone?: string }) => request<{ user: User; token: string }>('/auth/register', { method: 'POST', body: JSON.stringify(data) }),
-  registerRider: (data: { name: string; email: string; password: string; password_confirmation: string; phone?: string; vehicle_type?: string; banking_details?: string }) => request<{ user: User; token: string }>('/auth/register/rider', { method: 'POST', body: JSON.stringify(data) }),
-  login: (data: { email: string; password: string }) => request<{ user: User; token: string }>('/auth/login', { method: 'POST', body: JSON.stringify(data) }),
-  logout: () => request<void>('/auth/logout', { method: 'POST' }),
-  getUser: () => request<User>('/auth/user'),
+  register: (data: { name: string; email: string; password: string; password_confirmation: string; phone?: string }) => request<{ user: User }>('/auth/register', { method: 'POST', body: JSON.stringify(data) }),
+  registerRider: (data: { name: string; email: string; password: string; password_confirmation: string; phone?: string; vehicle_type?: string; banking_details?: Record<string, string> }) => request<{ user: User }>('/auth/register/rider', { method: 'POST', body: JSON.stringify(data) }),
+  login: (data: { email: string; password: string; remember?: boolean }) => request<{ user: User }>('/auth/login', { method: 'POST', body: JSON.stringify(data) }),
+  logout: () => request<{ message: string }>('/auth/logout', { method: 'POST' }),
+  getUser: () => request<{ user: User }>('/auth/user'),
   // Customer
   getOrders: () => request<{ data: Order[] }>('/orders'),
   getOrder: (id: number) => request<Order>(`/orders/${id}`),
@@ -49,6 +45,8 @@ export const api = {
   markOutForDelivery: (id: number) => request<Order>(`/rider/out-for-delivery/${id}`, { method: 'POST' }),
   markDelivered: (id: number) => request<Order>(`/rider/delivered/${id}`, { method: 'POST' }),
   toggleAvailability: () => request<Rider>('/rider/toggle-availability', { method: 'POST' }),
-  getRiderStats: () => request<any>('/rider/stats'),
+  getRiderStats: () => request<{ data: { xp: number; level: number; total_deliveries: number; average_rating: number; badges: any[] } }>('/rider/stats'),
   getRiderHistory: () => request<{ data: Order[] }>('/rider/history'),
+  getActiveDeliveries: () => request<{ data: Order[] }>('/rider/active-deliveries'),
+  getRiderProfile: () => request<Rider>('/rider/profile'),
 }

@@ -54,17 +54,25 @@ describe('cart-store', () => {
     expect(items[0].quantity).toBe(8)
   })
 
-  it('remove item reduces quantity', () => {
+  it('decrement item reduces quantity', () => {
     const product = mockProduct()
     useCartStore.getState().addItem(product, 3)
-    useCartStore.getState().removeItem(1)
+    useCartStore.getState().decrementItem(1)
     const { items } = useCartStore.getState()
     expect(items[0].quantity).toBe(2)
   })
 
-  it('remove item at quantity 1 removes it entirely', () => {
+  it('decrement item at quantity 1 removes it entirely', () => {
     const product = mockProduct()
     useCartStore.getState().addItem(product)
+    useCartStore.getState().decrementItem(1)
+    const { items } = useCartStore.getState()
+    expect(items).toHaveLength(0)
+  })
+
+  it('remove item removes entirely regardless of quantity', () => {
+    const product = mockProduct()
+    useCartStore.getState().addItem(product, 5)
     useCartStore.getState().removeItem(1)
     const { items } = useCartStore.getState()
     expect(items).toHaveLength(0)

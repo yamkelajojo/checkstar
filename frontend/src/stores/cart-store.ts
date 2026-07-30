@@ -6,6 +6,7 @@ import { api } from '@/lib/api'
 interface CartState {
   items: CartItem[]
   addItem: (product: Product, quantity?: number) => void
+  decrementItem: (productId: number) => void
   removeItem: (productId: number) => void
   updateQuantity: (productId: number, quantity: number) => void
   clearCart: () => void
@@ -28,7 +29,7 @@ export const useCartStore = create<CartState>()(
           set({ items: [...items, { product, quantity: Math.min(quantity, 8) }] })
         }
       },
-      removeItem: (productId) => {
+      decrementItem: (productId) => {
         const items = get().items
         const existing = items.find(i => i.product.id === productId)
         if (existing) {
@@ -38,6 +39,9 @@ export const useCartStore = create<CartState>()(
             set({ items: items.filter(i => i.product.id !== productId) })
           }
         }
+      },
+      removeItem: (productId) => {
+        set({ items: get().items.filter(i => i.product.id !== productId) })
       },
       updateQuantity: (productId, quantity) => {
         set({ items: get().items.map(i => i.product.id === productId ? { ...i, quantity: Math.min(Math.max(quantity, 1), 8) } : i) })

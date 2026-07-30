@@ -119,6 +119,16 @@ class OrderStateMachineTest extends TestCase
         $this->assertSame(EventType::Cancelled->value, $log->event_type);
     }
 
+    public function test_out_for_delivery_to_cancelled(): void
+    {
+        $this->order->update(['status' => OrderStatus::OutForDelivery]);
+
+        $log = $this->machine->transition($this->order, OrderStatus::Cancelled);
+
+        $this->assertEquals(OrderStatus::Cancelled, $this->order->fresh()->status);
+        $this->assertSame(EventType::Cancelled->value, $log->event_type);
+    }
+
     public function test_delivered_to_preparing_throws(): void
     {
         $this->order->update(['status' => OrderStatus::Delivered]);
