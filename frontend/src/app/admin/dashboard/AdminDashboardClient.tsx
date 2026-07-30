@@ -50,7 +50,7 @@ export default function AdminDashboardClient() {
 
   const { data: contactData, isLoading: contactLoading, error: contactError } = useQuery({
     queryKey: ['contact-messages'],
-    queryFn: () => fetch('/api/contact-messages', { credentials: 'include' }).then(r => r.json()),
+    queryFn: () => fetch('/api/admin/messages', { credentials: 'include' }).then(r => r.json()),
   })
 
   const { data: healthData, isLoading: healthLoading, error: healthError } = useQuery({
