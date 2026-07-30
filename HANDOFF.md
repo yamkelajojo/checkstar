@@ -9,6 +9,7 @@
 ## What's Been Done
 
 ### Phase One (committed to `phase_one`)
+
 - Domain glossary (`CONTEXT.md`) sharpened via grill-with-docs session
   - Store failover threshold, dispatch contention (`FOR UPDATE SKIP LOCKED`), Rider availability toggle
   - Order Activity Log (append-only audit trail)
@@ -23,27 +24,32 @@
 
 ### This Session (Decisions Made)
 
-| Area | Decision |
-|---|---|
-| **Frontend** | Next.js (App Router) + React 19 |
-| **Backend** | Laravel 11 (API-only) |
-| **Auth** | Laravel Sanctum (cookie-based SPA auth; Next.js proxies `/api/*` to Laravel) |
-| **UI Kit** | motion.dev/ui (strictly, all custom components use it) |
-| **CSS** | Tailwind v3 + Josh Comeau CSS reset (`modern-css-reset.md`) |
-| **State** | Zustand v5 |
-| **Database** | SQLite (dev) → PostgreSQL (prod) |
-| **Maps** | Leaflet + OpenStreetMap |
-| **Pricing** | Same price across all 3 stores |
-| **Cart** | Guest: localStorage (Zustand persist) → synced to DB on login |
-| **Rider dispatch** | Polling (MVP), WebSockets later |
-| **Rider banking** | Mock fields (prototype only, not functional) |
-| **Testing** | Vitest (unit/integration) + Playwright (e2e/regression) + CI (GitHub Actions) |
-| **Mobile future** | React Native (shares types, Zustand patterns) |
-| **EGAD** | Borrow concepts only, not as SDLC |
+| Area               | Decision                                                                      |
+| ------------------ | ----------------------------------------------------------------------------- |
+| **Frontend**       | Next.js (App Router) + React 19                                               |
+| **Backend**        | Laravel 11 (API-only)                                                         |
+| **Auth**           | Laravel Sanctum (cookie-based SPA auth; Next.js proxies `/api/*` to Laravel)  |
+| **UI Kit**         | motion.dev/ui (strictly, all custom components use it)                        |
+| **CSS**            | Tailwind v3 + Josh Comeau CSS reset (`modern-css-reset.md`)                   |
+| **State**          | Zustand v5                                                                    |
+| **Database**       | SQLite (dev) → PostgreSQL (prod)                                              |
+| **Cache**          | Redis (cache store, session driver, queue backend)                            |
+| **Maps**           | Leaflet + OpenStreetMap                                                       |
+| **Pricing**        | Same price across all 3 stores                                                |
+| **Cart**           | Guest: localStorage (Zustand persist) → synced to DB on login                 |
+| **Rider dispatch** | Polling (MVP), WebSockets later                                               |
+| **Rider banking**  | Mock fields (prototype only, not functional)                                  |
+| **Testing**        | Vitest (unit/integration) + Playwright (e2e/regression) + CI (GitHub Actions) |
+| **Mobile future**  | React Native (shares types, Zustand patterns)                                 |
+| **EGAD**           | Borrow concepts only, not as SDLC                                             |
 
 ### Source of Truth Location
+
 - `C:\Users\Acer\.opensrc\sources.json` — cached packages index
   - React 19.2.8, motion (main), shadcn/ui 4.10.0, Zustand 5.0.14, Playwright 1.62.0, base-ui, MUI 9.2.0 cached locally
+  - Laravel 13.x skeleton at `repos/github.com/laravel/laravel/13.x/` — reference for config, structure, migrations patterns
+  - SQLite (kriasoft/node-sqlite 5.1.1), pg (node-postgres 8.21.0) cached
+  - Firecrawl Redis config at `repos/github.com/firecrawl/firecrawl/4.30.1/apps/redis/`
 - `C:\Users\Acer\.opensrc\repos\github.com\motiondivision\motion\main\` — motion.dev source
 - Reference repos: GreenBidder, Runnar v2 (for patterns only)
 - `C:\Users\Acer\Documents\Software\2026\checkstar\original_site_issues.md` — user flow decisions
@@ -71,7 +77,7 @@ These are the remaining gaps that need to be built:
    - Store Finder (dedicated tab, Leaflet map + 3 store cards)
    - Contact (store locations as small cards)
    - Careers (simplified)
-   - *Removed:* Tips 4 You, Competitions
+   - _Removed:_ Tips 4 You, Competitions
 7. **Admin dashboard** — CRUD for products, orders, specials, posts
 8. **Delivery system** — Order lifecycle, dispatch polling, Rider claim flow
 9. **Testing** — Write tests alongside code (TDD): Vitest for stores + components, Playwright for e2e flows
@@ -94,7 +100,7 @@ Tech stack decisions (already settled):
 - motion.dev/ui for ALL custom components (strict, no exceptions)
 - Tailwind v3 + Josh Comeau CSS reset
 - Zustand v5 for state (with persist middleware for cart)
-- SQLite (dev) → PostgreSQL (prod)
+- SQLite (dev) → PostgreSQL (prod) with Redis for cache, sessions, and queues
 - Leaflet + OpenStreetMap for maps
 - Same pricing across all 3 stores
 - Vitest (unit/integration) + Playwright (e2e/regression) + GitHub Actions CI
@@ -102,7 +108,7 @@ Tech stack decisions (already settled):
 - Mock Rider banking fields (prototype only)
 - EGAD: borrow concepts only, not as SDLC
 
-Source of truth: C:\Users\Acer\.opensrc\sources.json (React 19.2.8, motion, shadcn/ui 4.10.0, Zustand 5.0.14, Playwright 1.62.0 cached)
+Source of truth: C:\Users\Acer\.opensrc (index at sources.json). Key cached packages: React 19.2.8, motion, shadcn/ui 4.10.0, Zustand 5.0.14, Playwright 1.62.0, SQLite (kriasoft/node-sqlite 5.1.1), pg 8.21.0. Laravel 13.x skeleton at repos/github.com/laravel/laravel/13.x/. Redis config reference at repos/github.com/firecrawl/firecrawl/4.30.1/apps/redis/. Always consult local source first before any external resource.
 
 Reference repos: GreenBidder, Runnar v2.
 
@@ -110,7 +116,7 @@ Original site issues: orginal_site_issues.md (informs user flow decisions about 
 
 The remaining gaps to implement (in order):
 1. Scaffold Next.js + Laravel projects
-2. DB migrations (Prisma or Drizzle)
+2. DB migrations (Laravel native — 20 tables, column types, FKs, indexes per PHASE_3_DB_SCHEMA.md)
 3. Auth flow (register with role, login, protected routes)
 4. Seeders (demo data)
 5. Zustand stores (auth, cart, orders)

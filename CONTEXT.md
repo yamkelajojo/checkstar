@@ -1,6 +1,6 @@
 # Checkstar
 
-A Durban-based South African supermarket chain (3 physical stores) rebuilding its website and adding a grocery delivery service with bike couriers.
+A Durban-based South African supermarket chain (3 physical stores) rebuilding its website and adding a grocery delivery service with motorbike couriers.
 
 ## Language
 
