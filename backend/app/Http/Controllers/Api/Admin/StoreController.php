@@ -1,0 +1,71 @@
+<?php
+
+namespace App\Http\Controllers\Api\Admin;
+
+use App\Http\Controllers\Controller;
+use App\Models\Store;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+
+class StoreController extends Controller
+{
+    public function index(): JsonResponse
+    {
+        return response()->json(['data' => Store::with('owner')->get()]);
+    }
+
+    public function store(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'slug' => 'required|string|max:255|unique:stores',
+            'description' => 'nullable|string',
+            'address' => 'required|string|max:255',
+            'city' => 'required|string|max:100',
+            'province' => 'required|string|max:100',
+            'postal_code' => 'required|string|max:20',
+            'latitude' => 'required|numeric',
+            'longitude' => 'required|numeric',
+            'delivery_radius_km' => 'numeric|min:0',
+            'phone' => 'required|string|max:20',
+            'email' => 'nullable|string|email|max:255',
+            'trading_hours' => 'nullable|array',
+            'is_active' => 'boolean',
+        ]);
+
+        return response()->json(['data' => Store::create($validated)], 201);
+    }
+
+    public function update(Request $request, int $id): JsonResponse
+    {
+        $store = Store::findOrFail($id);
+
+        $validated = $request->validate([
+            'name' => 'string|max:255',
+            'slug' => 'string|max:255|unique:stores,slug,' . $id,
+            'description' => 'nullable|string',
+            'address' => 'string|max:255',
+            'city' => 'string|max:100',
+            'province' => 'string|max:100',
+            'postal_code' => 'string|max:20',
+            'latitude' => 'numeric',
+            'longitude' => 'numeric',
+            'delivery_radius_km' => 'numeric|min:0',
+            'phone' => 'string|max:20',
+            'email' => 'nullable|string|email|max:255',
+            'trading_hours' => 'nullable|array',
+            'is_active' => 'boolean',
+        ]);
+
+        $store->update($validated);
+
+        return response()->json(['data' => $store]);
+    }
+
+    public function destroy(int $id): JsonResponse
+    {
+        Store::findOrFail($id)->delete();
+
+        return response()->json(['message' => 'Deleted']);
+    }
+}
