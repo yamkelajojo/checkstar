@@ -100,8 +100,9 @@ These are the highest-value tests. Each deep module is tested in complete isolat
 **Dependencies mocked:**
 - `StoreRepository` (returns stores with coordinates, active status)
 - `RiderRepository` (returns available riders per store with max radius)
-- `HaversineService` (or tested together if pure)
 - `OrderRepository` (for updating order state)
+
+**Note:** Haversine distance is an internal private function within DispatchService — not mocked, not tested in isolation. The Haversine tests were deleted; their coverage is absorbed by the dispatch scenarios above (a distance bug surfaces as a wrong-store-selected test failure).
 
 #### PricingServiceTest
 
@@ -165,36 +166,27 @@ These are the highest-value tests. Each deep module is tested in complete isolat
 - Activity log has a `created_at` timestamp
 - `metadata` contains relevant context (e.g., `reason` for cancellations)
 
-#### HaversineServiceTest
+#### Haversine (internal to DispatchService)
 
-**Interface:** `distance(float $lat1, float $lng1, float $lat2, float $lng2): float`
-
-**Test Scenarios:**
+Haversine distance calculation is absorbed into **DispatchService** as a private function — no external seam. It is tested **through DispatchService's interface**:
 
 | # | Scenario | Input | Expected |
 |---|----------|-------|----------|
-| 1 | Same point (zero distance) | Same lat/lng | `0.0` |
-| 2 | Known distance between two cities | Durban (-29.8587, 31.0218) to Pinetown (-29.8175, 30.8500) | ~18.5 km (±0.5 km tolerance) |
-| 3 | North-to-south (meridian) | (0, 0) to (1, 0) | ~111 km |
-| 4 | Equatorial | (0, 0) to (0, 1) | ~111 km |
-| 5 | Antipodal (opposite sides) | (0, 0) to (0, 180) | ~20015 km (half circumference) |
-| 6 | Very close points (centimeter precision) | Same building, 10m apart | ~0.01 km |
+| 1 | Order near Store A → Store A selected | Delivery coords 2km from Store A | DispatchResult has store_id = A |
+| 2 | Order far from Store A but near Store B | Delivery coords 15km from A, 1km from B | Store B selected (A out of radius, B inside) |
+| 3 | All stores out of radius | Delivery coords 100km from all stores | DispatchFailedException thrown |
 
-**Pure function** — no dependencies. Test precision with `assertEqualsWithDelta(0.5)`.
+The Haversine math itself is tested implicitly through these dispatch scenarios. If a distance bug exists, dispatch fails in observable ways. This is the **interface is the test surface** principle — we test observable outcomes, not internal math.
 
-#### CartSyncServiceTest
+#### Cart merge (inlined, not a module)
 
-**Interface:** `mergeGuestCart(array $guestItems, User $user): Cart`
+Cart sync logic lives in the auth login handler as private methods — no external seam. Tested through the login feature test:
 
-| # | Scenario | Input | Expected |
-|---|----------|-------|----------|
-| 1 | Guest cart empty, user has no existing cart | Empty array, user with no cart | Empty cart returned |
-| 2 | Guest cart has items, user has no cart | `[{product_id: 1, quantity: 2}]` | Cart created with those items |
-| 3 | Guest cart has items, user has existing cart with different items | Guest: `[{product_id: 1, qty: 2}]`, User: `[{product_id: 2, qty: 1}]` | Merged: both items in cart |
-| 4 | Same product in both guest and user cart | Guest: `[{product_id: 1, qty: 2}]`, User: `[{product_id: 1, qty: 3}]` | Higher quantity (3) wins |
-| 5 | Guest cart product no longer available/active | Guest item with `is_active = false` product | Item removed, noted in metadata |
-| 6 | Guest cart product no longer exists (deleted) | Guest item with non-existent product_id | Item silently removed |
-| 7 | Guest cart has quantity > max allowed | Guest item with qty 99 | Capped at max (e.g., 8) |
+| # | Scenario | Steps | Assertion |
+|---|----------|-------|-----------|
+| 1 | Guest cart syncs on registration | Add items as guest → register | Cart persisted to user's DB cart |
+| 2 | Guest cart survives login/logout cycle | Register → logout → login again | Cart still has items |
+| 3 | Conflict resolution (same product) | Guest cart has product A × 2, user has product A × 3 | Product A has quantity 3 (higher wins) |
 
 #### GamificationServiceTest
 
@@ -590,7 +582,7 @@ jobs:
 
 | Metric | Target | Notes |
 |--------|--------|-------|
-| Deep module line coverage | 100% | DispatchService, PricingService, StateMachine, Haversine |
+| Deep module line coverage | 100% | DispatchService, PricingService, OrderStateMachine, GamificationService |
 | API endpoint coverage | 100% | Every route tested for success + auth failure |
 | Zustand store branch coverage | 100% | Every action and selector |
 | Component coverage | 80%+ | Key interactive components only |

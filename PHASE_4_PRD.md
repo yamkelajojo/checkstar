@@ -176,44 +176,94 @@ checkstar/
 
 ### Deep Modules
 
-The following services are extracted as deep modules — testable in isolation with simple interfaces and complex internals:
+These modules pass the **deletion test**: if deleted, their complexity would reappear across multiple callers, not concentrate in one place. Each has a small **interface** (few methods, simple params, typed inputs/outputs) hiding a large **implementation**.
 
-1. **DispatchService** — `dispatch(Order $order): DispatchResult`
-   - Computes Haversine distance from delivery address to each store
-   - Filters stores by delivery radius
-   - Selects closest store with available Riders
-   - Falls back through stores with configurable timeout
-   - Returns assigned store or signals cancellation
-   - Depends on: StoreRepository, RiderRepository, config values
+**Dependency categories** (per DEEPENING.md): in-process (pure computation), local-substitutable (SQLite in testing), remote but owned (own services), true external (third-party).
 
-2. **PricingService** — `effectivePrice(Product $product, ?Collection $specials): Price`
-   - Returns `sale_price` if set (product-level takes priority)
-   - Falls back to collection special price if product belongs to active special
-   - Returns regular `price` otherwise
-   - Pure function — no side effects
+#### 1. DispatchService
 
-3. **OrderStateMachine** — `transition(Order $order, string $newStatus, ?User $actor): ActivityLogEntry`
-   - Validates that transition is allowed from current status
-   - Updates `orders.status`
-   - Writes to `order_activity_logs` with old/new status, user, metadata
-   - Returns the activity log entry
-   - Does NOT handle side effects (those are the caller's responsibility via events)
+```php
+/**
+ * Initiates dispatch for a confirmed order.
+ * If a rider is immediately available, assigns them atomically.
+ * If not, schedules retry via the queue.
+ * All outcomes recorded in order activity log.
+ *
+ * @throws OrderNotFoundException
+ * @throws InvalidOrderStatusException (if not 'confirmed')
+ * @throws DispatchFailedException (all stores exhausted)
+ */
+function dispatch(OrderId $orderId): void;
+```
 
-4. **HaversineService** — `distance(float $lat1, float $lng1, float $lat2, float $lng2): float`
-   - Pure math calculation
-   - Returns distance in kilometers
+**Implementation hides:**
+- Haversine distance calculation (formerly its own module — absorbed here)
+- Store proximity sort and delivery radius filtering
+- Available rider query
+- Atomic claim via `FOR UPDATE SKIP LOCKED`
+- Retry scheduling (Redis queue with TTL)
+- Store failover cascade with configurable timeout
+- Activity log entries for each sub-step (attempt, assignment, retry, cancellation)
 
-5. **CartSyncService** — `mergeGuestCart(array $guestItems, User $user): Cart`
-   - Merges localStorage guest cart items into user's DB cart on login
-   - Resolves conflicts (same product → higher quantity wins)
-   - Cleans up stale items (products no longer available)
+**Dependency category:** Remote but owned (queue for retries), local-substitutable (repositories). Single public method — maximum depth.
 
-6. **GamificationService** — `awardXp(Rider $rider, string $event, array $metadata): GamificationResult`
-   - Calculates XP gain based on event type
-   - Checks level-up thresholds (20 XP per level)
-   - Awards badges on milestone events
-   - Dispatches queued job for badge check
-   - Returns updated stats + any new badges
+#### 2. PricingService
+
+```php
+/**
+ * Returns the effective price for a product given optional collection specials.
+ * Product-level sale_price always takes priority over collection pricing.
+ *
+ * @param CollectionSpecial[] $specials — active specials the product belongs to
+ */
+function effectivePrice(Product $product, array $specials = []): Price;
+```
+
+**Implementation hides:** sale_price vs collection special priority logic, active date range checking, null-to-regular-price fallback.
+
+**Dependency category:** In-process (pure computation). No adapter needed — test directly. Interfaces passes specials in so the function stays pure; callers load specials once and pass them.
+
+#### 3. OrderStateMachine
+
+```php
+/**
+ * Validates and executes an order status transition.
+ * Atomically updates the order and writes an append-only activity log entry.
+ *
+ * @throws OrderNotFoundException
+ * @throws InvalidTransitionException (transition not allowed from current status)
+ */
+function transition(OrderId $id, OrderStatus $to, ?UserId $actor): void;
+```
+
+**Implementation hides:** 18 transition rules (14 valid + 4 invalid, includes cancellation from most states), status update, activity log creation with old/new status and metadata, immutable audit enforcement (no updates to existing logs).
+
+**Dependency category:** Local-substitutable (Eloquent repositories). Typed `OrderStatus` enum communicates valid values in the interface — callers cannot pass invalid strings.
+
+#### 4. GamificationService
+
+```php
+/**
+ * Processes a gamification event for a Rider.
+ * Awards XP, checks level-up thresholds, and awards milestone badges.
+ *
+ * @param GameEvent $event — typed enum (DeliveryCompleted, OrderConfirmed, etc.)
+ */
+function handleEvent(RiderId $riderId, GameEvent $event, array $context): GamificationOutcome;
+```
+
+Where `GamificationOutcome` = `{xpGained: int, newLevel: ?int, newBadges: BadgeType[]}`.
+
+**Implementation hides:** XP calculation per event type, level-up detection (20 XP per level), badge milestone checks, duplicate badge prevention, queued badge award job.
+
+**Dependency category:** Local-substitutable (Eloquent). `GameEvent` typed enum replaces the old string-typed `$event` — misspellings are caught at compile time.
+
+#### Removed as deep modules
+
+| Module | Reason | New home |
+|--------|--------|----------|
+| **HaversineService** | Failed deletion test — only one caller (DispatchService). Interface as complex as the formula. | Absorbed into DispatchService's implementation as a private function. |
+| **CartSyncService** | Failed deletion test — only one call site (login handler). One adapter (Eloquent). Seam is hypothetical, not real. | Inlined into the auth login handler. Merge logic for conflict resolution and stale cleanup lives as private methods there. |
 
 ### Database
 
@@ -318,7 +368,7 @@ A comprehensive testing plan is documented in `PHASE_4_TESTING_PLAN.md` (separat
 
 - **Backend**: PHPUnit for unit tests (deep modules in isolation) + feature tests (API contract tests)
 - **Frontend**: Vitest for Zustand stores and utility functions; Playwright for e2e flows
-- **Deep modules** (DispatchService, PricingService, OrderStateMachine, HaversineService, CartSyncService, GamificationService): Unit tested in isolation with mocked dependencies
+- **Deep modules** (DispatchService, PricingService, OrderStateMachine, GamificationService): Unit tested across their external seams (the interface is the test surface — see codebase-design principles). HaversineService and CartSyncService removed as modules: Haversine absorbed into DispatchService, CartSync inlined at its single call site.
 - **API tests**: Test request/response contracts, auth gating, role-based access, status transitions
 - **E2E**: Playwright covers critical user journeys (browse → cart → checkout → track, Rider claim → deliver cycle, admin CRUD flows)
 - **CI**: GitHub Actions running backend tests, frontend tests, and Playwright on push
