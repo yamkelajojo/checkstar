@@ -1,0 +1,2276 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sneaksy - High Fidelity Banner Creator & Interactive Mockup</title>
+    <!-- Tailwind CSS v4 CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- html2canvas for exporting high-res banners -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        /* Custom scrollbar for preview drawer and editor panel */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(24, 24, 27, 0.5);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(63, 63, 70, 0.8);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(82, 82, 91, 1);
+        }
+        /* Glassmorphism */
+        .glass-panel {
+            background: rgba(24, 24, 27, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(63, 63, 70, 0.4);
+        }
+        /* Phone screen scroll mask */
+        .phone-scroll {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        .phone-scroll::-webkit-scrollbar {
+            display: none;
+        }
+        /* Pulse keyframe */
+        @keyframes subtle-pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.95; }
+        }
+        .pulse-btn {
+            animation: subtle-pulse 2s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-[#0b0c0e] text-zinc-100 min-h-screen overflow-x-hidden selection:bg-[#eb7a43]/30 selection:text-white">
+
+    <!-- Top Navigation Bar -->
+    <header class="border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-md sticky top-0 z-50 px-6 py-4">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-gradient-to-br from-[#eb7a43] to-orange-600 p-2.5 rounded-xl shadow-lg shadow-orange-500/10">
+                    <i data-lucide="zap" class="w-6 h-6 text-white animate-bounce"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight bg-gradient-to-r from-white via-zinc-200 to-zinc-400 bg-clip-text text-transparent">Sneaksy Studio</h1>
+                    <p class="text-xs text-zinc-500">Premium Banner Customizer & Interactive iOS Mockup</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <span class="flex h-2 w-2 relative">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+                <span class="text-xs text-zinc-400 font-medium">Recreation Mode: Active</span>
+                <button onclick="resetToOriginal()" class="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold bg-zinc-800 hover:bg-zinc-700 active:scale-95 text-zinc-300 rounded-lg transition-all border border-zinc-700">
+                    <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> Reset to Original
+                </button>
+                <a href="#editor-section" class="px-4 py-1.5 text-xs font-semibold bg-gradient-to-r from-[#eb7a43] to-orange-600 hover:from-orange-500 hover:to-orange-700 text-white rounded-lg transition-all shadow-md shadow-orange-500/10">
+                    Start Customizing
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace Layout -->
+    <main class="max-w-7xl mx-auto px-4 py-8 lg:px-6">
+        
+        <!-- Feature Banner Introduction -->
+        <div class="mb-10 text-center lg:text-left">
+            <h2 class="text-3xl lg:text-4xl font-extrabold tracking-tight text-white mb-2">Recreate with Precision</h2>
+            <p class="text-zinc-400 max-w-3xl">
+                A pixel-perfect digital twin of the modern <span class="text-white font-semibold">Sneaksy Flash Sale Banner</span> in an iOS environment. Toggle presets, control layout depth, customize live text/colors, and export instantly to production-ready Tailwind HTML code or downloadable high-res PNG image.
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            
+            <!-- LEFT COLUMN: Interactive iPhone Device (Sticky Preview) (lg:col-span-5) -->
+            <div class="lg:col-span-5 lg:sticky lg:top-28 flex flex-col items-center justify-center">
+                
+                <!-- Controller Actions for Mockup -->
+                <div class="flex flex-wrap items-center justify-center gap-2 mb-4 bg-zinc-900/90 p-2 rounded-xl border border-zinc-800/80 w-full max-w-sm">
+                    <button id="btn-light-dark" onclick="togglePhoneTheme()" class="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-all bg-zinc-800 text-zinc-300 hover:bg-zinc-700" title="Toggle Light/Dark App Theme">
+                        <i data-lucide="sun" class="w-3.5 h-3.5" id="theme-icon"></i>
+                        <span id="theme-text">Light Mode</span>
+                    </button>
+                    <div class="h-4 w-px bg-zinc-800"></div>
+                    <button onclick="togglePhoneGlare()" class="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-all bg-zinc-800/50 text-zinc-400 hover:bg-zinc-700 hover:text-white" title="Toggle Screen Reflection">
+                        <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                        <span>Reflection</span>
+                    </button>
+                    <div class="h-4 w-px bg-zinc-800"></div>
+                    <button onclick="triggerMockNotification()" class="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-all bg-zinc-800/50 text-zinc-400 hover:bg-zinc-700 hover:text-white animate-pulse" title="Trigger Notification Alert">
+                        <i data-lucide="bell" class="w-3.5 h-3.5"></i>
+                        <span>Alert</span>
+                    </button>
+                </div>
+
+                <!-- iPhone Hardware Device Mockup -->
+                <div class="relative w-[345px] h-[700px] rounded-[52px] border-[10px] border-[#222] bg-[#f9fafb] shadow-2xl transition-all duration-300 shadow-orange-500/5 ring-12 ring-zinc-900/60" id="iphone-device">
+                    
+                    <!-- Hardware highlights & details -->
+                    <div class="absolute -left-3 top-28 w-1 h-12 bg-zinc-800 rounded-l"></div> <!-- Volume Up -->
+                    <div class="absolute -left-3 top-44 w-1 h-12 bg-zinc-800 rounded-l"></div> <!-- Volume Down -->
+                    <div class="absolute -right-3 top-36 w-1 h-16 bg-zinc-800 rounded-r"></div> <!-- Power Button -->
+
+                    <!-- Screen Reflection Layer -->
+                    <div id="screen-glare" class="absolute inset-0 pointer-events-none rounded-[42px] bg-gradient-to-tr from-white/0 via-white/5 to-white/10 z-30 transition-opacity duration-300"></div>
+
+                    <!-- App Notification Toast (iOS Alert Overlay) -->
+                    <div id="ios-toast" class="absolute top-12 left-4 right-4 bg-white/95 dark:bg-zinc-900/95 shadow-xl rounded-2xl p-3 z-40 transform -translate-y-32 opacity-0 transition-all duration-500 flex items-center gap-3 border border-zinc-100 dark:border-zinc-800">
+                        <div class="bg-orange-500 p-2 rounded-xl text-white">
+                            <i data-lucide="percent" class="w-4 h-4"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs font-bold text-zinc-800 dark:text-zinc-200">Sneaksy Deal Alert</span>
+                                <span class="text-[10px] text-zinc-400">now</span>
+                            </div>
+                            <p class="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium">Use code <span class="font-extrabold text-orange-600 dark:text-orange-400">SNEAK50</span> for an extra 10% off checkout!</p>
+                        </div>
+                        <button onclick="dismissToast()" class="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200">
+                            <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </div>
+
+                    <!-- Apple Dynamic Island / Notch -->
+                    <div id="dynamic-island" onclick="toggleDynamicIsland()" class="absolute top-2.5 left-1/2 transform -translate-x-1/2 w-[95px] h-[26px] bg-black rounded-full z-50 flex items-center justify-between px-3.5 transition-all duration-300 cursor-pointer hover:scale-105 active:scale-95" title="Tap the Island!">
+                        <div class="w-1.5 h-1.5 rounded-full bg-zinc-900"></div>
+                        <div class="flex items-center gap-1 opacity-0 transition-opacity duration-200" id="island-pulse">
+                            <span class="w-1 h-1 rounded-full bg-emerald-500 animate-pulse"></span>
+                            <span class="text-[8px] text-emerald-500 font-bold uppercase tracking-widest">LIVE</span>
+                        </div>
+                        <div class="w-3 h-3 rounded-full bg-zinc-900 flex items-center justify-center">
+                            <div class="w-1 h-1 rounded-full bg-blue-900"></div>
+                        </div>
+                    </div>
+
+                    <!-- Dynamic Island Expanded Tray -->
+                    <div id="dynamic-island-expanded" class="absolute top-2.5 left-4 right-4 bg-black rounded-3xl p-4 z-40 transform scale-75 opacity-0 pointer-events-none transition-all duration-300 shadow-2xl flex flex-col gap-2">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <div class="w-8 h-8 rounded-lg bg-orange-600 flex items-center justify-center text-white">
+                                    <i data-lucide="music" class="w-4 h-4"></i>
+                                </div>
+                                <div>
+                                    <h4 class="text-[10px] font-bold text-white leading-tight">Cop or Drop</h4>
+                                    <p class="text-[8px] text-zinc-400 leading-tight font-medium">Sneaksy Radio • Live Podcast</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <span class="w-0.5 h-3 bg-orange-500 animate-[pulse_1s_infinite]"></span>
+                                <span class="w-0.5 h-4 bg-orange-500 animate-[pulse_0.8s_infinite]"></span>
+                                <span class="w-0.5 h-2 bg-orange-500 animate-[pulse_1.2s_infinite]"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- iPhone Screen Content Frame -->
+                    <div id="iphone-screen" class="w-full h-full rounded-[42px] bg-white text-zinc-900 overflow-hidden flex flex-col select-none relative transition-colors duration-300">
+                        
+                        <!-- Top Status Bar Area -->
+                        <div class="h-10 pt-2.5 px-6 flex justify-between items-center text-[11px] font-bold z-35 bg-white/50 dark:bg-zinc-950/20 backdrop-blur-xs transition-colors">
+                            <div id="status-clock" class="text-zinc-800 dark:text-zinc-100">15:37</div>
+                            <div class="flex items-center gap-1.5 text-zinc-800 dark:text-zinc-100">
+                                <i data-lucide="signal" class="w-3.5 h-3.5"></i>
+                                <span class="text-[9px]">5G</span>
+                                <i data-lucide="battery" class="w-4 h-4"></i>
+                            </div>
+                        </div>
+
+                        <!-- Scrollable Mobile App Body -->
+                        <div class="flex-1 overflow-y-auto phone-scroll pb-16">
+                            
+                            <!-- App Header -->
+                            <div class="px-5 py-4 flex justify-between items-center">
+                                <span class="text-[22px] font-extrabold tracking-tight text-zinc-900 dark:text-white transition-colors">Sneaksy</span>
+                                <div class="flex items-center gap-2.5">
+                                    <!-- Interactive Heart button -->
+                                    <button onclick="toggleLikedHeader(this)" class="w-9 h-9 rounded-full bg-zinc-50 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:scale-105 active:scale-95 transition-all flex items-center justify-center border border-zinc-100 dark:border-zinc-800 shadow-xs">
+                                        <i data-lucide="heart" class="w-4.5 h-4.5" id="header-heart-icon"></i>
+                                    </button>
+                                    <!-- Interactive Notification alert button -->
+                                    <button onclick="triggerMockNotification()" class="w-9 h-9 rounded-full bg-zinc-50 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:scale-105 active:scale-95 transition-all flex items-center justify-center border border-zinc-100 dark:border-zinc-800 shadow-xs relative">
+                                        <i data-lucide="bell" class="w-4.5 h-4.5"></i>
+                                        <span id="bell-badge" class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-orange-500 ring-2 ring-white dark:ring-zinc-900 hidden"></span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Search Input -->
+                            <div class="px-5 mb-5">
+                                <div class="relative">
+                                    <i data-lucide="search" class="absolute left-4 top-1/2 transform -translate-y-1/2 text-zinc-400 dark:text-zinc-500 w-4.5 h-4.5"></i>
+                                    <input type="text" id="app-search-input" oninput="handleSearch(this.value)" placeholder="Search..." class="w-full pl-11 pr-4 py-3 text-xs bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800/80 rounded-full text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-[#eb7a43] focus:border-[#eb7a43] transition-all">
+                                </div>
+                            </div>
+
+                            <!-- ============================================== -->
+                            <!-- CLIENT BANNER COMPONENT UNDER RECREATION -->
+                            <!-- ============================================== -->
+                            <div class="px-5 mb-6 relative">
+                                <div id="live-banner-container" class="relative w-full aspect-[2/1] min-h-[155px] rounded-3xl transition-all shadow-xl shadow-zinc-950/10 cursor-pointer overflow-visible">
+                                    
+                                    <!-- Banner Background Layer -->
+                                    <div id="banner-bg" class="absolute inset-0 rounded-3xl transition-all duration-300 z-0"></div>
+
+                                    <!-- Banner SVG Background Patterns Overlay -->
+                                    <div id="banner-pattern" class="absolute inset-0 rounded-3xl pointer-events-none overflow-hidden z-1 select-none">
+                                        <!-- SVG will be dynamically injected here based on selection -->
+                                    </div>
+
+                                    <!-- Content Row inside Banner -->
+                                    <div class="relative z-10 w-full h-full p-5 flex flex-col justify-between pointer-events-none">
+                                        
+                                        <!-- Left Side Labels -->
+                                        <div class="max-w-[55%] pointer-events-auto">
+                                            <p id="banner-sub-text" class="text-[11px] uppercase tracking-wider font-semibold transition-all mb-1">
+                                                Flash Sale
+                                            </p>
+                                            <h3 id="banner-title-text" class="text-lg md:text-xl font-extrabold tracking-tight leading-tight transition-all">
+                                                Up to 50% Off
+                                            </h3>
+                                        </div>
+
+                                        <!-- Shop Now Link CTA -->
+                                        <div class="pointer-events-auto mt-2">
+                                            <a id="banner-cta" class="inline-flex items-center gap-1.5 text-xs font-bold transition-all hover:translate-x-1 duration-200">
+                                                <span id="banner-cta-text">Shop Now</span>
+                                                <i data-lucide="arrow-up-right" class="w-3.5 h-3.5" id="banner-cta-arrow"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+
+                                    <!-- Layered Shoes container -->
+                                    <div id="banner-shoes-container" class="absolute inset-0 rounded-3xl z-15 pointer-events-none">
+                                        <!-- Shoe 1 (Background Shoe) -->
+                                        <img id="dom-shoe-1" src="" alt="Shoe 1" class="absolute select-none pointer-events-none transition-all duration-300 drop-shadow-[0_10px_20px_rgba(0,0,0,0.35)]" style="display: none;">
+                                        
+                                        <!-- Shoe 2 (Foreground Shoe) -->
+                                        <img id="dom-shoe-2" src="" alt="Shoe 2" class="absolute select-none pointer-events-none transition-all duration-300 drop-shadow-[0_15px_25px_rgba(0,0,0,0.4)]" style="display: none;">
+                                    </div>
+
+                                    <!-- Dot Slides Indicators -->
+                                    <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex items-center gap-1.5 z-20 pointer-events-auto">
+                                        <button onclick="switchSlide(0)" class="slide-indicator w-1.5 h-1.5 rounded-full transition-all duration-300 bg-white/40" id="dot-0"></button>
+                                        <button onclick="switchSlide(1)" class="slide-indicator w-1.5 h-1.5 rounded-full transition-all duration-300 bg-white/40" id="dot-1"></button>
+                                        <button onclick="switchSlide(2)" class="slide-indicator w-1.5 h-1.5 rounded-full transition-all duration-300 bg-white/40" id="dot-2"></button>
+                                    </div>
+
+                                </div>
+                            </div>
+                            <!-- ============================================== -->
+
+                            <!-- Shop by Collection -->
+                            <div class="px-5 mb-5">
+                                <h4 class="text-sm font-extrabold text-zinc-900 dark:text-white transition-colors mb-3">Shop by Collection</h4>
+                                <div class="flex gap-2 overflow-x-auto pb-1.5 phone-scroll select-none">
+                                    <button onclick="selectCollection('Sneakers')" id="pill-Sneakers" class="collection-pill shrink-0 px-4 py-2 text-xs font-bold rounded-full transition-all duration-200 shadow-xs shadow-orange-500/10 bg-[#eb7a43] text-white">
+                                        Sneakers
+                                    </button>
+                                    <button onclick="selectCollection('Oxford')" id="pill-Oxford" class="collection-pill shrink-0 px-4 py-2 text-xs font-bold rounded-full transition-all duration-200 bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white border border-zinc-100 dark:border-zinc-800/80">
+                                        Oxford Shoes
+                                    </button>
+                                    <button onclick="selectCollection('Chelsea')" id="pill-Chelsea" class="collection-pill shrink-0 px-4 py-2 text-xs font-bold rounded-full transition-all duration-200 bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white border border-zinc-100 dark:border-zinc-800/80">
+                                        Chelsea Boots
+                                    </button>
+                                    <button onclick="selectCollection('Running')" id="pill-Running" class="collection-pill shrink-0 px-4 py-2 text-xs font-bold rounded-full transition-all duration-200 bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white border border-zinc-100 dark:border-zinc-800/80">
+                                        Running
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Recommended Section -->
+                            <div class="px-5">
+                                <div class="flex justify-between items-center mb-3">
+                                    <h4 class="text-sm font-extrabold text-zinc-900 dark:text-white transition-colors">Recommended for you</h4>
+                                    <button class="text-[10px] font-bold text-[#eb7a43] hover:underline">See All</button>
+                                </div>
+                                
+                                <!-- Product Cards Grid -->
+                                <div class="grid grid-cols-2 gap-3" id="app-products-grid">
+                                    <!-- Rendered dynamically by JavaScript -->
+                                </div>
+                            </div>
+
+                        </div> <!-- End App Body -->
+
+                        <!-- Bottom Interactive Navigation Dock -->
+                        <div class="absolute bottom-0 left-0 right-0 h-[52px] bg-white/80 dark:bg-zinc-950/85 backdrop-blur-md border-t border-zinc-100 dark:border-zinc-900/80 px-6 flex justify-between items-center text-zinc-400 z-35 transition-all">
+                            <button class="flex flex-col items-center justify-center gap-0.5 text-[#eb7a43] w-12 h-10">
+                                <i data-lucide="home" class="w-4.5 h-4.5"></i>
+                                <span class="text-[8px] font-bold">Shop</span>
+                            </button>
+                            <button onclick="toggleLikedHeader()" class="flex flex-col items-center justify-center gap-0.5 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors w-12 h-10">
+                                <i data-lucide="heart" class="w-4.5 h-4.5"></i>
+                                <span class="text-[8px] font-medium">Favorites</span>
+                            </button>
+                            <button onclick="openMockCart()" class="flex flex-col items-center justify-center gap-0.5 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors w-12 h-10 relative">
+                                <i data-lucide="shopping-bag" class="w-4.5 h-4.5"></i>
+                                <span class="text-[8px] font-medium">Cart</span>
+                                <span id="cart-dot-count" class="absolute top-0.5 right-2 w-3.5 h-3.5 rounded-full bg-[#eb7a43] text-white text-[8px] font-bold flex items-center justify-center border border-white dark:border-zinc-950 hidden">0</span>
+                            </button>
+                            <button class="flex flex-col items-center justify-center gap-0.5 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors w-12 h-10">
+                                <i data-lucide="user" class="w-4.5 h-4.5"></i>
+                                <span class="text-[8px] font-medium">Profile</span>
+                            </button>
+                        </div>
+
+                        <!-- iOS Bottom Product Detail Slide-Up Drawer -->
+                        <div id="product-detail-drawer" class="absolute bottom-0 left-0 right-0 h-[480px] bg-white dark:bg-zinc-900 rounded-t-[32px] shadow-2xl border-t border-zinc-100 dark:border-zinc-800 z-45 transform translate-y-full transition-all duration-300 flex flex-col">
+                            
+                            <!-- iOS Pull Handle -->
+                            <div class="py-3 flex justify-center cursor-pointer" onclick="closeProductDrawer()">
+                                <div class="w-12 h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-full"></div>
+                            </div>
+
+                            <div class="flex-1 overflow-y-auto px-5 pb-6">
+                                <!-- Drawer Image Area with Backdrop circle -->
+                                <div class="relative w-full h-[180px] bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl flex items-center justify-center overflow-hidden mb-4">
+                                    <div class="absolute w-36 h-36 bg-orange-500/10 dark:bg-orange-500/5 rounded-full"></div>
+                                    <img id="drawer-shoe-img" src="" alt="Detailed Shoe" class="w-44 h-auto transform -rotate-15 drop-shadow-[0_15px_20px_rgba(0,0,0,0.25)] select-none">
+                                    <!-- Sale Badge -->
+                                    <span class="absolute top-3 left-3 bg-[#eb7a43] text-white text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-md">SPECIAL OFFER</span>
+                                </div>
+
+                                <div class="flex justify-between items-start mb-2">
+                                    <div>
+                                        <h3 id="drawer-shoe-name" class="text-base font-extrabold text-zinc-900 dark:text-white leading-tight">Nike Jordan</h3>
+                                        <p id="drawer-shoe-category" class="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">Sneakers Collection</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="flex items-center gap-1.5">
+                                            <span id="drawer-shoe-price" class="text-base font-extrabold text-[#eb7a43]">$170</span>
+                                            <span id="drawer-shoe-original" class="text-xs text-zinc-400 line-through font-medium">$220</span>
+                                        </div>
+                                        <p class="text-[10px] text-emerald-500 font-bold">In stock</p>
+                                    </div>
+                                </div>
+
+                                <!-- Rating Row -->
+                                <div class="flex items-center gap-1.5 mb-4">
+                                    <div class="flex text-amber-400">
+                                        <i data-lucide="star" class="w-3 h-3 fill-current"></i>
+                                        <i data-lucide="star" class="w-3 h-3 fill-current"></i>
+                                        <i data-lucide="star" class="w-3 h-3 fill-current"></i>
+                                        <i data-lucide="star" class="w-3 h-3 fill-current"></i>
+                                        <i data-lucide="star" class="w-3 h-3 fill-current"></i>
+                                    </div>
+                                    <span id="drawer-shoe-rating" class="text-xs font-bold text-zinc-800 dark:text-zinc-200">4.9</span>
+                                    <span class="text-[10px] text-zinc-400 font-medium">(145 reviews)</span>
+                                </div>
+
+                                <p class="text-[11px] text-zinc-500 dark:text-zinc-400 leading-relaxed mb-4">
+                                    Engineered for premium performance and signature athletic appeal, featuring the legendary responsive midsole, leather overlays, and multi-surface grip.
+                                </p>
+
+                                <!-- Size Selector -->
+                                <div class="mb-4">
+                                    <div class="flex justify-between mb-2">
+                                        <span class="text-xs font-extrabold text-zinc-800 dark:text-zinc-200">Select Size (US)</span>
+                                        <span class="text-[10px] text-zinc-400 font-bold hover:underline cursor-pointer">Size Guide</span>
+                                    </div>
+                                    <div class="grid grid-cols-5 gap-1.5">
+                                        <button onclick="selectSize(this)" class="size-btn py-2 text-xs font-bold border border-zinc-200 dark:border-zinc-800 rounded-xl hover:border-zinc-400 dark:hover:border-zinc-500 text-zinc-800 dark:text-zinc-200 bg-transparent transition-all">US 8</button>
+                                        <button onclick="selectSize(this)" class="size-btn py-2 text-xs font-bold border border-zinc-200 dark:border-zinc-800 rounded-xl hover:border-zinc-400 dark:hover:border-zinc-500 text-zinc-800 dark:text-zinc-200 bg-transparent transition-all">US 9</button>
+                                        <button onclick="selectSize(this)" class="size-btn py-2 text-xs font-bold bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 border border-zinc-900 dark:border-white rounded-xl transition-all">US 10</button>
+                                        <button onclick="selectSize(this)" class="size-btn py-2 text-xs font-bold border border-zinc-200 dark:border-zinc-800 rounded-xl hover:border-zinc-400 dark:hover:border-zinc-500 text-zinc-800 dark:text-zinc-200 bg-transparent transition-all">US 11</button>
+                                        <button onclick="selectSize(this)" class="size-btn py-2 text-xs font-bold border border-zinc-200 dark:border-zinc-800 rounded-xl hover:border-zinc-400 dark:hover:border-zinc-500 text-zinc-800 dark:text-zinc-200 bg-transparent transition-all">US 12</button>
+                                    </div>
+                                </div>
+
+                                <!-- Actions -->
+                                <div class="flex gap-2.5 pt-2">
+                                    <button onclick="addToCart()" class="flex-1 py-3 text-xs font-extrabold text-white bg-gradient-to-r from-[#eb7a43] to-orange-600 hover:from-orange-500 hover:to-orange-700 rounded-full transition-all flex items-center justify-center gap-2 shadow-md shadow-orange-500/10 active:scale-95">
+                                        <i data-lucide="shopping-cart" class="w-4 h-4"></i> Add to Cart
+                                    </button>
+                                    <button onclick="toggleLikedHeader()" class="px-4 py-3 border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800 rounded-full text-zinc-700 dark:text-zinc-300 transition-all flex items-center justify-center">
+                                        <i data-lucide="heart" class="w-4.5 h-4.5"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div> <!-- End Screen Frame -->
+                </div> <!-- End Device frame -->
+            </div>
+
+            <!-- RIGHT COLUMN: Control Dashboard (lg:col-span-7) -->
+            <div class="lg:col-span-7 flex flex-col gap-6" id="editor-section">
+                
+                <!-- Customizer Panel Card -->
+                <div class="glass-panel rounded-3xl p-6 shadow-2xl relative overflow-hidden">
+                    
+                    <!-- Decorative corner glow -->
+                    <div class="absolute -right-24 -top-24 w-48 h-48 rounded-full bg-[#eb7a43]/10 blur-3xl pointer-events-none"></div>
+
+                    <!-- Sidebar Tabs Nav -->
+                    <div class="flex border-b border-zinc-800/80 mb-6 overflow-x-auto pb-1 gap-1">
+                        <button onclick="switchTab('presets')" id="tab-presets" class="tab-btn px-4 py-2 text-sm font-bold border-b-2 border-[#eb7a43] text-white flex items-center gap-2 transition-all">
+                            <i data-lucide="sliders" class="w-4 h-4 text-[#eb7a43]"></i> Presets
+                        </button>
+                        <button onclick="switchTab('text')" id="tab-text" class="tab-btn px-4 py-2 text-sm font-bold border-b-2 border-transparent text-zinc-400 hover:text-white flex items-center gap-2 transition-all">
+                            <i data-lucide="type" class="w-4 h-4 text-zinc-500"></i> Text & CTA
+                        </button>
+                        <button onclick="switchTab('shoes')" id="tab-shoes" class="tab-btn px-4 py-2 text-sm font-bold border-b-2 border-transparent text-zinc-400 hover:text-white flex items-center gap-2 transition-all">
+                            <i data-lucide="footprints" class="w-4 h-4 text-zinc-500"></i> Shoes Layer
+                        </button>
+                        <button onclick="switchTab('style')" id="tab-style" class="tab-btn px-4 py-2 text-sm font-bold border-b-2 border-transparent text-zinc-400 hover:text-white flex items-center gap-2 transition-all">
+                            <i data-lucide="palette" class="w-4 h-4 text-zinc-500"></i> Colors & BG
+                        </button>
+                        <button onclick="switchTab('export')" id="tab-export" class="tab-btn px-4 py-2 text-sm font-bold border-b-2 border-transparent text-zinc-400 hover:text-white flex items-center gap-2 transition-all">
+                            <i data-lucide="code" class="w-4 h-4 text-zinc-500"></i> Export HTML
+                        </button>
+                    </div>
+
+                    <!-- 1. PRESETS TAB PANEL -->
+                    <div id="panel-presets" class="tab-panel flex flex-col gap-5">
+                        <div>
+                            <h3 class="text-base font-extrabold text-white mb-1">Interactive One-Click Presets</h3>
+                            <p class="text-xs text-zinc-400">Apply masterly curated styles designed to showcase specific color stories, background vectors, and sneaker geometries.</p>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Preset Card 1 -->
+                            <div onclick="applyPreset('sneaksy-original')" class="group relative p-4 rounded-2xl bg-zinc-900/60 hover:bg-zinc-900/100 border border-zinc-800 hover:border-[#eb7a43]/50 cursor-pointer transition-all duration-200">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-12 h-12 bg-[#1c1c1c] rounded-xl flex items-center justify-center border border-zinc-800 group-hover:scale-105 transition-transform overflow-hidden relative">
+                                        <div class="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.4)_1px,transparent_1px)] bg-[size:10px_10px]"></div>
+                                        <img src="https://image.goat.com/attachments/product_template_pictures/images/011/119/994/original/218099_00.png.png" class="w-9 h-auto transform -rotate-15">
+                                    </div>
+                                    <div>
+                                        <h4 class="text-xs font-bold text-white group-hover:text-[#eb7a43]">Original Sneaksy</h4>
+                                        <p class="text-[10px] text-zinc-500 font-medium">Dual Charcoal Jordan 1 Shadows, concentric circles, orange CTA</p>
+                                    </div>
+                                </div>
+                                <span class="absolute right-3 top-3 px-1.5 py-0.5 text-[8px] font-bold text-[#eb7a43] bg-[#eb7a43]/10 rounded border border-[#eb7a43]/20">IMAGE MATCH</span>
+                            </div>
+
+                            <!-- Preset Card 2 -->
+                            <div onclick="applyPreset('neon-cyberpunk')" class="group p-4 rounded-2xl bg-zinc-900/60 hover:bg-zinc-900/100 border border-zinc-800 hover:border-fuchsia-500/50 cursor-pointer transition-all duration-200">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-12 h-12 bg-gradient-to-br from-indigo-950 to-slate-950 rounded-xl flex items-center justify-center border border-zinc-800 group-hover:scale-105 transition-transform overflow-hidden relative">
+                                        <img src="https://image.goat.com/attachments/product_template_pictures/images/018/675/311/original/464372_00.png.png" class="w-9 h-auto transform -rotate-25">
+                                    </div>
+                                    <div>
+                                        <h4 class="text-xs font-bold text-white group-hover:text-fuchsia-400">Cyberpunk Tech</h4>
+                                        <p class="text-[10px] text-zinc-500 font-medium">Dark purple & neon, Jordan 6 Infrared, tech grid, fuchsia accents</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Preset Card 3 -->
+                            <div onclick="applyPreset('golden-luxury')" class="group p-4 rounded-2xl bg-zinc-900/60 hover:bg-zinc-900/100 border border-zinc-800 hover:border-amber-500/50 cursor-pointer transition-all duration-200">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-12 h-12 bg-gradient-to-br from-amber-950 to-stone-950 rounded-xl flex items-center justify-center border border-zinc-800 group-hover:scale-105 transition-transform overflow-hidden relative">
+                                        <img src="https://image.goat.com/attachments/product_template_pictures/images/021/042/384/original/500924_00.png.png" class="w-9 h-auto transform -rotate-12">
+                                    </div>
+                                    <div>
+                                        <h4 class="text-xs font-bold text-white group-hover:text-amber-400">Golden Luxury</h4>
+                                        <p class="text-[10px] text-zinc-500 font-medium">Prestige black Jordan 12 Reptile, luxurious wave curves, gold fonts</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Preset Card 4 -->
+                            <div onclick="applyPreset('vibrant-gym-red')" class="group p-4 rounded-2xl bg-zinc-900/60 hover:bg-zinc-900/100 border border-zinc-800 hover:border-red-500/50 cursor-pointer transition-all duration-200">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-12 h-12 bg-gradient-to-br from-red-800 to-stone-950 rounded-xl flex items-center justify-center border border-zinc-800 group-hover:scale-105 transition-transform overflow-hidden relative">
+                                        <img src="https://image.goat.com/attachments/product_template_pictures/images/020/806/444/original/507844_00.png.png" class="w-9 h-auto transform -rotate-15">
+                                    </div>
+                                    <div>
+                                        <h4 class="text-xs font-bold text-white group-hover:text-red-400">Gym Red Sport</h4>
+                                        <p class="text-[10px] text-zinc-500 font-medium">Fiery red athletic look, Jordan 1 Gym Red, slash stripes, bold white</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Preset Card 5 -->
+                            <div onclick="applyPreset('hyper-ice')" class="group p-4 rounded-2xl bg-zinc-900/60 hover:bg-zinc-900/100 border border-zinc-800 hover:border-sky-500/50 cursor-pointer transition-all duration-200">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-12 h-12 bg-gradient-to-br from-sky-950 to-zinc-900 rounded-xl flex items-center justify-center border border-zinc-800 group-hover:scale-105 transition-transform overflow-hidden relative">
+                                        <img src="https://image.goat.com/attachments/product_template_pictures/images/010/634/133/original/303217_00.png.png" class="w-9 h-auto transform -rotate-30">
+                                    </div>
+                                    <div>
+                                        <h4 class="text-xs font-bold text-white group-hover:text-sky-400">Hyper Ice Velocity</h4>
+                                        <p class="text-[10px] text-zinc-500 font-medium">Cyan gradient, Air Max 270 White, sport dot pattern, bright sky accents</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Preset Card 6 -->
+                            <div onclick="applyPreset('obsidian-minimal')" class="group p-4 rounded-2xl bg-zinc-900/60 hover:bg-zinc-900/100 border border-zinc-800 hover:border-zinc-400/50 cursor-pointer transition-all duration-200">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-12 h-12 bg-zinc-950 rounded-xl flex items-center justify-center border border-zinc-800 group-hover:scale-105 transition-transform overflow-hidden relative">
+                                        <img src="https://image.goat.com/attachments/product_template_pictures/images/011/119/994/original/218099_00.png.png" class="w-9 h-auto transform -rotate-15 filter grayscale">
+                                    </div>
+                                    <div>
+                                        <h4 class="text-xs font-bold text-white group-hover:text-zinc-300">Obsidian Minimal</h4>
+                                        <p class="text-[10px] text-zinc-500 font-medium">Flat stark carbon `#000000`, single Jordan Shadow, clean empty style</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. TEXT & CTA TAB PANEL -->
+                    <div id="panel-text" class="tab-panel hidden flex flex-col gap-4">
+                        <div>
+                            <h3 class="text-base font-extrabold text-white mb-1">Banner Typography Customizer</h3>
+                            <p class="text-xs text-zinc-400">Edit the text fields, sizes, and colors inside the live banner dynamically.</p>
+                        </div>
+
+                        <!-- Grid -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            
+                            <!-- Subtitle Settings -->
+                            <div class="flex flex-col gap-1.5">
+                                <label class="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Sub-Title Text</label>
+                                <input type="text" id="input-subtitle" oninput="updateBannerContent()" class="w-full bg-zinc-950 border border-zinc-800 hover:border-zinc-700 focus:border-[#eb7a43] focus:outline-none rounded-xl px-3.5 py-2.5 text-xs text-white">
+                            </div>
+
+                            <!-- Main Title Settings -->
+                            <div class="flex flex-col gap-1.5">
+                                <label class="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Main Title Text</label>
+                                <input type="text" id="input-title" oninput="updateBannerContent()" class="w-full bg-zinc-950 border border-zinc-800 hover:border-zinc-700 focus:border-[#eb7a43] focus:outline-none rounded-xl px-3.5 py-2.5 text-xs text-white">
+                            </div>
+
+                            <!-- Call-To-Action Link Settings -->
+                            <div class="flex flex-col gap-1.5">
+                                <label class="text-[11px] font-bold uppercase tracking-wider text-zinc-400">CTA Text</label>
+                                <input type="text" id="input-ctatext" oninput="updateBannerContent()" class="w-full bg-zinc-950 border border-zinc-800 hover:border-zinc-700 focus:border-[#eb7a43] focus:outline-none rounded-xl px-3.5 py-2.5 text-xs text-white">
+                            </div>
+
+                            <!-- Title Font Weight -->
+                            <div class="flex flex-col gap-1.5">
+                                <label class="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Title Weight</label>
+                                <select id="input-weight" onchange="updateBannerContent()" class="w-full bg-zinc-950 border border-zinc-800 hover:border-zinc-700 focus:border-[#eb7a43] focus:outline-none rounded-xl px-3.5 py-2.5 text-xs text-white">
+                                    <option value="font-normal">Normal (400)</option>
+                                    <option value="font-semibold">Semi Bold (600)</option>
+                                    <option value="font-bold">Bold (700)</option>
+                                    <option value="font-extrabold" selected>Extra Bold (800)</option>
+                                    <option value="font-black">Black (900)</option>
+                                </select>
+                            </div>
+
+                            <!-- Text Color Pickers -->
+                            <div class="flex flex-col gap-1.5">
+                                <label class="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Title Color</label>
+                                <div class="flex gap-2">
+                                    <input type="color" id="color-title" oninput="updateBannerContent()" class="w-9 h-9 border border-zinc-800 rounded-lg cursor-pointer bg-transparent">
+                                    <input type="text" id="hex-title" oninput="updateColorFromHex('title', this.value)" class="flex-1 bg-zinc-950 border border-zinc-800 hover:border-zinc-700 rounded-xl px-3 text-xs font-mono text-white">
+                                </div>
+                            </div>
+
+                            <div class="flex flex-col gap-1.5">
+                                <label class="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Subtitle Color</label>
+                                <div class="flex gap-2">
+                                    <input type="color" id="color-subtitle" oninput="updateBannerContent()" class="w-9 h-9 border border-zinc-800 rounded-lg cursor-pointer bg-transparent">
+                                    <input type="text" id="hex-subtitle" oninput="updateColorFromHex('subtitle', this.value)" class="flex-1 bg-zinc-950 border border-zinc-800 hover:border-zinc-700 rounded-xl px-3 text-xs font-mono text-white">
+                                </div>
+                            </div>
+
+                            <div class="flex flex-col gap-1.5 md:col-span-2">
+                                <label class="text-[11px] font-bold uppercase tracking-wider text-zinc-400">CTA Arrow Color</label>
+                                <div class="flex gap-2">
+                                    <input type="color" id="color-cta" oninput="updateBannerContent()" class="w-9 h-9 border border-zinc-800 rounded-lg cursor-pointer bg-transparent">
+                                    <input type="text" id="hex-cta" oninput="updateColorFromHex('cta', this.value)" class="flex-1 bg-zinc-950 border border-zinc-800 hover:border-zinc-700 rounded-xl px-3 text-xs font-mono text-white">
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- 3. SHOES LAYER TAB PANEL -->
+                    <div id="panel-shoes" class="tab-panel hidden flex flex-col gap-5">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <h3 class="text-base font-extrabold text-white mb-1">Dual-Shoe Layer Layout</h3>
+                                <p class="text-xs text-zinc-400">Adjust the dimensions, rotations, and layered overlap to match the exact 3D depth of the image.</p>
+                            </div>
+                            <!-- Global Depth Overflow toggle -->
+                            <div class="flex items-center gap-2 bg-zinc-950 border border-zinc-800 px-3.5 py-1.5 rounded-full">
+                                <span class="text-[10px] font-bold uppercase text-zinc-400">3D Overflow</span>
+                                <input type="checkbox" id="toggle-overflow" onchange="toggleOverflow(this.checked)" class="w-4 h-4 text-[#eb7a43] accent-[#eb7a43] cursor-pointer">
+                            </div>
+                        </div>
+
+                        <!-- Selector for Active Slide (Since we support 3 customized slides!) -->
+                        <div class="bg-zinc-950/80 p-3 rounded-2xl border border-zinc-800 flex items-center justify-between">
+                            <span class="text-xs font-bold text-zinc-400">Configure layout for:</span>
+                            <div class="flex gap-1.5">
+                                <button onclick="switchSlide(0)" class="slide-badge px-3 py-1 text-[10px] font-bold rounded-lg transition-all" id="badge-slide-0">Slide 1</button>
+                                <button onclick="switchSlide(1)" class="slide-badge px-3 py-1 text-[10px] font-bold rounded-lg transition-all" id="badge-slide-1">Slide 2</button>
+                                <button onclick="switchSlide(2)" class="slide-badge px-3 py-1 text-[10px] font-bold rounded-lg transition-all" id="badge-slide-2">Slide 3</button>
+                            </div>
+                        </div>
+
+                        <!-- Toggle Show/Hide Shoe 2 -->
+                        <div class="flex items-center justify-between p-3 rounded-xl bg-zinc-900 border border-zinc-800">
+                            <div>
+                                <h4 class="text-xs font-bold text-white">Secondary Shoe Layer (Bottom-Left overlap)</h4>
+                                <p class="text-[10px] text-zinc-500 font-medium">Show or hide the secondary shoe in the foreground stack</p>
+                            </div>
+                            <input type="checkbox" id="toggle-shoe2" onchange="toggleShoe2Layer(this.checked)" class="w-4.5 h-4.5 text-[#eb7a43] accent-[#eb7a43] cursor-pointer">
+                        </div>
+
+                        <!-- Custom Shoe Image Input -->
+                        <div class="bg-zinc-900/60 p-4 border border-zinc-800 rounded-2xl flex flex-col gap-3">
+                            <div>
+                                <h4 class="text-xs font-bold text-white">Select Shoe Models</h4>
+                                <p class="text-[10px] text-zinc-500">Pick premium transparent sneakers or enter a custom link.</p>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-2">
+                                <div class="flex flex-col gap-1">
+                                    <span class="text-[9px] font-bold text-zinc-400 uppercase tracking-widest">Shoe 1 Model (Back)</span>
+                                    <select id="select-shoe1" onchange="changeShoeImg(1, this.value)" class="bg-zinc-950 text-xs px-2.5 py-2 border border-zinc-800 focus:border-[#eb7a43] focus:outline-none rounded-xl text-white">
+                                        <option value="https://image.goat.com/attachments/product_template_pictures/images/011/119/994/original/218099_00.png.png" selected>Air Jordan 1 Shadow (Grey/Black)</option>
+                                        <option value="https://image.goat.com/attachments/product_template_pictures/images/008/870/353/original/235806_00.png.png">Air Jordan 11 Red (Win Like '96)</option>
+                                        <option value="https://image.goat.com/attachments/product_template_pictures/images/018/675/311/original/464372_00.png.png">Air Jordan 6 Infrared (Black/Orange)</option>
+                                        <option value="https://image.goat.com/attachments/product_template_pictures/images/021/042/384/original/500924_00.png.png">Wmns Air Jordan 12 Reptile (Black)</option>
+                                        <option value="https://image.goat.com/attachments/product_template_pictures/images/010/634/133/original/303217_00.png.png">Air Max 270 White (Orange Heel)</option>
+                                        <option value="https://image.goat.com/attachments/product_template_pictures/images/020/806/444/original/507844_00.png.png">Air Jordan 1 Gym Red (Red/Black)</option>
+                                        <option value="https://image.goat.com/attachments/product_template_pictures/images/008/654/900/original/52015_00.png.png">Air Jordan 11 Space Jam (Black)</option>
+                                        <option value="custom">Custom URL...</option>
+                                    </select>
+                                    <input type="text" id="custom-shoe1-url" placeholder="https://..." class="hidden bg-zinc-950 text-[10px] px-2 py-1.5 border border-zinc-800 rounded-lg text-white mt-1" oninput="changeShoeImg(1, this.value)">
+                                </div>
+
+                                <div class="flex flex-col gap-1">
+                                    <span class="text-[9px] font-bold text-zinc-400 uppercase tracking-widest">Shoe 2 Model (Front)</span>
+                                    <select id="select-shoe2" onchange="changeShoeImg(2, this.value)" class="bg-zinc-950 text-xs px-2.5 py-2 border border-zinc-800 focus:border-[#eb7a43] focus:outline-none rounded-xl text-white">
+                                        <option value="https://image.goat.com/attachments/product_template_pictures/images/011/119/994/original/218099_00.png.png" selected>Air Jordan 1 Shadow (Grey/Black)</option>
+                                        <option value="https://image.goat.com/attachments/product_template_pictures/images/008/870/353/original/235806_00.png.png">Air Jordan 11 Red (Win Like '96)</option>
+                                        <option value="https://image.goat.com/attachments/product_template_pictures/images/018/675/311/original/464372_00.png.png">Air Jordan 6 Infrared (Black/Orange)</option>
+                                        <option value="https://image.goat.com/attachments/product_template_pictures/images/021/042/384/original/500924_00.png.png">Wmns Air Jordan 12 Reptile (Black)</option>
+                                        <option value="https://image.goat.com/attachments/product_template_pictures/images/010/634/133/original/303217_00.png.png">Air Max 270 White (Orange Heel)</option>
+                                        <option value="https://image.goat.com/attachments/product_template_pictures/images/020/806/444/original/507844_00.png.png">Air Jordan 1 Gym Red (Red/Black)</option>
+                                        <option value="https://image.goat.com/attachments/product_template_pictures/images/008/654/900/original/52015_00.png.png">Air Jordan 11 Space Jam (Black)</option>
+                                        <option value="custom">Custom URL...</option>
+                                    </select>
+                                    <input type="text" id="custom-shoe2-url" placeholder="https://..." class="hidden bg-zinc-950 text-[10px] px-2 py-1.5 border border-zinc-800 rounded-lg text-white mt-1" oninput="changeShoeImg(2, this.value)">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Range Controls Grid -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2">
+                            
+                            <!-- SHOE 1 ADJUSTERS -->
+                            <div class="flex flex-col gap-4 bg-zinc-950/40 p-4 border border-zinc-800/65 rounded-2xl relative">
+                                <span class="absolute top-3 right-3 text-[9px] font-extrabold px-2 py-0.5 bg-zinc-800 text-zinc-400 rounded">SHOE 1 (BACK)</span>
+                                <h4 class="text-xs font-bold text-white mb-2">Background Shoe Transform</h4>
+                                
+                                <!-- Slider: Rotation -->
+                                <div class="flex flex-col gap-1">
+                                    <div class="flex justify-between text-[11px] font-bold">
+                                        <span class="text-zinc-400">Rotation</span>
+                                        <span class="text-zinc-200" id="val-shoe1-rot">-42°</span>
+                                    </div>
+                                    <input type="range" id="range-shoe1-rot" min="-180" max="180" value="-42" oninput="updateShoeTransform(1)" class="w-full h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-[#eb7a43]">
+                                </div>
+
+                                <!-- Slider: Scale -->
+                                <div class="flex flex-col gap-1">
+                                    <div class="flex justify-between text-[11px] font-bold">
+                                        <span class="text-zinc-400">Scale</span>
+                                        <span class="text-zinc-200" id="val-shoe1-scale">1.05x</span>
+                                    </div>
+                                    <input type="range" id="range-shoe1-scale" min="50" max="200" value="105" oninput="updateShoeTransform(1)" class="w-full h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-[#eb7a43]">
+                                </div>
+
+                                <!-- Slider: Horizontal X -->
+                                <div class="flex flex-col gap-1">
+                                    <div class="flex justify-between text-[11px] font-bold">
+                                        <span class="text-zinc-400">Horizontal (Left)</span>
+                                        <span class="text-zinc-200" id="val-shoe1-x">78%</span>
+                                    </div>
+                                    <input type="range" id="range-shoe1-x" min="0" max="100" value="78" oninput="updateShoeTransform(1)" class="w-full h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-[#eb7a43]">
+                                </div>
+
+                                <!-- Slider: Vertical Y -->
+                                <div class="flex flex-col gap-1">
+                                    <div class="flex justify-between text-[11px] font-bold">
+                                        <span class="text-zinc-400">Vertical (Top)</span>
+                                        <span class="text-zinc-200" id="val-shoe1-y">32%</span>
+                                    </div>
+                                    <input type="range" id="range-shoe1-y" min="0" max="100" value="32" oninput="updateShoeTransform(1)" class="w-full h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-[#eb7a43]">
+                                </div>
+                            </div>
+
+                            <!-- SHOE 2 ADJUSTERS -->
+                            <div class="flex flex-col gap-4 bg-zinc-950/40 p-4 border border-zinc-800/65 rounded-2xl relative" id="shoe2-adjusters-container">
+                                <span class="absolute top-3 right-3 text-[9px] font-extrabold px-2 py-0.5 bg-zinc-800 text-zinc-400 rounded">SHOE 2 (FRONT)</span>
+                                <h4 class="text-xs font-bold text-white mb-2">Foreground Shoe Transform</h4>
+                                
+                                <!-- Slider: Rotation -->
+                                <div class="flex flex-col gap-1">
+                                    <div class="flex justify-between text-[11px] font-bold">
+                                        <span class="text-zinc-400">Rotation</span>
+                                        <span class="text-zinc-200" id="val-shoe2-rot">-32°</span>
+                                    </div>
+                                    <input type="range" id="range-shoe2-rot" min="-180" max="180" value="-32" oninput="updateShoeTransform(2)" class="w-full h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-[#eb7a43]">
+                                </div>
+
+                                <!-- Slider: Scale -->
+                                <div class="flex flex-col gap-1">
+                                    <div class="flex justify-between text-[11px] font-bold">
+                                        <span class="text-zinc-400">Scale</span>
+                                        <span class="text-zinc-200" id="val-shoe2-scale">1.25x</span>
+                                    </div>
+                                    <input type="range" id="range-shoe2-scale" min="50" max="200" value="125" oninput="updateShoeTransform(2)" class="w-full h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-[#eb7a43]">
+                                </div>
+
+                                <!-- Slider: Horizontal X -->
+                                <div class="flex flex-col gap-1">
+                                    <div class="flex justify-between text-[11px] font-bold">
+                                        <span class="text-zinc-400">Horizontal (Left)</span>
+                                        <span class="text-zinc-200" id="val-shoe2-x">62%</span>
+                                    </div>
+                                    <input type="range" id="range-shoe2-x" min="0" max="100" value="62" oninput="updateShoeTransform(2)" class="w-full h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-[#eb7a43]">
+                                </div>
+
+                                <!-- Slider: Vertical Y -->
+                                <div class="flex flex-col gap-1">
+                                    <div class="flex justify-between text-[11px] font-bold">
+                                        <span class="text-zinc-400">Vertical (Top)</span>
+                                        <span class="text-zinc-200" id="val-shoe2-y">68%</span>
+                                    </div>
+                                    <input type="range" id="range-shoe2-y" min="0" max="100" value="68" oninput="updateShoeTransform(2)" class="w-full h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-[#eb7a43]">
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- 4. COLORS & BACKGROUND TAB PANEL -->
+                    <div id="panel-style" class="tab-panel hidden flex flex-col gap-4">
+                        <div>
+                            <h3 class="text-base font-extrabold text-white mb-1">Canvas Styling & Vectors</h3>
+                            <p class="text-xs text-zinc-400">Apply deep gradient shifts, solid finishes, and geometric vector lines to represent custom aesthetic brand languages.</p>
+                        </div>
+
+                        <!-- Grid -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            
+                            <!-- BG Styling Selection -->
+                            <div class="flex flex-col gap-1.5">
+                                <label class="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Background Styling Mode</label>
+                                <select id="select-bgtype" onchange="updateBackgroundSettings()" class="w-full bg-zinc-950 border border-zinc-800 hover:border-zinc-700 focus:border-[#eb7a43] focus:outline-none rounded-xl px-3.5 py-2.5 text-xs text-white">
+                                    <option value="gradient" selected>Linear Gradient (Two-Tone)</option>
+                                    <option value="radial">Radial Gradient (Centered Spotlight)</option>
+                                    <option value="solid">Solid Base Color</option>
+                                </select>
+                            </div>
+
+                            <!-- BG Pattern Select -->
+                            <div class="flex flex-col gap-1.5">
+                                <label class="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Vector Background Pattern</label>
+                                <select id="select-pattern" onchange="updateBackgroundSettings()" class="w-full bg-zinc-950 border border-zinc-800 hover:border-zinc-700 focus:border-[#eb7a43] focus:outline-none rounded-xl px-3.5 py-2.5 text-xs text-white">
+                                    <option value="circles" selected>Concentric Circles (Original)</option>
+                                    <option value="waves">Abstract Waves Curve</option>
+                                    <option value="grid">Athletic Tech Grid</option>
+                                    <option value="stripes">Fast Diagonal Stripes</option>
+                                    <option value="dots">Modern Dotted Grid</option>
+                                    <option value="none">Empty (Minimalist Solid)</option>
+                                </select>
+                            </div>
+
+                            <!-- Primary BG Color -->
+                            <div class="flex flex-col gap-1.5" id="container-color-start">
+                                <label class="text-[11px] font-bold uppercase tracking-wider text-zinc-400" id="label-color-start">Gradient Start Color</label>
+                                <div class="flex gap-2">
+                                    <input type="color" id="color-start" oninput="updateBackgroundSettings()" class="w-9 h-9 border border-zinc-800 rounded-lg cursor-pointer bg-transparent">
+                                    <input type="text" id="hex-start" oninput="updateBgColorFromHex('start', this.value)" class="flex-1 bg-zinc-950 border border-zinc-800 hover:border-zinc-700 rounded-xl px-3 text-xs font-mono text-white">
+                                </div>
+                            </div>
+
+                            <!-- Secondary BG Color -->
+                            <div class="flex flex-col gap-1.5" id="container-color-end">
+                                <label class="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Gradient End Color</label>
+                                <div class="flex gap-2">
+                                    <input type="color" id="color-end" oninput="updateBackgroundSettings()" class="w-9 h-9 border border-zinc-800 rounded-lg cursor-pointer bg-transparent">
+                                    <input type="text" id="hex-end" oninput="updateBgColorFromHex('end', this.value)" class="flex-1 bg-zinc-950 border border-zinc-800 hover:border-zinc-700 rounded-xl px-3 text-xs font-mono text-white">
+                                </div>
+                            </div>
+
+                            <!-- Pattern Color -->
+                            <div class="flex flex-col gap-1.5">
+                                <label class="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Vector Line Color</label>
+                                <div class="flex gap-2">
+                                    <input type="color" id="color-pattern" oninput="updateBackgroundSettings()" class="w-9 h-9 border border-zinc-800 rounded-lg cursor-pointer bg-transparent">
+                                    <input type="text" id="hex-pattern" oninput="updateBgColorFromHex('pattern', this.value)" class="flex-1 bg-zinc-950 border border-zinc-800 hover:border-zinc-700 rounded-xl px-3 text-xs font-mono text-white">
+                                </div>
+                            </div>
+
+                            <!-- Pattern Opacity -->
+                            <div class="flex flex-col gap-1.5 justify-center">
+                                <div class="flex justify-between text-[11px] font-bold mb-1">
+                                    <span class="text-zinc-400">Vector Pattern Opacity</span>
+                                    <span class="text-zinc-200" id="val-pattern-opacity">15%</span>
+                                </div>
+                                <input type="range" id="range-pattern-opacity" min="0" max="100" value="15" oninput="updateBackgroundSettings()" class="w-full h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-[#eb7a43]">
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- 5. EXPORT TAB PANEL -->
+                    <div id="panel-export" class="tab-panel hidden flex flex-col gap-5">
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+                            <div>
+                                <h3 class="text-base font-extrabold text-white mb-1">Export Clean Production Code</h3>
+                                <p class="text-xs text-zinc-400">Copy optimized code with responsive layout geometries for immediate deployment.</p>
+                            </div>
+                            
+                            <div class="flex gap-2 shrink-0">
+                                <button onclick="copyGeneratedCode()" class="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold bg-[#eb7a43] hover:bg-orange-600 active:scale-95 text-white rounded-xl transition-all shadow-md shadow-orange-500/10">
+                                    <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copy Code
+                                </button>
+                                <button onclick="downloadBannerImage()" class="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold bg-zinc-800 hover:bg-zinc-700 active:scale-95 text-zinc-200 border border-zinc-700 rounded-xl transition-all">
+                                    <i data-lucide="download" class="w-3.5 h-3.5"></i> Download PNG
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Source Toggle -->
+                        <div class="flex gap-2 p-1 bg-zinc-950 rounded-xl border border-zinc-800 w-fit self-start">
+                            <button onclick="switchCodeType('tailwind')" id="code-btn-tailwind" class="px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all bg-zinc-800 text-white">Tailwind CSS Code</button>
+                            <button onclick="switchCodeType('raw')" id="code-btn-raw" class="px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all text-zinc-400 hover:text-white">Inline Style CSS Code</button>
+                        </div>
+
+                        <!-- Code Display Wrapper -->
+                        <div class="relative group">
+                            <!-- Code block scroll window -->
+                            <pre class="bg-zinc-950 p-4 rounded-2xl border border-zinc-800 text-[11px] text-zinc-300 font-mono overflow-x-auto max-h-[300px] leading-relaxed" id="code-output-block"></pre>
+                            
+                            <!-- Floater Indicator -->
+                            <div class="absolute right-4 top-4 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                <span class="bg-zinc-800/80 text-[9px] font-bold text-zinc-400 px-2 py-1 rounded-md uppercase border border-zinc-700">Responsive Architecture</span>
+                            </div>
+                        </div>
+
+                        <div class="p-4 bg-[#eb7a43]/5 border border-[#eb7a43]/15 rounded-2xl">
+                            <h4 class="text-xs font-extrabold text-[#eb7a43] mb-1 flex items-center gap-1.5">
+                                <i data-lucide="info" class="w-4 h-4"></i> Architecture Specs
+                            </h4>
+                            <p class="text-[10px] text-zinc-400 leading-relaxed">
+                                The generated component is self-contained. The shoes are absolutely structured using <span class="text-zinc-200 font-semibold font-mono">left</span> and <span class="text-zinc-200 font-semibold font-mono">top</span> percentage indices inside a responsive aspect ratio parent. Toggling <span class="text-zinc-200 font-semibold">3D Overflow</span> enables layout spills utilizing absolute coordinate overrides and <span class="text-zinc-200 font-semibold font-mono">overflow-visible</span> wraps.
+                            </p>
+                        </div>
+                    </div>
+
+                </div> <!-- End Editor Panel Card -->
+            </div> <!-- End Right Column -->
+
+        </div> <!-- End Grid Layout -->
+
+        <!-- Bottom Informational Reference Block -->
+        <section class="mt-16 bg-zinc-900/40 border border-zinc-800/80 rounded-3xl p-6 lg:p-8 max-w-7xl mx-auto">
+            <h3 class="text-lg lg:text-xl font-extrabold text-white mb-3">Recreation Highlights & Details</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs text-zinc-400 leading-relaxed">
+                <div class="flex flex-col gap-2">
+                    <span class="text-sm font-bold text-white flex items-center gap-2">
+                        <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i> Double-Shoe Overlap
+                    </span>
+                    <p>In the original reference image, the banner contains two gray high-top sneakers, rotated at -42 and -32 degrees. Our recreation models these with absolute precision, letting you adjust their translation vectors in real-time, matching the shadows and depth overlap perfectly.</p>
+                </div>
+                <div class="flex flex-col gap-2">
+                    <span class="text-sm font-bold text-white flex items-center gap-2">
+                        <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i> 3D Bound Overflow
+                    </span>
+                    <p>The shoe on the foreground of the reference design spills out of the bottom border. By toggling 3D Overflow, we render the banner's outer clip layer visible, projecting the sneaker's leather outline beyond the boundaries with drop shadows.</p>
+                </div>
+                <div class="flex flex-col gap-2">
+                    <span class="text-sm font-bold text-white flex items-center gap-2">
+                        <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i> Vector Circle Grid
+                    </span>
+                    <p>The dark charcoal background pattern is reproduced in high fidelity using responsive inline SVG rings. Adjust lines stroke weight, color, and opacity from the Styles tab, or choose from 5 sports vector presets (Waves, Stripes, Grid, Dots, Concentric Rings).</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-zinc-900 bg-zinc-950 py-8 px-6 text-center mt-20">
+        <p class="text-xs text-zinc-600">&copy; 2026 Sneaksy Studio. All brand assets, sneaker silhouettes, and product designs remain intellectual properties of Nike & Air Jordan. Engineered for educational recreate purposes only.</p>
+    </footer>
+
+    <!-- Interactive JS Core Logic -->
+    <script>
+        // State management
+        const state = {
+            activeSlide: 0,
+            activeTab: 'presets',
+            codeType: 'tailwind',
+            isPhoneDark: false,
+            isPhoneGlare: true,
+            isToastVisible: false,
+            liked: false,
+            selectedCollection: 'Sneakers',
+            cartCount: 0,
+            slides: [
+                {
+                    subTitle: "Flash Sale",
+                    title: "Up to 50% Off",
+                    ctaText: "Shop Now",
+                    bgType: "solid",
+                    bgColorStart: "#1b1c1e",
+                    bgColorEnd: "#232427",
+                    textColor: "#ffffff",
+                    subColor: "#ffffff",
+                    ctaColor: "#eb7a43",
+                    patternType: "circles",
+                    patternColor: "#ffffff",
+                    patternOpacity: "0.15",
+                    shoe1Img: "https://image.goat.com/attachments/product_template_pictures/images/011/119/994/original/218099_00.png.png", // Jordan 1 Shadow
+                    shoe1Rot: -42,
+                    shoe1Scale: 1.1,
+                    shoe1X: 78,
+                    shoe1Y: 32,
+                    shoe1Z: 10,
+                    shoe2Img: "https://image.goat.com/attachments/product_template_pictures/images/011/119/994/original/218099_00.png.png", // Jordan 1 Shadow
+                    shoe2Rot: -32,
+                    shoe2Scale: 1.25,
+                    shoe2X: 62,
+                    shoe2Y: 68,
+                    shoe2Z: 20,
+                    overflow: true,
+                    showShoe2: true
+                },
+                {
+                    subTitle: "Special Release",
+                    title: "Win Like '96 Jordan",
+                    ctaText: "Explore Collection",
+                    bgType: "gradient",
+                    bgColorStart: "#3b0764",
+                    bgColorEnd: "#0f172a",
+                    textColor: "#ffffff",
+                    subColor: "#f5f3ff",
+                    ctaColor: "#f43f5e",
+                    patternType: "stripes",
+                    patternColor: "#f43f5e",
+                    patternOpacity: "0.20",
+                    shoe1Img: "https://image.goat.com/attachments/product_template_pictures/images/008/870/353/original/235806_00.png.png", // Jordan 11 Red
+                    shoe1Rot: -25,
+                    shoe1Scale: 1.2,
+                    shoe1X: 76,
+                    shoe1Y: 30,
+                    shoe1Z: 10,
+                    shoe2Img: "https://image.goat.com/attachments/product_template_pictures/images/008/870/353/original/235806_00.png.png",
+                    shoe2Rot: -15,
+                    shoe2Scale: 0.95,
+                    shoe2X: 50,
+                    shoe2Y: 60,
+                    shoe2Z: 5,
+                    overflow: true,
+                    showShoe2: false
+                },
+                {
+                    subTitle: "Retro Classics",
+                    title: "Air Jordan 6 Retro",
+                    ctaText: "Cop Now",
+                    bgType: "radial",
+                    bgColorStart: "#18181b",
+                    bgColorEnd: "#09090b",
+                    textColor: "#ffffff",
+                    subColor: "#a1a1aa",
+                    ctaColor: "#10b981",
+                    patternType: "grid",
+                    patternColor: "#10b981",
+                    patternOpacity: "0.10",
+                    shoe1Img: "https://image.goat.com/attachments/product_template_pictures/images/018/675/311/original/464372_00.png.png", // Jordan 6 Infrared
+                    shoe1Rot: -35,
+                    shoe1Scale: 1.15,
+                    shoe1X: 75,
+                    shoe1Y: 35,
+                    shoe1Z: 10,
+                    shoe2Img: "https://image.goat.com/attachments/product_template_pictures/images/018/675/311/original/464372_00.png.png",
+                    shoe2Rot: -20,
+                    shoe2Scale: 1.25,
+                    shoe2X: 58,
+                    shoe2Y: 70,
+                    shoe2Z: 20,
+                    overflow: true,
+                    showShoe2: true
+                }
+            ],
+            products: [
+                {
+                    id: 'prod-1',
+                    name: "Air Jordan 1 Retro High 'Shadow'",
+                    category: "Sneakers",
+                    price: 170,
+                    originalPrice: 220,
+                    rating: "4.9",
+                    image: "https://image.goat.com/attachments/product_template_pictures/images/011/119/994/original/218099_00.png.png",
+                    liked: false
+                },
+                {
+                    id: 'prod-2',
+                    name: "Air Jordan 11 Retro 'Win Like '96'",
+                    category: "Sneakers",
+                    price: 190,
+                    originalPrice: 220,
+                    rating: "4.8",
+                    image: "https://image.goat.com/attachments/product_template_pictures/images/008/870/353/original/235806_00.png.png",
+                    liked: false
+                },
+                {
+                    id: 'prod-3',
+                    name: "Wmns Air Jordan 12 'Reptile'",
+                    category: "Sneakers",
+                    price: 210,
+                    originalPrice: 240,
+                    rating: "4.7",
+                    image: "https://image.goat.com/attachments/product_template_pictures/images/021/042/384/original/500924_00.png.png",
+                    liked: false
+                },
+                {
+                    id: 'prod-4',
+                    name: "Air Max 270 'White Orange'",
+                    category: "Running",
+                    price: 150,
+                    originalPrice: 180,
+                    rating: "4.9",
+                    image: "https://image.goat.com/attachments/product_template_pictures/images/010/634/133/original/303217_00.png.png",
+                    liked: false
+                },
+                {
+                    id: 'prod-5',
+                    name: "Oxford Leather Wingtip Brogue",
+                    category: "Oxford",
+                    price: 135,
+                    originalPrice: 175,
+                    rating: "4.6",
+                    image: "https://images.unsplash.com/photo-1539185441755-769473a23570?auto=compress&cs=tinysrgb&w=350",
+                    liked: false
+                },
+                {
+                    id: 'prod-6',
+                    name: "Chelsea Premium Suede Boot",
+                    category: "Chelsea",
+                    price: 155,
+                    originalPrice: 210,
+                    rating: "4.8",
+                    image: "https://images.unsplash.com/photo-1549298916-b41d501d3772?auto=compress&cs=tinysrgb&w=350",
+                    liked: false
+                }
+            ]
+        };
+
+        // DOM Elements
+        const liveBannerContainer = document.getElementById('live-banner-container');
+        const bannerBg = document.getElementById('banner-bg');
+        const bannerPattern = document.getElementById('banner-pattern');
+        const bannerSubText = document.getElementById('banner-sub-text');
+        const bannerTitleText = document.getElementById('banner-title-text');
+        const bannerCta = document.getElementById('banner-cta');
+        const bannerCtaText = document.getElementById('banner-cta-text');
+        const bannerCtaArrow = document.getElementById('banner-cta-arrow');
+        const domShoe1 = document.getElementById('dom-shoe-1');
+        const domShoe2 = document.getElementById('dom-shoe-2');
+        const iphoneDevice = document.getElementById('iphone-device');
+        const iphoneScreen = document.getElementById('iphone-screen');
+        const statusClock = document.getElementById('status-clock');
+        const headerHeartIcon = document.getElementById('header-heart-icon');
+        const appSearchInput = document.getElementById('app-search-input');
+        const appProductsGrid = document.getElementById('app-products-grid');
+        const productDetailDrawer = document.getElementById('product-detail-drawer');
+        const drawerShoeImg = document.getElementById('drawer-shoe-img');
+        const drawerShoeName = document.getElementById('drawer-shoe-name');
+        const drawerShoeCategory = document.getElementById('drawer-shoe-category');
+        const drawerShoePrice = document.getElementById('drawer-shoe-price');
+        const drawerShoeOriginal = document.getElementById('drawer-shoe-original');
+        const drawerShoeRating = document.getElementById('drawer-shoe-rating');
+        const cartDotCount = document.getElementById('cart-dot-count');
+        const iosToast = document.getElementById('ios-toast');
+        const bellBadge = document.getElementById('bell-badge');
+
+        // SVG pattern templates
+        const patterns = {
+            circles: (color) => `
+                <svg class="absolute inset-0 w-full h-full pointer-events-none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="85%" cy="50%" r="40" stroke="${color}" stroke-width="1.2" fill="none" />
+                    <circle cx="85%" cy="50%" r="75" stroke="${color}" stroke-width="1.2" fill="none" />
+                    <circle cx="85%" cy="50%" r="110" stroke="${color}" stroke-width="1.2" fill="none" />
+                    <circle cx="85%" cy="50%" r="145" stroke="${color}" stroke-width="1.2" fill="none" />
+                    <circle cx="85%" cy="50%" r="180" stroke="${color}" stroke-width="1.2" fill="none" />
+                    <circle cx="15%" cy="-10%" r="50" stroke="${color}" stroke-width="1" fill="none" />
+                    <circle cx="15%" cy="-10%" r="90" stroke="${color}" stroke-width="1" fill="none" />
+                </svg>
+            `,
+            waves: (color) => `
+                <svg class="absolute inset-0 w-full h-full pointer-events-none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200">
+                    <path d="M-50,150 C100,50 150,180 300,100 C380,50 420,120 500,80" stroke="${color}" stroke-width="1.5" fill="none" />
+                    <path d="M-50,120 C100,20 150,150 300,70 C380,20 420,90 500,50" stroke="${color}" stroke-width="1" fill="none" opacity="0.6" />
+                    <path d="M-50,180 C100,80 150,210 300,130 C380,80 420,150 500,110" stroke="${color}" stroke-width="1" fill="none" opacity="0.4" />
+                </svg>
+            `,
+            grid: (color) => `
+                <svg class="absolute inset-0 w-full h-full pointer-events-none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <pattern id="techGrid" width="22" height="22" patternUnits="userSpaceOnUse">
+                            <rect width="22" height="22" fill="none" />
+                            <path d="M 22 0 L 0 0 0 22" fill="none" stroke="${color}" stroke-width="0.8" />
+                        </pattern>
+                    </defs>
+                    <rect width="100%" height="100%" fill="url(#techGrid)" />
+                </svg>
+            `,
+            stripes: (color) => `
+                <svg class="absolute inset-0 w-full h-full pointer-events-none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <pattern id="sportStripes" width="40" height="40" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+                            <rect width="40" height="40" fill="none" />
+                            <line x1="0" y1="0" x2="0" y2="40" stroke="${color}" stroke-width="6" />
+                            <line x1="20" y1="0" x2="20" y2="40" stroke="${color}" stroke-width="2" opacity="0.5" />
+                        </pattern>
+                    </defs>
+                    <rect width="100%" height="100%" fill="url(#sportStripes)" />
+                </svg>
+            `,
+            dots: (color) => `
+                <svg class="absolute inset-0 w-full h-full pointer-events-none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <pattern id="polkaDots" width="16" height="16" patternUnits="userSpaceOnUse">
+                            <circle cx="8" cy="8" r="1.5" fill="${color}" />
+                        </pattern>
+                    </defs>
+                    <rect width="100%" height="100%" fill="url(#polkaDots)" />
+                </svg>
+            `,
+            none: () => ''
+        };
+
+        // Initialize Studio Application
+        function initApp() {
+            // Update Clock
+            updateClock();
+            setInterval(updateClock, 10000);
+
+            // Set Inputs and Controls with Slide values
+            loadInputsFromState();
+
+            // Render components
+            renderBanner();
+            renderProductsGrid();
+            
+            // Setup Lucide icons
+            lucide.createIcons();
+        }
+
+        // Clock Update
+        function updateClock() {
+            const now = new Date();
+            let hours = now.getHours();
+            let minutes = now.getMinutes();
+            hours = hours < 10 ? '0' + hours : hours;
+            minutes = minutes < 10 ? '0' + minutes : minutes;
+            statusClock.textContent = `${hours}:${minutes}`;
+        }
+
+        // Active State Slide loader
+        function loadInputsFromState() {
+            const current = state.slides[state.activeSlide];
+
+            // 1. Text Inputs
+            document.getElementById('input-subtitle').value = current.subTitle;
+            document.getElementById('input-title').value = current.title;
+            document.getElementById('input-ctatext').value = current.ctaText;
+            document.getElementById('input-weight').value = current.weightClass || 'font-extrabold';
+            
+            // 2. Color pickers
+            document.getElementById('color-title').value = current.textColor;
+            document.getElementById('hex-title').value = current.textColor.toUpperCase();
+            document.getElementById('color-subtitle').value = current.subColor;
+            document.getElementById('hex-subtitle').value = current.subColor.toUpperCase();
+            document.getElementById('color-cta').value = current.ctaColor;
+            document.getElementById('hex-cta').value = current.ctaColor.toUpperCase();
+
+            // 3. BG Controls
+            document.getElementById('select-bgtype').value = current.bgType;
+            document.getElementById('select-pattern').value = current.patternType;
+            document.getElementById('color-start').value = current.bgColorStart;
+            document.getElementById('hex-start').value = current.bgColorStart.toUpperCase();
+            document.getElementById('color-end').value = current.bgColorEnd;
+            document.getElementById('hex-end').value = current.bgColorEnd.toUpperCase();
+            document.getElementById('color-pattern').value = current.patternColor;
+            document.getElementById('hex-pattern').value = current.patternColor.toUpperCase();
+            document.getElementById('range-pattern-opacity').value = Math.round(parseFloat(current.patternOpacity) * 100);
+            document.getElementById('val-pattern-opacity').textContent = `${Math.round(parseFloat(current.patternOpacity) * 100)}%`;
+
+            // Adjust BG visibility depending on type
+            toggleBgTypeInputs(current.bgType);
+
+            // 4. Shoes Transforms & Layer Settings
+            document.getElementById('select-shoe1').value = isPresetShoe(current.shoe1Img) ? current.shoe1Img : 'custom';
+            document.getElementById('custom-shoe1-url').value = isPresetShoe(current.shoe1Img) ? '' : current.shoe1Img;
+            document.getElementById('custom-shoe1-url').style.display = isPresetShoe(current.shoe1Img) ? 'none' : 'block';
+
+            document.getElementById('select-shoe2').value = isPresetShoe(current.shoe2Img) ? current.shoe2Img : 'custom';
+            document.getElementById('custom-shoe2-url').value = isPresetShoe(current.shoe2Img) ? '' : current.shoe2Img;
+            document.getElementById('custom-shoe2-url').style.display = isPresetShoe(current.shoe2Img) ? 'none' : 'block';
+
+            // Shoe 1 transforms
+            document.getElementById('range-shoe1-rot').value = current.shoe1Rot;
+            document.getElementById('val-shoe1-rot').textContent = `${current.shoe1Rot}°`;
+            document.getElementById('range-shoe1-scale').value = Math.round(current.shoe1Scale * 100);
+            document.getElementById('val-shoe1-scale').textContent = `${current.shoe1Scale.toFixed(2)}x`;
+            document.getElementById('range-shoe1-x').value = current.shoe1X;
+            document.getElementById('val-shoe1-x').textContent = `${current.shoe1X}%`;
+            document.getElementById('range-shoe1-y').value = current.shoe1Y;
+            document.getElementById('val-shoe1-y').textContent = `${current.shoe1Y}%`;
+
+            // Shoe 2 transforms
+            document.getElementById('range-shoe2-rot').value = current.shoe2Rot;
+            document.getElementById('val-shoe2-rot').textContent = `${current.shoe2Rot}°`;
+            document.getElementById('range-shoe2-scale').value = Math.round(current.shoe2Scale * 100);
+            document.getElementById('val-shoe2-scale').textContent = `${current.shoe2Scale.toFixed(2)}x`;
+            document.getElementById('range-shoe2-x').value = current.shoe2X;
+            document.getElementById('val-shoe2-x').textContent = `${current.shoe2X}%`;
+            document.getElementById('range-shoe2-y').value = current.shoe2Y;
+            document.getElementById('val-shoe2-y').textContent = `${current.shoe2Y}%`;
+
+            // Global/Secondary Toggles
+            document.getElementById('toggle-overflow').checked = current.overflow;
+            document.getElementById('toggle-shoe2').checked = current.showShoe2;
+            
+            // Adjust Adjusters panel for Shoe 2 based on visibility
+            toggleShoe2AdjustersPanel(current.showShoe2);
+
+            // Set slide indicators badges in Editor Panel
+            updateBadgeIndicators();
+        }
+
+        // Helper to check standard shoe images
+        function isPresetShoe(url) {
+            const list = [
+                "https://image.goat.com/attachments/product_template_pictures/images/011/119/994/original/218099_00.png.png",
+                "https://image.goat.com/attachments/product_template_pictures/images/008/870/353/original/235806_00.png.png",
+                "https://image.goat.com/attachments/product_template_pictures/images/018/675/311/original/464372_00.png.png",
+                "https://image.goat.com/attachments/product_template_pictures/images/021/042/384/original/500924_00.png.png",
+                "https://image.goat.com/attachments/product_template_pictures/images/010/634/133/original/303217_00.png.png",
+                "https://image.goat.com/attachments/product_template_pictures/images/020/806/444/original/507844_00.png.png",
+                "https://image.goat.com/attachments/product_template_pictures/images/008/654/900/original/52015_00.png.png"
+            ];
+            return list.includes(url);
+        }
+
+        // Toggle end gradient picker depending on select
+        function toggleBgTypeInputs(type) {
+            const containerEnd = document.getElementById('container-color-end');
+            const labelStart = document.getElementById('label-color-start');
+            if (type === 'solid') {
+                containerEnd.style.display = 'none';
+                labelStart.textContent = "Canvas Solid Color";
+            } else {
+                containerEnd.style.display = 'flex';
+                labelStart.textContent = "Gradient Start Color";
+            }
+        }
+
+        // Toggle front shoe adjuster panel
+        function toggleShoe2AdjustersPanel(visible) {
+            const container = document.getElementById('shoe2-adjusters-container');
+            if (visible) {
+                container.style.opacity = '1';
+                container.style.pointerEvents = 'auto';
+            } else {
+                container.style.opacity = '0.4';
+                container.style.pointerEvents = 'none';
+            }
+        }
+
+        // Switch active slides inside mockup and editor
+        function switchSlide(index) {
+            state.activeSlide = index;
+            
+            // Switch active slide indicator dot style
+            const dots = document.querySelectorAll('.slide-indicator');
+            dots.forEach((dot, idx) => {
+                if (idx === index) {
+                    dot.classList.remove('bg-white/40');
+                    dot.classList.add('bg-white', 'w-4');
+                } else {
+                    dot.classList.add('bg-white/40');
+                    dot.classList.remove('bg-white', 'w-4');
+                }
+            });
+
+            // Reload configurations
+            loadInputsFromState();
+            renderBanner();
+            updateCodeOutput();
+        }
+
+        // Update badge states in layout panel
+        function updateBadgeIndicators() {
+            for(let i = 0; i < 3; i++) {
+                const badge = document.getElementById(`badge-slide-${i}`);
+                if (state.activeSlide === i) {
+                    badge.className = "slide-badge px-3 py-1 text-[10px] font-bold rounded-lg transition-all bg-[#eb7a43]/20 text-[#eb7a43] border border-[#eb7a43]/30";
+                } else {
+                    badge.className = "slide-badge px-3 py-1 text-[10px] font-bold rounded-lg transition-all bg-zinc-900 text-zinc-500 border border-zinc-850 hover:text-zinc-300";
+                }
+            }
+        }
+
+        // Switch Editor tab Panels
+        function switchTab(tabId) {
+            state.activeTab = tabId;
+
+            // Update nav borders
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            tabButtons.forEach(btn => {
+                const icon = btn.querySelector('i');
+                if (btn.id === `tab-${tabId}`) {
+                    btn.classList.add('border-[#eb7a43]', 'text-white');
+                    btn.classList.remove('border-transparent', 'text-zinc-400');
+                    if (icon) icon.className = `w-4 h-4 text-[#eb7a43]`;
+                } else {
+                    btn.classList.add('border-transparent', 'text-zinc-400');
+                    btn.classList.remove('border-[#eb7a43]', 'text-white');
+                    if (icon) icon.className = `w-4 h-4 text-zinc-500`;
+                }
+            });
+
+            // Update panel displays
+            const panels = document.querySelectorAll('.tab-panel');
+            panels.forEach(p => {
+                if (p.id === `panel-${tabId}`) {
+                    p.classList.remove('hidden');
+                } else {
+                    p.classList.add('hidden');
+                }
+            });
+        }
+
+        // RENDER LIVE BANNER IN THE PHONE SCREEN
+        function renderBanner() {
+            const current = state.slides[state.activeSlide];
+
+            // 1. Title/Sub Content
+            bannerSubText.textContent = current.subTitle;
+            bannerSubText.style.color = current.subColor;
+            
+            bannerTitleText.textContent = current.title;
+            bannerTitleText.style.color = current.textColor;
+            // Apply font-weight dynamically
+            bannerTitleText.className = `text-lg md:text-xl font-extrabold tracking-tight leading-tight transition-all ${current.weightClass || 'font-extrabold'}`;
+
+            // 2. CTA button styles
+            bannerCtaText.textContent = current.ctaText;
+            bannerCta.style.color = current.ctaColor;
+            bannerCtaArrow.style.color = current.ctaColor;
+
+            // 3. Overflow
+            if (current.overflow) {
+                liveBannerContainer.classList.remove('overflow-hidden');
+                liveBannerContainer.classList.add('overflow-visible');
+            } else {
+                liveBannerContainer.classList.add('overflow-hidden');
+                liveBannerContainer.classList.remove('overflow-visible');
+            }
+
+            // 4. Background styling (linear/radial/solid)
+            if (current.bgType === 'solid') {
+                bannerBg.style.background = current.bgColorStart;
+            } else if (current.bgType === 'gradient') {
+                bannerBg.style.background = `linear-gradient(135deg, ${current.bgColorStart}, ${current.bgColorEnd})`;
+            } else if (current.bgType === 'radial') {
+                bannerBg.style.background = `radial-gradient(circle at center, ${current.bgColorStart} 0%, ${current.bgColorEnd} 100%)`;
+            }
+
+            // 5. SVG patterns injection
+            if (patterns[current.patternType]) {
+                const opacityHex = Math.round(parseFloat(current.patternOpacity) * 255).toString(16).padStart(2, '0');
+                const fullPatternColor = current.patternColor + opacityHex;
+                bannerPattern.innerHTML = patterns[current.patternType](fullPatternColor);
+            } else {
+                bannerPattern.innerHTML = '';
+            }
+
+            // 6. Layered Shoes render
+            // Shoe 1
+            if (current.shoe1Img) {
+                domShoe1.src = current.shoe1Img;
+                domShoe1.style.display = 'block';
+                domShoe1.style.left = `${current.shoe1X}%`;
+                domShoe1.style.top = `${current.shoe1Y}%`;
+                domShoe1.style.zIndex = current.shoe1Z;
+                domShoe1.style.transform = `translate(-50%, -50%) rotate(${current.shoe1Rot}deg) scale(${current.shoe1Scale})`;
+                domShoe1.style.width = '75%'; // Base scaling width relative to banner width
+            } else {
+                domShoe1.style.display = 'none';
+            }
+
+            // Shoe 2
+            if (current.showShoe2 && current.shoe2Img) {
+                domShoe2.src = current.shoe2Img;
+                domShoe2.style.display = 'block';
+                domShoe2.style.left = `${current.shoe2X}%`;
+                domShoe2.style.top = `${current.shoe2Y}%`;
+                domShoe2.style.zIndex = current.shoe2Z;
+                domShoe2.style.transform = `translate(-50%, -50%) rotate(${current.shoe2Rot}deg) scale(${current.shoe2Scale})`;
+                domShoe2.style.width = '75%'; // Base scaling width relative to banner width
+            } else {
+                domShoe2.style.display = 'none';
+            }
+
+            // Keep the active slides dot selector in sync
+            const dots = document.querySelectorAll('.slide-indicator');
+            dots.forEach((dot, idx) => {
+                if (idx === state.activeSlide) {
+                    dot.style.backgroundColor = 'white';
+                    dot.style.width = '14px';
+                } else {
+                    dot.style.backgroundColor = 'rgba(255, 255, 255, 0.4)';
+                    dot.style.width = '6px';
+                }
+            });
+
+            // Re-render Code Exporter panel
+            updateCodeOutput();
+        }
+
+        // TEXT TAB CONTENT REAL-TIME INPUTS UPDATES
+        function updateBannerContent() {
+            const current = state.slides[state.activeSlide];
+
+            current.subTitle = document.getElementById('input-subtitle').value;
+            current.title = document.getElementById('input-title').value;
+            current.ctaText = document.getElementById('input-ctatext').value;
+            current.weightClass = document.getElementById('input-weight').value;
+
+            // Colors
+            current.textColor = document.getElementById('color-title').value;
+            document.getElementById('hex-title').value = current.textColor.toUpperCase();
+
+            current.subColor = document.getElementById('color-subtitle').value;
+            document.getElementById('hex-subtitle').value = current.subColor.toUpperCase();
+
+            current.ctaColor = document.getElementById('color-cta').value;
+            document.getElementById('hex-cta').value = current.ctaColor.toUpperCase();
+
+            renderBanner();
+        }
+
+        // Color input changes from hex typing
+        function updateColorFromHex(type, val) {
+            if (/^#[0-9A-F]{6}$/i.test(val)) {
+                const current = state.slides[state.activeSlide];
+                if (type === 'title') {
+                    current.textColor = val;
+                    document.getElementById('color-title').value = val;
+                } else if (type === 'subtitle') {
+                    current.subColor = val;
+                    document.getElementById('color-subtitle').value = val;
+                } else if (type === 'cta') {
+                    current.ctaColor = val;
+                    document.getElementById('color-cta').value = val;
+                }
+                renderBanner();
+            }
+        }
+
+        // BACKGROUND TAB REAL-TIME INPUTS UPDATES
+        function updateBackgroundSettings() {
+            const current = state.slides[state.activeSlide];
+
+            current.bgType = document.getElementById('select-bgtype').value;
+            current.patternType = document.getElementById('select-pattern').value;
+
+            // Colors
+            current.bgColorStart = document.getElementById('color-start').value;
+            document.getElementById('hex-start').value = current.bgColorStart.toUpperCase();
+
+            current.bgColorEnd = document.getElementById('color-end').value;
+            document.getElementById('hex-end').value = current.bgColorEnd.toUpperCase();
+
+            current.patternColor = document.getElementById('color-pattern').value;
+            document.getElementById('hex-pattern').value = current.patternColor.toUpperCase();
+
+            // Opacity slider
+            const opPercent = document.getElementById('range-pattern-opacity').value;
+            document.getElementById('val-pattern-opacity').textContent = `${opPercent}%`;
+            current.patternOpacity = (parseInt(opPercent) / 100).toFixed(2);
+
+            // Handle start/end fields visibility
+            toggleBgTypeInputs(current.bgType);
+
+            renderBanner();
+        }
+
+        // Color input changes from background hex typing
+        function updateBgColorFromHex(type, val) {
+            if (/^#[0-9A-F]{6}$/i.test(val)) {
+                const current = state.slides[state.activeSlide];
+                if (type === 'start') {
+                    current.bgColorStart = val;
+                    document.getElementById('color-start').value = val;
+                } else if (type === 'end') {
+                    current.bgColorEnd = val;
+                    document.getElementById('color-end').value = val;
+                } else if (type === 'pattern') {
+                    current.patternColor = val;
+                    document.getElementById('color-pattern').value = val;
+                }
+                renderBanner();
+            }
+        }
+
+        // SHOE TAB REAL-TIME TRANSFORM UPDATES
+        function updateShoeTransform(shoeNum) {
+            const current = state.slides[state.activeSlide];
+
+            if (shoeNum === 1) {
+                current.shoe1Rot = parseInt(document.getElementById('range-shoe1-rot').value);
+                document.getElementById('val-shoe1-rot').textContent = `${current.shoe1Rot}°`;
+
+                current.shoe1Scale = parseFloat((parseInt(document.getElementById('range-shoe1-scale').value) / 100).toFixed(2));
+                document.getElementById('val-shoe1-scale').textContent = `${current.shoe1Scale.toFixed(2)}x`;
+
+                current.shoe1X = parseInt(document.getElementById('range-shoe1-x').value);
+                document.getElementById('val-shoe1-x').textContent = `${current.shoe1X}%`;
+
+                current.shoe1Y = parseInt(document.getElementById('range-shoe1-y').value);
+                document.getElementById('val-shoe1-y').textContent = `${current.shoe1Y}%`;
+            } else if (shoeNum === 2) {
+                current.shoe2Rot = parseInt(document.getElementById('range-shoe2-rot').value);
+                document.getElementById('val-shoe2-rot').textContent = `${current.shoe2Rot}°`;
+
+                current.shoe2Scale = parseFloat((parseInt(document.getElementById('range-shoe2-scale').value) / 100).toFixed(2));
+                document.getElementById('val-shoe2-scale').textContent = `${current.shoe2Scale.toFixed(2)}x`;
+
+                current.shoe2X = parseInt(document.getElementById('range-shoe2-x').value);
+                document.getElementById('val-shoe2-x').textContent = `${current.shoe2X}%`;
+
+                current.shoe2Y = parseInt(document.getElementById('range-shoe2-y').value);
+                document.getElementById('val-shoe2-y').textContent = `${current.shoe2Y}%`;
+            }
+
+            renderBanner();
+        }
+
+        // Change shoe image models
+        function changeShoeImg(shoeNum, val) {
+            const current = state.slides[state.activeSlide];
+            const customUrlInput = document.getElementById(`custom-shoe${shoeNum}-url`);
+
+            if (val === 'custom') {
+                customUrlInput.style.display = 'block';
+                const inputVal = customUrlInput.value || '';
+                if (shoeNum === 1) current.shoe1Img = inputVal;
+                else current.shoe2Img = inputVal;
+            } else {
+                customUrlInput.style.display = 'none';
+                if (shoeNum === 1) current.shoe1Img = val;
+                else current.shoe2Img = val;
+            }
+
+            renderBanner();
+        }
+
+        // Toggle secondary shoe layers
+        function toggleShoe2Layer(checked) {
+            state.slides[state.activeSlide].showShoe2 = checked;
+            toggleShoe2AdjustersPanel(checked);
+            renderBanner();
+        }
+
+        // Toggle 3D Bound overflow spills
+        function toggleOverflow(checked) {
+            state.slides[state.activeSlide].overflow = checked;
+            renderBanner();
+        }
+
+        // APPLY ONE-CLICK PRESET TEMPLATES
+        function applyPreset(presetName) {
+            const current = state.slides[state.activeSlide];
+
+            switch(presetName) {
+                case 'sneaksy-original':
+                    current.subTitle = "Flash Sale";
+                    current.title = "Up to 50% Off";
+                    current.ctaText = "Shop Now";
+                    current.weightClass = "font-extrabold";
+                    current.bgType = "solid";
+                    current.bgColorStart = "#1c1c1c";
+                    current.bgColorEnd = "#262626";
+                    current.textColor = "#ffffff";
+                    current.subColor = "#ffffff";
+                    current.ctaColor = "#eb7a43";
+                    current.patternType = "circles";
+                    current.patternColor = "#ffffff";
+                    current.patternOpacity = "0.15";
+                    current.shoe1Img = "https://image.goat.com/attachments/product_template_pictures/images/011/119/994/original/218099_00.png.png"; // Jordan 1 Shadow
+                    current.shoe1Rot = -42;
+                    current.shoe1Scale = 1.1;
+                    current.shoe1X = 78;
+                    current.shoe1Y = 32;
+                    current.shoe2Img = "https://image.goat.com/attachments/product_template_pictures/images/011/119/994/original/218099_00.png.png";
+                    current.shoe2Rot = -32;
+                    current.shoe2Scale = 1.25;
+                    current.shoe2X = 62;
+                    current.shoe2Y = 68;
+                    current.showShoe2 = true;
+                    current.overflow = true;
+                    break;
+
+                case 'neon-cyberpunk':
+                    current.subTitle = "Cyber Release";
+                    current.title = "Neon Velocity Drop";
+                    current.ctaText = "Hack The Frame ↗";
+                    current.weightClass = "font-black";
+                    current.bgType = "gradient";
+                    current.bgColorStart = "#090514";
+                    current.bgColorEnd = "#1e0b36";
+                    current.textColor = "#22d3ee"; // Neon Cyan
+                    current.subColor = "#f472b6"; // Hot Pink
+                    current.ctaColor = "#f43f5e";
+                    current.patternType = "grid";
+                    current.patternColor = "#f43f5e";
+                    current.patternOpacity = "0.20";
+                    current.shoe1Img = "https://image.goat.com/attachments/product_template_pictures/images/018/675/311/original/464372_00.png.png"; // Jordan 6 Infrared
+                    current.shoe1Rot = -25;
+                    current.shoe1Scale = 1.15;
+                    current.shoe1X = 72;
+                    current.shoe1Y = 30;
+                    current.shoe2Img = "https://image.goat.com/attachments/product_template_pictures/images/010/634/133/original/303217_00.png.png"; // Air Max 270 White
+                    current.shoe2Rot = -10;
+                    current.shoe2Scale = 1.05;
+                    current.shoe2X = 48;
+                    current.shoe2Y = 62;
+                    current.showShoe2 = false;
+                    current.overflow = true;
+                    break;
+
+                case 'golden-luxury':
+                    current.subTitle = "Prestige Reserve";
+                    current.title = "The Jordan XII Premium";
+                    current.ctaText = "Enter Vault";
+                    current.weightClass = "font-semibold";
+                    current.bgType = "radial";
+                    current.bgColorStart = "#1c1917";
+                    current.bgColorEnd = "#0c0a09";
+                    current.textColor = "#fbbf24"; // Rich Amber/Gold
+                    current.subColor = "#fef3c7"; // Pale Amber
+                    current.ctaColor = "#f59e0b";
+                    current.patternType = "waves";
+                    current.patternColor = "#fbbf24";
+                    current.patternOpacity = "0.15";
+                    current.shoe1Img = "https://image.goat.com/attachments/product_template_pictures/images/021/042/384/original/500924_00.png.png"; // Jordan 12 Reptile
+                    current.shoe1Rot = -15;
+                    current.shoe1Scale = 1.15;
+                    current.shoe1X = 76;
+                    current.shoe1Y = 32;
+                    current.shoe2Img = "https://image.goat.com/attachments/product_template_pictures/images/021/042/384/original/500924_00.png.png";
+                    current.shoe2Rot = -5;
+                    current.shoe2Scale = 1.25;
+                    current.shoe2X = 58;
+                    current.shoe2Y = 68;
+                    current.showShoe2 = true;
+                    current.overflow = true;
+                    break;
+
+                case 'vibrant-gym-red':
+                    current.subTitle = "Hot Release";
+                    current.title = "Air Gym Red Highs";
+                    current.ctaText = "Secure Checkout";
+                    current.weightClass = "font-extrabold";
+                    current.bgType = "gradient";
+                    current.bgColorStart = "#991b1b";
+                    current.bgColorEnd = "#180404";
+                    current.textColor = "#ffffff";
+                    current.subColor = "#fecaca";
+                    current.ctaColor = "#ffffff";
+                    current.patternType = "stripes";
+                    current.patternColor = "#ffffff";
+                    current.patternOpacity = "0.15";
+                    current.shoe1Img = "https://image.goat.com/attachments/product_template_pictures/images/020/806/444/original/507844_00.png.png"; // Gym red AJ1
+                    current.shoe1Rot = -35;
+                    current.shoe1Scale = 1.1;
+                    current.shoe1X = 75;
+                    current.shoe1Y = 32;
+                    current.shoe2Img = "https://image.goat.com/attachments/product_template_pictures/images/020/806/444/original/507844_00.png.png";
+                    current.shoe2Rot = -25;
+                    current.shoe2Scale = 1.25;
+                    current.shoe2X = 58;
+                    current.shoe2Y = 66;
+                    current.showShoe2 = true;
+                    current.overflow = true;
+                    break;
+
+                case 'hyper-ice':
+                    current.subTitle = "Active Velocity";
+                    current.title = "Air Max High Cushion";
+                    current.ctaText = "Shop Runner";
+                    current.weightClass = "font-bold";
+                    current.bgType = "gradient";
+                    current.bgColorStart = "#0369a1";
+                    current.bgColorEnd = "#090514";
+                    current.textColor = "#f0f9ff";
+                    current.subColor = "#bae6fd";
+                    current.ctaColor = "#0ea5e9";
+                    current.patternType = "dots";
+                    current.patternColor = "#0ea5e9";
+                    current.patternOpacity = "0.25";
+                    current.shoe1Img = "https://image.goat.com/attachments/product_template_pictures/images/010/634/133/original/303217_00.png.png"; // Air Max White
+                    current.shoe1Rot = -42;
+                    current.shoe1Scale = 1.2;
+                    current.shoe1X = 72;
+                    current.shoe1Y = 34;
+                    current.shoe2Img = "https://image.goat.com/attachments/product_template_pictures/images/010/634/133/original/303217_00.png.png";
+                    current.shoe2Rot = -25;
+                    current.shoe2Scale = 1.35;
+                    current.shoe2X = 52;
+                    current.shoe2Y = 66;
+                    current.showShoe2 = false;
+                    current.overflow = true;
+                    break;
+
+                case 'obsidian-minimal':
+                    current.subTitle = "Stark Limited";
+                    current.title = "Dark Carbon Shadow";
+                    current.ctaText = "Purchase Reserve";
+                    current.weightClass = "font-normal";
+                    current.bgType = "solid";
+                    current.bgColorStart = "#000000";
+                    current.bgColorEnd = "#121212";
+                    current.textColor = "#e4e4e7";
+                    current.subColor = "#71717a";
+                    current.ctaColor = "#71717a";
+                    current.patternType = "none";
+                    current.patternColor = "#ffffff";
+                    current.patternOpacity = "0.00";
+                    current.shoe1Img = "https://image.goat.com/attachments/product_template_pictures/images/011/119/994/original/218099_00.png.png"; // Shadow
+                    current.shoe1Rot = -15;
+                    current.shoe1Scale = 1.15;
+                    current.shoe1X = 75;
+                    current.shoe1Y = 35;
+                    current.shoe2Img = "";
+                    current.shoe2Rot = 0;
+                    current.shoe2Scale = 1.0;
+                    current.shoe2X = 50;
+                    current.shoe2Y = 50;
+                    current.showShoe2 = false;
+                    current.overflow = false;
+                    break;
+            }
+
+            // Reload configurations
+            loadInputsFromState();
+            renderBanner();
+
+            // Trigger temporary visual flash highlighting app banner to confirm change
+            liveBannerContainer.classList.add('ring-4', 'ring-[#eb7a43]/50', 'scale-[1.02]');
+            setTimeout(() => {
+                liveBannerContainer.classList.remove('ring-4', 'ring-[#eb7a43]/50', 'scale-[1.02]');
+            }, 400);
+        }
+
+        // Reset studio parameters to the core reference banner match
+        function resetToOriginal() {
+            state.activeSlide = 0;
+            applyPreset('sneaksy-original');
+            switchSlide(0);
+        }
+
+        // Switch Exporter code type
+        function switchCodeType(type) {
+            state.codeType = type;
+            const btnTailwind = document.getElementById('code-btn-tailwind');
+            const btnRaw = document.getElementById('code-btn-raw');
+
+            if (type === 'tailwind') {
+                btnTailwind.classList.add('bg-zinc-800', 'text-white');
+                btnTailwind.classList.remove('text-zinc-400', 'hover:text-white');
+                btnRaw.classList.add('text-zinc-400', 'hover:text-white');
+                btnRaw.classList.remove('bg-zinc-800', 'text-white');
+            } else {
+                btnRaw.classList.add('bg-zinc-800', 'text-white');
+                btnRaw.classList.remove('text-zinc-400', 'hover:text-white');
+                btnTailwind.classList.add('text-zinc-400', 'hover:text-white');
+                btnTailwind.classList.remove('bg-zinc-800', 'text-white');
+            }
+
+            updateCodeOutput();
+        }
+
+        // ESCAPE HELPER FOR RAW CSS EXPORTS
+        function escapeHtml(string) {
+            return String(string).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        // GENERATE EXPORTABLE STATIC HTML/CSS CODE
+        function generateBannerCode() {
+            const current = state.slides[state.activeSlide];
+            const isTailwind = state.codeType === 'tailwind';
+
+            // Background styles variables calculation
+            let bgCssStyle = '';
+            if (current.bgType === 'solid') {
+                bgCssStyle = `background: ${current.bgColorStart};`;
+            } else if (current.bgType === 'gradient') {
+                bgCssStyle = `background: linear-gradient(135deg, ${current.bgColorStart}, ${current.bgColorEnd});`;
+            } else if (current.bgType === 'radial') {
+                bgCssStyle = `background: radial-gradient(circle at center, ${current.bgColorStart} 0%, ${current.bgColorEnd} 100%);`;
+            }
+
+            // Inline Opacity
+            const opacityHex = Math.round(parseFloat(current.patternOpacity) * 255).toString(16).padStart(2, '0');
+            const fullPatternColor = current.patternColor + opacityHex;
+
+            // Generate clean inline patterns SVGs
+            let rawPatternSvg = '';
+            if (current.patternType !== 'none') {
+                rawPatternSvg = patterns[current.patternType](fullPatternColor)
+                    .trim()
+                    .replace(/\s+/g, ' ');
+            }
+
+            // Inline Shoe transform styling
+            const shoe1Style = `position: absolute; left: ${current.shoe1X}%; top: ${current.shoe1Y}%; z-index: ${current.shoe1Z}; transform: translate(-50%, -50%) rotate(${current.shoe1Rot}deg) scale(${current.shoe1Scale}); width: 75%; filter: drop-shadow(0 12px 24px rgba(0,0,0,0.35));`;
+            const shoe2Style = `position: absolute; left: ${current.shoe2X}%; top: ${current.shoe2Y}%; z-index: ${current.shoe2Z}; transform: translate(-50%, -50%) rotate(${current.shoe2Rot}deg) scale(${current.shoe2Scale}); width: 75%; filter: drop-shadow(0 15px 30px rgba(0,0,0,0.42));`;
+
+            if (isTailwind) {
+                // Formatting clean responsive tailwind component
+                return `<!-- SNEAKSY EXPORT: HTML with inline Tailwind Utility Classes -->
+<div class="relative w-full aspect-[2/1] min-h-[160px] rounded-[24px] ${current.overflow ? 'overflow-visible' : 'overflow-hidden'} shadow-2xl transition-all" style="${bgCssStyle}">
+    
+    <!-- Vector Background Geometric Pattern Overlay -->
+    <div class="absolute inset-0 rounded-[24px] overflow-hidden pointer-events-none select-none z-0">
+        ${rawPatternSvg}
+    </div>
+
+    <!-- Typography Content Columns -->
+    <div class="relative z-10 w-full h-full p-6 flex flex-col justify-between pointer-events-none">
+        
+        <div class="max-w-[55%] pointer-events-auto">
+            <p class="text-[11px] uppercase tracking-widest font-semibold mb-1" style="color: ${current.subColor};">
+                ${current.subTitle}
+            </p>
+            <h3 class="text-xl font-extrabold tracking-tight leading-tight" style="color: ${current.textColor};">
+                ${current.title}
+            </h3>
+        </div>
+
+        <div class="pointer-events-auto mt-2">
+            <a href="#" class="inline-flex items-center gap-1.5 text-xs font-bold transition-transform hover:translate-x-1 duration-200" style="color: ${current.ctaColor}; text-decoration: none;">
+                <span>${current.ctaText}</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-up-right"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg>
+            </a>
+        </div>
+    </div>
+
+    <!-- Layered Drop Shadow Sneakers -->
+    <div class="absolute inset-0 rounded-[24px] pointer-events-none z-10">
+        <!-- Shoe 1 (Background) -->
+        <img src="${current.shoe1Img}" alt="Sneaksy Back" style="${shoe1Style}">
+        ${current.showShoe2 && current.shoe2Img ? `\n        <!-- Shoe 2 (Foreground Layered Overflow) -->\n        <img src="${current.shoe2Img}" alt="Sneaksy Front" style="${shoe2Style}">` : ''}
+    </div>
+
+</div>`;
+            } else {
+                // Formatting Raw CSS standalone container with no framework dependencies
+                return `<!-- SNEAKSY EXPORT: Pure HTML & Standalone Inline CSS Component (No frameworks required) -->
+<div style="position: relative; width: 100%; aspect-ratio: 2/1; min-height: 160px; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.4); font-family: 'Plus Jakarta Sans', sans-serif; overflow: ${current.overflow ? 'visible' : 'hidden'}; ${bgCssStyle}">
+    
+    <!-- Vector Background Geometric Pattern Overlay -->
+    <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; border-radius: 24px; overflow: hidden; pointer-events: none; user-select: none; z-index: 0;">
+        ${rawPatternSvg}
+    </div>
+
+    <!-- Typography Content Columns -->
+    <div style="position: relative; z-index: 10; width: 100%; height: 100%; box-sizing: border-box; padding: 24px; display: flex; flex-direction: col; justify-content: space-between; pointer-events: none;">
+        
+        <div style="max-width: 55%; pointer-events: auto;">
+            <p style="margin: 0 0 4px 0; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; color: ${current.subColor};">
+                ${current.subTitle}
+            </p>
+            <h3 style="margin: 0; font-size: 20px; font-weight: 800; tracking: -0.025em; line-height: 1.25; color: ${current.textColor};">
+                ${current.title}
+            </h3>
+        </div>
+
+        <div style="pointer-events: auto; margin-top: 8px;">
+            <a href="#" style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; text-decoration: none; color: ${current.ctaColor}; transition: transform 0.2s;">
+                <span>${current.ctaText}</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg>
+            </a>
+        </div>
+    </div>
+
+    <!-- Layered Drop Shadow Sneakers -->
+    <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; border-radius: 24px; pointer-events: none; z-index: 10;">
+        <!-- Shoe 1 (Background) -->
+        <img src="${current.shoe1Img}" alt="Sneaker Back" style="${shoe1Style}">
+        ${current.showShoe2 && current.shoe2Img ? `\n        <!-- Shoe 2 (Foreground Layered Overflow) -->\n        <img src="${current.shoe2Img}" alt="Sneaker Front" style="${shoe2Style}">` : ''}
+    </div>
+
+</div>`;
+            }
+        }
+
+        // Live updating exported text displays
+        function updateCodeOutput() {
+            const codeOutput = document.getElementById('code-output-block');
+            if (codeOutput) {
+                codeOutput.textContent = generateBannerCode();
+            }
+        }
+
+        // Copy source code to keyboard clipboard
+        function copyGeneratedCode() {
+            const code = generateBannerCode();
+            navigator.clipboard.writeText(code).then(() => {
+                const btn = document.querySelector('#tab-export');
+                const origHtml = btn.innerHTML;
+                btn.innerHTML = `<i data-lucide="check" class="w-4 h-4 text-emerald-400"></i> Copied!`;
+                lucide.createIcons();
+
+                setTimeout(() => {
+                    btn.innerHTML = origHtml;
+                    lucide.createIcons();
+                }, 1500);
+            }).catch(err => {
+                alert("Failed to copy code. Please manually drag and copy the window contents.");
+            });
+        }
+
+        // DOWNLOAD THE LIVE BANNER IMAGE DIRECTLY AS PNG (via html2canvas)
+        function downloadBannerImage() {
+            // Temporary overlay classes adjustments to ensure high-fidelity print capture
+            const element = document.getElementById('live-banner-container');
+            
+            // Re-render specifically using html2canvas config
+            html2canvas(element, {
+                useCORS: true,
+                allowTaint: true,
+                backgroundColor: null,
+                scale: 3, // Premium high-density image result multiplier
+                logging: false,
+                onclone: (clonedDoc) => {
+                    // Force the cloned banner to have overflow-visible inside canvas if overflow was true
+                    const clonedBanner = clonedDoc.getElementById('live-banner-container');
+                    const current = state.slides[state.activeSlide];
+                    if (current.overflow) {
+                        clonedBanner.style.overflow = 'visible';
+                        // Keep parent background clear to prevent crop boundaries
+                        clonedBanner.parentNode.style.overflow = 'visible';
+                    }
+                }
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `sneaksy-flash-sale-slide-${state.activeSlide + 1}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            }).catch(err => {
+                console.error("html2canvas error:", err);
+                alert("Image rendering completed with some cross-origin asset limitations. Banners with external customizable assets can be manually snap-copied.");
+            });
+        }
+
+        // ==============================================
+        // MOCK INTERACTIVE PHONE APP WORKFLOWS
+        // ==============================================
+
+        // Render phone catalog based on filters
+        function renderProductsGrid() {
+            let filtered = state.products;
+
+            // Filter 1: Collection Selected Pill
+            if (state.selectedCollection !== 'Sneakers') {
+                filtered = state.products.filter(p => p.category === state.selectedCollection);
+            }
+
+            // Filter 2: Search String
+            const query = appSearchInput.value.toLowerCase().trim();
+            if (query !== '') {
+                filtered = filtered.filter(p => p.name.toLowerCase().includes(query) || p.category.toLowerCase().includes(query));
+            }
+
+            // Render cards HTML
+            if (filtered.length === 0) {
+                appProductsGrid.innerHTML = `
+                    <div class="col-span-2 py-8 text-center">
+                        <i data-lucide="inbox" class="w-8 h-8 text-zinc-300 dark:text-zinc-600 mx-auto mb-2"></i>
+                        <p class="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">No products match</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            appProductsGrid.innerHTML = filtered.map(prod => {
+                const discount = Math.round(((prod.originalPrice - prod.price) / prod.originalPrice) * 100);
+                return `
+                    <div class="bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800/80 rounded-2xl p-2.5 flex flex-col justify-between transition-all hover:scale-[1.01] cursor-pointer" onclick="openProductDrawer('${prod.id}')">
+                        <div class="relative w-full aspect-square bg-white dark:bg-zinc-800/40 rounded-xl flex items-center justify-center overflow-hidden mb-2 shadow-inner">
+                            <!-- Absolute Heart Like -->
+                            <button onclick="event.stopPropagation(); toggleProductLike('${prod.id}', this)" class="absolute top-1.5 right-1.5 w-6.5 h-6.5 rounded-full bg-white/90 dark:bg-zinc-900/90 shadow-sm border border-zinc-150 dark:border-zinc-800/60 flex items-center justify-center text-zinc-400 hover:text-red-500 hover:scale-110 active:scale-95 transition-all">
+                                <i data-lucide="heart" class="w-3.5 h-3.5 ${prod.liked ? 'fill-red-500 text-red-500' : ''}"></i>
+                            </button>
+                            <img src="${prod.image}" alt="${prod.name}" class="w-20 h-auto transform -rotate-12 drop-shadow-[0_8px_12px_rgba(0,0,0,0.15)] transition-transform hover:scale-105 duration-300 select-none">
+                            <span class="absolute bottom-1.5 left-1.5 bg-[#eb7a43]/15 text-[#eb7a43] text-[8px] font-extrabold uppercase px-1.5 py-0.5 rounded">-${discount}%</span>
+                        </div>
+                        <div>
+                            <p class="text-[9px] text-[#eb7a43] font-bold uppercase tracking-wider mb-0.5 leading-tight">${prod.category} Collection</p>
+                            <h5 class="text-[10px] font-bold text-zinc-800 dark:text-zinc-200 leading-tight line-clamp-2 h-7">${prod.name}</h5>
+                            <div class="flex items-center justify-between mt-1.5">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="text-xs font-black text-zinc-800 dark:text-zinc-100">$${prod.price}</span>
+                                    <span class="text-[9px] text-zinc-400 line-through font-medium">$${prod.originalPrice}</span>
+                                </div>
+                                <div class="flex items-center gap-0.5 text-amber-500 text-[9px] font-bold">
+                                    <i data-lucide="star" class="w-2.5 h-2.5 fill-current"></i>
+                                    <span>${prod.rating}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            lucide.createIcons();
+        }
+
+        // Toggle liked status on cards
+        function toggleProductLike(prodId, element) {
+            const prod = state.products.find(p => p.id === prodId);
+            if (prod) {
+                prod.liked = !prod.liked;
+                const icon = element.querySelector('i');
+                if (prod.liked) {
+                    icon.classList.add('fill-red-500', 'text-red-500');
+                    element.classList.add('text-red-500');
+                    // Add bounce animation
+                    element.classList.add('animate-[subtle-pulse_0.4s_ease-out_1]');
+                } else {
+                    icon.classList.remove('fill-red-500', 'text-red-500');
+                    element.classList.remove('text-red-500');
+                    element.classList.remove('animate-[subtle-pulse_0.4s_ease-out_1]');
+                }
+            }
+        }
+
+        // Toggle Liking heart state in header
+        function toggleLikedHeader(btn) {
+            state.liked = !state.liked;
+            const icon = document.getElementById('header-heart-icon');
+            if (state.liked) {
+                icon.classList.add('fill-red-500', 'text-red-500');
+                if (btn) btn.classList.add('scale-110');
+            } else {
+                icon.classList.remove('fill-red-500', 'text-red-500');
+                if (btn) btn.classList.remove('scale-110');
+            }
+            setTimeout(() => { if (btn) btn.classList.remove('scale-110'); }, 300);
+        }
+
+        // Collection Pills Selector logic
+        function selectCollection(collectionId) {
+            state.selectedCollection = collectionId;
+
+            const pills = document.querySelectorAll('.collection-pill');
+            pills.forEach(p => {
+                if (p.id === `pill-${collectionId}`) {
+                    p.className = "collection-pill shrink-0 px-4 py-2 text-xs font-bold rounded-full transition-all duration-200 shadow-xs shadow-orange-500/10 bg-[#eb7a43] text-white";
+                } else {
+                    p.className = "collection-pill shrink-0 px-4 py-2 text-xs font-bold rounded-full transition-all duration-200 bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white border border-zinc-100 dark:border-zinc-800/80";
+                }
+            });
+
+            renderProductsGrid();
+        }
+
+        // App search input handler
+        function handleSearch(val) {
+            renderProductsGrid();
+        }
+
+        // Toggle iOS dark/light app theme
+        function togglePhoneTheme() {
+            state.isPhoneDark = !state.isPhoneDark;
+            const iphoneDevice = document.getElementById('iphone-device');
+            const iphoneScreen = document.getElementById('iphone-screen');
+            const themeIcon = document.getElementById('theme-icon');
+            const themeText = document.getElementById('theme-text');
+
+            if (state.isPhoneDark) {
+                iphoneScreen.classList.add('dark');
+                iphoneScreen.style.backgroundColor = '#09090b'; // dark zinc
+                themeIcon.setAttribute('data-lucide', 'moon');
+                themeText.textContent = "Dark Mode";
+            } else {
+                iphoneScreen.classList.remove('dark');
+                iphoneScreen.style.backgroundColor = '#ffffff';
+                themeIcon.setAttribute('data-lucide', 'sun');
+                themeText.textContent = "Light Mode";
+            }
+            
+            // Re-render
+            renderProductsGrid();
+            lucide.createIcons();
+        }
+
+        // Toggle Screen Glare Reflectivity Overlay
+        function togglePhoneGlare() {
+            state.isPhoneGlare = !state.isPhoneGlare;
+            const glare = document.getElementById('screen-glare');
+            glare.style.opacity = state.isPhoneGlare ? '1' : '0';
+        }
+
+        // Trigger floating iOS Toast Alert
+        function triggerMockNotification() {
+            bellBadge.classList.remove('hidden');
+            iosToast.classList.remove('-translate-y-32', 'opacity-0');
+            iosToast.classList.add('translate-y-0', 'opacity-100');
+            state.isToastVisible = true;
+
+            // Auto dismiss after 7 seconds
+            setTimeout(() => {
+                if (state.isToastVisible) dismissToast();
+            }, 7000);
+        }
+
+        function dismissToast() {
+            iosToast.classList.add('-translate-y-32', 'opacity-0');
+            iosToast.classList.remove('translate-y-0', 'opacity-100');
+            state.isToastVisible = false;
+        }
+
+        // Dynamic Island Tap expands dynamic status
+        function toggleDynamicIsland() {
+            const island = document.getElementById('dynamic-island');
+            const pulse = document.getElementById('island-pulse');
+            const expanded = document.getElementById('dynamic-island-expanded');
+
+            if (island.classList.contains('w-[95px]')) {
+                island.classList.remove('w-[95px]', 'h-[26px]');
+                island.classList.add('w-[135px]', 'h-[32px]', 'bg-black/95');
+                pulse.classList.remove('opacity-0');
+                pulse.classList.add('opacity-100');
+                
+                // Show floating drawer badge in 3 seconds as callback
+                setTimeout(() => {
+                    if (island.classList.contains('w-[135px]')) {
+                        island.classList.add('w-[95px]', 'h-[26px]');
+                        island.classList.remove('w-[135px]', 'h-[32px]', 'bg-black/95');
+                        pulse.classList.add('opacity-0');
+                        pulse.classList.remove('opacity-100');
+                    }
+                }, 4000);
+            } else {
+                island.classList.add('w-[95px]', 'h-[26px]');
+                island.classList.remove('w-[135px]', 'h-[32px]', 'bg-black/95');
+                pulse.classList.add('opacity-0');
+                pulse.classList.remove('opacity-100');
+            }
+        }
+
+        // iOS Bottom Product Detail Drawer open/close
+        function openProductDrawer(prodId) {
+            // Default load product-1 if none provided
+            const targetId = prodId || 'prod-1';
+            const prod = state.products.find(p => p.id === targetId);
+            
+            if (prod) {
+                drawerShoeImg.src = prod.image;
+                drawerShoeName.textContent = prod.name;
+                drawerShoeCategory.textContent = `${prod.category} Collection`;
+                drawerShoePrice.textContent = `$${prod.price}`;
+                drawerShoeOriginal.textContent = `$${prod.originalPrice}`;
+                drawerShoeRating.textContent = prod.rating;
+
+                // Animate drawer up
+                productDetailDrawer.classList.remove('translate-y-full');
+                productDetailDrawer.classList.add('translate-y-0');
+            }
+        }
+
+        function closeProductDrawer() {
+            productDetailDrawer.classList.remove('translate-y-0');
+            productDetailDrawer.classList.add('translate-y-full');
+        }
+
+        // Drawer Shoe Size Selector UI Highlight
+        function selectSize(element) {
+            const btns = document.querySelectorAll('.size-btn');
+            btns.forEach(btn => {
+                btn.className = "size-btn py-2 text-xs font-bold border border-zinc-200 dark:border-zinc-800 rounded-xl hover:border-zinc-400 dark:hover:border-zinc-500 text-zinc-800 dark:text-zinc-200 bg-transparent transition-all";
+            });
+            element.className = "size-btn py-2 text-xs font-bold bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 border border-zinc-900 dark:border-white rounded-xl transition-all";
+        }
+
+        // Add to Cart workflow
+        function addToCart() {
+            state.cartCount++;
+            cartDotCount.textContent = state.cartCount;
+            cartDotCount.classList.remove('hidden');
+
+            // Close Drawer
+            closeProductDrawer();
+
+            // Trigger visual floating Success Badge inside app
+            const alertBadge = document.createElement('div');
+            alertBadge.className = "absolute top-12 left-6 right-6 py-2.5 px-4 bg-emerald-500 text-white text-[11px] font-bold rounded-full text-center z-50 shadow-lg transform -translate-y-6 opacity-0 transition-all duration-300 flex items-center justify-center gap-2";
+            alertBadge.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4"></i> Shoe added to cart successfully!`;
+            iphoneScreen.appendChild(alertBadge);
+            lucide.createIcons();
+
+            setTimeout(() => {
+                alertBadge.classList.remove('-translate-y-6', 'opacity-0');
+                alertBadge.classList.add('translate-y-0', 'opacity-100');
+            }, 100);
+
+            // Auto dismiss alert badge
+            setTimeout(() => {
+                alertBadge.classList.add('-translate-y-6', 'opacity-0');
+                setTimeout(() => alertBadge.remove(), 400);
+            }, 3000);
+        }
+
+        function openMockCart() {
+            if (state.cartCount === 0) {
+                alert("Your cart is empty! Select sneakers from 'Recommended for you' to add.");
+                return;
+            }
+            
+            const conf = confirm(`Checkout Workflow:\nYou have ${state.cartCount} premium items in your cart. Proceed to mock purchase?`);
+            if (conf) {
+                state.cartCount = 0;
+                cartDotCount.classList.add('hidden');
+                alert("Order completed! Your premium Sneaksy selection is on its way.");
+            }
+        }
+
+        // Start initialization
+        window.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>

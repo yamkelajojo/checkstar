@@ -1,0 +1,9 @@
+# Two-font brand system: system sans + Caveat script
+
+Status: accepted
+
+The mobile app uses a **two-font system**: the platform system sans (iOS San Francisco / Android Roboto) acts as the "Checkstar font" — a Helvetica Neue / Arial Narrow grotesque voice with heavy weights (700–900) and tight letter-spacing, exactly like the wordmark in `checkstar-logo-text.html` — and the **Caveat** handwritten cursive (bundled via `expo-font`, Google Fonts OFL) stands in for the "cares enough" script. The script is used only on orange/emphasised moments (discount %, sale price, "Special Offer", active pill highlights); everything else uses the system sans. We did **not** bundle Plus Jakarta Sans (the Sneaksy mockup font) because the user wants the Checkstar wordmark voice, not Sneaksy's; and we did not ship Brush Script MT (the original script) because it is proprietary.
+
+We chose platform system sans rather than bundling a strict copy of the wordmark font because Helvetica Neue is licensed/iOS-only and Arial Narrow is absent on Android — system sans is already Helvetica-like and we recreate the wordmark feel with weight + tracking. Caveat was picked over Dancing Script / Kaushan Script for its warm, legible, 400–700 range that works at both small badge and large price sizes. JetBrains Mono (used for codes in Sneaksy) is dropped — the Customer app has no code surfaces.
+
+Consequences: brand typography is tied to each platform's system font, so exact pixel rendering differs iOS vs Android by design; emphasise-the-accent moments rely on Caveat, so its OFL license must be carried in asset attribution.

@@ -8,6 +8,10 @@ A Durban-based South African supermarket chain (3 physical stores) rebuilding it
 A person who shops at Checkstar — either in-store or via the delivery app.
 _Avoid_: Buyer, User (when referring to a shopper)
 
+**Guest**:
+A Customer using the delivery app without a signed-in session. Guests can browse and build a cart, but sign-in is required to place an Order (prompted at checkout). A Rider who wants to shop must sign in as a Customer — there is no guest path to Rider screens.
+_Avoid_: Anonymous user, Visitor
+
 **Rider**:
 A Checkstar employee who delivers orders to Customers via motorbike. Riders have an `available` status they can toggle to indicate whether they're ready to accept deliveries.
 _Avoid_: Runner, Courier, Delivery person
