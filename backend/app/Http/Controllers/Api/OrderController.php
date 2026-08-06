@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Review;
 use App\Services\DeliveryConfirmation;
+use App\Services\OrderCancellationPolicy;
 use App\Services\OrderIntake;
 use App\Services\OrderStateMachine;
 use App\Services\RiderStatsRecorder;
@@ -19,13 +20,15 @@ class OrderController extends Controller
     private RiderStatsRecorder $riderStats;
     private DeliveryConfirmation $deliveryConfirmation;
     private OrderIntake $orderIntake;
+    private OrderCancellationPolicy $cancellationPolicy;
 
-    public function __construct(OrderStateMachine $stateMachine, RiderStatsRecorder $riderStats, DeliveryConfirmation $deliveryConfirmation, OrderIntake $orderIntake)
+    public function __construct(OrderStateMachine $stateMachine, RiderStatsRecorder $riderStats, DeliveryConfirmation $deliveryConfirmation, OrderIntake $orderIntake, OrderCancellationPolicy $cancellationPolicy)
     {
         $this->stateMachine = $stateMachine;
         $this->riderStats = $riderStats;
         $this->deliveryConfirmation = $deliveryConfirmation;
         $this->orderIntake = $orderIntake;
+        $this->cancellationPolicy = $cancellationPolicy;
     }
 
     public function index(Request $request): JsonResponse
@@ -73,6 +76,10 @@ class OrderController extends Controller
 
         if ($order->customer_id !== $request->user()->id) {
             return response()->json(['message' => 'Not your order'], 403);
+        }
+
+        if (!$this->cancellationPolicy->customerCanCancel($order)) {
+            return response()->json(['message' => 'This order can no longer be cancelled'], 422);
         }
 
         $this->stateMachine->transition(

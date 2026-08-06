@@ -246,6 +246,17 @@ class OrderPlacementTest extends TestCase
             ->assertStatus(403);
     }
 
+    public function test_customer_cannot_cancel_out_for_delivery_order(): void
+    {
+        $customer = $this->makeCustomer();
+        $order = $this->makeOrder($customer, OrderStatus::OutForDelivery->value);
+
+        $this->actingAs($customer)
+            ->postJson("/api/orders/{$order->id}/cancel")
+            ->assertStatus(422)
+            ->assertJson(['message' => 'This order can no longer be cancelled']);
+    }
+
     public function test_customer_can_confirm_own_delivery(): void
     {
         $customer = $this->makeCustomer();
