@@ -55,13 +55,17 @@ class OrderController extends Controller
 
         $result = $this->orderIntake->place($validated, $request->user());
 
+        $order = $result->order->load('rider.user', 'store');
+
         return response()->json([
-            'data' => $result->order,
+            'data' => $order,
             'dispatch' => [
                 'status' => $result->dispatchStatus,
                 'claim_latency_ms' => $result->claimLatencyMs,
                 'rider_id' => $result->riderId,
                 'store_id' => $result->storeId,
+                'rider_name' => $order->rider?->user?->name,
+                'store_name' => $order->store?->name,
             ],
         ], 201);
     }
@@ -82,7 +86,7 @@ class OrderController extends Controller
     {
         $order = Order::findOrFail($id);
 
-        if ($request->user()->cannot('update', $order)) {
+        if ($request->user()->cannot('cancel', $order)) {
             return response()->json(['message' => 'Not your order'], 403);
         }
 

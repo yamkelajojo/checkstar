@@ -17,6 +17,11 @@ class OrderPolicy
         return $user->id === $order->customer_id;
     }
 
+    public function cancel(User $user, Order $order): bool
+    {
+        return $user->id === $order->customer_id;
+    }
+
     public function confirmDelivery(User $user, Order $order): bool
     {
         return $user->id === $order->customer_id;

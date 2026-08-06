@@ -129,7 +129,9 @@ class OrderPlacementTest extends TestCase
             ->assertJsonPath('data.store_id', $store->id)
             ->assertJsonPath('dispatch.status', 'assigned')
             ->assertJsonPath('dispatch.rider_id', $store->riders()->first()->id)
-            ->assertJsonPath('dispatch.store_id', $store->id);
+            ->assertJsonPath('dispatch.store_id', $store->id)
+            ->assertJsonPath('dispatch.rider_name', 'Test Rider')
+            ->assertJsonPath('dispatch.store_name', 'Durban Central');
     }
 
     public function test_order_with_no_available_rider_is_cancelled(): void
@@ -143,6 +145,7 @@ class OrderPlacementTest extends TestCase
             'is_available' => true,
         ]);
         $customer = $this->makeCustomer();
+        $customer->cartItems()->create(['product_id' => $product->id, 'quantity' => 1]);
 
         $response = $this->actingAs($customer)->postJson('/api/orders', [
             'items' => [['product_id' => $product->id, 'quantity' => 1]],
@@ -154,6 +157,11 @@ class OrderPlacementTest extends TestCase
         $response->assertStatus(201)
             ->assertJsonPath('dispatch.status', 'no_rider_available')
             ->assertJsonPath('data.status', 'cancelled');
+
+        $this->actingAs($customer)
+            ->getJson('/api/cart')
+            ->assertStatus(200)
+            ->assertJsonCount(1, 'data');
     }
 
     public function test_placing_an_order_clears_the_server_cart(): void

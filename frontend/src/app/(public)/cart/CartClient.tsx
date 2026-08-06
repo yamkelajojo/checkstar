@@ -9,6 +9,7 @@ import { useCartStore } from '@/stores/cart-store'
 import { usePlaceOrder } from '@/lib/query'
 import { getDeliveryCoords, type DeliveryCoords } from '@/lib/delivery-coords'
 import LocationFallbackNotice from '@/components/LocationFallbackNotice'
+import type { Dispatch } from '@/types'
 import OrderConfirmation from './OrderConfirmation'
 
 export default function CartClient() {
@@ -18,7 +19,7 @@ export default function CartClient() {
   const [showCheckoutForm, setShowCheckoutForm] = useState(false)
   const [placeError, setPlaceError] = useState('')
   const [placedOrder, setPlacedOrder] = useState<{ order_number: string; id: number } | null>(null)
-  const [dispatchStatus, setDispatchStatus] = useState<string | null>(null)
+  const [dispatch, setDispatch] = useState<Dispatch | null>(null)
   const [coords, setCoords] = useState<DeliveryCoords | null>(null)
 
   const placeOrderMutation = usePlaceOrder()
@@ -45,7 +46,7 @@ export default function CartClient() {
       })
       clearCart()
       setPlacedOrder({ order_number: result.data.order_number, id: result.data.id })
-      setDispatchStatus(result.dispatch.status)
+      setDispatch(result.dispatch)
     } catch (err: any) {
       setPlaceError(err.message || 'Failed to place order.')
     }
@@ -55,7 +56,7 @@ export default function CartClient() {
   const deliveryFee = 0 as number
 
   if (placedOrder) {
-    return <OrderConfirmation order={placedOrder} dispatchStatus={dispatchStatus} />
+    return <OrderConfirmation order={placedOrder} dispatch={dispatch} />
   }
 
   return (

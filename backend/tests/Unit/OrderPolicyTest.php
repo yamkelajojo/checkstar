@@ -108,4 +108,14 @@ class OrderPolicyTest extends TestCase
     {
         $this->assertFalse($this->policy->review($this->intruder, $this->order));
     }
+
+    public function test_customer_can_cancel_own_order(): void
+    {
+        $this->assertTrue($this->policy->cancel($this->owner, $this->order));
+    }
+
+    public function test_customer_cannot_cancel_others_order(): void
+    {
+        $this->assertFalse($this->policy->cancel($this->intruder, $this->order));
+    }
 }

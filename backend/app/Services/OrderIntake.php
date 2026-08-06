@@ -73,12 +73,15 @@ class OrderIntake
                 'event_type' => EventType::OrderPlaced->value,
             ]);
 
-            $dispatchResult = $this->dispatchService->dispatch($order->fresh());
+            $dispatchedOrder = $order->fresh();
+            $dispatchResult = $this->dispatchService->dispatch($dispatchedOrder);
 
-            $customer->cartItems()->delete();
+            if ($dispatchedOrder->status !== OrderStatus::Cancelled) {
+                $customer->cartItems()->delete();
+            }
 
             return new OrderIntakeResult(
-                order: $order->fresh()->load('items'),
+                order: $dispatchedOrder->fresh()->load('items'),
                 dispatchStatus: $dispatchResult['status'],
                 claimLatencyMs: $dispatchResult['claim_latency_ms'] ?? null,
                 riderId: $dispatchResult['rider_id'] ?? null,
