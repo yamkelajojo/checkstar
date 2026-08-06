@@ -1,0 +1,144 @@
+export type CopyValues = Record<string, string | number>;
+
+/**
+ * Interpolates named `{key}` placeholders in a copy string.
+ * Throws if a placeholder is referenced but no value was supplied, so broken
+ * copy fails loudly in development rather than rendering raw braces.
+ */
+export function formatString(template: string, values?: CopyValues): string {
+  const map = values ?? {};
+  return template.replace(/\{(\w+)\}/g, (full, key: string) => {
+    if (!(key in map)) {
+      throw new Error(`formatString: missing value for placeholder "${key}"`);
+    }
+    return String(map[key]);
+  });
+}
+
+export const copy = {
+  app: {
+    tagline: 'cares enough',
+    checkoutLine: "We'll get it to your door",
+  },
+  onboarding: {
+    startShopping: 'Start shopping',
+    iAmARider: "I'm a Rider",
+    skip: 'Skip',
+    slides: {
+      groceriesTitle: 'Fresh groceries delivered',
+      groceriesSubtitle: 'Straight to your door in Durban.',
+      specialsTitle: 'Save on Specials',
+      specialsSubtitle: 'New deals land every week.',
+      trackingTitle: 'Track your delivery live',
+      trackingSubtitle: 'Follow your order from shelf to door.',
+    },
+  },
+  cart: {
+    emptyTitle: 'Your cart is empty',
+    emptyCaption: 'Add a Special or two to get started.',
+    browseSpecials: 'Browse Specials',
+    trustNote: 'Your cart is saved for 72 hours.',
+    minOrder: 'Order at least {minCents} to check out.',
+    checkOut: 'Checkout',
+  },
+  orders: {
+    emptyTitle: 'No orders yet',
+    emptyBody: 'Your delivery timeline will live here.',
+    viewOrder: 'View order',
+    cancelThisOrder: 'Cancel this order?',
+    cancelWarning: 'Items are released, no charge for COD.',
+    placedTitle: 'Order placed',
+    placedBody: "We're on it — {store} will start packing shortly.",
+    trackOrder: 'Track order',
+    done: 'Done',
+    cancel: 'Cancel order',
+    confirmReceived: 'Confirm received',
+    confirmReceivedNote: 'Mark this delivery as received',
+    items: 'Your items',
+    payment: 'Payment',
+    activity: 'Activity',
+    delivery: 'Delivery',
+    cancelled: 'Cancelled',
+  },
+  checkout: {
+    title: 'Checkout',
+    deliveryAddress: 'Delivery address',
+    deliveryAddressPlaceholder: 'House number, street, area',
+    deliveryNotes: 'Delivery notes',
+    deliveryNotesPlaceholder: 'Gate code, landmarks…',
+    summary: 'Order summary',
+    estimatedDelivery: 'Estimated delivery',
+    total: 'Total',
+    placeOrder: 'Place order',
+    placingOrder: 'Placing order…',
+    signInPrompt: 'Sign in to place your order',
+    signInToContinue: 'Sign in',
+    noStoreTitle: 'Pick a store first',
+    noStoreBody: 'Choose the Checkstar store that will fulfil your delivery.',
+    pickStore: 'Choose store',
+  },
+  auth: {
+    sessionExpired: 'Session expired — sign in again',
+    alreadyClaimed: 'Already claimed by another Rider',
+    orderCancelled: 'Order cancelled',
+    thanksForReview: "Thanks — your Rider's rating is updated",
+    title: 'Welcome to Checkstar',
+    signIn: 'Sign in',
+    createAccount: 'Create account',
+    registerAsRider: 'Register as a Rider',
+    asRiderNote: 'Deliver for Checkstar on your motorbike.',
+    email: 'Email',
+    password: 'Password',
+    confirmPassword: 'Confirm password',
+    name: 'Full name',
+    phone: 'Phone',
+    phoneOptional: 'Phone (optional)',
+    vehicleType: 'Vehicle type',
+    vehicleBike: 'Motorbike',
+    vehicleCar: 'Car',
+    switchToSignIn: 'Already have an account? Sign in',
+    switchToRegister: 'New to Checkstar? Create an account',
+    backToCustomer: 'Back to customer sign-up',
+    badCredentials: 'Check your email and password.',
+    invalidEmail: 'Enter a valid email address.',
+    shortPassword: 'Password must be at least 8 characters.',
+    mismatchPassword: 'Passwords do not match.',
+  },
+  rider: {
+    available: 'Available',
+    offline: 'Offline',
+    goOnline: 'Go online',
+    goOffline: 'Go offline',
+    statsTitle: 'Your stats',
+    deliveries: 'Deliveries',
+    rating: 'Rating',
+    level: 'Level',
+    availableOrders: 'Available orders',
+    activeDeliveries: 'Active deliveries',
+    emptyAvailable: 'No orders waiting right now.',
+    emptyActive: 'No active deliveries.',
+    claim: 'Claim',
+    claimed: 'Claimed',
+    markItemsBought: 'Mark items bought',
+    markItemsBoughtShort: 'Bought',
+    outForDelivery: 'Out for delivery',
+    outForDeliveryShort: 'Start trip',
+    delivered: 'Delivered',
+    markDelivered: 'Mark delivered',
+    storePickup: 'Pick up from {store}',
+  },
+  search: {
+    placeholder: 'Search for products',
+    searching: 'Searching…',
+    noResultsTitle: 'No matches for {term}',
+    noResultsBody: 'Try a different search.',
+  },
+  specials: {
+    emptyTitle: 'No Specials right now',
+    emptyBody: 'New deals land every week.',
+  },
+  review: {
+    title: 'Rate your Rider',
+    cta: 'Submit review',
+  },
+};
