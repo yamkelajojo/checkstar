@@ -71,7 +71,7 @@ class OrderController extends Controller
         $order = Order::with(['items', 'store', 'rider.user', 'activityLogs.user', 'review'])
             ->findOrFail($id);
 
-        if ($order->customer_id !== $request->user()->id) {
+        if ($request->user()->cannot('view', $order)) {
             return response()->json(['message' => 'Not your order'], 403);
         }
 
@@ -82,7 +82,7 @@ class OrderController extends Controller
     {
         $order = Order::findOrFail($id);
 
-        if ($order->customer_id !== $request->user()->id) {
+        if ($request->user()->cannot('update', $order)) {
             return response()->json(['message' => 'Not your order'], 403);
         }
 
@@ -104,7 +104,7 @@ class OrderController extends Controller
     {
         $order = Order::findOrFail($id);
 
-        if ($order->customer_id !== $request->user()->id) {
+        if ($request->user()->cannot('confirmDelivery', $order)) {
             return response()->json(['message' => 'Not your order'], 403);
         }
 
@@ -122,7 +122,7 @@ class OrderController extends Controller
 
         $order = Order::with('rider')->findOrFail($id);
 
-        if ($order->customer_id !== $request->user()->id) {
+        if ($request->user()->cannot('review', $order)) {
             return response()->json(['message' => 'Not your order'], 403);
         }
 
