@@ -9,13 +9,6 @@ export function useCategories() {
   })
 }
 
-export function useProducts(params?: Record<string, string>) {
-  return useQuery({
-    queryKey: ['products', params],
-    queryFn: () => api.getProducts(params).then(r => r.data),
-  })
-}
-
 export function useAllProducts(params?: Record<string, string>) {
   return useQuery({
     queryKey: ['products', 'all', params],

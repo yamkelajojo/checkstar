@@ -63,4 +63,16 @@ describe('api.getAllProducts', () => {
     expect(products).toHaveLength(1)
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
+
+  it('terminates when a page returns empty data instead of looping forever', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(jsonResponse(paginated(1, [mockProduct(1), mockProduct(2)], 5)))
+      .mockResolvedValue(jsonResponse(paginated(2, [], 5)))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const products = await api.getAllProducts()
+
+    expect(products).toHaveLength(2)
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  }, 2000)
 })

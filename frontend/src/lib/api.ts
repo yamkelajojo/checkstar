@@ -29,17 +29,15 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 export const api = {
   // Public
   getCategories: () => request<{ data: Category[] }>('/categories'),
-  getProducts: (params?: Record<string, string>) => request<{ data: Product[] }>(`/products?${new URLSearchParams(params || {})}`),
   getAllProducts: async (params?: Record<string, string>): Promise<Product[]> => {
     const query: Record<string, string> = { per_page: '100', ...params }
     const all: Product[] = []
     let page = 1
-    let total = Number.POSITIVE_INFINITY
 
-    while (all.length < total) {
+    while (true) {
       const res = await request<Paginated<Product>>(`/products?${new URLSearchParams({ ...query, page: String(page) })}`)
       all.push(...res.data)
-      total = res.total
+      if (res.data.length === 0 || all.length >= res.total) break
       page++
     }
 
