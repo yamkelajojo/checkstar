@@ -4,8 +4,6 @@ import { useEffect, useRef } from 'react'
 import { motion } from 'motion/react'
 import { MapPin, Phone, Clock, ChevronLeft, Navigation, Mail } from 'lucide-react'
 import Link from 'next/link'
-import Header from '@/components/Header'
-import Footer from '@/components/Footer'
 import { useStore } from '@/lib/query'
 
 export default function StoreDetailClient({ slug }: { slug: string }) {
@@ -66,13 +64,11 @@ export default function StoreDetailClient({ slug }: { slug: string }) {
   if (fetchError) {
     return (
       <>
-        <Header />
         <main className="max-w-4xl mx-auto px-4 py-16 text-center">
           <p className="text-red-500 text-lg font-medium">{fetchError}</p>
           <p className="text-sm text-gray-400 mt-1">Please try again later.</p>
           <Link href="/stores" className="text-primary hover:underline mt-4 inline-block">Back to stores</Link>
         </main>
-        <Footer />
       </>
     )
   }
@@ -80,7 +76,6 @@ export default function StoreDetailClient({ slug }: { slug: string }) {
   if (loading) {
     return (
       <>
-        <Header />
         <main className="max-w-4xl mx-auto px-4 py-16">
           <div className="animate-pulse space-y-6">
             <div className="h-6 bg-gray-50 rounded w-1/4" />
@@ -88,7 +83,6 @@ export default function StoreDetailClient({ slug }: { slug: string }) {
             <div className="h-[300px] bg-gray-50 rounded-xl" />
           </div>
         </main>
-        <Footer />
       </>
     )
   }
@@ -96,19 +90,16 @@ export default function StoreDetailClient({ slug }: { slug: string }) {
   if (!store) {
     return (
       <>
-        <Header />
         <main className="max-w-4xl mx-auto px-4 py-16 text-center">
           <p className="text-gray-400 text-lg">Store not found.</p>
           <Link href="/stores" className="text-primary hover:underline mt-4 inline-block">Back to stores</Link>
         </main>
-        <Footer />
       </>
     )
   }
 
   return (
     <>
-      <Header />
       <main className="max-w-4xl mx-auto px-4 py-16">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
           <Link href="/stores" className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-primary mb-8 transition-colors">
@@ -166,7 +157,6 @@ export default function StoreDetailClient({ slug }: { slug: string }) {
           </motion.div>
         </div>
       </main>
-      <Footer />
     </>
   )
 }

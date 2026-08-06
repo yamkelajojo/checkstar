@@ -3,8 +3,6 @@
 import { useState } from 'react'
 import { motion } from 'motion/react'
 import { Send, MapPin, Phone, Mail, Clock, Loader2, CheckCircle } from 'lucide-react'
-import Header from '@/components/Header'
-import Footer from '@/components/Footer'
 
 const stores = [
   { name: 'Checkstar Berea', address: '123 Berea Road, Berea, Durban', phone: '(031) 201-1234', hours: 'Mon–Sat 7am–8pm, Sun 8am–6pm' },
@@ -41,7 +39,6 @@ export default function ContactClient() {
 
   return (
     <>
-      <Header />
       <main className="max-w-6xl mx-auto px-4 py-16">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="font-display text-4xl font-bold mb-2">Contact Us</h1>
@@ -188,7 +185,6 @@ export default function ContactClient() {
           </motion.div>
         </div>
       </main>
-      <Footer />
     </>
   )
 }

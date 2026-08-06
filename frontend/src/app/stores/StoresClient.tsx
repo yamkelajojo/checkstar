@@ -3,8 +3,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion } from 'motion/react'
 import { MapPin, Navigation } from 'lucide-react'
-import Header from '@/components/Header'
-import Footer from '@/components/Footer'
 import StoreCard from '@/components/StoreCard'
 import type { Store } from '@/types'
 import { useStores } from '@/lib/query'
@@ -80,7 +78,6 @@ export default function StoresClient() {
 
   return (
     <>
-      <Header />
       <main className="max-w-7xl mx-auto px-4 py-16">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="font-display text-4xl font-bold mb-2">Our Stores</h1>
@@ -120,7 +117,6 @@ export default function StoresClient() {
           </motion.div>
         )}
       </main>
-      <Footer />
     </>
   )
 }

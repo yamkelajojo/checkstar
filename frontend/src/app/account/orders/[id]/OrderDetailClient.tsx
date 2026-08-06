@@ -5,8 +5,6 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'motion/react'
 import { ArrowLeft, Package, Clock, CheckCircle, XCircle, Bike, User, Star, Loader2, AlertCircle, MapPin, CreditCard } from 'lucide-react'
-import Header from '@/components/Header'
-import Footer from '@/components/Footer'
 import { useAuthStore } from '@/stores/auth-store'
 import { api } from '@/lib/api'
 import { useOrder } from '@/lib/query'
@@ -136,11 +134,9 @@ export default function OrderDetailClient({ id }: { id: string }) {
   if (authLoading || loading) {
     return (
       <>
-        <Header />
         <main className="max-w-4xl mx-auto px-4 py-20 text-center">
           <Loader2 size={32} className="animate-spin mx-auto text-primary" />
         </main>
-        <Footer />
       </>
     )
   }
@@ -148,14 +144,12 @@ export default function OrderDetailClient({ id }: { id: string }) {
   if (error && !order) {
     return (
       <>
-        <Header />
         <main className="max-w-4xl mx-auto px-4 py-16">
           <div className="bg-accent/10 border border-accent/30 text-accent text-sm rounded-lg px-4 py-3">{error?.message || 'Something went wrong'}</div>
           <Link href="/account/orders" className="mt-4 inline-flex items-center gap-1 text-sm text-primary hover:underline">
             <ArrowLeft size={14} /> Back to orders
           </Link>
         </main>
-        <Footer />
       </>
     )
   }
@@ -172,7 +166,6 @@ export default function OrderDetailClient({ id }: { id: string }) {
 
   return (
     <>
-      <Header />
       <main className="max-w-4xl mx-auto px-4 py-16">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <Link href="/account/orders" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-primary mb-6 transition-colors">
@@ -326,7 +319,6 @@ export default function OrderDetailClient({ id }: { id: string }) {
           )}
         </motion.div>
       </main>
-      <Footer />
     </>
   )
 }

@@ -3,8 +3,6 @@
 import { motion } from 'motion/react'
 import Link from 'next/link'
 import { ArrowRight, ShoppingBag, Bike, Store } from 'lucide-react'
-import Header from '@/components/Header'
-import Footer from '@/components/Footer'
 
 const stagger = {
   hidden: {},
@@ -19,7 +17,6 @@ const fadeUp = {
 export default function HomePage() {
   return (
     <>
-      <Header />
       <main>
         <section className="relative bg-gradient-to-br from-primary-light via-white to-white overflow-hidden">
           <div className="max-w-7xl mx-auto px-4 py-20 md:py-32">
@@ -119,7 +116,6 @@ export default function HomePage() {
           </div>
         </section>
       </main>
-      <Footer />
     </>
   )
 }

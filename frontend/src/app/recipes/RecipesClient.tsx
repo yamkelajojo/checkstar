@@ -4,8 +4,6 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'motion/react'
 import { Clock, Users, ChefHat, ArrowRight } from 'lucide-react'
-import Header from '@/components/Header'
-import Footer from '@/components/Footer'
 import { useRecipes } from '@/lib/query'
 
 const fadeUp = {
@@ -25,7 +23,6 @@ export default function RecipesClient() {
 
   return (
     <>
-      <Header />
       <main className="max-w-7xl mx-auto px-4 py-16">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="font-display text-4xl font-bold mb-2">Recipes</h1>
@@ -142,7 +139,6 @@ export default function RecipesClient() {
           </motion.div>
         )}
       </main>
-      <Footer />
     </>
   )
 }

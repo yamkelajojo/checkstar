@@ -4,8 +4,6 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'motion/react'
 import { User, Mail, Phone, Loader2, Save, CheckCircle } from 'lucide-react'
-import Header from '@/components/Header'
-import Footer from '@/components/Footer'
 import { useAuthStore } from '@/stores/auth-store'
 import { api } from '@/lib/api'
 
@@ -57,18 +55,15 @@ export default function ProfileClient() {
   if (authLoading) {
     return (
       <>
-        <Header />
         <main className="max-w-4xl mx-auto px-4 py-20 text-center">
           <Loader2 size={32} className="animate-spin mx-auto text-primary" />
         </main>
-        <Footer />
       </>
     )
   }
 
   return (
     <>
-      <Header />
       <main className="max-w-2xl mx-auto px-4 py-16">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="font-display text-3xl font-bold mb-8">My Profile</h1>
@@ -131,7 +126,6 @@ export default function ProfileClient() {
           </div>
         </motion.div>
       </main>
-      <Footer />
     </>
   )
 }

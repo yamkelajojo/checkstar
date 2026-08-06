@@ -3,8 +3,6 @@
 import { useState } from 'react'
 import { motion } from 'motion/react'
 import { Search, SlidersHorizontal } from 'lucide-react'
-import Header from '@/components/Header'
-import Footer from '@/components/Footer'
 import ProductCard from '@/components/ProductCard'
 import CategoryGrid from '@/components/CategoryGrid'
 import type { Product, Category } from '@/types'
@@ -30,7 +28,6 @@ export default function ProductsClient() {
 
   return (
     <>
-      <Header />
       <main className="max-w-7xl mx-auto px-4 py-16">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="font-display text-4xl font-bold mb-2">Products</h1>
@@ -105,7 +102,6 @@ export default function ProductsClient() {
           )}
         </motion.div>
       </main>
-      <Footer />
     </>
   )
 }

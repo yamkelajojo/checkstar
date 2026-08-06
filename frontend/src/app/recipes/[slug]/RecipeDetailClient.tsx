@@ -4,8 +4,6 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'motion/react'
 import { Clock, Users, ChefHat, ChevronLeft, Check, ListOrdered } from 'lucide-react'
-import Header from '@/components/Header'
-import Footer from '@/components/Footer'
 import { useRecipe } from '@/lib/query'
 
 export default function RecipeDetailClient({ slug }: { slug: string }) {
@@ -38,13 +36,11 @@ export default function RecipeDetailClient({ slug }: { slug: string }) {
   if (fetchError) {
     return (
       <>
-        <Header />
         <main className="max-w-4xl mx-auto px-4 py-16 text-center">
           <p className="text-red-500 text-lg font-medium">{fetchError}</p>
           <p className="text-sm text-gray-400 mt-1">Please try again later.</p>
           <Link href="/recipes" className="text-primary hover:underline mt-4 inline-block">Back to recipes</Link>
         </main>
-        <Footer />
       </>
     )
   }
@@ -52,7 +48,6 @@ export default function RecipeDetailClient({ slug }: { slug: string }) {
   if (loading) {
     return (
       <>
-        <Header />
         <main className="max-w-4xl mx-auto px-4 py-16">
           <div className="animate-pulse space-y-6">
             <div className="h-6 bg-gray-50 rounded w-1/4" />
@@ -62,7 +57,6 @@ export default function RecipeDetailClient({ slug }: { slug: string }) {
             <div className="h-40 bg-gray-50 rounded" />
           </div>
         </main>
-        <Footer />
       </>
     )
   }
@@ -70,19 +64,16 @@ export default function RecipeDetailClient({ slug }: { slug: string }) {
   if (!recipe) {
     return (
       <>
-        <Header />
         <main className="max-w-4xl mx-auto px-4 py-16 text-center">
           <p className="text-gray-400 text-lg">Recipe not found.</p>
           <Link href="/recipes" className="text-primary hover:underline mt-4 inline-block">Back to recipes</Link>
         </main>
-        <Footer />
       </>
     )
   }
 
   return (
     <>
-      <Header />
       <main className="max-w-4xl mx-auto px-4 py-16">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
           <Link href="/recipes" className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-primary mb-8 transition-colors">
@@ -208,7 +199,6 @@ export default function RecipeDetailClient({ slug }: { slug: string }) {
           </motion.div>
         </div>
       </main>
-      <Footer />
     </>
   )
 }

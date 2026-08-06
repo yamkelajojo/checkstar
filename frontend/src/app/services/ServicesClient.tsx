@@ -2,8 +2,6 @@
 
 import { motion } from 'motion/react'
 import { Milk, CreditCard, Wifi, Zap, Bike, Store } from 'lucide-react'
-import Header from '@/components/Header'
-import Footer from '@/components/Footer'
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
@@ -41,7 +39,6 @@ const services = [
 export default function ServicesClient() {
   return (
     <>
-      <Header />
       <main>
         <section className="relative bg-gradient-to-br from-primary-light via-white to-white overflow-hidden">
           <div className="max-w-4xl mx-auto px-4 py-20 md:py-28 text-center">
@@ -115,7 +112,6 @@ export default function ServicesClient() {
           </div>
         </section>
       </main>
-      <Footer />
     </>
   )
 }

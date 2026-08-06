@@ -6,17 +6,8 @@ import { motion, AnimatePresence } from 'motion/react'
 import { ShoppingCart, Menu, X, User, LogOut } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth-store'
 import { useCartStore } from '@/stores/cart-store'
-
-const navLinks = [
-  { href: '/', label: 'Home' },
-  { href: '/about', label: 'About' },
-  { href: '/products', label: 'Products' },
-  { href: '/specials', label: 'Specials' },
-  { href: '/recipes', label: 'Recipes' },
-  { href: '/community', label: 'Community' },
-  { href: '/stores', label: 'Stores' },
-  { href: '/contact', label: 'Contact' },
-]
+import { navLinks } from '@/lib/navigation'
+import NavLink from '@/components/NavLink'
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -32,9 +23,7 @@ export default function Header() {
 
         <nav className="hidden lg:flex items-center gap-6">
           {navLinks.map(link => (
-            <Link key={link.href} href={link.href} className="text-sm text-gray-600 hover:text-primary transition-colors">
-              {link.label}
-            </Link>
+            <NavLink key={link.href} href={link.href} label={link.label} />
           ))}
         </nav>
 
@@ -79,9 +68,7 @@ export default function Header() {
           >
             <div className="px-4 py-4 flex flex-col gap-3">
               {navLinks.map(link => (
-                <Link key={link.href} href={link.href} onClick={() => setMenuOpen(false)} className="text-sm text-gray-600 hover:text-primary transition-colors">
-                  {link.label}
-                </Link>
+                <NavLink key={link.href} href={link.href} label={link.label} onNavigate={() => setMenuOpen(false)} />
               ))}
               {!isAuthenticated && (
                 <Link href="/auth/login" onClick={() => setMenuOpen(false)} className="text-sm font-medium text-primary hover:text-primary-dark transition-colors">

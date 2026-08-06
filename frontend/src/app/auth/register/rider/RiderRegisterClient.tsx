@@ -5,8 +5,6 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'motion/react'
 import { Mail, Lock, Eye, EyeOff, User, Phone, Bike, Landmark, Loader2, ArrowRight } from 'lucide-react'
-import Header from '@/components/Header'
-import Footer from '@/components/Footer'
 import { useAuthStore } from '@/stores/auth-store'
 
 const VEHICLE_TYPES = [
@@ -77,7 +75,6 @@ export default function RiderRegisterClient() {
 
   return (
     <>
-      <Header />
       <main className="max-w-lg mx-auto px-4 py-16">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="font-display text-3xl font-bold mb-2 text-center">Become a Rider</h1>
@@ -200,7 +197,6 @@ export default function RiderRegisterClient() {
           </div>
         </motion.div>
       </main>
-      <Footer />
     </>
   )
 }

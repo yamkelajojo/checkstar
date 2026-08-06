@@ -4,8 +4,6 @@ import { useState } from 'react'
 import { motion } from 'motion/react'
 import { ShoppingCart, ChevronLeft, Tag, Package } from 'lucide-react'
 import Link from 'next/link'
-import Header from '@/components/Header'
-import Footer from '@/components/Footer'
 import { useCartStore } from '@/stores/cart-store'
 import { useProduct } from '@/lib/query'
 
@@ -18,13 +16,11 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
   if (fetchError) {
     return (
       <>
-        <Header />
         <main className="max-w-7xl mx-auto px-4 py-16 text-center">
           <p className="text-red-500 text-lg font-medium">{fetchError}</p>
           <p className="text-sm text-gray-400 mt-1">Please try again later.</p>
           <Link href="/products" className="text-primary hover:underline mt-4 inline-block">Back to products</Link>
         </main>
-        <Footer />
       </>
     )
   }
@@ -32,7 +28,6 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
   if (loading) {
     return (
       <>
-        <Header />
         <main className="max-w-7xl mx-auto px-4 py-16">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 animate-pulse">
             <div className="aspect-square bg-gray-50 rounded-2xl" />
@@ -44,7 +39,6 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
             </div>
           </div>
         </main>
-        <Footer />
       </>
     )
   }
@@ -52,14 +46,12 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
   if (!product) {
     return (
       <>
-        <Header />
         <main className="max-w-7xl mx-auto px-4 py-16 text-center">
           <p className="text-gray-400 text-lg">Product not found.</p>
           <Link href="/products" className="text-primary hover:underline mt-4 inline-block">
             Back to products
           </Link>
         </main>
-        <Footer />
       </>
     )
   }
@@ -75,7 +67,6 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
 
   return (
     <>
-      <Header />
       <main className="max-w-7xl mx-auto px-4 py-16">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
           <Link href="/products" className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-primary mb-8 transition-colors">
@@ -148,7 +139,6 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
           </motion.div>
         </div>
       </main>
-      <Footer />
     </>
   )
 }

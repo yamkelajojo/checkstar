@@ -5,8 +5,6 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'motion/react'
 import { Mail, Lock, Eye, EyeOff, User, Phone, Loader2, ArrowRight } from 'lucide-react'
-import Header from '@/components/Header'
-import Footer from '@/components/Footer'
 import { useAuthStore } from '@/stores/auth-store'
 
 export default function RegisterClient() {
@@ -54,7 +52,6 @@ export default function RegisterClient() {
 
   return (
     <>
-      <Header />
       <main className="max-w-md mx-auto px-4 py-16">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="font-display text-3xl font-bold mb-2 text-center">Create your account</h1>
@@ -135,7 +132,6 @@ export default function RegisterClient() {
           </div>
         </motion.div>
       </main>
-      <Footer />
     </>
   )
 }

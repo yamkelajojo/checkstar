@@ -2,8 +2,6 @@
 
 import { motion } from 'motion/react'
 import { Store, Bike, Users, ShoppingBag, Award, Heart } from 'lucide-react'
-import Header from '@/components/Header'
-import Footer from '@/components/Footer'
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
@@ -33,7 +31,6 @@ const stakeholders = [
 export default function AboutClient() {
   return (
     <>
-      <Header />
       <main>
         <section className="relative bg-gradient-to-br from-primary-light via-white to-white overflow-hidden">
           <div className="max-w-4xl mx-auto px-4 py-20 md:py-28 text-center">
@@ -152,7 +149,6 @@ export default function AboutClient() {
           </motion.div>
         </section>
       </main>
-      <Footer />
     </>
   )
 }

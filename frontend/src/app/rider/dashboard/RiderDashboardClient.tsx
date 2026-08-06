@@ -3,8 +3,6 @@
 import { useState, useCallback } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { motion } from 'motion/react'
-import Header from '@/components/Header'
-import Footer from '@/components/Footer'
 import OrderTimeline from '@/components/OrderTimeline'
 import StarRating from '@/components/StarRating'
 import { api } from '@/lib/api'
@@ -228,7 +226,6 @@ export default function RiderDashboardClient() {
 
   return (
     <>
-      <Header />
       <main className="max-w-6xl mx-auto px-4 py-8">
         <motion.div initial="hidden" animate="show" variants={stagger}>
           {/* Top bar */}
@@ -520,7 +517,6 @@ export default function RiderDashboardClient() {
           )}
         </motion.div>
       </main>
-      <Footer />
     </>
   )
 }

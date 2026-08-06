@@ -5,8 +5,6 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'motion/react'
 import { Minus, Plus, Trash2, ShoppingBag, ArrowRight, Loader2, MapPin, CheckCircle, Bike } from 'lucide-react'
-import Header from '@/components/Header'
-import Footer from '@/components/Footer'
 import { useCartStore } from '@/stores/cart-store'
 import { usePlaceOrder } from '@/lib/query'
 
@@ -42,7 +40,6 @@ export default function CartClient() {
   if (placedOrder) {
     return (
       <>
-        <Header />
         <main className="max-w-md mx-auto px-4 py-20 text-center">
           <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -70,14 +67,12 @@ export default function CartClient() {
             </div>
           </motion.div>
         </main>
-        <Footer />
       </>
     )
   }
 
   return (
     <>
-      <Header />
       <main className="max-w-4xl mx-auto px-4 py-16">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <div className="flex items-center justify-between mb-8">
@@ -245,7 +240,6 @@ export default function CartClient() {
           )}
         </motion.div>
       </main>
-      <Footer />
     </>
   )
 }

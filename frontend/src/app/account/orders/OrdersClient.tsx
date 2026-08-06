@@ -5,8 +5,6 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'motion/react'
 import { Package, ChevronRight, Loader2, ShoppingBag, Clock, CheckCircle, XCircle, Bike, AlertCircle } from 'lucide-react'
-import Header from '@/components/Header'
-import Footer from '@/components/Footer'
 import { useAuthStore } from '@/stores/auth-store'
 import { useOrders } from '@/lib/query'
 
@@ -37,18 +35,15 @@ export default function OrdersClient() {
   if (authLoading || loading) {
     return (
       <>
-        <Header />
         <main className="max-w-4xl mx-auto px-4 py-20 text-center">
           <Loader2 size={32} className="animate-spin mx-auto text-primary" />
         </main>
-        <Footer />
       </>
     )
   }
 
   return (
     <>
-      <Header />
       <main className="max-w-4xl mx-auto px-4 py-16">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="font-display text-3xl font-bold mb-8">My Orders</h1>
@@ -111,7 +106,6 @@ export default function OrdersClient() {
           )}
         </motion.div>
       </main>
-      <Footer />
     </>
   )
 }

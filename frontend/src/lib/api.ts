@@ -30,12 +30,12 @@ export const api = {
   // Public
   getCategories: () => request<{ data: Category[] }>('/categories'),
   getProducts: (params?: Record<string, string>) => request<{ data: Product[] }>(`/products?${new URLSearchParams(params || {})}`),
-  getProduct: (slug: string) => request<Product>(`/products/${slug}`),
+  getProduct: (slug: string) => request<{ data: Product }>(`/products/${slug}`).then(r => r.data),
   getSpecials: () => request<{ data: Special[] }>('/specials'),
   getStores: () => request<{ data: Store[] }>('/stores'),
   getStore: (slug: string) => request<{ data: Store }>(`/stores/${slug}`),
   getRecipes: () => request<{ data: Recipe[] }>('/recipes'),
-  getRecipe: (slug: string) => request<Recipe>(`/recipes/${slug}`),
+  getRecipe: (slug: string) => request<{ data: Recipe }>(`/recipes/${slug}`).then(r => r.data),
   getCommunityPosts: (category?: string) => request<{ data: CommunityPost[] }>(`/community-posts${category ? `?category=${category}` : ''}`),
   getCareers: () => request<{ data: CareerListing[] }>('/careers'),
   // Auth

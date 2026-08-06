@@ -2,8 +2,6 @@
 
 import Link from 'next/link'
 import { motion } from 'motion/react'
-import Header from '@/components/Header'
-import Footer from '@/components/Footer'
 import { useAuthStore } from '@/stores/auth-store'
 import { useProducts, useCategories, useOrders, useStores, useSpecials, useRecipes } from '@/lib/query'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
@@ -100,7 +98,6 @@ export default function AdminDashboardClient() {
 
   return (
     <>
-      <Header />
       <main className="max-w-6xl mx-auto px-4 py-8">
         <motion.div initial="hidden" animate="show" variants={stagger}>
           {/* Header */}
@@ -297,7 +294,6 @@ export default function AdminDashboardClient() {
           </div>
         </motion.div>
       </main>
-      <Footer />
     </>
   )
 }
