@@ -7,23 +7,9 @@ import { motion, AnimatePresence } from 'motion/react'
 import { Minus, Plus, Trash2, ShoppingBag, ArrowRight, Loader2, MapPin } from 'lucide-react'
 import { useCartStore } from '@/stores/cart-store'
 import { usePlaceOrder } from '@/lib/query'
+import { getDeliveryCoords, type DeliveryCoords } from '@/lib/delivery-coords'
+import LocationFallbackNotice from '@/components/LocationFallbackNotice'
 import OrderConfirmation from './OrderConfirmation'
-
-const DURBAN_COORDS = { latitude: -29.8587, longitude: 31.0218 }
-
-function getDeliveryCoords(): Promise<{ latitude: number; longitude: number }> {
-  return new Promise(resolve => {
-    if (typeof navigator === 'undefined' || !navigator.geolocation) {
-      resolve(DURBAN_COORDS)
-      return
-    }
-    navigator.geolocation.getCurrentPosition(
-      pos => resolve({ latitude: pos.coords.latitude, longitude: pos.coords.longitude }),
-      () => resolve(DURBAN_COORDS),
-      { timeout: 5000, maximumAge: 60000 }
-    )
-  })
-}
 
 export default function CartClient() {
   const router = useRouter()
@@ -33,8 +19,14 @@ export default function CartClient() {
   const [placeError, setPlaceError] = useState('')
   const [placedOrder, setPlacedOrder] = useState<{ order_number: string; id: number } | null>(null)
   const [dispatchStatus, setDispatchStatus] = useState<string | null>(null)
+  const [coords, setCoords] = useState<DeliveryCoords | null>(null)
 
   const placeOrderMutation = usePlaceOrder()
+
+  const handleProceedToCheckout = () => {
+    setShowCheckoutForm(true)
+    getDeliveryCoords().then(setCoords)
+  }
 
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -44,12 +36,12 @@ export default function CartClient() {
       return
     }
     try {
-      const coords = await getDeliveryCoords()
+      const resolved = coords ?? (await getDeliveryCoords())
       const result = await placeOrderMutation.mutateAsync({
         items: items.map(i => ({ product_id: i.product.id, quantity: i.quantity })),
         delivery_address: deliveryAddress.trim(),
-        delivery_latitude: coords.latitude,
-        delivery_longitude: coords.longitude,
+        delivery_latitude: resolved.latitude,
+        delivery_longitude: resolved.longitude,
       })
       clearCart()
       setPlacedOrder({ order_number: result.data.order_number, id: result.data.id })
@@ -176,7 +168,7 @@ export default function CartClient() {
                   {!showCheckoutForm ? (
                     <motion.button
                       whileTap={{ scale: 0.98 }}
-                      onClick={() => setShowCheckoutForm(true)}
+                      onClick={handleProceedToCheckout}
                       className="w-full mt-5 bg-primary text-white py-2.5 rounded-lg font-medium hover:bg-primary-dark transition-colors flex items-center justify-center gap-2"
                     >
                       Proceed to Checkout <ArrowRight size={16} />
@@ -191,6 +183,8 @@ export default function CartClient() {
                       {placeError && (
                         <p className="text-xs text-accent">{placeError}</p>
                       )}
+
+                      {coords?.usedFallback && <LocationFallbackNotice />}
 
                       <div>
                         <label htmlFor="delivery-address" className="block text-xs font-medium text-gray-600 mb-1">
