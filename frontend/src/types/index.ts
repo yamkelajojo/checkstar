@@ -18,3 +18,4 @@ export interface Special { id: number; title: string; slug: string; description:
 export interface Recipe { id: number; title: string; slug: string; description: string | null; ingredients: any; method: string; image: string | null; category: string | null; prep_time: number | null; cook_time: number | null; servings: number | null }
 export interface CommunityPost { id: number; title: string; slug: string; content: string | null; image: string | null; category: 'gallery' | 'csr'; event_date: string | null }
 export interface CareerListing { id: number; title: string; slug: string; description: string; requirements: string | null; location: string; type: string; department: string | null; closes_at: string | null }
+export interface Paginated<T> { current_page: number; data: T[]; per_page: number; total: number; last_page: number }

@@ -55,10 +55,14 @@ class OrderController extends Controller
         return response()->json(['data' => $result->order], 201);
     }
 
-    public function show(int $id): JsonResponse
+    public function show(Request $request, int $id): JsonResponse
     {
         $order = Order::with(['items', 'store', 'rider.user', 'activityLogs.user', 'review'])
             ->findOrFail($id);
+
+        if ($order->customer_id !== $request->user()->id) {
+            return response()->json(['message' => 'Not your order'], 403);
+        }
 
         return response()->json(['data' => $order]);
     }
@@ -66,6 +70,10 @@ class OrderController extends Controller
     public function cancel(Request $request, int $id): JsonResponse
     {
         $order = Order::findOrFail($id);
+
+        if ($order->customer_id !== $request->user()->id) {
+            return response()->json(['message' => 'Not your order'], 403);
+        }
 
         $this->stateMachine->transition(
             $order,
@@ -80,6 +88,10 @@ class OrderController extends Controller
     public function confirmDelivery(Request $request, int $id): JsonResponse
     {
         $order = Order::findOrFail($id);
+
+        if ($order->customer_id !== $request->user()->id) {
+            return response()->json(['message' => 'Not your order'], 403);
+        }
 
         $confirmed = $this->deliveryConfirmation->confirm($order, $request->user());
 

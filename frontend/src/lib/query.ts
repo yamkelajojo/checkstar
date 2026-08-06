@@ -16,6 +16,13 @@ export function useProducts(params?: Record<string, string>) {
   })
 }
 
+export function useAllProducts(params?: Record<string, string>) {
+  return useQuery({
+    queryKey: ['products', 'all', params],
+    queryFn: () => api.getAllProducts(params),
+  })
+}
+
 export function useProduct(slug: string) {
   return useQuery({
     queryKey: ['product', slug],

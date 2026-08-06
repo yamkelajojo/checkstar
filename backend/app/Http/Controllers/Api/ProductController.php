@@ -53,7 +53,12 @@ class ProductController extends Controller
             $query->where('tags', 'like', "%\"{$request->tag}\"%");
         }
 
-        $products = $query->orderBy('sort_order')->paginate(20);
+        $rawPerPage = $request->query('per_page', 20);
+        $perPage = is_numeric($rawPerPage)
+            ? max(1, min((int) $rawPerPage, 100))
+            : 20;
+
+        $products = $query->orderBy('sort_order')->paginate($perPage);
 
         foreach ($products as $product) {
             $this->absolutizeImages($product);

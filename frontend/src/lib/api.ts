@@ -1,4 +1,4 @@
-import type { Category, Product, Store, Order, Rider, Special, Recipe, CommunityPost, CareerListing, User, CartItem } from '@/types'
+import type { Category, Product, Store, Order, Rider, Special, Recipe, CommunityPost, CareerListing, User, CartItem, Paginated } from '@/types'
 
 const BASE = '/api'
 
@@ -30,6 +30,21 @@ export const api = {
   // Public
   getCategories: () => request<{ data: Category[] }>('/categories'),
   getProducts: (params?: Record<string, string>) => request<{ data: Product[] }>(`/products?${new URLSearchParams(params || {})}`),
+  getAllProducts: async (params?: Record<string, string>): Promise<Product[]> => {
+    const query: Record<string, string> = { per_page: '100', ...params }
+    const all: Product[] = []
+    let page = 1
+    let total = Number.POSITIVE_INFINITY
+
+    while (all.length < total) {
+      const res = await request<Paginated<Product>>(`/products?${new URLSearchParams({ ...query, page: String(page) })}`)
+      all.push(...res.data)
+      total = res.total
+      page++
+    }
+
+    return all
+  },
   getProduct: (slug: string) => request<{ data: Product }>(`/products/${slug}`).then(r => r.data),
   getSpecials: () => request<{ data: Special[] }>('/specials'),
   getStores: () => request<{ data: Store[] }>('/stores'),
@@ -47,13 +62,13 @@ export const api = {
   getUser: () => request<{ user: User }>('/auth/user'),
   // Customer
   getOrders: () => request<{ data: Order[] }>('/orders'),
-  getOrder: (id: number) => request<Order>(`/orders/${id}`),
-  placeOrder: (data: { store_id: number; items: { product_id: number; quantity: number }[]; delivery_address?: string }) => request<Order>('/orders', { method: 'POST', body: JSON.stringify(data) }),
-  cancelOrder: (id: number) => request<Order>(`/orders/${id}/cancel`, { method: 'POST' }),
-  confirmDelivery: (id: number) => request<Order>(`/orders/${id}/confirm`, { method: 'POST' }),
+  getOrder: (id: number) => request<{ data: Order }>(`/orders/${id}`).then(r => r.data),
+  placeOrder: (data: { items: { product_id: number; quantity: number }[]; delivery_address?: string; delivery_latitude: number; delivery_longitude: number; delivery_notes?: string }) => request<{ data: Order }>('/orders', { method: 'POST', body: JSON.stringify(data) }).then(r => r.data),
+  cancelOrder: (id: number) => request<{ data: Order }>(`/orders/${id}/cancel`, { method: 'POST' }).then(r => r.data),
+  confirmDelivery: (id: number) => request<{ data: Order }>(`/orders/${id}/confirm`, { method: 'POST' }).then(r => r.data),
   reviewRider: (id: number, data: { rating: number; comment?: string }) => request<any>(`/orders/${id}/review`, { method: 'POST', body: JSON.stringify(data) }),
-  getCart: () => request<{ items: CartItem[] }>('/cart'),
-  syncCart: (items: { product_id: number; quantity: number }[]) => request<{ items: CartItem[] }>('/cart/sync', { method: 'POST', body: JSON.stringify({ items }) }),
+  getCart: () => request<{ data: CartItem[] }>('/cart').then(r => r.data),
+  syncCart: (items: { product_id: number; quantity: number }[]) => request<{ message: string }>('/cart/sync', { method: 'POST', body: JSON.stringify({ items }) }),
   updateProfile: (data: Partial<User>) => request<User>('/profile', { method: 'PUT', body: JSON.stringify(data) }),
   // Rider
   getAvailableOrders: () => request<{ data: Order[] }>('/rider/available-orders'),

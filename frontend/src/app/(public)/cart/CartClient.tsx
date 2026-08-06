@@ -8,6 +8,22 @@ import { Minus, Plus, Trash2, ShoppingBag, ArrowRight, Loader2, MapPin, CheckCir
 import { useCartStore } from '@/stores/cart-store'
 import { usePlaceOrder } from '@/lib/query'
 
+const DURBAN_COORDS = { latitude: -29.8587, longitude: 31.0218 }
+
+function getDeliveryCoords(): Promise<{ latitude: number; longitude: number }> {
+  return new Promise(resolve => {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      resolve(DURBAN_COORDS)
+      return
+    }
+    navigator.geolocation.getCurrentPosition(
+      pos => resolve({ latitude: pos.coords.latitude, longitude: pos.coords.longitude }),
+      () => resolve(DURBAN_COORDS),
+      { timeout: 5000, maximumAge: 60000 }
+    )
+  })
+}
+
 export default function CartClient() {
   const router = useRouter()
   const { items, total, removeItem, updateQuantity, decrementItem, addItem, clearCart } = useCartStore()
@@ -21,11 +37,17 @@ export default function CartClient() {
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault()
     setPlaceError('')
+    if (!deliveryAddress.trim()) {
+      setPlaceError('Please enter a delivery address.')
+      return
+    }
     try {
+      const coords = await getDeliveryCoords()
       const order = await placeOrderMutation.mutateAsync({
-        store_id: 1,
         items: items.map(i => ({ product_id: i.product.id, quantity: i.quantity })),
-        delivery_address: deliveryAddress || undefined,
+        delivery_address: deliveryAddress.trim(),
+        delivery_latitude: coords.latitude,
+        delivery_longitude: coords.longitude,
       })
       clearCart()
       setPlacedOrder({ order_number: order.order_number, id: order.id })

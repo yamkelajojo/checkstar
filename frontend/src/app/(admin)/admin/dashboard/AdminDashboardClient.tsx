@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { motion } from 'motion/react'
 import { useAuthStore } from '@/stores/auth-store'
-import { useProducts, useCategories, useOrders, useStores, useSpecials, useRecipes } from '@/lib/query'
+import { useAllProducts, useCategories, useOrders, useStores, useSpecials, useRecipes } from '@/lib/query'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import type { Order } from '@/types'
 import {
@@ -39,7 +39,7 @@ export default function AdminDashboardClient() {
   const { user } = useAuthStore()
   const queryClient = useQueryClient()
 
-  const { data: products = [], isLoading: productsLoading, error: productsError } = useProducts()
+  const { data: products = [], isLoading: productsLoading, error: productsError } = useAllProducts()
   const { data: categories = [], isLoading: categoriesLoading, error: categoriesError } = useCategories()
   const { data: orders = [], isLoading: ordersLoading, error: ordersError } = useOrders()
   const { data: stores = [], isLoading: storesLoading, error: storesError } = useStores()

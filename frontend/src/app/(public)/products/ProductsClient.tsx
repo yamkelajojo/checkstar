@@ -6,13 +6,13 @@ import { Search, SlidersHorizontal } from 'lucide-react'
 import ProductCard from '@/components/ProductCard'
 import CategoryGrid from '@/components/CategoryGrid'
 import type { Product, Category } from '@/types'
-import { useProducts, useCategories } from '@/lib/query'
+import { useAllProducts, useCategories } from '@/lib/query'
 
 export default function ProductsClient() {
   const [activeCategory, setActiveCategory] = useState<number | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
 
-  const { data: products = [], isLoading: productsLoading, error: productsError } = useProducts()
+  const { data: products = [], isLoading: productsLoading, error: productsError } = useAllProducts()
   const { data: categories = [], isLoading: categoriesLoading, error: categoriesError } = useCategories()
 
   const loading = productsLoading || categoriesLoading
