@@ -9,6 +9,25 @@ use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
+    private function imageUrl(?string $path): ?string
+    {
+        if ($path === null) {
+            return null;
+        }
+
+        return rtrim(request()->getSchemeAndHttpHost(), '/') . '/' . ltrim($path, '/');
+    }
+
+    private function absolutizeImages(Product $product): Product
+    {
+        $product->image = $this->imageUrl($product->image);
+        if ($product->images !== null) {
+            $product->images = array_map(fn (?string $img) => $this->imageUrl($img), $product->images);
+        }
+
+        return $product;
+    }
+
     public function index(Request $request): JsonResponse
     {
         $query = Product::where('is_active', true)
@@ -36,6 +55,10 @@ class ProductController extends Controller
 
         $products = $query->orderBy('sort_order')->paginate(20);
 
+        foreach ($products as $product) {
+            $this->absolutizeImages($product);
+        }
+
         return response()->json($products);
     }
 
@@ -45,6 +68,8 @@ class ProductController extends Controller
             ->where('is_active', true)
             ->with('category', 'specials')
             ->firstOrFail();
+
+        $this->absolutizeImages($product);
 
         return response()->json(['data' => $product]);
     }
