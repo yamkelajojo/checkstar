@@ -129,6 +129,52 @@ class OrderPlacementTest extends TestCase
             ->assertJsonPath('data.store_id', $store->id);
     }
 
+    public function test_placing_an_order_clears_the_server_cart(): void
+    {
+        $store = $this->makeStore();
+        $this->makeRider($store);
+        $product = $this->makeProduct();
+        StoreProduct::create([
+            'store_id' => $store->id,
+            'product_id' => $product->id,
+            'stock_quantity' => 10,
+            'is_available' => true,
+        ]);
+        $customer = $this->makeCustomer();
+        $customer->cartItems()->create(['product_id' => $product->id, 'quantity' => 2]);
+
+        $this->actingAs($customer)->postJson('/api/orders', [
+            'items' => [['product_id' => $product->id, 'quantity' => 2]],
+            'delivery_address' => '1 Test Street, Durban',
+            'delivery_latitude' => self::LAT,
+            'delivery_longitude' => self::LNG,
+        ])->assertStatus(201);
+
+        $this->actingAs($customer)
+            ->getJson('/api/cart')
+            ->assertStatus(200)
+            ->assertJsonCount(0, 'data');
+    }
+
+    public function test_failed_placement_leaves_server_cart_intact(): void
+    {
+        $product = $this->makeProduct();
+        $customer = $this->makeCustomer();
+        $customer->cartItems()->create(['product_id' => $product->id, 'quantity' => 2]);
+
+        $this->actingAs($customer)->postJson('/api/orders', [
+            'items' => [['product_id' => 999999, 'quantity' => 1]],
+            'delivery_address' => '1 Test Street, Durban',
+            'delivery_latitude' => self::LAT,
+            'delivery_longitude' => self::LNG,
+        ])->assertStatus(422);
+
+        $this->actingAs($customer)
+            ->getJson('/api/cart')
+            ->assertStatus(200)
+            ->assertJsonCount(1, 'data');
+    }
+
     public function test_order_requires_delivery_coordinates(): void
     {
         $product = $this->makeProduct();

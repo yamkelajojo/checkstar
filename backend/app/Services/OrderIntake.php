@@ -75,6 +75,8 @@ class OrderIntake
 
             $dispatchResult = $this->dispatchService->dispatch($order->fresh());
 
+            $customer->cartItems()->delete();
+
             return new OrderIntakeResult(
                 order: $order->fresh()->load('items'),
                 dispatchStatus: $dispatchResult['status'],
