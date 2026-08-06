@@ -19,3 +19,5 @@ export interface Recipe { id: number; title: string; slug: string; description: 
 export interface CommunityPost { id: number; title: string; slug: string; content: string | null; image: string | null; category: 'gallery' | 'csr'; event_date: string | null }
 export interface CareerListing { id: number; title: string; slug: string; description: string; requirements: string | null; location: string; type: string; department: string | null; closes_at: string | null }
 export interface Paginated<T> { current_page: number; data: T[]; per_page: number; total: number; last_page: number }
+export interface Dispatch { status: string; claim_latency_ms: number | null; rider_id: number | null; store_id: number | null }
+export interface OrderPlacementResult { data: Order; dispatch: Dispatch }

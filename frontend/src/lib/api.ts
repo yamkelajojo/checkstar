@@ -1,4 +1,4 @@
-import type { Category, Product, Store, Order, Rider, Special, Recipe, CommunityPost, CareerListing, User, CartItem, Paginated } from '@/types'
+import type { Category, Product, Store, Order, Rider, Special, Recipe, CommunityPost, CareerListing, User, CartItem, Paginated, OrderPlacementResult } from '@/types'
 
 const BASE = '/api'
 
@@ -63,7 +63,7 @@ export const api = {
   // Customer
   getOrders: () => request<{ data: Order[] }>('/orders'),
   getOrder: (id: number) => request<{ data: Order }>(`/orders/${id}`).then(r => r.data),
-  placeOrder: (data: { items: { product_id: number; quantity: number }[]; delivery_address?: string; delivery_latitude: number; delivery_longitude: number; delivery_notes?: string }) => request<{ data: Order }>('/orders', { method: 'POST', body: JSON.stringify(data) }).then(r => r.data),
+  placeOrder: (data: { items: { product_id: number; quantity: number }[]; delivery_address?: string; delivery_latitude: number; delivery_longitude: number; delivery_notes?: string }) => request<OrderPlacementResult>('/orders', { method: 'POST', body: JSON.stringify(data) }),
   cancelOrder: (id: number) => request<{ data: Order }>(`/orders/${id}/cancel`, { method: 'POST' }).then(r => r.data),
   confirmDelivery: (id: number) => request<{ data: Order }>(`/orders/${id}/confirm`, { method: 'POST' }).then(r => r.data),
   reviewRider: (id: number, data: { rating: number; comment?: string }) => request<any>(`/orders/${id}/review`, { method: 'POST', body: JSON.stringify(data) }),

@@ -4,9 +4,10 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'motion/react'
-import { Minus, Plus, Trash2, ShoppingBag, ArrowRight, Loader2, MapPin, CheckCircle, Bike } from 'lucide-react'
+import { Minus, Plus, Trash2, ShoppingBag, ArrowRight, Loader2, MapPin } from 'lucide-react'
 import { useCartStore } from '@/stores/cart-store'
 import { usePlaceOrder } from '@/lib/query'
+import OrderConfirmation from './OrderConfirmation'
 
 const DURBAN_COORDS = { latitude: -29.8587, longitude: 31.0218 }
 
@@ -31,6 +32,7 @@ export default function CartClient() {
   const [showCheckoutForm, setShowCheckoutForm] = useState(false)
   const [placeError, setPlaceError] = useState('')
   const [placedOrder, setPlacedOrder] = useState<{ order_number: string; id: number } | null>(null)
+  const [dispatchStatus, setDispatchStatus] = useState<string | null>(null)
 
   const placeOrderMutation = usePlaceOrder()
 
@@ -43,14 +45,15 @@ export default function CartClient() {
     }
     try {
       const coords = await getDeliveryCoords()
-      const order = await placeOrderMutation.mutateAsync({
+      const result = await placeOrderMutation.mutateAsync({
         items: items.map(i => ({ product_id: i.product.id, quantity: i.quantity })),
         delivery_address: deliveryAddress.trim(),
         delivery_latitude: coords.latitude,
         delivery_longitude: coords.longitude,
       })
       clearCart()
-      setPlacedOrder({ order_number: order.order_number, id: order.id })
+      setPlacedOrder({ order_number: result.data.order_number, id: result.data.id })
+      setDispatchStatus(result.dispatch.status)
     } catch (err: any) {
       setPlaceError(err.message || 'Failed to place order.')
     }
@@ -60,37 +63,7 @@ export default function CartClient() {
   const deliveryFee = 0 as number
 
   if (placedOrder) {
-    return (
-      <>
-        <main className="max-w-md mx-auto px-4 py-20 text-center">
-          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CheckCircle size={32} className="text-green-600" />
-            </div>
-            <h1 className="font-display text-2xl font-bold mb-2">Order Placed!</h1>
-            <p className="text-gray-500 mb-1">Your order number is</p>
-            <p className="font-mono text-2xl font-bold text-primary mb-6">#{placedOrder.order_number}</p>
-            <p className="text-sm text-gray-500 mb-8">
-              We&apos;ll start preparing your order shortly. You can track it in real-time.
-            </p>
-            <div className="flex flex-col gap-3">
-              <Link
-                href={`/account/orders/${placedOrder.id}`}
-                className="bg-primary text-white px-6 py-2.5 rounded-lg font-medium hover:bg-primary-dark transition-colors inline-flex items-center justify-center gap-2"
-              >
-                Track Order <ArrowRight size={16} />
-              </Link>
-              <Link
-                href="/products"
-                className="border border-gray-200 text-gray-700 px-6 py-2.5 rounded-lg font-medium hover:bg-gray-50 transition-colors"
-              >
-                Continue Shopping
-              </Link>
-            </div>
-          </motion.div>
-        </main>
-      </>
-    )
+    return <OrderConfirmation order={placedOrder} dispatchStatus={dispatchStatus} />
   }
 
   return (

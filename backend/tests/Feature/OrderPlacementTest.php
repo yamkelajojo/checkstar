@@ -122,11 +122,38 @@ class OrderPlacementTest extends TestCase
         ]);
 
         $response->assertStatus(201)
-            ->assertJsonStructure(['data' => ['order_number', 'items']])
+            ->assertJsonStructure(['data' => ['order_number', 'items'], 'dispatch' => ['status']])
             ->assertJsonPath('data.items.0.quantity', 2)
             ->assertJsonPath('data.status', 'preparing')
             ->assertJsonPath('data.rider_id', $store->riders()->first()->id)
-            ->assertJsonPath('data.store_id', $store->id);
+            ->assertJsonPath('data.store_id', $store->id)
+            ->assertJsonPath('dispatch.status', 'assigned')
+            ->assertJsonPath('dispatch.rider_id', $store->riders()->first()->id)
+            ->assertJsonPath('dispatch.store_id', $store->id);
+    }
+
+    public function test_order_with_no_available_rider_is_cancelled(): void
+    {
+        $store = $this->makeStore();
+        $product = $this->makeProduct();
+        StoreProduct::create([
+            'store_id' => $store->id,
+            'product_id' => $product->id,
+            'stock_quantity' => 10,
+            'is_available' => true,
+        ]);
+        $customer = $this->makeCustomer();
+
+        $response = $this->actingAs($customer)->postJson('/api/orders', [
+            'items' => [['product_id' => $product->id, 'quantity' => 1]],
+            'delivery_address' => '1 Test Street, Durban',
+            'delivery_latitude' => self::LAT,
+            'delivery_longitude' => self::LNG,
+        ]);
+
+        $response->assertStatus(201)
+            ->assertJsonPath('dispatch.status', 'no_rider_available')
+            ->assertJsonPath('data.status', 'cancelled');
     }
 
     public function test_placing_an_order_clears_the_server_cart(): void

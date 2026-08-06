@@ -55,7 +55,15 @@ class OrderController extends Controller
 
         $result = $this->orderIntake->place($validated, $request->user());
 
-        return response()->json(['data' => $result->order], 201);
+        return response()->json([
+            'data' => $result->order,
+            'dispatch' => [
+                'status' => $result->dispatchStatus,
+                'claim_latency_ms' => $result->claimLatencyMs,
+                'rider_id' => $result->riderId,
+                'store_id' => $result->storeId,
+            ],
+        ], 201);
     }
 
     public function show(Request $request, int $id): JsonResponse
