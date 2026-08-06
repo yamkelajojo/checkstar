@@ -23,6 +23,8 @@ class CategorySeeder extends Seeder
             ['name' => 'Health & Beauty', 'slug' => 'health-beauty', 'sort_order' => 11],
             ['name' => 'Wines & Spirits', 'slug' => 'wines-spirits', 'sort_order' => 12],
             ['name' => 'Pet Supplies', 'slug' => 'pet-supplies', 'sort_order' => 13],
+            ['name' => 'Ready Meals & Deli', 'slug' => 'ready-meals-deli', 'sort_order' => 14],
+            ['name' => 'Stationery & School', 'slug' => 'stationery-school', 'sort_order' => 15],
         ];
 
         foreach ($categories as $cat) {
