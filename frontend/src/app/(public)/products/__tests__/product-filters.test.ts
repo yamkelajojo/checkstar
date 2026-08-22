@@ -69,6 +69,11 @@ describe('ProductsClient filter groups', () => {
     expect(src).toMatch(/whitespace-nowrap/)
     expect(src).toMatch(/shrink-0/)
     expect(src).toMatch(/scrollbar-none/)
+    expect(src).toMatch(/w-full/)
+    expect(src).toMatch(/max-w-full/)
+    // Must respect page padding — no bleed outside container
+    expect(src).not.toMatch(/-mx-4/)
+    expect(src).toMatch(/overflow-hidden/)
     // Exactly one tablist
     const tablists = (src.match(/role="tablist"/g) ?? []).length
     expect(tablists).toBe(1)
@@ -76,5 +81,16 @@ describe('ProductsClient filter groups', () => {
     expect(src).toMatch(/FILTER_GROUPS\.map/)
     // Fade hint for mobile viewport
     expect(src).toMatch(/bg-gradient-to-l/)
+  })
+
+  it('ProductsClient respects mobile spacing (reduced top gap)', () => {
+    const src = fs.readFileSync(path.join(__dirname, '..', 'ProductsClient.tsx'), 'utf8')
+    // Main should have responsive padding, not uniform py-8 which creates large gap on mobile
+    expect(src).toMatch(/pt-4/)
+    expect(src).toMatch(/sm:pt-6/)
+    expect(src).not.toMatch(/className="max-w-7xl mx-auto px-4 py-8"/)
+    // Heading and subtext tighter on mobile
+    expect(src).toMatch(/text-\[1\.75rem\]/)
+    expect(src).toMatch(/mb-1\.5/)
   })
 })

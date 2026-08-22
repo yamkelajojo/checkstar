@@ -37,12 +37,12 @@ export default function ProductsClient() {
 
   return (
     <>
-      <main className="max-w-7xl mx-auto px-4 py-8">
+      <main className="max-w-7xl mx-auto px-4 pt-4 pb-6 sm:pt-6 sm:pb-8 lg:py-8">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <h1 className="font-display text-4xl font-bold mb-2">Products</h1>
-          <p className="text-gray-500 mb-6">Browse our full range of groceries and household essentials.</p>
+          <h1 className="font-display text-[1.75rem] leading-tight sm:text-4xl font-bold mb-1.5 sm:mb-2">Products</h1>
+          <p className="text-gray-500 text-sm sm:text-base mb-4 sm:mb-6">Browse our full range of groceries and household essentials.</p>
 
-          <div className="relative max-w-md mb-6">
+          <div className="relative max-w-md mb-4 sm:mb-6">
             <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
@@ -53,11 +53,11 @@ export default function ProductsClient() {
             />
           </div>
 
-          <div className="relative mb-4">
+          <div className="relative mb-4 overflow-hidden">
             <div
               role="tablist"
               aria-label="Filter by category"
-              className="scrollbar-none flex items-center gap-2 overflow-x-auto flex-nowrap scroll-smooth snap-x snap-mandatory pb-1 -mx-4 px-4 sm:mx-0 sm:px-0"
+              className="scrollbar-none flex w-full max-w-full items-center gap-2 overflow-x-auto flex-nowrap scroll-smooth snap-x snap-mandatory pb-1 pr-1"
             >
               <SlidersHorizontal size={16} className="text-gray-400 shrink-0" aria-hidden="true" />
               {FILTER_GROUPS.map(group => {
