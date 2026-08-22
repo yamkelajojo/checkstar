@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react'
 import { ShoppingCart, User, LogOut } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth-store'
@@ -14,6 +15,8 @@ const cubic: [number, number, number, number] = [0.4, 0.01, 0.165, 0.99]
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false)
   const shouldReduceMotion = useReducedMotion()
+  const pathname = usePathname()
+  const prevPathRef = useRef(pathname)
   const { user, isAuthenticated, logout } = useAuthStore()
   const itemCount = useCartStore(s => s.itemCount())
 
@@ -35,16 +38,28 @@ export default function Header() {
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
+  // Close only after navigation completes — keeps overlay visible until next page content appears
+  useEffect(() => {
+    if (prevPathRef.current !== pathname && menuOpen) {
+      setMenuOpen(false)
+    }
+    prevPathRef.current = pathname
+  }, [pathname, menuOpen])
+
+  const handleNavClick = (href: string) => {
+    // Same-page click has no pathname change — close immediately
+    if (href === pathname) setMenuOpen(false)
+  }
+
   const panelVariants = {
     closed: {
       opacity: 0,
-      y: shouldReduceMotion ? 0 : -10,
+      y: shouldReduceMotion ? 0 : -8,
       filter: shouldReduceMotion ? 'blur(0px)' : 'blur(6px)',
-      height: 0,
       transition: shouldReduceMotion
         ? { duration: 0.12 }
         : {
-            duration: 0.26,
+            duration: 0.22,
             ease: cubic,
             when: 'afterChildren' as const,
             staggerChildren: 0.03,
@@ -55,15 +70,14 @@ export default function Header() {
       opacity: 1,
       y: 0,
       filter: 'blur(0px)',
-      height: 'auto' as const,
       transition: shouldReduceMotion
         ? { duration: 0.12 }
         : {
-            duration: 0.34,
+            duration: 0.32,
             ease: cubic,
             when: 'beforeChildren' as const,
             staggerChildren: 0.045,
-            delayChildren: 0.08,
+            delayChildren: 0.06,
           },
     },
   }
@@ -190,18 +204,18 @@ export default function Header() {
               animate="open"
               exit="closed"
               variants={panelVariants}
-              className="fixed inset-0 z-40 lg:hidden bg-white overflow-hidden overflow-y-auto overscroll-contain will-change-transform flex flex-col pt-16 supports-[height:100dvh]:h-[100dvh] h-[100vh] pb-[env(safe-area-inset-bottom)]"
+              className="fixed inset-x-0 top-16 bottom-0 z-40 lg:hidden bg-white overflow-y-auto overscroll-contain will-change-transform flex flex-col pb-[env(safe-area-inset-bottom)]"
             >
               <motion.nav
-                className="flex-1 flex flex-col items-center justify-center px-4 py-8 gap-1 text-center min-h-[calc(100dvh-4rem)] supports-[height:100dvh]:min-h-[calc(100dvh-4rem)]"
-                variants={{ open: { transition: { staggerChildren: 0.045, delayChildren: 0.08 } } }}
+                className="flex-1 flex flex-col items-center justify-center px-4 py-6 gap-1 text-center"
+                variants={{ open: { transition: { staggerChildren: 0.045, delayChildren: 0.06 } } }}
               >
                 <div className="w-full max-w-sm flex flex-col items-center">
                   {navLinks.map(link => (
                     <motion.div key={link.href} variants={itemVariants} className="w-full">
                       <Link
                         href={link.href}
-                        onClick={() => setMenuOpen(false)}
+                        onClick={() => handleNavClick(link.href)}
                         className="flex items-center justify-center py-3.5 text-[17px] font-normal tracking-[-0.01em] text-gray-800 hover:text-primary transition-colors text-center"
                       >
                         {link.label}
@@ -213,7 +227,7 @@ export default function Header() {
                   {!isAuthenticated ? (
                     <Link
                       href="/auth/login"
-                      onClick={() => setMenuOpen(false)}
+                      onClick={() => handleNavClick('/auth/login')}
                       className="inline-flex w-full items-center justify-center bg-primary text-white px-4 py-3 rounded-xl text-sm font-semibold hover:bg-primary-dark transition-colors"
                     >
                       Login / Register
@@ -222,7 +236,7 @@ export default function Header() {
                     <div className="flex gap-3 w-full">
                       <Link
                         href={user?.role === 'rider' ? '/rider/dashboard' : '/account/orders'}
-                        onClick={() => setMenuOpen(false)}
+                        onClick={() => handleNavClick(user?.role === 'rider' ? '/rider/dashboard' : '/account/orders')}
                         className="flex-1 inline-flex items-center justify-center gap-2 bg-gray-900 text-white px-4 py-3 rounded-xl text-sm font-medium"
                       >
                         <User size={16} /> Account

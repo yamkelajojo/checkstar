@@ -7,9 +7,8 @@ describe('Header mobile menu', () => {
 
   it('does not push page content — menu is overlay fixed, not inside header flow', () => {
     expect(src).toMatch(/fixed inset-0/)
-    expect(src).toMatch(/pt-16/)
-    expect(src).toMatch(/overflow-y-auto|overflow-hidden/)
-    expect(src).toMatch(/h-\[100dvh\]|h-\[100vh\]|min-h-\[calc\(100dvh/)
+    expect(src).toMatch(/inset-x-0 top-16 bottom-0/)
+    expect(src).toMatch(/overflow-y-auto/)
     expect(src).toMatch(/sticky top-0 z-50/)
     expect(src).not.toMatch(/<motion\.div[^>]*className="lg:hidden border-t/)
   })
@@ -49,15 +48,16 @@ describe('Header mobile menu', () => {
 
   it('covers entire viewport and respects safe areas', () => {
     expect(src).toMatch(/inset-0/)
+    expect(src).toMatch(/inset-x-0 top-16 bottom-0/)
     expect(src).toMatch(/env\(safe-area-inset-bottom\)/)
-    expect(src).toMatch(/100dvh/)
   })
 
   it('tabs are centered horizontally and vertically', () => {
     expect(src).toMatch(/items-center/)
     expect(src).toMatch(/justify-center/)
     expect(src).toMatch(/text-center/)
-    expect(src).toMatch(/min-h-\[calc\(100dvh/)
+    expect(src).toMatch(/flex-1/)
+    expect(src).toMatch(/flex flex-col items-center justify-center/)
   })
 
   it('reduces font weight one step per design system (medium -> normal)', () => {
@@ -69,11 +69,21 @@ describe('Header mobile menu', () => {
   })
 
   it('animation is faster/snappier with subtle blur', () => {
-    expect(src).toMatch(/duration: 0\.34/)
-    expect(src).toMatch(/duration: 0\.26/)
+    expect(src).toMatch(/duration: 0\.32/)
+    expect(src).toMatch(/duration: 0\.22/)
     expect(src).toMatch(/staggerChildren: 0\.045/)
     expect(src).toMatch(/blur\(6px\)/)
     expect(src).toMatch(/blur\(0px\)/)
     expect(src).toMatch(/backdropFilter/)
+  })
+
+  it('keeps menu open until next page appears (closes on pathname change, not immediate)', () => {
+    expect(src).toMatch(/usePathname/)
+    expect(src).toMatch(/prevPathRef/)
+    expect(src).toMatch(/handleNavClick/)
+    // Should close on pathname change via effect, not immediate on every link click
+    expect(src).toMatch(/prevPathRef\.current !== pathname/)
+    // Same-page click should close immediately, different page defers
+    expect(src).toMatch(/href === pathname/)
   })
 })
