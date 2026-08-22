@@ -38,30 +38,32 @@ export default function Header() {
   const panelVariants = {
     closed: {
       opacity: 0,
-      y: shouldReduceMotion ? 0 : -12,
+      y: shouldReduceMotion ? 0 : -10,
+      filter: shouldReduceMotion ? 'blur(0px)' : 'blur(6px)',
       height: 0,
       transition: shouldReduceMotion
-        ? { duration: 0.15 }
+        ? { duration: 0.12 }
         : {
-            duration: 0.3,
+            duration: 0.26,
             ease: cubic,
             when: 'afterChildren' as const,
-            staggerChildren: 0.04,
+            staggerChildren: 0.03,
             staggerDirection: -1 as const,
           },
     },
     open: {
       opacity: 1,
       y: 0,
+      filter: 'blur(0px)',
       height: 'auto' as const,
       transition: shouldReduceMotion
-        ? { duration: 0.15 }
+        ? { duration: 0.12 }
         : {
-            duration: 0.5,
+            duration: 0.34,
             ease: cubic,
             when: 'beforeChildren' as const,
-            staggerChildren: 0.07,
-            delayChildren: 0.15,
+            staggerChildren: 0.045,
+            delayChildren: 0.08,
           },
     },
   }
@@ -69,15 +71,17 @@ export default function Header() {
   const itemVariants = {
     closed: {
       opacity: 0,
-      y: shouldReduceMotion ? 0 : -14,
-      scale: shouldReduceMotion ? 1 : 1.06,
-      transition: shouldReduceMotion ? { duration: 0.12 } : { duration: 0.25, ease: cubic },
+      y: shouldReduceMotion ? 0 : -10,
+      scale: shouldReduceMotion ? 1 : 1.04,
+      filter: shouldReduceMotion ? 'blur(0px)' : 'blur(2px)',
+      transition: shouldReduceMotion ? { duration: 0.1 } : { duration: 0.2, ease: cubic },
     },
     open: {
       opacity: 1,
       y: 0,
       scale: 1,
-      transition: shouldReduceMotion ? { duration: 0.12 } : { duration: 0.45, ease: cubic },
+      filter: 'blur(0px)',
+      transition: shouldReduceMotion ? { duration: 0.1 } : { duration: 0.32, ease: cubic },
     },
   }
 
@@ -168,12 +172,12 @@ export default function Header() {
           <>
             <motion.div
               key="backdrop"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={shouldReduceMotion ? { duration: 0.15 } : { duration: 0.35, ease: cubic }}
+              initial={{ opacity: 0, backdropFilter: 'blur(0px)' }}
+              animate={{ opacity: 1, backdropFilter: 'blur(2px)' }}
+              exit={{ opacity: 0, backdropFilter: 'blur(0px)' }}
+              transition={shouldReduceMotion ? { duration: 0.12 } : { duration: 0.28, ease: cubic }}
               onClick={() => setMenuOpen(false)}
-              className="fixed inset-0 top-16 bg-black/20 backdrop-blur-[2px] z-40 lg:hidden"
+              className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[2px] lg:hidden"
               aria-hidden="true"
             />
             <motion.div
@@ -186,24 +190,26 @@ export default function Header() {
               animate="open"
               exit="closed"
               variants={panelVariants}
-              className="fixed top-16 left-0 right-0 z-40 lg:hidden bg-white border-t border-gray-100 shadow-[0_12px_32px_rgba(0,0,0,0.08)] overflow-hidden will-change-transform"
+              className="fixed inset-0 z-40 lg:hidden bg-white overflow-hidden overflow-y-auto overscroll-contain will-change-transform flex flex-col pt-16 supports-[height:100dvh]:h-[100dvh] h-[100vh] pb-[env(safe-area-inset-bottom)]"
             >
               <motion.nav
-                className="max-w-7xl mx-auto px-4 py-5 flex flex-col"
-                variants={{ open: { transition: { staggerChildren: 0.07, delayChildren: 0.15 } } }}
+                className="flex-1 flex flex-col items-center justify-center px-4 py-8 gap-1 text-center min-h-[calc(100dvh-4rem)] supports-[height:100dvh]:min-h-[calc(100dvh-4rem)]"
+                variants={{ open: { transition: { staggerChildren: 0.045, delayChildren: 0.08 } } }}
               >
-                {navLinks.map(link => (
-                  <motion.div key={link.href} variants={itemVariants} className="border-b border-gray-100 last:border-0">
-                    <Link
-                      href={link.href}
-                      onClick={() => setMenuOpen(false)}
-                      className="flex items-center py-3.5 text-[17px] font-medium text-gray-800 hover:text-primary transition-colors"
-                    >
-                      {link.label}
-                    </Link>
-                  </motion.div>
-                ))}
-                <motion.div variants={itemVariants} className="pt-4 mt-1">
+                <div className="w-full max-w-sm flex flex-col items-center">
+                  {navLinks.map(link => (
+                    <motion.div key={link.href} variants={itemVariants} className="w-full">
+                      <Link
+                        href={link.href}
+                        onClick={() => setMenuOpen(false)}
+                        className="flex items-center justify-center py-3.5 text-[17px] font-normal tracking-[-0.01em] text-gray-800 hover:text-primary transition-colors text-center"
+                      >
+                        {link.label}
+                      </Link>
+                    </motion.div>
+                  ))}
+                </div>
+                <motion.div variants={itemVariants} className="w-full max-w-sm pt-6 mt-2">
                   {!isAuthenticated ? (
                     <Link
                       href="/auth/login"
@@ -213,7 +219,7 @@ export default function Header() {
                       Login / Register
                     </Link>
                   ) : (
-                    <div className="flex gap-3">
+                    <div className="flex gap-3 w-full">
                       <Link
                         href={user?.role === 'rider' ? '/rider/dashboard' : '/account/orders'}
                         onClick={() => setMenuOpen(false)}

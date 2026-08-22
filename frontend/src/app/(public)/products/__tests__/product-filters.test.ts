@@ -79,8 +79,24 @@ describe('ProductsClient filter groups', () => {
     expect(tablists).toBe(1)
     // Exactly one pills map over FILTER_GROUPS
     expect(src).toMatch(/FILTER_GROUPS\.map/)
-    // Fade hint for mobile viewport
+    // Bilateral fade affordance — subtle, not heavy overlay
     expect(src).toMatch(/bg-gradient-to-l/)
+    expect(src).toMatch(/bg-gradient-to-r/)
+    expect(src).toMatch(/w-6/)
+    expect(src).not.toMatch(/w-8 bg-gradient/)
+  })
+
+  it('filter scroll fade responds dynamically to scroll position (left/right)', () => {
+    const src = fs.readFileSync(path.join(__dirname, '..', 'ProductsClient.tsx'), 'utf8')
+    expect(src).toMatch(/canScrollLeft/)
+    expect(src).toMatch(/canScrollRight/)
+    expect(src).toMatch(/scrollLeft/)
+    expect(src).toMatch(/scrollWidth/)
+    expect(src).toMatch(/clientWidth/)
+    expect(src).toMatch(/ResizeObserver/)
+    expect(src).toMatch(/transition-opacity/)
+    // Left fade only when scrolled, right fade only when not at end
+    expect(src).toMatch(/opacity-100.*opacity-0|opacity-0.*opacity-100/)
   })
 
   it('ProductsClient respects mobile spacing (reduced top gap)', () => {

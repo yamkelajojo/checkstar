@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { motion } from 'motion/react'
 import { Search, SlidersHorizontal } from 'lucide-react'
 import ProductCard from '@/components/ProductCard'
@@ -20,11 +20,35 @@ export const FILTER_GROUPS = [
 export default function ProductsClient() {
   const [activeGroup, setActiveGroup] = useState<string>('All')
   const [searchQuery, setSearchQuery] = useState('')
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const [canScrollLeft, setCanScrollLeft] = useState(false)
+  const [canScrollRight, setCanScrollRight] = useState(false)
 
   const { data: products = [], isLoading: productsLoading, error: productsError } = useAllProducts()
 
   const loading = productsLoading
   const fetchError = productsError ? 'Failed to load products' : null
+
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
+    const update = () => {
+      const left = el.scrollLeft > 2
+      const right = el.scrollLeft + el.clientWidth < el.scrollWidth - 2
+      setCanScrollLeft(left)
+      setCanScrollRight(right)
+    }
+    update()
+    el.addEventListener('scroll', update, { passive: true })
+    const ro = new ResizeObserver(update)
+    ro.observe(el)
+    window.addEventListener('resize', update)
+    return () => {
+      el.removeEventListener('scroll', update)
+      ro.disconnect()
+      window.removeEventListener('resize', update)
+    }
+  }, [products.length])
 
   const filtered = products.filter(p => {
     const activeIds = FILTER_GROUPS.find(g => g.label === activeGroup)?.ids
@@ -55,6 +79,7 @@ export default function ProductsClient() {
 
           <div className="relative mb-4 overflow-hidden">
             <div
+              ref={scrollRef}
               role="tablist"
               aria-label="Filter by category"
               className="scrollbar-none flex w-full max-w-full items-center gap-2 overflow-x-auto flex-nowrap scroll-smooth snap-x snap-mandatory pb-1 pr-1"
@@ -78,8 +103,12 @@ export default function ProductsClient() {
               })}
             </div>
             <div
-              className="pointer-events-none absolute right-0 top-0 h-full w-8 bg-gradient-to-l from-white to-transparent sm:hidden"
               aria-hidden="true"
+              className={`pointer-events-none absolute left-0 top-0 h-full w-6 bg-gradient-to-r from-white to-transparent transition-opacity duration-200 sm:hidden ${canScrollLeft ? 'opacity-100' : 'opacity-0'}`}
+            />
+            <div
+              aria-hidden="true"
+              className={`pointer-events-none absolute right-0 top-0 h-full w-6 bg-gradient-to-l from-white to-transparent transition-opacity duration-200 sm:hidden ${canScrollRight ? 'opacity-100' : 'opacity-0'}`}
             />
           </div>
 
