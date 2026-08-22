@@ -4,22 +4,31 @@ import { useState } from 'react'
 import { motion } from 'motion/react'
 import { Search, SlidersHorizontal } from 'lucide-react'
 import ProductCard from '@/components/ProductCard'
-import CategoryGrid from '@/components/CategoryGrid'
-import type { Product, Category } from '@/types'
-import { useAllProducts, useCategories } from '@/lib/query'
+import type { Product } from '@/types'
+import { useAllProducts } from '@/lib/query'
+
+export const FILTER_GROUPS = [
+  { label: 'All', ids: null as number[] | null },
+  { label: 'Fresh', ids: [1, 2, 3, 4] as number[] },
+  { label: 'Pantry', ids: [7, 8, 14] as number[] },
+  { label: 'Drinks', ids: [5, 12] as number[] },
+  { label: 'Home', ids: [9, 13] as number[] },
+  { label: 'Care', ids: [10, 11] as number[] },
+  { label: 'Other', ids: [6, 15] as number[] },
+] as const
 
 export default function ProductsClient() {
-  const [activeCategory, setActiveCategory] = useState<number | null>(null)
+  const [activeGroup, setActiveGroup] = useState<string>('All')
   const [searchQuery, setSearchQuery] = useState('')
 
   const { data: products = [], isLoading: productsLoading, error: productsError } = useAllProducts()
-  const { data: categories = [], isLoading: categoriesLoading, error: categoriesError } = useCategories()
 
-  const loading = productsLoading || categoriesLoading
-  const fetchError = productsError || categoriesError ? 'Failed to load products' : null
+  const loading = productsLoading
+  const fetchError = productsError ? 'Failed to load products' : null
 
   const filtered = products.filter(p => {
-    const matchesCategory = activeCategory ? p.category_id === activeCategory : true
+    const activeIds = FILTER_GROUPS.find(g => g.label === activeGroup)?.ids
+    const matchesCategory = activeIds ? (activeIds as number[]).includes(p.category_id) : true
     const matchesSearch = searchQuery
       ? p.name.toLowerCase().includes(searchQuery.toLowerCase())
       : true
@@ -28,12 +37,12 @@ export default function ProductsClient() {
 
   return (
     <>
-      <main className="max-w-7xl mx-auto px-4 py-16">
+      <main className="max-w-7xl mx-auto px-4 py-8">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="font-display text-4xl font-bold mb-2">Products</h1>
-          <p className="text-gray-500 mb-8">Browse our full range of groceries and household essentials.</p>
+          <p className="text-gray-500 mb-6">Browse our full range of groceries and household essentials.</p>
 
-          <div className="relative max-w-md mb-8">
+          <div className="relative max-w-md mb-6">
             <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
@@ -44,37 +53,34 @@ export default function ProductsClient() {
             />
           </div>
 
-          {categories.length > 0 && (
-            <div className="mb-8">
-              <CategoryGrid categories={categories} />
-            </div>
-          )}
-
-          <div className="flex flex-wrap items-center gap-2 mb-6">
-            <SlidersHorizontal size={16} className="text-gray-400" />
-            <button
-              onClick={() => setActiveCategory(null)}
-              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                activeCategory === null
-                  ? 'bg-primary text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
+          <div className="relative mb-4">
+            <div
+              role="tablist"
+              aria-label="Filter by category"
+              className="scrollbar-none flex items-center gap-2 overflow-x-auto flex-nowrap scroll-smooth snap-x snap-mandatory pb-1 -mx-4 px-4 sm:mx-0 sm:px-0"
             >
-              All
-            </button>
-            {categories.map(cat => (
-              <button
-                key={cat.id}
-                onClick={() => setActiveCategory(activeCategory === cat.id ? null : cat.id)}
-                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                  activeCategory === cat.id
-                    ? 'bg-primary text-white'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                {cat.name}
-              </button>
-            ))}
+              <SlidersHorizontal size={16} className="text-gray-400 shrink-0" aria-hidden="true" />
+              {FILTER_GROUPS.map(group => {
+                const isActive = activeGroup === group.label
+                return (
+                  <button
+                    key={group.label}
+                    role="tab"
+                    aria-selected={isActive}
+                    onClick={() => setActiveGroup(isActive && group.label !== 'All' ? 'All' : group.label)}
+                    className={`shrink-0 snap-start whitespace-nowrap px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                      isActive ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    {group.label}
+                  </button>
+                )
+              })}
+            </div>
+            <div
+              className="pointer-events-none absolute right-0 top-0 h-full w-8 bg-gradient-to-l from-white to-transparent sm:hidden"
+              aria-hidden="true"
+            />
           </div>
 
           {fetchError ? (
@@ -83,8 +89,8 @@ export default function ProductsClient() {
               <p className="text-sm mt-1">Please try again later.</p>
             </div>
           ) : loading ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {Array.from({ length: 8 }).map((_, i) => (
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
+              {Array.from({ length: 10 }).map((_, i) => (
                 <div key={i} className="bg-gray-50 rounded-xl aspect-square animate-pulse" />
               ))}
             </div>
@@ -94,7 +100,7 @@ export default function ProductsClient() {
               <p className="text-sm mt-1">Try adjusting your search or filter.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
               {filtered.map(product => (
                 <ProductCard key={product.id} product={product} />
               ))}
