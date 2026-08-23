@@ -31,14 +31,14 @@ describe('OrderConfirmation', () => {
     expect(screen.getByRole('link', { name: /track order/i })).toHaveAttribute('href', '/account/orders/1')
   })
 
-  it('shows the not-dispatched state when no rider is available', () => {
-    const dispatch: Dispatch = { status: 'no_rider_available', claim_latency_ms: null, rider_id: null, store_id: null }
+  it('shows the retrying state when dispatch is still finding a rider', () => {
+    const dispatch: Dispatch = { status: 'retrying', claim_latency_ms: null, rider_id: null, store_id: null }
 
     render(<OrderConfirmation order={order} dispatch={dispatch} />)
 
-    expect(screen.getByText('Order Not Dispatched')).toBeInTheDocument()
-    expect(screen.getByText(/available rider/i)).toBeInTheDocument()
-    expect(screen.queryByText('Order Placed!')).not.toBeInTheDocument()
+    expect(screen.getByText('Finding a Rider')).toBeInTheDocument()
+    expect(screen.getByText(/looking for an available rider/i)).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /track order/i })).toHaveAttribute('href', '/account/orders/1')
   })
 
   it('shows the cancelled state when dispatch cancelled the order', () => {

@@ -16,7 +16,7 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
   if (fetchError) {
     return (
       <>
-        <main className="max-w-7xl mx-auto px-4 py-16 text-center">
+        <main className="max-w-7xl mx-auto px-4 py-8 text-center">
           <p className="text-red-500 text-lg font-medium">{fetchError}</p>
           <p className="text-sm text-gray-400 mt-1">Please try again later.</p>
           <Link href="/products" className="text-primary hover:underline mt-4 inline-block">Back to products</Link>
@@ -28,7 +28,7 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
   if (loading) {
     return (
       <>
-        <main className="max-w-7xl mx-auto px-4 py-16">
+        <main className="max-w-7xl mx-auto px-4 py-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 animate-pulse">
             <div className="aspect-square bg-gray-50 rounded-2xl" />
             <div className="space-y-4">
@@ -46,7 +46,7 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
   if (!product) {
     return (
       <>
-        <main className="max-w-7xl mx-auto px-4 py-16 text-center">
+        <main className="max-w-7xl mx-auto px-4 py-8 text-center">
           <p className="text-gray-400 text-lg">Product not found.</p>
           <Link href="/products" className="text-primary hover:underline mt-4 inline-block">
             Back to products
@@ -56,8 +56,8 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
     )
   }
 
-  const price = Number(product.sale_price ?? product.price)
-  const hasSale = product.sale_price !== null && product.sale_price !== undefined
+  const price = Number(product.effective_price ?? product.sale_price ?? product.price)
+  const hasSale = product.effective_price !== null && product.effective_price !== undefined && product.effective_price < product.price
 
   const handleAddToCart = () => {
     addItem(product)

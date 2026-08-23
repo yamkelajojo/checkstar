@@ -4,11 +4,17 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Product;
+use App\Services\PricingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
+    public function __construct(
+        private PricingService $pricingService,
+    ) {
+    }
+
     private function imageUrl(?string $path): ?string
     {
         if ($path === null) {
@@ -62,6 +68,7 @@ class ProductController extends Controller
 
         foreach ($products as $product) {
             $this->absolutizeImages($product);
+            $product->effective_price = $this->pricingService->effectivePrice($product, $product->specials ?? collect());
         }
 
         return response()->json($products);
@@ -75,6 +82,7 @@ class ProductController extends Controller
             ->firstOrFail();
 
         $this->absolutizeImages($product);
+        $product->effective_price = $this->pricingService->effectivePrice($product, $product->specials ?? collect());
 
         return response()->json(['data' => $product]);
     }

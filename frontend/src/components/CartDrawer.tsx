@@ -55,7 +55,7 @@ export default function CartDrawer({ open, onClose }: Props) {
                         <p className="text-sm font-medium truncate">{item.product.name}</p>
                         <p className="text-xs text-gray-400">{item.product.unit}</p>
                         <p className="text-sm font-semibold text-primary mt-1">
-                          R{(Number(item.product.sale_price ?? item.product.price) * item.quantity).toFixed(2)}
+                          R{(Number(item.product.effective_price ?? item.product.sale_price ?? item.product.price) * item.quantity).toFixed(2)}
                         </p>
                       </div>
                       <div className="flex items-center gap-1">

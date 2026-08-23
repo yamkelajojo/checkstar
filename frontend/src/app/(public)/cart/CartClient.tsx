@@ -61,7 +61,7 @@ export default function CartClient() {
 
   return (
     <>
-      <main className="max-w-4xl mx-auto px-4 py-16">
+      <main className="max-w-4xl mx-auto px-4 py-8">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <div className="flex items-center justify-between mb-8">
             <h1 className="font-display text-3xl font-bold">Your Cart</h1>
@@ -87,7 +87,7 @@ export default function CartClient() {
               <div className="lg:col-span-2 space-y-1">
                 <AnimatePresence initial={false}>
                   {items.map(item => {
-                    const price = Number(item.product.sale_price ?? item.product.price)
+                    const price = Number(item.product.effective_price ?? item.product.sale_price ?? item.product.price)
                     return (
                       <motion.div
                         key={item.product.id}

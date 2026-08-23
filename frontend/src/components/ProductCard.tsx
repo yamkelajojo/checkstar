@@ -12,8 +12,8 @@ interface Props {
 
 export default function ProductCard({ product }: Props) {
   const addItem = useCartStore(s => s.addItem)
-  const price = Number(product.sale_price ?? product.price)
-  const hasSale = product.sale_price !== null && product.sale_price !== undefined
+  const price = Number(product.effective_price ?? product.sale_price ?? product.price)
+  const hasSale = product.effective_price !== null && product.effective_price !== undefined && product.effective_price < product.price
 
   return (
     <motion.div
@@ -24,7 +24,7 @@ export default function ProductCard({ product }: Props) {
       className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow"
     >
       <Link href={`/products/${product.slug}`}>
-        <div className="aspect-square bg-gray-50 flex items-center justify-center p-4">
+        <div className="aspect-[4/3] bg-gray-50 flex items-center justify-center p-3">
           {product.image ? (
             <img src={product.image} alt={product.name} className="w-full h-full object-contain" />
           ) : (
@@ -33,7 +33,7 @@ export default function ProductCard({ product }: Props) {
         </div>
       </Link>
 
-      <div className="p-4">
+      <div className="p-3">
         <Link href={`/products/${product.slug}`}>
           <h3 className="font-medium text-sm text-gray-900 line-clamp-2 mb-1">{product.name}</h3>
         </Link>
@@ -41,18 +41,18 @@ export default function ProductCard({ product }: Props) {
 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="font-bold text-lg text-gray-900">R{price.toFixed(2)}</span>
+            <span className="font-semibold text-base text-gray-900">R{price.toFixed(2)}</span>
             {hasSale && (
-              <span className="text-sm text-gray-400 line-through">R{Number(product.price).toFixed(2)}</span>
+              <span className="text-xs text-gray-400 line-through">R{Number(product.price).toFixed(2)}</span>
             )}
           </div>
 
           <motion.button
             whileTap={{ scale: 0.9 }}
             onClick={() => addItem(product)}
-            className="bg-primary text-white p-2 rounded-lg hover:bg-primary-dark transition-colors"
+            className="bg-primary text-white p-1.5 rounded-lg hover:bg-primary-dark transition-colors"
           >
-            <ShoppingCart size={16} />
+            <ShoppingCart size={15} />
           </motion.button>
         </div>
       </div>

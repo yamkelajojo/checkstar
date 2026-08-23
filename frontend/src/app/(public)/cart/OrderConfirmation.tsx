@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { CheckCircle, XCircle, Clock, ArrowRight } from 'lucide-react'
+import { CheckCircle, XCircle, Clock, ArrowRight, RotateCcw } from 'lucide-react'
 import type { Dispatch } from '@/types'
 
 interface OrderConfirmationProps {
@@ -8,6 +8,27 @@ interface OrderConfirmationProps {
 }
 
 export default function OrderConfirmation({ order, dispatch }: OrderConfirmationProps) {
+  if (dispatch?.status === 'retrying') {
+    return (
+      <main className="max-w-md mx-auto px-4 py-20 text-center">
+        <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <RotateCcw size={32} className="text-yellow-600 animate-spin" />
+        </div>
+        <h1 className="font-display text-2xl font-bold mb-2">Finding a Rider</h1>
+        <p className="text-gray-500 mb-1">Order #{order.order_number}</p>
+        <p className="text-sm text-gray-500 mb-8">
+          We&apos;re looking for an available rider at nearby stores. You&apos;ll be notified as soon as one is assigned.
+        </p>
+        <Link
+          href={`/account/orders/${order.id}`}
+          className="inline-flex items-center justify-center gap-2 bg-primary text-white px-6 py-2.5 rounded-lg font-medium hover:bg-primary-dark transition-colors"
+        >
+          Track Order <ArrowRight size={16} />
+        </Link>
+      </main>
+    )
+  }
+
   if (dispatch?.status === 'cancelled') {
     return (
       <main className="max-w-md mx-auto px-4 py-20 text-center">
@@ -18,28 +39,6 @@ export default function OrderConfirmation({ order, dispatch }: OrderConfirmation
         <p className="text-gray-500 mb-1">Order #{order.order_number}</p>
         <p className="text-sm text-gray-500 mb-8">
           Your order was cancelled before dispatch and you haven&apos;t been charged.
-        </p>
-        <Link
-          href="/products"
-          className="inline-flex items-center justify-center gap-2 bg-primary text-white px-6 py-2.5 rounded-lg font-medium hover:bg-primary-dark transition-colors"
-        >
-          Continue Shopping <ArrowRight size={16} />
-        </Link>
-      </main>
-    )
-  }
-
-  if (dispatch?.status === 'no_rider_available') {
-    return (
-      <main className="max-w-md mx-auto px-4 py-20 text-center">
-        <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <XCircle size={32} className="text-red-600" />
-        </div>
-        <h1 className="font-display text-2xl font-bold mb-2">Order Not Dispatched</h1>
-        <p className="text-gray-500 mb-1">Order #{order.order_number}</p>
-        <p className="text-sm text-gray-500 mb-8">
-          We couldn&apos;t find an available rider at a nearby store. Your order was cancelled and you haven&apos;t
-          been charged.
         </p>
         <Link
           href="/products"
