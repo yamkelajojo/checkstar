@@ -20,7 +20,7 @@ function StarIcon({ size, tone }: { size: number; tone: 'light' | 'dark' }) {
   const starFill = tone === 'dark' ? '#ffffff' : '#18181b';
   return (
     <Svg width={size} height={size} viewBox="0 0 48 48">
-      <Polygon points={STAR_PATH} fill={starFill} stroke={brand.primary} strokeWidth={2.5} strokeLinejoin="round" />
+      <Path d={STAR_PATH} fill={starFill} stroke={brand.primary} strokeWidth={2.5} strokeLinejoin="round" />
       <Path d={CHECK_PATH} stroke={brand.primary} strokeWidth={4} strokeLinecap="round" strokeLinejoin="round" fill="none" />
     </Svg>
   );
