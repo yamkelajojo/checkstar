@@ -7,6 +7,23 @@ function getCookie(name: string): string | null {
   return match ? decodeURIComponent(match[2]) : null
 }
 
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+    public readonly payload: unknown,
+  ) {
+    super(message)
+    this.name = 'ApiError'
+  }
+}
+
+export function apiErrorReason(error: unknown): string | null {
+  if (!(error instanceof ApiError)) return null
+  const reason = (error.payload as { reason?: unknown } | null)?.reason
+  return typeof reason === 'string' ? reason : null
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const method = (init?.method || 'GET').toUpperCase()
   const headers: Record<string, string> = { 'Accept': 'application/json', ...init?.headers as Record<string, string> }
@@ -21,7 +38,11 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   }
 
   const res = await fetch(`${BASE}${path}`, { credentials: 'include', headers, ...init })
-  if (!res.ok) { const err = await res.json().catch(() => ({ message: res.statusText })); throw new Error(err.message || `Request failed: ${res.status}`) }
+  if (!res.ok) {
+    const payload = await res.json().catch(() => ({ message: res.statusText }))
+    const message = (payload as { message?: string } | null)?.message ?? `Request failed: ${res.status}`
+    throw new ApiError(message, res.status, payload)
+  }
   if (res.status === 204) return undefined as T
   return res.json()
 }
@@ -69,6 +90,17 @@ export const api = {
   getCart: () => request<{ data: CartItem[] }>('/cart').then(r => r.data),
   syncCart: (items: { product_id: number; quantity: number }[]) => request<{ data: CartItem[]; dropped: { product_id: number; reason: string }[] }>('/cart/sync', { method: 'POST', body: JSON.stringify({ items }) }),
   updateProfile: (data: Partial<User>) => request<User>('/profile', { method: 'PUT', body: JSON.stringify(data) }),
+  // Store dispatch (Logistics Officer / Store Owner)
+  getPendingDispatch: (storeId?: number) => request<{ data: Order[] }>(`/store/dispatch/pending${storeId ? `?store_id=${storeId}` : ''}`),
+  dispatchOrder: (orderId: number, riderId: number, storeId?: number) => request<{ data: Order }>(`/store/orders/${orderId}/dispatch`, { method: 'POST', body: JSON.stringify({ rider_id: riderId, ...(storeId ? { store_id: storeId } : {}) }) }),
+  reassignOrder: (orderId: number, riderId: number) => request<{ data: Order }>(`/store/orders/${orderId}/reassign`, { method: 'POST', body: JSON.stringify({ rider_id: riderId }) }),
+  // Staff management
+  hireStaff: (userId: number, role: string, storeId?: number) => request<{ data: unknown }>(`/store/staff`, { method: 'POST', body: JSON.stringify({ user_id: userId, role, ...(storeId ? { store_id: storeId } : {}) }) }),
+  fireStaff: (staffId: number, storeId?: number) => request<{ message: string }>(`/store/staff/${staffId}${storeId ? `?store_id=${storeId}` : ''}`, { method: 'DELETE' }),
+  // Admin messages
+  getMessages: () => request<{ data: unknown[] }>('/admin/messages'),
+  getMessage: (id: number) => request<{ data: unknown }>(`/admin/messages/${id}`),
+  replyToMessage: (id: number, body: string) => request<{ data: unknown }>(`/admin/messages/${id}/reply`, { method: 'POST', body: JSON.stringify({ body }) }),
   // Rider
   getAvailableOrders: () => request<{ data: Order[] }>('/rider/available-orders'),
   claimOrder: (id: number) => request<Order>(`/rider/claim/${id}`, { method: 'POST' }),

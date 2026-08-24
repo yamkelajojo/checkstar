@@ -82,6 +82,13 @@ export function useOrders(params?: Record<string, string>) {
   })
 }
 
+export function usePendingDispatch(storeId?: number) {
+  return useQuery({
+    queryKey: ['pending-dispatch', storeId],
+    queryFn: () => api.getPendingDispatch(storeId).then(r => r.data),
+  })
+}
+
 export function useOrder(id: number | string) {
   return useQuery({
     queryKey: ['order', id],

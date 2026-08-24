@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -11,7 +11,9 @@ import { ToastProvider } from './src/components/shared/GlassToast';
 import { useMotionPreferences } from './src/stores/motionPreferences';
 import { useSession } from './src/stores/session';
 import { useDeliveryStore } from './src/stores/deliveryStore';
-import { setUnauthorizedHandler } from './src/lib/apiClient';
+import { setUnauthorizedHandler, syncCart } from './src/lib/apiClient';
+import { useCart } from './src/features/cart/store';
+import { performCartSync } from './src/lib/cartSync';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import type { RootStackParamList } from './src/navigation/types';
 import { TamaguiProvider } from 'tamagui';
@@ -30,6 +32,21 @@ export const navigationRef = createNavigationContainerRef<RootStackParamList>();
 
 export default function App() {
   const theme = useThemeFromSystem();
+  const sessionStatus = useSession((s) => s.status);
+  const cartSyncRef = useRef(false);
+
+  useEffect(() => {
+    if (sessionStatus === 'guest') cartSyncRef.current = false;
+    if (sessionStatus !== 'authenticated' || cartSyncRef.current) return;
+    void performCartSync(cartSyncRef, {
+      syncCart,
+      getLocalCart: () => useCart.getState().items as unknown as import('./src/features/cart/types').CartItem[],
+      setCart: (items) => useCart.getState().mergeLocalOntoServer(items as unknown as import('./src/features/cart/types').ServerCartLine[]),
+    }).catch(() => {
+      // Sync is best-effort; keep local draft if server unreachable.
+      cartSyncRef.current = false;
+    });
+  }, [sessionStatus]);
 
   useEffect(() => {
     void useMotionPreferences.getState().init();

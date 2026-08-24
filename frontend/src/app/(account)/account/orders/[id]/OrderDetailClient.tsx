@@ -6,10 +6,17 @@ import Link from 'next/link'
 import { motion } from 'motion/react'
 import { ArrowLeft, Package, Clock, CheckCircle, XCircle, Bike, User, Star, Loader2, AlertCircle, MapPin, CreditCard } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth-store'
-import { api } from '@/lib/api'
+import { api, apiErrorReason } from '@/lib/api'
 import { useOrder } from '@/lib/query'
 import { useQueryClient } from '@tanstack/react-query'
 import type { Order, OrderActivityLog } from '@/types'
+
+function cancelReasonLabel(reason: string | null): string {
+  if (reason === 'order_not_cancellable') return "Can't cancel — order already out for delivery"
+  if (reason === 'order_not_claimable' || reason === 'rider_not_eligible') return 'Dispatch failed — check rider eligibility'
+  if (reason) return reason.replace(/_/g, ' ')
+  return "This order can't be cancelled right now."
+}
 
 const statusConfig: Record<string, { color: string; bg: string; icon: any; label: string }> = {
   pending: { color: 'text-yellow-600', bg: 'bg-yellow-100', icon: Clock, label: 'Pending' },
@@ -70,6 +77,7 @@ export default function OrderDetailClient({ id }: { id: string }) {
   const { data: order, isLoading: loading, error } = useOrder(id)
   const queryClient = useQueryClient()
   const [mutationError, setMutationError] = useState('')
+  const [cancelReason, setCancelReason] = useState<string | null>(null)
   const displayError = error?.message || mutationError
   const [cancelling, setCancelling] = useState(false)
   const [confirming, setConfirming] = useState(false)
@@ -92,11 +100,13 @@ export default function OrderDetailClient({ id }: { id: string }) {
     if (!confirm('Are you sure you want to cancel this order?')) return
     setCancelling(true)
     setMutationError('')
+    setCancelReason(null)
     try {
       await api.cancelOrder(Number(id))
       queryClient.invalidateQueries({ queryKey: ['order', id] })
     } catch (err: any) {
       setMutationError(err.message)
+      setCancelReason(apiErrorReason(err))
     } finally {
       setCancelling(false)
     }
@@ -174,6 +184,11 @@ export default function OrderDetailClient({ id }: { id: string }) {
 
           {displayError && (
             <div className="bg-accent/10 border border-accent/30 text-accent text-sm rounded-lg px-4 py-3 mb-6">{displayError}</div>
+          )}
+          {cancelReason && (
+            <div className="inline-flex items-center gap-2 bg-accent/10 border border-accent/20 rounded-full px-3 py-1.5 mb-4 text-xs font-medium text-accent">
+              <AlertCircle size={14} /> {cancelReasonLabel(cancelReason)}
+            </div>
           )}
 
           <div className="bg-white border border-gray-100 rounded-xl p-6 mb-6">
