@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Alert } from 'react-native';
 import { OrderDetailScreen } from '../OrderDetailScreen';
 import { fetchOrder, cancelOrder, confirmDelivery, reviewOrder } from '../../../lib/apiClient';
+import { ApiError } from '../../../lib/api';
 import type { ApiOrder } from '../../../lib/types';
 import { copy } from '../../../lib/strings';
 
@@ -11,6 +12,11 @@ jest.mock('../../../lib/apiClient', () => ({
   cancelOrder: jest.fn(),
   confirmDelivery: jest.fn(),
   reviewOrder: jest.fn(),
+}));
+
+jest.mock('expo-notifications', () => ({
+  scheduleNotificationAsync: jest.fn().mockResolvedValue(undefined),
+  addNotificationResponseReceivedListener: jest.fn(() => ({ remove: jest.fn() })),
 }));
 
 const clients: QueryClient[] = [];
@@ -106,6 +112,48 @@ describe('OrderDetailScreen', () => {
     await renderOrder({ status: 'confirmed', payment_status: 'paid' });
     await screen.findByText('Order #42');
     expect(screen.queryByText(copy.orders.cancel)).toBeNull();
+  });
+
+  it('prefers the API can_cancel flag over the local rule', async () => {
+    await renderOrder({ status: 'out_for_delivery', payment_status: 'pending', can_cancel: true });
+    expect(await screen.findByText(copy.orders.cancel)).toBeTruthy();
+
+    await renderOrder({ status: 'pending', payment_status: 'pending', can_cancel: false });
+    await screen.findByText('Order #42');
+    expect(screen.queryByText(copy.orders.cancel)).toBeNull();
+  });
+
+  it('renders a reason chip when the server rejects the cancellation with a 409 conflict', async () => {
+    (cancelOrder as jest.Mock).mockRejectedValue(
+      new ApiError('Order cannot be cancelled', 409, { message: 'Order cannot be cancelled', reason: 'order_not_cancellable', status: 409 }),
+    );
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(((_title: unknown, _message: unknown, buttons?: Array<{ style?: string; onPress?: () => void }>) => {
+      buttons?.find((b) => b.style === 'destructive')?.onPress?.();
+    }) as typeof Alert.alert);
+    try {
+      await renderOrder({ status: 'confirmed', payment_status: 'pending' });
+      await fireEvent.press(await screen.findByText(copy.orders.cancel));
+      expect(await screen.findByText("Can't cancel — order already out")).toBeTruthy();
+      expect(screen.queryByText(copy.auth.orderCancelled)).toBeNull();
+    } finally {
+      alertSpy.mockRestore();
+    }
+  });
+
+  it('shows a generic chip when the cancel conflict has an unknown reason', async () => {
+    (cancelOrder as jest.Mock).mockRejectedValue(
+      new ApiError('Nope', 409, { message: 'Nope', reason: 'something_new', status: 409 }),
+    );
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(((_title: unknown, _message: unknown, buttons?: Array<{ style?: string; onPress?: () => void }>) => {
+      buttons?.find((b) => b.style === 'destructive')?.onPress?.();
+    }) as typeof Alert.alert);
+    try {
+      await renderOrder({ status: 'confirmed', payment_status: 'pending' });
+      await fireEvent.press(await screen.findByText(copy.orders.cancel));
+      expect(await screen.findByText("This order can't be cancelled right now.")).toBeTruthy();
+    } finally {
+      alertSpy.mockRestore();
+    }
   });
 
   it('confirms the cancellation through the Alert dialog', async () => {

@@ -1,9 +1,16 @@
-import { View, Text, Image } from 'react-native';
+import { View, Text, Image, Pressable } from 'react-native';
 import type { StyleProp, ViewStyle } from 'react-native';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { ProductVO } from '../../lib/product';
+
+export interface BadgeRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
 import { formatZar } from '../../lib/currency';
 import { savingsPercent } from '../../lib/pricing';
 import { useTheme } from '../../theme';
@@ -18,18 +25,21 @@ interface ProductCardProps {
   product: ProductVO;
   storeProductId?: number | null;
   style?: StyleProp<ViewStyle>;
+  /** Opens a quick summary popup; when absent the price row is not pressable. */
+  onRequestSummary?: (product: ProductVO, rect: BadgeRect | null) => void;
 }
 
 /**
  * 2-col grid product card: angled image on a backdrop circle, % off ribbon,
  * price, and an inline add/stepper. The single most valuable commerce pattern.
  */
-export function ProductCard({ product, storeProductId = null, style }: ProductCardProps) {
+export function ProductCard({ product, storeProductId = null, style, onRequestSummary }: ProductCardProps) {
   const theme = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const quantity = useCart((s) => s.items.find((i) => i.productId === String(product.id))?.quantity ?? 0);
   const add = useCart((s) => s.add);
   const decrement = useCart((s) => s.decrement);
+  const badgeRef = useRef<View>(null);
 
   const [imageSource, setImageSource] = useState<{ uri: string } | null>(
     product.images[0] ? { uri: product.images[0] } : null,
@@ -103,9 +113,42 @@ export function ProductCard({ product, storeProductId = null, style }: ProductCa
           <Text numberOfLines={2} style={{ fontSize: typeScale.body, fontWeight: weights.semibold, color: theme.colors.text }}>
             {product.name}
           </Text>
-          <Text style={{ fontSize: typeScale.caption, color: theme.colors.textMuted }}>
-            {formatZar(product.effectivePriceCents)} / {product.unit}
-          </Text>
+          {onRequestSummary ? (
+            <Pressable
+              ref={badgeRef}
+              onPress={() => {
+                const fallback = () => onRequestSummary(product, null);
+                const ref = badgeRef.current as unknown as { measureInWindow?: (cb: (x: number, y: number, w: number, h: number) => void) => void } | null;
+                if (ref?.measureInWindow) {
+                  try {
+                    ref.measureInWindow((x, y, w, h) => {
+                      if (Number.isFinite(x) && Number.isFinite(y) && w > 0 && h > 0) {
+                        onRequestSummary(product, { x, y, width: w, height: h });
+                      } else {
+                        fallback();
+                      }
+                    });
+                    return;
+                  } catch {
+                    // fall through to fallback
+                  }
+                }
+                fallback();
+              }}
+              accessibilityRole="button"
+              accessibilityLabel={`About ${product.name}`}
+              hitSlop={4}
+              style={{ alignSelf: 'flex-start' }}
+            >
+              <Text style={{ fontSize: typeScale.caption, color: theme.colors.textMuted }}>
+                {formatZar(product.effectivePriceCents)} / {product.unit}
+              </Text>
+            </Pressable>
+          ) : (
+            <Text style={{ fontSize: typeScale.caption, color: theme.colors.textMuted }}>
+              {formatZar(product.effectivePriceCents)} / {product.unit}
+            </Text>
+          )}
         </View>
 
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>

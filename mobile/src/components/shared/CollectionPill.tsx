@@ -1,10 +1,10 @@
-import { Text } from 'react-native';
 import { TactilePressable } from './TactilePressable';
 import { useTheme } from '../../theme';
 import { brand } from '../../theme/colors';
 import { typeScale, weights, letterSpacing } from '../../theme/typography';
 import { useReducedMotion } from './useReducedMotion';
 import { FadeSlideIn } from './FadeSlideIn';
+import { Text as TamaguiText } from 'tamagui';
 
 interface CollectionPillProps {
   label: string;
@@ -17,18 +17,16 @@ export function CollectionPill({ label, active = false, onPress }: CollectionPil
   const theme = useTheme();
   const reduceMotion = useReducedMotion();
   const content = (
-    <Text
-      style={{
-        fontSize: typeScale.caption,
-        fontWeight: weights.bold,
-        letterSpacing: letterSpacing.wide,
-        textTransform: 'uppercase',
-        color: active ? theme.colors.onPrimary : brand.primary,
-        paddingHorizontal: 16,
-      }}
+    <TamaguiText
+      fontSize={typeScale.caption}
+      fontWeight={weights.bold}
+      letterSpacing={letterSpacing.wide}
+      textTransform="uppercase"
+      color={active ? theme.colors.onPrimary : brand.primary}
+      paddingHorizontal={16}
     >
       {label}
-    </Text>
+    </TamaguiText>
   );
   if (reduceMotion) {
     return (

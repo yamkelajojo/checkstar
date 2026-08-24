@@ -14,6 +14,7 @@ interface StepperProps {
 /** Inline quantity stepper with tactile +/- buttons and screen-reader labels. */
 export function Stepper({ quantity, onIncrement, onDecrement }: StepperProps) {
   const theme = useTheme();
+  const buttonStyle = { width: 36, borderRadius: 999 };
   return (
     <View
       style={{
@@ -30,7 +31,7 @@ export function Stepper({ quantity, onIncrement, onDecrement }: StepperProps) {
         hapticOnPress="tap"
         accessibilityRole="button"
         accessibilityLabel="Decrease quantity"
-        style={{ width: 36, borderRadius: 999 }}
+        style={buttonStyle}
       >
         <Minus size={16} color={quantity <= 1 ? theme.colors.textFaint : brand.primary} />
       </TactilePressable>
@@ -45,7 +46,7 @@ export function Stepper({ quantity, onIncrement, onDecrement }: StepperProps) {
         hapticOnPress="tap"
         accessibilityRole="button"
         accessibilityLabel="Increase quantity"
-        style={{ width: 36, borderRadius: 999 }}
+        style={buttonStyle}
       >
         <Plus size={16} color={brand.primary} />
       </TactilePressable>

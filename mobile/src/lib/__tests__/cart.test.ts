@@ -1,4 +1,4 @@
-import { cartRules } from '../../features/cart/model';
+import { cartRules, applyServerMerge } from '../../features/cart/model';
 import type { CartItem } from '../../features/cart/types';
 
 const id = { productId: 'p1', storeProductId: 5 as number | null };
@@ -84,5 +84,56 @@ describe('totalQuantity', () => {
   it('sums quantities for the cart badge', () => {
     const items = [line('p1', 2), line('p2', 3)];
     expect(cartRules.totalQuantity(items)).toBe(5);
+  });
+});
+
+describe('applyServerMerge', () => {
+  const syncResponse = (
+    data: { product_id: number; quantity: number; store_product_id: number | null }[],
+    dropped: { product_id: number; reason: string }[] = [],
+  ) => ({ data, dropped });
+
+  it('replaces the draft with the server lines mapped into cart items', () => {
+    const draft = [line('1', 3, null)];
+    const result = applyServerMerge(draft, syncResponse([
+      { product_id: 1, quantity: 4, store_product_id: 11 },
+    ]));
+    expect(result.items).toEqual([{ productId: '1', storeProductId: 11, quantity: 4 }]);
+    expect(result.droppedCount).toBe(0);
+  });
+
+  it('keeps the draft ordering and appends server-only lines', () => {
+    const draft = [line('2', 1), line('1', 1)];
+    const result = applyServerMerge(draft, syncResponse([
+      { product_id: 1, quantity: 1, store_product_id: null },
+      { product_id: 2, quantity: 1, store_product_id: null },
+      { product_id: 3, quantity: 2, store_product_id: null },
+    ]));
+    expect(result.items.map((i) => i.productId)).toEqual(['2', '1', '3']);
+  });
+
+  it('omits lines the server dropped and reports the count', () => {
+    const draft = [line('1', 2), line('2', 1)];
+    const result = applyServerMerge(draft, syncResponse(
+      [{ product_id: 2, quantity: 1, store_product_id: null }],
+      [{ product_id: 1, reason: 'unavailable' }],
+    ));
+    expect(result.items.map((i) => i.productId)).toEqual(['2']);
+    expect(result.droppedCount).toBe(1);
+  });
+
+  it('caps synced quantities at 8', () => {
+    const result = applyServerMerge([line('9', 20)], syncResponse([
+      { product_id: 9, quantity: 12, store_product_id: null },
+    ]));
+    expect(result.items[0].quantity).toBe(8);
+  });
+
+  it('empties the cart when every line was dropped', () => {
+    const result = applyServerMerge([line('1', 1)], syncResponse([], [
+      { product_id: 1, reason: 'unavailable' },
+    ]));
+    expect(result.items).toEqual([]);
+    expect(result.droppedCount).toBe(1);
   });
 });

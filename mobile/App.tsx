@@ -14,6 +14,8 @@ import { useDeliveryStore } from './src/stores/deliveryStore';
 import { setUnauthorizedHandler } from './src/lib/apiClient';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import type { RootStackParamList } from './src/navigation/types';
+import { TamaguiProvider } from 'tamagui';
+import config from './tamagui.config';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -31,6 +33,12 @@ export default function App() {
 
   useEffect(() => {
     void useMotionPreferences.getState().init();
+    return () => {
+      useMotionPreferences.getState().dispose();
+    };
+  }, []);
+
+  useEffect(() => {
     void useSession.getState().boot().catch(() => {
       void useSession.getState().signOut();
     });
@@ -49,19 +57,21 @@ export default function App() {
   }, []);
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <ThemeContext.Provider value={theme}>
-          <ToastProvider>
-            <QueryClientProvider client={queryClient}>
-              <NavigationContainer ref={navigationRef}>
-                <StatusBar style="auto" />
-                <RootNavigator />
-              </NavigationContainer>
-            </QueryClientProvider>
-          </ToastProvider>
-        </ThemeContext.Provider>
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
+    <TamaguiProvider config={config} defaultTheme="light">
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <SafeAreaProvider>
+          <ThemeContext.Provider value={theme}>
+            <ToastProvider>
+              <QueryClientProvider client={queryClient}>
+                <NavigationContainer ref={navigationRef}>
+                  <StatusBar style="auto" />
+                  <RootNavigator />
+                </NavigationContainer>
+              </QueryClientProvider>
+            </ToastProvider>
+          </ThemeContext.Provider>
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
+    </TamaguiProvider>
   );
 }

@@ -1,13 +1,15 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { View, Text, ScrollView, Pressable, Alert, TextInput } from 'react-native';
 import { Check, Star } from 'lucide-react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import * as Notifications from 'expo-notifications';
 import { useTheme } from '../../theme';
 import { brand } from '../../theme/colors';
 import { typeScale, weights, letterSpacing } from '../../theme/typography';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchOrder, cancelOrder, confirmDelivery, reviewOrder } from '../../lib/apiClient';
+import { apiErrorReason } from '../../lib/api';
 import { queryKeys } from '../../lib/queryKeys';
 import { formatZar } from '../../lib/currency';
 import { TactilePressable } from '../../components/shared/TactilePressable';
@@ -15,7 +17,17 @@ import { SkeletonCard } from '../../components/shared/SkeletonCard';
 import { useToast } from '../../components/shared/GlassToast';
 import { copy } from '../../lib/strings';
 import type { RootStackParamList } from '../../navigation/types';
-import { STATUS_STEPS, statusStepIndex, isCancelled, canCancel, isAwaitingDeliveryConfirmation, canReview } from './model';
+import {
+  STATUS_STEPS,
+  statusStepIndex,
+  isCancelled,
+  cancellable,
+  isActiveOrderStatus,
+  isAwaitingDeliveryConfirmation,
+  canReview,
+  cancelConflictLabel,
+  orderUpdateBody,
+} from './model';
 
 const STATUS_LABEL: Record<string, string> = {
   pending: 'Order received',
@@ -32,6 +44,29 @@ const PAYMENT_LABEL: Record<string, string> = {
   refunded: 'Refunded',
 };
 
+function useOrderStatusNotification(status: string | undefined, orderId: number) {
+  const previousStatus = useRef<string | null>(null);
+  useEffect(() => {
+    if (status == null) return;
+    const previous = previousStatus.current;
+    previousStatus.current = status;
+    if (previous != null && previous !== status) {
+      void Notifications.scheduleNotificationAsync({
+        content: {
+          title: copy.orders.updateTitle,
+          body: orderUpdateBody(status),
+          data: { orderId },
+        },
+        trigger: null,
+      });
+    }
+  }, [status, orderId]);
+}
+
+function pollIntervalForStatus(status: string | undefined): number | false {
+  return status != null && isActiveOrderStatus(status) ? 10_000 : false;
+}
+
 export function OrderDetailScreen() {
   const theme = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -43,12 +78,17 @@ export function OrderDetailScreen() {
   const { data: order, isLoading } = useQuery({
     queryKey: queryKeys.order(orderId),
     queryFn: () => fetchOrder(orderId),
+    refetchInterval: (query) => pollIntervalForStatus(query.state.data?.status),
   });
+
+  useOrderStatusNotification(order?.status, orderId);
 
   const invalidate = () => {
     void queryClient.invalidateQueries({ queryKey: queryKeys.order(orderId) });
     void queryClient.invalidateQueries({ queryKey: queryKeys.orders });
   };
+
+  const [cancelConflict, setCancelConflict] = useState<string | null>(null);
 
   const onCancel = () => {
     Alert.alert(copy.orders.cancelThisOrder, copy.orders.cancelWarning, [
@@ -59,10 +99,11 @@ export function OrderDetailScreen() {
         onPress: async () => {
           try {
             await cancelOrder(orderId, 'Cancelled by customer');
+            setCancelConflict(null);
             toast.show(copy.auth.orderCancelled);
             invalidate();
-          } catch {
-            toast.show('Could not cancel the order.');
+          } catch (e) {
+            setCancelConflict(apiErrorReason(e));
           }
         },
       },
@@ -89,7 +130,7 @@ export function OrderDetailScreen() {
 
   const statusIndex = statusStepIndex(order.status);
   const cancelled = isCancelled(order.status);
-  const cancellable = canCancel(order.status, order.payment_status);
+  const cancellableNow = cancellable(order);
   const awaitingConfirm = isAwaitingDeliveryConfirmation(order.status);
   const reviewable = canReview(order.status, order.rider_rating);
 
@@ -212,6 +253,23 @@ export function OrderDetailScreen() {
 
       {/* Sticky actions */}
       <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: 16, borderTopWidth: 1, borderTopColor: theme.colors.hairline, backgroundColor: theme.colors.bg, gap: 8 }}>
+        {cancelConflict != null && (
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+            <View
+              style={{
+                backgroundColor: theme.colors.surface,
+                borderRadius: 999,
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+                alignSelf: 'flex-start',
+              }}
+            >
+              <Text style={{ color: brand.accent, fontSize: typeScale.caption, fontWeight: weights.semibold }}>
+                {cancelConflictLabel(cancelConflict)}
+              </Text>
+            </View>
+          </View>
+        )}
         {awaitingConfirm && (
           <TactilePressable
             onPress={onConfirmReceived}
@@ -224,7 +282,7 @@ export function OrderDetailScreen() {
             </Text>
           </TactilePressable>
         )}
-        {cancellable && (
+        {cancellableNow && (
           <TactilePressable onPress={onCancel} hapticOnPress="warning" accessibilityRole="button">
             <Text style={{ textAlign: 'center', color: brand.accent, fontWeight: weights.semibold }}>
               {copy.orders.cancel}

@@ -1,4 +1,5 @@
 import type { NavigatorScreenParams } from '@react-navigation/native';
+import type { ApiDispatchOutcome } from '../lib/types';
 
 export type RootStackParamList = {
   Splash: undefined;
@@ -9,7 +10,7 @@ export type RootStackParamList = {
   Auth: { intent?: 'checkout' } | undefined;
   StorePicker: undefined;
   Checkout: undefined;
-  OrderPlaced: { orderId: number };
+  OrderPlaced: { orderId: number; dispatch?: ApiDispatchOutcome };
   OrderDetail: { orderId: number; fromNotification?: boolean };
   RiderHome: undefined;
   RiderOrderDetail: { orderId: number; fromNotification?: boolean };

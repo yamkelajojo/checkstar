@@ -5,6 +5,7 @@ import { useProducts } from '../../catalog/hooks';
 import { useDeliveryStore } from '../../../stores/deliveryStore';
 import { formatZar } from '../../../lib/currency';
 import { copy } from '../../../lib/strings';
+import { TestWrapper } from '../../../test/utils';
 
 jest.mock('../../catalog/hooks', () => ({ useProducts: jest.fn() }));
 
@@ -53,40 +54,40 @@ beforeEach(() => {
 
 describe('CartScreen', () => {
   it('shows the empty state when the cart has no items', async () => {
-    await render(<CartScreen />);
+    await render(<CartScreen />, { wrapper: TestWrapper });
     expect(screen.getByText(copy.cart.emptyTitle)).toBeTruthy();
   });
 
   it('navigates to Browse from the empty state', async () => {
-    await render(<CartScreen />);
+    await render(<CartScreen />, { wrapper: TestWrapper });
     await fireEvent.press(screen.getByText(copy.cart.browseSpecials));
     expect(mockNavigate).toHaveBeenCalledWith('Tabs', { screen: 'Browse' });
   });
 
   it('renders the subtotal for the items in the cart', async () => {
     setCart([{ productId: '1', quantity: 2, storeProductId: null }]);
-    await render(<CartScreen />);
+    await render(<CartScreen />, { wrapper: TestWrapper });
     expect(screen.getByText('Subtotal (2 items)')).toBeTruthy();
     expect(screen.getAllByText('R 20,00').length).toBeGreaterThan(0);
   });
 
   it('shows the min-order warning and disables checkout below R50', async () => {
     setCart([{ productId: '1', quantity: 2, storeProductId: null }]);
-    await render(<CartScreen />);
+    await render(<CartScreen />, { wrapper: TestWrapper });
     expect(screen.getByText(minOrderWarning)).toBeTruthy();
     expect(screen.getByRole('button', { name: copy.cart.checkOut })).toBeDisabled();
   });
 
   it('enables checkout once the subtotal reaches R50', async () => {
     setCart([{ productId: '2', quantity: 2, storeProductId: null }]);
-    await render(<CartScreen />);
+    await render(<CartScreen />, { wrapper: TestWrapper });
     expect(screen.queryByText(minOrderWarning)).toBeNull();
     expect(screen.getByRole('button', { name: copy.cart.checkOut })).toBeEnabled();
   });
 
   it('increments the quantity from the stepper', async () => {
     setCart([{ productId: '1', quantity: 2, storeProductId: null }]);
-    await render(<CartScreen />);
+    await render(<CartScreen />, { wrapper: TestWrapper });
     await fireEvent.press(screen.getByLabelText('Increase quantity'));
     expect(useCart.getState().items[0].quantity).toBe(3);
     expect(screen.getByText('3')).toBeTruthy();
@@ -94,14 +95,14 @@ describe('CartScreen', () => {
 
   it('decrements the quantity from the stepper', async () => {
     setCart([{ productId: '1', quantity: 2, storeProductId: null }]);
-    await render(<CartScreen />);
+    await render(<CartScreen />, { wrapper: TestWrapper });
     await fireEvent.press(screen.getByLabelText('Decrease quantity'));
     expect(useCart.getState().items[0].quantity).toBe(1);
   });
 
   it('empties the cart when the stepper decrements a single item to zero', async () => {
     setCart([{ productId: '1', quantity: 1, storeProductId: null }]);
-    await render(<CartScreen />);
+    await render(<CartScreen />, { wrapper: TestWrapper });
     await fireEvent.press(screen.getByLabelText('Decrease quantity'));
     expect(screen.getByText(copy.cart.emptyTitle)).toBeTruthy();
   });

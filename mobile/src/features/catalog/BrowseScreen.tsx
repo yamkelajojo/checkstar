@@ -5,15 +5,22 @@ import { brand } from '../../theme/colors';
 import { typeScale, weights } from '../../theme/typography';
 import { useCategories, useProducts } from './hooks';
 import { ProductCard } from '../../components/shared/ProductCard';
+import { ProductSummaryModal, type SourceRect } from './ProductSummaryModal';
 import { SkeletonCard } from '../../components/shared/SkeletonCard';
 import { useDeliveryStore } from '../../stores/deliveryStore';
+import type { ProductVO } from '../../lib/product';
 
 export function BrowseScreen() {
   const theme = useTheme();
   const store = useDeliveryStore((s) => s.store);
   const { data: categories = [] } = useCategories();
   const [activeCategory, setActiveCategory] = useState<string | undefined>(undefined);
+  const [summaryState, setSummaryState] = useState<{ product: ProductVO; rect: SourceRect | null } | null>(null);
   const { data: products = [], isLoading } = useProducts({ category: activeCategory, storeId: store?.id ?? null });
+
+  const handleRequestSummary = (product: ProductVO, rect: SourceRect | null) => {
+    setSummaryState({ product, rect });
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.bg }}>
@@ -76,9 +83,13 @@ export function BrowseScreen() {
               <Text style={{ color: theme.colors.textMuted, padding: 16 }}>No products here yet.</Text>
             )
           }
-          renderItem={({ item }) => <ProductCard product={item} />}
+          renderItem={({ item }) => <ProductCard product={item} onRequestSummary={handleRequestSummary} />}
         />
       </View>
+
+      {summaryState != null && (
+        <ProductSummaryModal product={summaryState.product} sourceRect={summaryState.rect} onClose={() => setSummaryState(null)} />
+      )}
     </View>
   );
 }

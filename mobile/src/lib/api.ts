@@ -15,6 +15,16 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * Machine-readable reason code from an error response body (e.g. the
+ * `reason` on a 409 cancel conflict), or null when there is none.
+ */
+export function apiErrorReason(error: unknown): string | null {
+  if (!(error instanceof ApiError)) return null;
+  const reason = (error.payload as { reason?: unknown } | null)?.reason;
+  return typeof reason === 'string' ? reason : null;
+}
+
 export interface ApiClientConfig {
   baseUrl: string;
   getToken: () => string | null;

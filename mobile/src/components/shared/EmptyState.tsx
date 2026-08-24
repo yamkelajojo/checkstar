@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { View, Text } from 'react-native';
+import { View } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -10,6 +10,7 @@ import Animated, {
 import type { LucideIcon } from 'lucide-react-native';
 import { useTheme } from '../../theme';
 import { useReducedMotion } from './useReducedMotion';
+import { YStack, Text as TamaguiText } from 'tamagui';
 
 const EASE_SETTLE = Easing.out(Easing.cubic);
 
@@ -43,12 +44,12 @@ export function EmptyState({ icon: Icon, title, caption, action }: EmptyStatePro
     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 }}>
       <Animated.View style={[{ alignItems: 'center', gap: 8 }, style]}>
         <Icon size={44} color={theme.colors.textFaint} />
-        <Text style={{ fontSize: 17, fontWeight: '700', color: theme.colors.text, textAlign: 'center' }}>
+        <TamaguiText fontSize={17} fontWeight="700" color={theme.colors.text} textAlign="center">
           {title}
-        </Text>
-        <Text style={{ fontSize: 14, color: theme.colors.textMuted, textAlign: 'center' }}>
+        </TamaguiText>
+        <TamaguiText fontSize={14} color={theme.colors.textMuted} textAlign="center">
           {caption}
-        </Text>
+        </TamaguiText>
         {action}
       </Animated.View>
     </View>

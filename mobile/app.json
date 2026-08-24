@@ -3,6 +3,8 @@
     "name": "Checkstar",
     "slug": "checkstar-mobile",
     "version": "1.0.0",
+    "sdkVersion": "54.0.0",
+    "description": "⚠️ PINNED TO SDK 54 — Expo Go 54.0.2 on device fleet. Do NOT bump without updating Go. See mobile/README.md and AGENTS.md.",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",

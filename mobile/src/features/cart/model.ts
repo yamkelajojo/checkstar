@@ -1,6 +1,37 @@
+import type { ApiCartSyncResponse } from '../../lib/types';
 import type { CartAddTarget, CartItem, ServerCartLine } from './types';
 
 const cap = (n: number) => Math.min(Math.max(n, 0), 8);
+
+export interface ServerMergeResult {
+  items: CartItem[];
+  droppedCount: number;
+}
+
+/**
+ * Replaces the local draft with the authoritative server response after a
+ * cart sync. Server lines win for content and quantity (capped at 8); the
+ * draft only decides ordering so the list does not jump, and the number of
+ * dropped lines is surfaced for the toast.
+ */
+function toCartItem(line: ApiCartSyncResponse['data'][number]): CartItem {
+  return { productId: String(line.product_id), storeProductId: line.store_product_id ?? null, quantity: cap(line.quantity) };
+}
+
+export function applyServerMerge(draft: CartItem[], response: ApiCartSyncResponse): ServerMergeResult {
+  const pending = new Map(response.data.map((line) => [String(line.product_id), line]));
+  const items: CartItem[] = [];
+  for (const item of draft) {
+    const line = pending.get(item.productId);
+    if (line == null) continue;
+    items.push(toCartItem(line));
+    pending.delete(item.productId);
+  }
+  for (const line of pending.values()) {
+    items.push(toCartItem(line));
+  }
+  return { items, droppedCount: response.dropped.length };
+}
 
 export const cartRules = {
   addItem(items: CartItem[], target: CartAddTarget, quantity: number): CartItem[] {

@@ -1,13 +1,14 @@
-import Svg, { Path, Polygon } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
 import { Text, View } from 'react-native';
 import type { StyleProp, TextStyle, ViewStyle } from 'react-native';
 import { brand } from '../../theme/colors';
 import { typeScale, weights, letterSpacing } from '../../theme/typography';
 import { copy } from '../../lib/strings';
 
-export const STAR_PATH =
-  'M24 3.5 L29.4 16.9 L44.4 17.3 L32.8 26.9 L36.9 41.5 L24 33 L11.1 41.5 L15.2 26.9 L3.6 17.3 L18.6 16.9 Z';
-export const CHECK_PATH = 'M17 24.5 L22 29.5 L31.5 18.5';
+const STAR_WING_PATH =
+  'M 18 252 C 68 226 108 214 150 214 C 192 214 234 232 258 262 C 224 248 188 241 150 241 C 112 241 64 247 18 252 Z';
+const STAR_CHECK_PATH =
+  'M 108 348 C 99 262 91 170 93 86 C 105 128 119 152 133 173 C 172 118 222 58 277 15 C 214 98 149 222 108 348 Z';
 
 interface LogoProps {
   variant: 'stacked' | 'lockup';
@@ -17,11 +18,12 @@ interface LogoProps {
 }
 
 function StarIcon({ size, tone }: { size: number; tone: 'light' | 'dark' }) {
-  const starFill = tone === 'dark' ? '#ffffff' : '#18181b';
+  const wingFill = tone === 'dark' ? '#ffffff' : '#18181b';
+  const checkColor = brand.primary;
   return (
-    <Svg width={size} height={size} viewBox="0 0 48 48">
-      <Path d={STAR_PATH} fill={starFill} stroke={brand.primary} strokeWidth={2.5} strokeLinejoin="round" />
-      <Path d={CHECK_PATH} stroke={brand.primary} strokeWidth={4} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+    <Svg width={size} height={size} viewBox="0 0 300 400">
+      <Path d={STAR_WING_PATH} fill={wingFill} />
+      <Path d={STAR_CHECK_PATH} fill={checkColor} />
     </Svg>
   );
 }
@@ -47,6 +49,7 @@ function Wordmark({ tone, size }: { tone: 'light' | 'dark'; size: number }) {
           fontSize: size * 0.34,
           color: brand.primary,
           fontWeight: weights.bold,
+          fontStyle: 'italic',
         }}
       >
         {copy.app.tagline}
@@ -56,10 +59,11 @@ function Wordmark({ tone, size }: { tone: 'light' | 'dark'; size: number }) {
 }
 
 export function Logo({ variant, size = 28, tone = 'dark', style }: LogoProps) {
+  const iconSize = size * 1.7;
   if (variant === 'stacked') {
     return (
       <View style={[{ alignItems: 'center' }, style]}>
-        <StarIcon size={size * 1.7} tone={tone} />
+        <StarIcon size={iconSize} tone={tone} />
         <Wordmark tone={tone} size={size} />
       </View>
     );

@@ -1,8 +1,9 @@
-import { View, Text } from 'react-native';
+import { View } from 'react-native';
 import { formatZar } from '../../lib/currency';
 import { useTheme } from '../../theme';
 import { brand } from '../../theme/colors';
 import { weights } from '../../theme/typography';
+import { Text as TamaguiText } from 'tamagui';
 
 interface PriceLabelProps {
   priceCents: number;
@@ -18,21 +19,21 @@ export function PriceLabel({ priceCents, salePriceCents, unit, size = 16 }: Pric
   return (
     <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6, flexWrap: 'wrap' }}>
       {onSale && (
-        <Text
-          style={{
-            fontSize: size * 0.8,
-            color: theme.colors.textFaint,
-            textDecorationLine: 'line-through',
-          }}
+        <TamaguiText
+          fontSize={size * 0.8}
+          color={theme.colors.textFaint}
+          textDecorationLine="line-through"
         >
           {formatZar(priceCents)}
-        </Text>
+        </TamaguiText>
       )}
-      <Text style={{ fontSize: size, fontWeight: weights.black, color: onSale ? brand.primary : theme.colors.text }}>
+      <TamaguiText fontSize={size} fontWeight={weights.black} color={onSale ? brand.primary : theme.colors.text}>
         {formatZar(salePriceCents ?? priceCents)}
-      </Text>
+      </TamaguiText>
       {unit ? (
-        <Text style={{ fontSize: size * 0.7, color: theme.colors.textMuted }}>/ {unit}</Text>
+        <TamaguiText fontSize={size * 0.7} color={theme.colors.textMuted}>
+          / {unit}
+        </TamaguiText>
       ) : null}
     </View>
   );

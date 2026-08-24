@@ -2,7 +2,7 @@ import { createApiClient, type ApiClient, type QueryParams } from './api';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 import { storage } from './storage';
-import type { ApiAuthResponse, ApiCategory, ApiOrder, ApiPagination, ApiProduct, ApiStore, ApiUser } from './types';
+import type { ApiAuthResponse, ApiCartSyncResponse, ApiCategory, ApiOrder, ApiPagination, ApiPlaceOrderResponse, ApiProduct, ApiStore, ApiUser } from './types';
 
 export const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_URL ?? 'http://192.168.1.100:8000/api';
@@ -136,9 +136,13 @@ export async function placeOrder(input: {
   delivery_latitude: number;
   delivery_longitude: number;
   delivery_notes?: string;
-}): Promise<ApiOrder> {
-  const res = await getApi().post<{ data: ApiOrder }>('/orders', input, true);
-  return res.data;
+  payment_method?: 'cash_on_delivery';
+}): Promise<ApiPlaceOrderResponse> {
+  return getApi().post<ApiPlaceOrderResponse>('/orders', input, true);
+}
+
+export async function syncCart(items: { product_id: number; quantity: number }[]): Promise<ApiCartSyncResponse> {
+  return getApi().post<ApiCartSyncResponse>('/cart/sync', { items }, true);
 }
 
 export async function cancelOrder(id: number | string, reason: string): Promise<ApiOrder> {

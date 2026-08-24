@@ -5,7 +5,7 @@ import Animated, { useSharedValue, useAnimatedStyle, withTiming, withDelay } fro
 import { BlurView } from 'expo-blur';
 import { brand } from '../../theme/colors';
 import { useReducedMotion } from './useReducedMotion';
-import { haptic } from '../../lib/haptics';
+import { haptics as haptic } from '../../lib';
 
 type ToastTone = 'default' | 'success' | 'warning';
 
@@ -42,6 +42,12 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     setToast({ id, message, tone });
     if (hideTimer.current) clearTimeout(hideTimer.current);
     hideTimer.current = setTimeout(() => setToast((current) => (current?.id === id ? null : current)), 2600);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (hideTimer.current) clearTimeout(hideTimer.current);
+    };
   }, []);
 
   const toneColor =

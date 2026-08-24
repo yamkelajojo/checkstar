@@ -72,6 +72,7 @@ export interface ApiOrder {
   status: string;
   payment_status: string;
   payment_method?: string | null;
+  can_cancel?: boolean;
   delivery_address?: string | null;
   delivery_notes?: string | null;
   subtotal_cents: number | null;
@@ -107,6 +108,36 @@ export interface ApiUser {
 export interface ApiAuthResponse {
   user: ApiUser;
   token?: string;
+}
+
+export type ApiDispatchStatus = 'assigned' | 'retrying' | 'cancelled';
+
+/** Outcome of the dispatch attempt that followed order placement. */
+export interface ApiDispatchOutcome {
+  status: ApiDispatchStatus;
+  claim_latency_ms?: number | null;
+  rider_id?: number | null;
+  store_id?: number | null;
+  rider_name?: string | null;
+  store_name?: string | null;
+  reason?: string | null;
+}
+
+export interface ApiPlaceOrderResponse {
+  data: ApiOrder;
+  dispatch: ApiDispatchOutcome;
+}
+
+export interface ApiCartSyncLine {
+  product_id: number;
+  product?: number | Record<string, unknown>;
+  quantity: number;
+  store_product_id: number | null;
+}
+
+export interface ApiCartSyncResponse {
+  data: ApiCartSyncLine[];
+  dropped: { product_id: number; reason: string }[];
 }
 
 export interface ApiPagination<T> {

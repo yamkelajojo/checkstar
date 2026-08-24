@@ -25,6 +25,8 @@ export interface ProductVO {
   storageTip: string | null;
   keyPoints: string[];
   isFeatured: boolean;
+  isActive: boolean;
+  stockLabel: string;
 }
 
 export function mapProduct(api: ApiProduct): ProductVO {
@@ -52,5 +54,7 @@ export function mapProduct(api: ApiProduct): ProductVO {
     storageTip: api.storage_tip ?? null,
     keyPoints: api.key_points ?? [],
     isFeatured: api.is_featured,
+    isActive: api.is_active,
+    stockLabel: api.is_active ? 'In stock' : 'Out of stock',
   };
 }

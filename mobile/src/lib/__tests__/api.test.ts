@@ -1,4 +1,4 @@
-import { createApiClient } from '../api';
+import { createApiClient, ApiError, apiErrorReason } from '../api';
 
 function jsonResponse(status: number, data: unknown, headers: Record<string, string> = {}): Response {
   return {
@@ -72,5 +72,27 @@ describe('api client', () => {
     const api = createApiClient({ baseUrl: 'https://x.test', getToken: () => null, onUnauthorized: jest.fn(), fetchFn: jsonFetch(200, { data: [1, 2] }) as unknown as typeof fetch });
     const body = await api.get<{ data: number[] }>('/products', {}, false);
     expect(body.data).toEqual([1, 2]);
+  });
+
+  it('surfaces the parsed body (message and reason) on a non-2xx conflict', async () => {
+    const api = createApiClient({
+      baseUrl: 'https://x.test',
+      getToken: () => 'tok',
+      onUnauthorized: jest.fn(),
+      fetchFn: jsonFetch(409, { message: 'Order cannot be cancelled', reason: 'order_not_cancellable', status: 409 }) as unknown as typeof fetch,
+    });
+    const error = await api.post('/orders/42/cancel', {}).catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(ApiError);
+    const apiError = error as ApiError;
+    expect(apiError.status).toBe(409);
+    expect(apiError.message).toBe('Order cannot be cancelled');
+    expect(apiError.payload).toMatchObject({ reason: 'order_not_cancellable' });
+    expect(apiErrorReason(error)).toBe('order_not_cancellable');
+  });
+
+  it('returns null from apiErrorReason for non-ApiError values and missing reasons', () => {
+    expect(apiErrorReason(new Error('boom'))).toBeNull();
+    expect(apiErrorReason(null)).toBeNull();
+    expect(apiErrorReason(new ApiError('no body', 500, null))).toBeNull();
   });
 });

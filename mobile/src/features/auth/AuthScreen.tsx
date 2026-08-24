@@ -10,15 +10,39 @@ import { TactilePressable } from '../../components/shared/TactilePressable';
 import { AnimatedError, useErrorShake } from '../../components/shared/AnimatedError';
 import { Logo } from '../../components/shared/Logo';
 import { copy } from '../../lib/strings';
-import { login, register, registerRider } from '../../lib/apiClient';
+import { login, register, registerRider, syncCart } from '../../lib/apiClient';
 import { useSession } from '../../stores/session';
+import { useCart } from '../cart/store';
+import { applyServerMerge } from '../cart/model';
 import { useToast } from '../../components/shared/GlassToast';
 import { queryClient, queryKeys } from '../../lib/queryKeys';
+import type { ApiUser } from '../../lib/types';
 import type { RootStackParamList } from '../../navigation/types';
 
 type Mode = 'signin' | 'register' | 'rider';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/**
+ * Pushes the guest draft cart to the server right after sign-in and replaces
+ * the local draft with the authoritative response, surfacing any lines the
+ * server dropped. Best-effort: failures keep the local draft untouched.
+ */
+async function syncDraftCartAfterAuth(role: ApiUser['role'], notifyDropped: (count: number) => void): Promise<void> {
+  if (role !== 'customer') return;
+  const cart = useCart.getState();
+  if (cart.items.length === 0) return;
+  try {
+    const response = await syncCart(
+      cart.items.map((i) => ({ product_id: Number(i.productId), quantity: i.quantity })),
+    );
+    const { items, droppedCount } = applyServerMerge(cart.items, response);
+    cart.mergeLocalOntoServer(items);
+    if (droppedCount > 0) notifyDropped(droppedCount);
+  } catch {
+    // Keep the local draft; the server cart can be synced on the next sign-in.
+  }
+}
 
 export function AuthScreen() {
   const theme = useTheme();
@@ -81,6 +105,9 @@ export function AuthScreen() {
       const token = res.token ?? '';
       await signIn(token, res.user);
       void queryClient.invalidateQueries({ queryKey: queryKeys.orders });
+      void syncDraftCartAfterAuth(res.user.role, (count) => {
+        toast.show(copy.cart.syncDropped.replace('{n}', String(count)));
+      });
       if (intent === 'checkout') {
         navigation.goBack();
       } else {

@@ -4,7 +4,10 @@ import { AccessibilityInfo } from 'react-native';
 interface MotionPreferencesState {
   reduceMotion: boolean;
   init: () => Promise<void>;
+  dispose: () => void;
 }
+
+let subscription: { remove: () => void } | null = null;
 
 export const useMotionPreferences = create<MotionPreferencesState>((set) => ({
   reduceMotion: false,
@@ -12,8 +15,14 @@ export const useMotionPreferences = create<MotionPreferencesState>((set) => ({
   async init() {
     const reduceMotion = await AccessibilityInfo.isReduceMotionEnabled();
     set({ reduceMotion });
-    AccessibilityInfo.addEventListener('reduceMotionChanged', (value) =>
+    subscription?.remove();
+    subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', (value) =>
       set({ reduceMotion: value }),
     );
+  },
+
+  dispose() {
+    subscription?.remove();
+    subscription = null;
   },
 }));

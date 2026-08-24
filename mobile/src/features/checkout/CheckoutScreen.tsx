@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { View, Text, TextInput, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
-import { Store, Lock } from 'lucide-react-native';
+import { Store, Lock, CheckCircle2 } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTheme } from '../../theme';
@@ -12,6 +12,7 @@ import { useProducts } from '../catalog/hooks';
 import { useDeliveryStore } from '../../stores/deliveryStore';
 import { useSession } from '../../stores/session';
 import { placeOrder } from '../../lib/apiClient';
+import { getDeliveryCoords } from '../../lib/deliveryCoords';
 import { formatZar } from '../../lib/currency';
 import { TactilePressable } from '../../components/shared/TactilePressable';
 import { EmptyState } from '../../components/shared/EmptyState';
@@ -22,6 +23,8 @@ import type { RootStackParamList } from '../../navigation/types';
 import { canSubmit, MIN_ORDER_CENTS } from './model';
 
 const EST_DELIVERY_FEE_CENTS = 2500;
+
+type PaymentMethod = 'cash_on_delivery';
 
 export function CheckoutScreen() {
   const theme = useTheme();
@@ -35,8 +38,24 @@ export function CheckoutScreen() {
 
   const [address, setAddress] = useState('');
   const [notes, setNotes] = useState('');
+  const [paymentMethod] = useState<PaymentMethod>('cash_on_delivery');
+  const [usedFallbackLocation, setUsedFallbackLocation] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void getDeliveryCoords()
+      .then((coords) => {
+        if (!cancelled) setUsedFallbackLocation(coords.usedFallback);
+      })
+      .catch(() => {
+        if (!cancelled) setUsedFallbackLocation(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const priceOf = (id: string) => products.find((p) => p.id === Number(id))?.effectivePriceCents ?? 0;
   const subtotal = cartRules.subtotalCents(items, priceOf);
@@ -54,16 +73,19 @@ export function CheckoutScreen() {
     setSubmitting(true);
     setError(null);
     try {
-      const order = await placeOrder({
+      const coords = await getDeliveryCoords();
+      setUsedFallbackLocation(coords.usedFallback);
+      const res = await placeOrder({
         items: items.map((i) => ({ product_id: Number(i.productId), quantity: i.quantity })),
         delivery_address: address.trim(),
-        delivery_latitude: 0,
-        delivery_longitude: 0,
+        delivery_latitude: coords.latitude,
+        delivery_longitude: coords.longitude,
         delivery_notes: notes.trim() || undefined,
+        payment_method: paymentMethod,
       });
       clearCart();
       void queryClient.invalidateQueries({ queryKey: queryKeys.orders });
-      navigation.replace('OrderPlaced', { orderId: order.id });
+      navigation.replace('OrderPlaced', { orderId: res.data.id, dispatch: res.dispatch });
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not place the order.');
     } finally {
@@ -158,6 +180,35 @@ export function CheckoutScreen() {
                 textAlignVertical: 'top',
               }}
             />
+            {usedFallbackLocation && (
+              <Text style={{ color: theme.colors.textMuted, fontSize: typeScale.caption }}>
+                {copy.checkout.locationFallback}
+              </Text>
+            )}
+          </View>
+
+          <View style={{ gap: 6 }}>
+            <Text style={{ fontWeight: weights.semibold, color: theme.colors.text }}>{copy.checkout.paymentMethod}</Text>
+            <View
+              accessibilityRole="radio"
+              accessibilityState={{ selected: true }}
+              style={{
+                backgroundColor: theme.colors.surface,
+                borderRadius: 14,
+                padding: 14,
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 10,
+                borderWidth: 1,
+                borderColor: brand.primary,
+              }}
+            >
+              <CheckCircle2 size={20} color={brand.primary} />
+              <View style={{ flex: 1, gap: 2 }}>
+                <Text style={{ fontWeight: weights.semibold, color: theme.colors.text }}>{copy.checkout.cashOnDelivery}</Text>
+                <Text style={{ color: theme.colors.textMuted, fontSize: typeScale.caption }}>{copy.checkout.cashOnDeliveryNote}</Text>
+              </View>
+            </View>
           </View>
 
           <View style={{ backgroundColor: theme.colors.surface, borderRadius: 16, padding: 16, gap: 10 }}>

@@ -3,14 +3,14 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
-  withTiming,
   cancelAnimation,
 } from 'react-native-reanimated';
 import type { PressableProps, StyleProp, ViewStyle } from 'react-native';
 import { Pressable, StyleSheet } from 'react-native';
 import { useReducedMotion } from './useReducedMotion';
-import { haptic } from '../../lib/haptics';
+import { haptics as haptic } from '../../lib';
 import type { HapticIntent } from '../../lib/haptics';
+import { YStack } from 'tamagui';
 
 const PRESS_IN = { damping: 18, stiffness: 450 };
 const PRESS_OUT = { damping: 22, stiffness: 400 };
@@ -26,6 +26,7 @@ interface TactilePressableProps extends Omit<PressableProps, 'style'> {
 /**
  * GreenBidder-style spring-compress pressable. Scaled to a 44pt hit target
  * and snaps to end state under Reduce Motion.
+ * Uses Tamagui Stack for layout, Reanimated for spring compression.
  */
 export function TactilePressable({
   variant = 'default',
@@ -60,16 +61,17 @@ export function TactilePressable({
 
   return (
     <Animated.View style={[styles.base, variantStyle[variant], scaleStyle, style]}>
-      <Pressable
-        {...rest}
-        hitSlop={8}
-        style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        onPress={handlePress}
-      >
-        {children}
-      </Pressable>
+      <YStack alignItems="center" justifyContent="center">
+        <Pressable
+          {...rest}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
+          onPress={handlePress}
+        >
+          {children}
+        </Pressable>
+      </YStack>
     </Animated.View>
   );
 }

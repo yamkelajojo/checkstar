@@ -1,30 +1,33 @@
 import * as Haptics from 'expo-haptics';
+import { Platform } from 'react-native';
 
 export type HapticIntent = 'tap' | 'commit' | 'success' | 'warning' | 'selection' | 'error';
 
-export async function haptic(intent: HapticIntent): Promise<void> {
-  if (__DEV__ && intent === 'warning') {
-    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-    return;
-  }
+/** Intent-based haptics: callers pass a domain intent, not a raw Haptics constant. */
+export function haptic(intent: HapticIntent): void {
+  const isIOS = Platform.OS === 'ios';
   switch (intent) {
+    case 'tap':
+      void Haptics.impactAsync(isIOS ? Haptics.ImpactFeedbackStyle.Light : Haptics.ImpactFeedbackStyle.Medium);
+      break;
     case 'commit':
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       break;
     case 'success':
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       break;
     case 'warning':
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       break;
     case 'error':
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       break;
     case 'selection':
-      await Haptics.selectionAsync();
-      break;
-    case 'tap':
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      void Haptics.selectionAsync();
       break;
   }
 }
+
+// Aliases for callers that already import as `haptics`
+export const haptics = haptic;
+export default haptic;
