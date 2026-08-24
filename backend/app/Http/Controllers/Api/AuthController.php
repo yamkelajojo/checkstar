@@ -36,7 +36,7 @@ class AuthController extends Controller
             $request->session()->regenerate();
         }
 
-        return response()->json(['user' => $user], 201);
+        return response()->json(['user' => $user, 'token' => $user->createToken('mobile')->plainTextToken], 201);
     }
 
     public function registerRider(Request $request): JsonResponse
@@ -69,7 +69,7 @@ class AuthController extends Controller
             $request->session()->regenerate();
         }
 
-        return response()->json(['user' => $user->load('rider')], 201);
+        return response()->json(['user' => $user->load('rider'), 'token' => $user->createToken('mobile')->plainTextToken], 201);
     }
 
     public function login(Request $request): JsonResponse
@@ -96,7 +96,7 @@ class AuthController extends Controller
             $request->session()->regenerate();
         }
 
-        return response()->json(['user' => $user->load(['rider', 'store'])]);
+        return response()->json(['user' => $user->load(['rider', 'store']), 'token' => $user->createToken('mobile')->plainTextToken]);
     }
 
     public function logout(Request $request): JsonResponse

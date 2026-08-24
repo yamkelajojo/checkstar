@@ -6,6 +6,7 @@ enum OrderStatus: string
 {
     case Pending = 'pending';
     case Confirmed = 'confirmed';
+    case Retrying = 'retrying';
     case Preparing = 'preparing';
     case OutForDelivery = 'out_for_delivery';
     case Delivered = 'delivered';

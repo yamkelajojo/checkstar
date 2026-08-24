@@ -31,16 +31,51 @@ class DispatchService
             return $this->result(null, null, 'cancelled', null, 'Delivery coordinates missing');
         }
 
+        $claimed = $this->tryStores($order);
+        if ($claimed !== null) {
+            return $claimed;
+        }
+
+        $this->stateMachine->transition($order, OrderStatus::Retrying, null, [
+            'reason' => 'No available riders at any store',
+            'source' => 'dispatch',
+        ]);
+
+        return $this->result(null, null, 'retrying');
+    }
+
+    public function retry(Order $order): array
+    {
+        $order = $order->fresh();
+
+        if ($order === null || $order->status !== OrderStatus::Retrying) {
+            return $this->result(null, null, 'skipped');
+        }
+
+        $claimed = $this->tryStores($order);
+        if ($claimed !== null) {
+            return $claimed;
+        }
+
+        if ($order->dispatch_attempts + 1 >= $this->policy->maxAttempts()) {
+            $this->cancelOrder($order, 'No available riders after ' . $this->policy->maxAttempts() . ' dispatch attempts');
+            return $this->result(null, null, 'cancelled');
+        }
+
+        $order->dispatch_attempts += 1;
+        $order->save();
+
+        return $this->result(null, null, 'retrying');
+    }
+
+    private function tryStores(Order $order): ?array
+    {
         $customerLat = (float) $order->delivery_latitude;
         $customerLng = (float) $order->delivery_longitude;
 
         $eligibleStores = $this->policy->eligibleStores($customerLat, $customerLng);
         $maxFallback = $this->policy->maxFallbackStores();
 
-        $claimLatency = null;
-        $riderId = null;
-        $storeId = null;
-        $status = 'no_rider_available';
         $attempts = 0;
 
         foreach ($eligibleStores as $sd) {
@@ -52,28 +87,20 @@ class DispatchService
             $distance = $sd['distance_km'];
             $rider = $this->policy->eligibleRider($store, $distance);
 
-            if (!$rider) {
+            if (!$rider instanceof Rider) {
                 $attempts++;
                 continue;
             }
 
             $claimResult = $this->orderClaim->claim($order, $rider, $store);
             if ($claimResult->claimed) {
-                $claimLatency = $claimResult->claimLatencyMs;
-                $riderId = $rider->id;
-                $storeId = $store->id;
-                $status = 'assigned';
-                break;
+                return $this->result($store->id, $rider->id, 'assigned', $claimResult->claimLatencyMs);
             }
 
             $attempts++;
         }
 
-        if ($status === 'no_rider_available') {
-            $this->cancelOrder($order, 'No available riders at any store');
-        }
-
-        return $this->result($storeId, $riderId, $status, $claimLatency);
+        return null;
     }
 
     private function cancelOrder(Order $order, string $reason): void

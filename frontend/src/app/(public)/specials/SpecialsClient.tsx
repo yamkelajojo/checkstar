@@ -25,10 +25,10 @@ export default function SpecialsClient() {
 
   return (
     <>
-      <main className="max-w-7xl mx-auto px-4 py-16">
+      <main className="max-w-7xl mx-auto px-4 py-8">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="font-display text-4xl font-bold mb-2">Specials</h1>
-          <p className="text-gray-500 mb-12">Limited-time offers on your favourite products.</p>
+          <p className="text-gray-500 mb-8">Limited-time offers on your favourite products.</p>
         </motion.div>
 
         {fetchError ? (
@@ -103,7 +103,7 @@ export default function SpecialsClient() {
                   </div>
 
                   {special.products && special.products.length > 0 && (
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
                       {special.products.map(product => (
                         <ProductCard key={product.id} product={product} />
                       ))}

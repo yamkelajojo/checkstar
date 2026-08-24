@@ -27,7 +27,7 @@ const stagger = {
 const managementLinks = [
   { href: '/admin/products', label: 'Products', icon: ShoppingBag, desc: 'Manage product catalog, pricing, and inventory' },
   { href: '/admin/categories', label: 'Categories', icon: Tags, desc: 'Organise products by category' },
-  { href: '/admin/specials', label: 'Specials', icon: Sparkles, desc: 'Time-bound offers and promotions' },
+  { href: '/admin/specials', label: 'Specials', icon: Sparkles, desc: 'Time-bound offers and Specials' },
   { href: '/admin/recipes', label: 'Recipes', icon: BookOpen, desc: 'Create and edit recipes' },
   { href: '/admin/community', label: 'Community', icon: Users, desc: 'Gallery and CSR posts' },
   { href: '/admin/careers', label: 'Careers', icon: Briefcase, desc: 'Manage job listings' },

@@ -20,11 +20,19 @@ export const FILTER_GROUPS = [
 export default function ProductsClient() {
   const [activeGroup, setActiveGroup] = useState<string>('All')
   const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const scrollRef = useRef<HTMLDivElement>(null)
   const [canScrollLeft, setCanScrollLeft] = useState(false)
   const [canScrollRight, setCanScrollRight] = useState(false)
 
-  const { data: products = [], isLoading: productsLoading, error: productsError } = useAllProducts()
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchQuery.trim()), 350)
+    return () => clearTimeout(timer)
+  }, [searchQuery])
+
+  const queryParams: Record<string, string> = {}
+  if (debouncedSearch) queryParams.search = debouncedSearch
+  const { data: products = [], isLoading: productsLoading, error: productsError } = useAllProducts(Object.keys(queryParams).length ? queryParams : undefined)
 
   const loading = productsLoading
   const fetchError = productsError ? 'Failed to load products' : null
@@ -53,10 +61,7 @@ export default function ProductsClient() {
   const filtered = products.filter(p => {
     const activeIds = FILTER_GROUPS.find(g => g.label === activeGroup)?.ids
     const matchesCategory = activeIds ? (activeIds as number[]).includes(p.category_id) : true
-    const matchesSearch = searchQuery
-      ? p.name.toLowerCase().includes(searchQuery.toLowerCase())
-      : true
-    return matchesCategory && matchesSearch
+    return matchesCategory
   })
 
   return (

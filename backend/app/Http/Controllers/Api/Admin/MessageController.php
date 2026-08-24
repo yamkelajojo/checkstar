@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\ContactMessage;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class MessageController extends Controller
 {
@@ -19,5 +20,21 @@ class MessageController extends Controller
         $message->update(['is_read' => true]);
 
         return response()->json(['data' => $message]);
+    }
+
+    public function reply(Request $request, int $id): JsonResponse
+    {
+        $validated = $request->validate([
+            'body' => 'required|string|max:5000',
+        ]);
+
+        $message = ContactMessage::findOrFail($id);
+        $message->update([
+            'reply_body' => $validated['body'],
+            'replied_at' => now(),
+            'is_read' => true,
+        ]);
+
+        return response()->json(['data' => $message->fresh()]);
     }
 }

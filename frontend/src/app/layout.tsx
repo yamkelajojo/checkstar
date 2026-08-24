@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import { inter } from './fonts/inter/inter'
 import { Providers } from '@/lib/providers'
 
 export const metadata: Metadata = {
@@ -10,10 +11,8 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="font-sans bg-white text-[#212529]">
-        <Providers>
-          {children}
-        </Providers>
+      <body className={`font-sans ${inter.variable} bg-white text-[#212529]`}>
+        <Providers>{children}</Providers>
       </body>
     </html>
   )

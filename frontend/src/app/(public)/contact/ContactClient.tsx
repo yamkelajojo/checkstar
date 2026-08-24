@@ -39,7 +39,7 @@ export default function ContactClient() {
 
   return (
     <>
-      <main className="max-w-6xl mx-auto px-4 py-16">
+      <main className="max-w-6xl mx-auto px-4 py-8">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="font-display text-4xl font-bold mb-2">Contact Us</h1>
           <p className="text-gray-500 mb-12">We&apos;d love to hear from you. Get in touch with our team.</p>

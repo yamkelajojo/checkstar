@@ -29,7 +29,7 @@ class RiderController extends Controller
         $rider = $this->getRider($request);
 
         $orders = Order::where('store_id', $rider->store_id)
-            ->where('status', OrderStatus::Confirmed)
+            ->whereIn('status', [OrderStatus::Confirmed, OrderStatus::Retrying])
             ->whereNull('rider_id')
             ->with('items')
             ->get();

@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'motion/react'
-import { Mail, Lock, Eye, EyeOff, Loader2, ArrowRight } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react'
+import { Loader } from '@/components/Loader'
 import { useAuthStore } from '@/stores/auth-store'
 
 export default function LoginClient() {
@@ -88,7 +89,7 @@ export default function LoginClient() {
               whileTap={{ scale: 0.98 }}
               className="w-full bg-primary text-white py-2.5 rounded-lg font-medium hover:bg-primary-dark transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
             >
-              {loading ? <Loader2 size={18} className="animate-spin" /> : null}
+              {loading ? <Loader className="h-8 w-24" /> : null}
               {loading ? 'Signing in...' : 'Sign In'}
             </motion.button>
           </form>

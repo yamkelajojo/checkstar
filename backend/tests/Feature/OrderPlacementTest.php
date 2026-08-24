@@ -12,6 +12,7 @@ use App\Models\Store;
 use App\Models\StoreProduct;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -134,8 +135,10 @@ class OrderPlacementTest extends TestCase
             ->assertJsonPath('dispatch.store_name', 'Durban Central');
     }
 
-    public function test_order_with_no_available_rider_is_cancelled(): void
+    public function test_order_with_no_available_rider_enters_retrying_and_keeps_cart(): void
     {
+        Queue::fake();
+
         $store = $this->makeStore();
         $product = $this->makeProduct();
         StoreProduct::create([
@@ -155,13 +158,40 @@ class OrderPlacementTest extends TestCase
         ]);
 
         $response->assertStatus(201)
-            ->assertJsonPath('dispatch.status', 'no_rider_available')
-            ->assertJsonPath('data.status', 'cancelled');
+            ->assertJsonPath('dispatch.status', 'retrying')
+            ->assertJsonPath('data.status', 'retrying');
 
+        Queue::assertPushed(\App\Jobs\RetryDispatch::class);
+
+        // Keep-on-cancel decision (#04): the cart survives so the Customer can re-checkout.
         $this->actingAs($customer)
             ->getJson('/api/cart')
             ->assertStatus(200)
             ->assertJsonCount(1, 'data');
+    }
+
+    public function test_order_defaults_to_cash_on_delivery(): void
+    {
+        $store = $this->makeStore();
+        $this->makeRider($store);
+        $product = $this->makeProduct();
+        StoreProduct::create([
+            'store_id' => $store->id,
+            'product_id' => $product->id,
+            'stock_quantity' => 10,
+            'is_available' => true,
+        ]);
+        $customer = $this->makeCustomer();
+
+        $response = $this->actingAs($customer)->postJson('/api/orders', [
+            'items' => [['product_id' => $product->id, 'quantity' => 1]],
+            'delivery_address' => '1 Test Street, Durban',
+            'delivery_latitude' => self::LAT,
+            'delivery_longitude' => self::LNG,
+        ]);
+
+        $response->assertStatus(201)
+            ->assertJsonPath('data.payment_method', 'cash_on_delivery');
     }
 
     public function test_placing_an_order_clears_the_server_cart(): void
@@ -288,8 +318,8 @@ class OrderPlacementTest extends TestCase
 
         $this->actingAs($customer)
             ->postJson("/api/orders/{$order->id}/cancel")
-            ->assertStatus(422)
-            ->assertJson(['message' => 'This order can no longer be cancelled']);
+            ->assertStatus(409)
+            ->assertJson(['reason' => 'order_not_cancellable']);
     }
 
     public function test_customer_can_confirm_own_delivery(): void

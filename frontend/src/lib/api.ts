@@ -37,8 +37,9 @@ export const api = {
     while (true) {
       const res = await request<Paginated<Product>>(`/products?${new URLSearchParams({ ...query, page: String(page) })}`)
       all.push(...res.data)
-      if (res.data.length === 0 || all.length >= res.total) break
+      if (res.data.length === 0 || page >= res.last_page) break
       page++
+      if (page > 100) break
     }
 
     return all
@@ -59,14 +60,14 @@ export const api = {
   logout: () => request<{ message: string }>('/auth/logout', { method: 'POST' }),
   getUser: () => request<{ user: User }>('/auth/user'),
   // Customer
-  getOrders: () => request<{ data: Order[] }>('/orders'),
+  getOrders: (params?: Record<string, string>) => request<{ data: Order[] }>(`/orders${params ? `?${new URLSearchParams(params)}` : ''}`),
   getOrder: (id: number) => request<{ data: Order }>(`/orders/${id}`).then(r => r.data),
-  placeOrder: (data: { items: { product_id: number; quantity: number }[]; delivery_address?: string; delivery_latitude: number; delivery_longitude: number; delivery_notes?: string }) => request<OrderPlacementResult>('/orders', { method: 'POST', body: JSON.stringify(data) }),
+  placeOrder: (data: { items: { product_id: number; quantity: number }[]; delivery_address?: string; delivery_latitude: number; delivery_longitude: number; delivery_notes?: string; payment_method?: string }) => request<OrderPlacementResult>('/orders', { method: 'POST', body: JSON.stringify(data) }),
   cancelOrder: (id: number) => request<{ data: Order }>(`/orders/${id}/cancel`, { method: 'POST' }).then(r => r.data),
   confirmDelivery: (id: number) => request<{ data: Order }>(`/orders/${id}/confirm`, { method: 'POST' }).then(r => r.data),
   reviewRider: (id: number, data: { rating: number; comment?: string }) => request<any>(`/orders/${id}/review`, { method: 'POST', body: JSON.stringify(data) }),
   getCart: () => request<{ data: CartItem[] }>('/cart').then(r => r.data),
-  syncCart: (items: { product_id: number; quantity: number }[]) => request<{ message: string }>('/cart/sync', { method: 'POST', body: JSON.stringify({ items }) }),
+  syncCart: (items: { product_id: number; quantity: number }[]) => request<{ data: CartItem[]; dropped: { product_id: number; reason: string }[] }>('/cart/sync', { method: 'POST', body: JSON.stringify({ items }) }),
   updateProfile: (data: Partial<User>) => request<User>('/profile', { method: 'PUT', body: JSON.stringify(data) }),
   // Rider
   getAvailableOrders: () => request<{ data: Order[] }>('/rider/available-orders'),

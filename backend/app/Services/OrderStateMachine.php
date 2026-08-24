@@ -21,7 +21,8 @@ class OrderStateMachine
 
         self::$transitions = [
             OrderStatus::Pending->value => [OrderStatus::Confirmed->value, OrderStatus::Cancelled->value],
-            OrderStatus::Confirmed->value => [OrderStatus::Preparing->value, OrderStatus::Cancelled->value],
+            OrderStatus::Confirmed->value => [OrderStatus::Preparing->value, OrderStatus::Retrying->value, OrderStatus::Cancelled->value],
+            OrderStatus::Retrying->value => [OrderStatus::Preparing->value, OrderStatus::Cancelled->value],
             OrderStatus::Preparing->value => [OrderStatus::OutForDelivery->value, OrderStatus::Cancelled->value],
             OrderStatus::OutForDelivery->value => [OrderStatus::Delivered->value, OrderStatus::Cancelled->value],
             OrderStatus::Delivered->value => [],
@@ -35,6 +36,7 @@ class OrderStateMachine
     {
         return match ($to) {
             OrderStatus::Confirmed => EventType::OrderConfirmed,
+            OrderStatus::Retrying => EventType::DispatchRetrying,
             OrderStatus::Preparing => EventType::RiderAssigned,
             OrderStatus::OutForDelivery => EventType::OutForDelivery,
             OrderStatus::Delivered => EventType::Delivered,

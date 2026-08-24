@@ -23,7 +23,7 @@ export default function CommunityClient() {
 
   return (
     <>
-      <main className="max-w-7xl mx-auto px-4 py-16">
+      <main className="max-w-7xl mx-auto px-4 py-8">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="font-display text-4xl font-bold mb-2">Community</h1>
           <p className="text-gray-500 mb-8">See how Checkstar connects with the community.</p>

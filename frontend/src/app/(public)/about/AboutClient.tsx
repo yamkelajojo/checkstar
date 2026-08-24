@@ -1,6 +1,7 @@
 'use client'
 
-import { motion } from 'motion/react'
+import { useRef } from 'react'
+import { motion, useScroll, useSpring, type Variants } from 'motion/react'
 import { Store, Bike, Users, ShoppingBag, Award, Heart } from 'lucide-react'
 
 const fadeUp = {
@@ -11,6 +12,11 @@ const fadeUp = {
 const stagger = {
   hidden: {},
   show: { transition: { staggerChildren: 0.1 } },
+}
+
+const timelineCard: Variants = {
+  hidden: (fromRight: boolean) => ({ opacity: 0, x: fromRight ? 56 : -56 }),
+  show: { opacity: 1, x: 0, transition: { duration: 0.55, ease: 'easeOut' } },
 }
 
 const timeline = [
@@ -24,7 +30,7 @@ const timeline = [
 const stakeholders = [
   { icon: Store, title: 'Store Owners', desc: 'Local entrepreneurs who own and operate each Checkstar location.' },
   { icon: Users, title: 'Store Managers', desc: 'Day-to-day operations, inventory, and staff management at each store.' },
-  { icon: Bike, title: 'Riders', desc: 'Motorbike couriers who deliver orders fresh and fast to customers.' },
+  { icon: Bike, title: 'Riders', desc: 'Riders who deliver orders fresh and fast to customers.' },
   { icon: ShoppingBag, title: 'Suppliers', desc: 'Trusted local and national suppliers who stock our shelves daily.' },
 ]
 
@@ -112,26 +118,7 @@ export default function AboutClient() {
           >
             Our Timeline
           </motion.h2>
-          <div className="relative">
-            <div className="absolute left-6 md:left-1/2 top-0 bottom-0 w-0.5 bg-gray-200 -translate-x-1/2" />
-            <motion.div variants={stagger} initial="hidden" whileInView="show" viewport={{ once: true }}>
-              {timeline.map((t, i) => (
-                <motion.div
-                  key={i}
-                  variants={fadeUp}
-                  className={`relative flex items-start gap-6 mb-10 ${i % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'}`}
-                >
-                  <div className="hidden md:block flex-1" />
-                  <div className="absolute left-6 md:left-1/2 w-4 h-4 bg-primary rounded-full -translate-x-1/2 mt-1.5 ring-4 ring-white" />
-                  <div className="flex-1 pl-10 md:pl-0">
-                    <span className="text-sm font-bold text-primary">{t.year}</span>
-                    <h3 className="font-display text-lg font-semibold mt-1">{t.title}</h3>
-                    <p className="text-sm text-gray-500 mt-1 leading-relaxed">{t.desc}</p>
-                  </div>
-                </motion.div>
-              ))}
-            </motion.div>
-          </div>
+          <Timeline />
         </section>
 
         <section className="bg-primary text-white py-16 text-center">
@@ -150,5 +137,57 @@ export default function AboutClient() {
         </section>
       </main>
     </>
+  )
+}
+
+function Timeline() {
+  const ref = useRef<HTMLDivElement>(null)
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ['start 0.75', 'end 0.6'],
+  })
+  const fillScale = useSpring(scrollYProgress, { stiffness: 50, damping: 20, restDelta: 0.001 })
+
+  return (
+    <div ref={ref} className="relative">
+      <div className="absolute left-6 md:left-1/2 top-0 bottom-0 w-0.5 -translate-x-1/2 bg-gray-200" />
+      <motion.div
+        style={{ scaleY: fillScale }}
+        className="absolute left-6 md:left-1/2 top-0 bottom-0 w-0.5 -translate-x-1/2 origin-top bg-gradient-to-b from-primary to-primary/40"
+      />
+      {timeline.map((t, i) => {
+        const isLast = i === timeline.length - 1
+        const fromRight = i % 2 === 1
+        return (
+          <div
+            key={t.year}
+            className={`relative flex items-start gap-6 md:gap-12 mb-16 md:mb-24 last:mb-0 ${i % 2 === 0 ? '' : 'md:flex-row-reverse'}`}
+          >
+            <div className="hidden md:block flex-1" />
+            <motion.span
+              initial={{ scale: 0 }}
+              whileInView={{ scale: 1 }}
+              viewport={{ once: true, amount: 0.5 }}
+              transition={{ type: 'spring', stiffness: 260, damping: 18, delay: 0.2 }}
+              className={`absolute left-6 md:left-1/2 -translate-x-1/2 top-6 rounded-full ring-4 ring-white bg-primary ${
+                isLast ? 'w-5 h-5' : 'w-4 h-4'
+              }`}
+            />
+            <motion.div
+              custom={fromRight}
+              variants={timelineCard}
+              initial="hidden"
+              whileInView="show"
+              viewport={{ once: true, amount: 0.3 }}
+              className="flex-1 ml-12 md:ml-0 bg-white rounded-xl border border-gray-100 shadow-sm p-6 md:p-8"
+            >
+              <span className="text-sm font-bold text-primary">{t.year}</span>
+              <h3 className="font-display text-lg font-semibold mt-1">{t.title}</h3>
+              <p className="text-sm text-gray-500 mt-2 leading-relaxed">{t.desc}</p>
+            </motion.div>
+          </div>
+        )
+      })}
+    </div>
   )
 }

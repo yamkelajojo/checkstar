@@ -33,7 +33,7 @@ export default function StoresClient() {
         shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
       })
 
-      const map = L.map(el).setView([-29.8587, 31.0218], 11)
+      const map = L.map(el!).setView([-29.8587, 31.0218], 11)
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap contributors',
       }).addTo(map)
@@ -78,7 +78,7 @@ export default function StoresClient() {
 
   return (
     <>
-      <main className="max-w-7xl mx-auto px-4 py-16">
+      <main className="max-w-7xl mx-auto px-4 py-8">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="font-display text-4xl font-bold mb-2">Our Stores</h1>
           <p className="text-gray-500 mb-8">Find a Checkstar store near you in Durban.</p>

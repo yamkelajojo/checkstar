@@ -31,7 +31,7 @@ class RiderOrderService
             return null;
         }
 
-        if ($order->rider_id !== null || $order->status !== OrderStatus::Confirmed) {
+        if ($order->rider_id !== null || !in_array($order->status, [OrderStatus::Confirmed, OrderStatus::Retrying], true)) {
             return null;
         }
 

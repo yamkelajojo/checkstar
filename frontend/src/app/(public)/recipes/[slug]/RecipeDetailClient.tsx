@@ -36,7 +36,7 @@ export default function RecipeDetailClient({ slug }: { slug: string }) {
   if (fetchError) {
     return (
       <>
-        <main className="max-w-4xl mx-auto px-4 py-16 text-center">
+        <main className="max-w-4xl mx-auto px-4 py-8 text-center">
           <p className="text-red-500 text-lg font-medium">{fetchError}</p>
           <p className="text-sm text-gray-400 mt-1">Please try again later.</p>
           <Link href="/recipes" className="text-primary hover:underline mt-4 inline-block">Back to recipes</Link>
@@ -48,7 +48,7 @@ export default function RecipeDetailClient({ slug }: { slug: string }) {
   if (loading) {
     return (
       <>
-        <main className="max-w-4xl mx-auto px-4 py-16">
+        <main className="max-w-4xl mx-auto px-4 py-8">
           <div className="animate-pulse space-y-6">
             <div className="h-6 bg-gray-50 rounded w-1/4" />
             <div className="aspect-[2/1] bg-gray-50 rounded-xl" />
@@ -64,7 +64,7 @@ export default function RecipeDetailClient({ slug }: { slug: string }) {
   if (!recipe) {
     return (
       <>
-        <main className="max-w-4xl mx-auto px-4 py-16 text-center">
+        <main className="max-w-4xl mx-auto px-4 py-8 text-center">
           <p className="text-gray-400 text-lg">Recipe not found.</p>
           <Link href="/recipes" className="text-primary hover:underline mt-4 inline-block">Back to recipes</Link>
         </main>

@@ -39,6 +39,16 @@ class DispatchPolicy
         return Config::get('dispatch.max_fallback_stores', 3);
     }
 
+    public function maxAttempts(): int
+    {
+        return Config::get('dispatch.max_attempts', 5);
+    }
+
+    public function retryIntervalSeconds(): int
+    {
+        return (int) Config::get('dispatch.retry_interval_seconds', 60);
+    }
+
     private function haversine(float $lat1, float $lng1, float $lat2, float $lng2): float
     {
         $earthRadius = 6371;

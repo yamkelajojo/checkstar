@@ -10,6 +10,7 @@ class OrderCancellationPolicy
     private const CUSTOMER_CANCELLABLE = [
         OrderStatus::Pending->value,
         OrderStatus::Confirmed->value,
+        OrderStatus::Retrying->value,
         OrderStatus::Preparing->value,
     ];
 

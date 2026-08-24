@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\EventType;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
+use App\Jobs\RetryDispatch;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
@@ -16,12 +17,16 @@ class OrderIntake
     private PricingService $pricingService;
     private OrderStateMachine $stateMachine;
     private DispatchService $dispatchService;
+    private DispatchPolicy $dispatchPolicy;
+    private OrderCartPolicy $cartPolicy;
 
-    public function __construct(PricingService $pricingService, OrderStateMachine $stateMachine, DispatchService $dispatchService)
+    public function __construct(PricingService $pricingService, OrderStateMachine $stateMachine, DispatchService $dispatchService, DispatchPolicy $dispatchPolicy, OrderCartPolicy $cartPolicy)
     {
         $this->pricingService = $pricingService;
         $this->stateMachine = $stateMachine;
         $this->dispatchService = $dispatchService;
+        $this->dispatchPolicy = $dispatchPolicy;
+        $this->cartPolicy = $cartPolicy;
     }
 
     public function place(array $validated, User $customer): OrderIntakeResult
@@ -56,6 +61,7 @@ class OrderIntake
                 'store_id' => null,
                 'status' => OrderStatus::Pending,
                 'payment_status' => PaymentStatus::Pending,
+                'payment_method' => $validated['payment_method'] ?? 'cash_on_delivery',
                 'delivery_address' => $validated['delivery_address'],
                 'delivery_latitude' => $validated['delivery_latitude'],
                 'delivery_longitude' => $validated['delivery_longitude'],
@@ -76,8 +82,13 @@ class OrderIntake
             $dispatchedOrder = $order->fresh();
             $dispatchResult = $this->dispatchService->dispatch($dispatchedOrder);
 
-            if ($dispatchedOrder->status !== OrderStatus::Cancelled) {
+            if ($this->cartPolicy->shouldClearAfterPlacement($dispatchedOrder)) {
                 $customer->cartItems()->delete();
+            }
+
+            if ($dispatchResult['status'] === 'retrying') {
+                RetryDispatch::dispatch($dispatchedOrder)
+                    ->delay(now()->addSeconds($this->dispatchPolicy->retryIntervalSeconds()));
             }
 
             return new OrderIntakeResult(

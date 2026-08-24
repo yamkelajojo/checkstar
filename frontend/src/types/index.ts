@@ -7,7 +7,7 @@ export interface User {
 }
 export interface Store { id: number; name: string; slug: string; address: string; city: string; phone: string; email: string | null; latitude: number; longitude: number; delivery_radius_km: number; trading_hours: any; logo: string | null; image: string | null; is_active: boolean }
 export interface Category { id: number; name: string; slug: string; description: string | null; image: string | null; icon: string | null; sort_order: number }
-export interface Product { id: number; category_id: number; name: string; slug: string; description: string | null; image: string | null; images: string[] | null; unit: string; price: number; sale_price: number | null; effective_price: number; tags: string[] | null; is_featured: boolean; category?: Category }
+export interface Product { id: number; category_id: number; name: string; slug: string; description: string | null; image: string | null; images: string[] | null; unit: string; price: number; sale_price: number | null; effective_price?: number | null; tags: string[] | null; is_featured: boolean; category?: Category }
 export interface StoreProduct { id: number; store_id: number; product_id: number; stock_quantity: number; is_available: boolean; product?: Product }
 export interface CartItem { product: Product; quantity: number; store_product_id?: number }
 export interface Order { id: number; order_number: string; status: OrderStatus; payment_status: PaymentStatus; total: number; subtotal: number; delivery_fee: number; delivery_address: string | null; created_at: string; can_cancel?: boolean; payment_method?: string; items?: OrderItem[]; rider?: Rider; store?: Store; activity_logs?: OrderActivityLog[] }

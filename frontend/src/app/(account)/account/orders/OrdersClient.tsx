@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'motion/react'
@@ -11,6 +11,7 @@ import { useOrders } from '@/lib/query'
 const statusConfig: Record<string, { color: string; bg: string; icon: any; label: string }> = {
   pending: { color: 'text-yellow-600', bg: 'bg-yellow-100', icon: Clock, label: 'Pending' },
   confirmed: { color: 'text-blue-600', bg: 'bg-blue-100', icon: AlertCircle, label: 'Confirmed' },
+  retrying: { color: 'text-amber-600', bg: 'bg-amber-100', icon: Clock, label: 'Finding Rider' },
   preparing: { color: 'text-indigo-600', bg: 'bg-indigo-100', icon: Package, label: 'Preparing' },
   out_for_delivery: { color: 'text-purple-600', bg: 'bg-purple-100', icon: Bike, label: 'Out for Delivery' },
   delivered: { color: 'text-green-600', bg: 'bg-green-100', icon: CheckCircle, label: 'Delivered' },
@@ -20,7 +21,12 @@ const statusConfig: Record<string, { color: string; bg: string; icon: any; label
 export default function OrdersClient() {
   const router = useRouter()
   const { isAuthenticated, isLoading: authLoading, checkAuth } = useAuthStore()
-  const { data: orders = [], isLoading: loading, error } = useOrders()
+  const [statusFilter, setStatusFilter] = useState<string>('')
+  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest')
+  const queryParams: Record<string, string> = {}
+  if (statusFilter) queryParams.status = statusFilter
+  if (sortOrder === 'oldest') queryParams.sort = 'oldest'
+  const { data: orders = [], isLoading: loading, error } = useOrders(Object.keys(queryParams).length ? queryParams : undefined)
 
   useEffect(() => {
     checkAuth()
@@ -46,7 +52,23 @@ export default function OrdersClient() {
     <>
       <main className="max-w-4xl mx-auto px-4 py-16">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <h1 className="font-display text-3xl font-bold mb-8">My Orders</h1>
+          <h1 className="font-display text-3xl font-bold mb-2">My Orders</h1>
+          <div className="flex flex-wrap gap-3 mb-6">
+            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary outline-none">
+              <option value="">All statuses</option>
+              <option value="pending">Pending</option>
+              <option value="confirmed">Confirmed</option>
+              <option value="retrying">Finding Rider</option>
+              <option value="preparing">Preparing</option>
+              <option value="out_for_delivery">Out for Delivery</option>
+              <option value="delivered">Delivered</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+            <select value={sortOrder} onChange={e => setSortOrder(e.target.value as 'newest' | 'oldest')} className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary outline-none">
+              <option value="newest">Newest first</option>
+              <option value="oldest">Oldest first</option>
+            </select>
+          </div>
 
           {error && (
             <div className="bg-accent/10 border border-accent/30 text-accent text-sm rounded-lg px-4 py-3 mb-6">{error.message}</div>

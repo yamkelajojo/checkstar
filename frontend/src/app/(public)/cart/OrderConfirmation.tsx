@@ -3,7 +3,7 @@ import { CheckCircle, XCircle, Clock, ArrowRight, RotateCcw } from 'lucide-react
 import type { Dispatch } from '@/types'
 
 interface OrderConfirmationProps {
-  order: { order_number: string; id: number }
+  order: { order_number: string; id: number; payment_status?: string }
   dispatch?: Dispatch | null
 }
 
@@ -30,6 +30,7 @@ export default function OrderConfirmation({ order, dispatch }: OrderConfirmation
   }
 
   if (dispatch?.status === 'cancelled') {
+    const paid = order.payment_status === 'paid'
     return (
       <main className="max-w-md mx-auto px-4 py-20 text-center">
         <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -38,7 +39,9 @@ export default function OrderConfirmation({ order, dispatch }: OrderConfirmation
         <h1 className="font-display text-2xl font-bold mb-2">Order Cancelled</h1>
         <p className="text-gray-500 mb-1">Order #{order.order_number}</p>
         <p className="text-sm text-gray-500 mb-8">
-          Your order was cancelled before dispatch and you haven&apos;t been charged.
+          {paid
+            ? 'Your order was cancelled — a refund will be issued if you were charged.'
+            : "Your order was cancelled before dispatch and you haven't been charged."}
         </p>
         <Link
           href="/products"

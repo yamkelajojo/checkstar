@@ -18,7 +18,7 @@ export default function CartClient() {
   const [deliveryAddress, setDeliveryAddress] = useState('')
   const [showCheckoutForm, setShowCheckoutForm] = useState(false)
   const [placeError, setPlaceError] = useState('')
-  const [placedOrder, setPlacedOrder] = useState<{ order_number: string; id: number } | null>(null)
+  const [placedOrder, setPlacedOrder] = useState<{ order_number: string; id: number; payment_status?: string } | null>(null)
   const [dispatch, setDispatch] = useState<Dispatch | null>(null)
   const [coords, setCoords] = useState<DeliveryCoords | null>(null)
 
@@ -43,9 +43,15 @@ export default function CartClient() {
         delivery_address: deliveryAddress.trim(),
         delivery_latitude: resolved.latitude,
         delivery_longitude: resolved.longitude,
+        payment_method: 'cash_on_delivery',
       })
-      clearCart()
-      setPlacedOrder({ order_number: result.data.order_number, id: result.data.id })
+      // Keep-on-cancel decision (#04): OrderCartPolicy keeps cart when dispatch is
+      // cancelled/retrying so Customer can re-checkout. Only clear when backend
+      // confirms the order proceeded (assigned).
+      if (result.dispatch?.status === 'assigned') {
+        clearCart()
+      }
+      setPlacedOrder({ order_number: result.data.order_number, id: result.data.id, payment_status: result.data.payment_status })
       setDispatch(result.dispatch)
     } catch (err: any) {
       setPlaceError(err.message || 'Failed to place order.')
@@ -53,7 +59,7 @@ export default function CartClient() {
   }
 
   const subtotal = total()
-  const deliveryFee = 0 as number
+  const deliveryFee: number = 0
 
   if (placedOrder) {
     return <OrderConfirmation order={placedOrder} dispatch={dispatch} />

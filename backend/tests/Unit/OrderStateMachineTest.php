@@ -129,6 +129,44 @@ class OrderStateMachineTest extends TestCase
         $this->assertSame(EventType::Cancelled->value, $log->event_type);
     }
 
+    public function test_confirmed_to_retrying(): void
+    {
+        $this->order->update(['status' => OrderStatus::Confirmed]);
+
+        $log = $this->machine->transition($this->order, OrderStatus::Retrying);
+
+        $this->assertEquals(OrderStatus::Retrying, $this->order->fresh()->status);
+        $this->assertSame(EventType::DispatchRetrying->value, $log->event_type);
+    }
+
+    public function test_retrying_to_preparing(): void
+    {
+        $this->order->update(['status' => OrderStatus::Retrying]);
+
+        $log = $this->machine->transition($this->order, OrderStatus::Preparing);
+
+        $this->assertEquals(OrderStatus::Preparing, $this->order->fresh()->status);
+        $this->assertSame(EventType::RiderAssigned->value, $log->event_type);
+    }
+
+    public function test_retrying_to_cancelled(): void
+    {
+        $this->order->update(['status' => OrderStatus::Retrying]);
+
+        $log = $this->machine->transition($this->order, OrderStatus::Cancelled);
+
+        $this->assertEquals(OrderStatus::Cancelled, $this->order->fresh()->status);
+        $this->assertSame(EventType::Cancelled->value, $log->event_type);
+    }
+
+    public function test_pending_to_retrying_throws(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Cannot transition from pending to retrying');
+
+        $this->machine->transition($this->order, OrderStatus::Retrying);
+    }
+
     public function test_delivered_to_preparing_throws(): void
     {
         $this->order->update(['status' => OrderStatus::Delivered]);

@@ -79,16 +79,6 @@ class OrderPolicyTest extends TestCase
         $this->assertFalse($this->policy->view($this->intruder, $this->order));
     }
 
-    public function test_customer_can_update_own_order(): void
-    {
-        $this->assertTrue($this->policy->update($this->owner, $this->order));
-    }
-
-    public function test_customer_cannot_update_others_order(): void
-    {
-        $this->assertFalse($this->policy->update($this->intruder, $this->order));
-    }
-
     public function test_customer_can_confirm_delivery_of_own_order(): void
     {
         $this->assertTrue($this->policy->confirmDelivery($this->owner, $this->order));

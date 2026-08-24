@@ -3,7 +3,7 @@ import SpecialsClient from './SpecialsClient'
 
 export const metadata: Metadata = {
   title: 'Specials — Checkstar',
-  description: 'Check out our latest specials and promotions — limited-time offers on your favourite products.',
+  description: 'Check out our latest Specials — limited-time offers on your favourite products.',
 }
 
 export default function SpecialsPage() {

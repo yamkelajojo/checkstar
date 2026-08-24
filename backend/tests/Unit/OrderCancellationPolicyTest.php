@@ -78,6 +78,13 @@ class OrderCancellationPolicyTest extends TestCase
         $this->assertTrue($this->policy->customerCanCancel($this->order->fresh()));
     }
 
+    public function test_customer_can_cancel_retrying_order(): void
+    {
+        $this->order->update(['status' => OrderStatus::Retrying]);
+
+        $this->assertTrue($this->policy->customerCanCancel($this->order->fresh()));
+    }
+
     public function test_customer_cannot_cancel_out_for_delivery_order(): void
     {
         $this->order->update(['status' => OrderStatus::OutForDelivery]);

@@ -12,7 +12,7 @@ class MigrationRollbackTest extends TestCase
 
     public function test_nullable_store_id_migration_can_roll_back(): void
     {
-        $this->artisan('migrate:rollback', ['--step' => 1])->assertExitCode(0);
+        $this->artisan('migrate:rollback', ['--path' => 'database/migrations/2026_08_06_000000_make_orders_store_id_nullable.php'])->assertExitCode(0);
 
         $columns = collect(Schema::getColumns('orders'))->first(fn ($col) => $col['name'] === 'store_id');
         $this->assertNotNull($columns, 'store_id column missing after rollback');

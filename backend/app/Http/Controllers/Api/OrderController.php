@@ -35,8 +35,11 @@ class OrderController extends Controller
     {
         $orders = $request->user()->orders()
             ->with(['items', 'store', 'rider.user'])
-            ->orderByDesc('created_at')
+            ->when($request->filled('status'), fn ($q) => $q->where('status', $request->query('status')))
+            ->orderBy('created_at', $request->query('sort') === 'oldest' ? 'asc' : 'desc')
             ->get();
+
+        $orders->each(fn (Order $order) => $this->appendCanCancel($order));
 
         return response()->json(['data' => $orders]);
     }
@@ -51,6 +54,7 @@ class OrderController extends Controller
             'delivery_latitude' => 'required|numeric|between:-90,90',
             'delivery_longitude' => 'required|numeric|between:-180,180',
             'delivery_notes' => 'nullable|string',
+            'payment_method' => 'nullable|in:cash_on_delivery',
         ]);
 
         $result = $this->orderIntake->place($validated, $request->user());
@@ -79,7 +83,14 @@ class OrderController extends Controller
             return response()->json(['message' => 'Not your order'], 403);
         }
 
+        $this->appendCanCancel($order);
+
         return response()->json(['data' => $order]);
+    }
+
+    private function appendCanCancel(Order $order): void
+    {
+        $order->can_cancel = $this->cancellationPolicy->customerCanCancel($order);
     }
 
     public function cancel(Request $request, int $id): JsonResponse
@@ -91,7 +102,11 @@ class OrderController extends Controller
         }
 
         if (!$this->cancellationPolicy->customerCanCancel($order)) {
-            return response()->json(['message' => 'This order can no longer be cancelled'], 422);
+            return response()->json([
+                'message' => 'This order can no longer be cancelled',
+                'reason' => 'order_not_cancellable',
+                'status' => $order->status->value,
+            ], 409);
         }
 
         $this->stateMachine->transition(

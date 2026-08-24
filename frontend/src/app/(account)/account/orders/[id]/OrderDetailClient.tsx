@@ -14,6 +14,7 @@ import type { Order, OrderActivityLog } from '@/types'
 const statusConfig: Record<string, { color: string; bg: string; icon: any; label: string }> = {
   pending: { color: 'text-yellow-600', bg: 'bg-yellow-100', icon: Clock, label: 'Pending' },
   confirmed: { color: 'text-blue-600', bg: 'bg-blue-100', icon: AlertCircle, label: 'Confirmed' },
+  retrying: { color: 'text-amber-600', bg: 'bg-amber-100', icon: Clock, label: 'Finding Rider' },
   preparing: { color: 'text-indigo-600', bg: 'bg-indigo-100', icon: Package, label: 'Preparing' },
   out_for_delivery: { color: 'text-purple-600', bg: 'bg-purple-100', icon: Bike, label: 'Out for Delivery' },
   delivered: { color: 'text-green-600', bg: 'bg-green-100', icon: CheckCircle, label: 'Delivered' },
@@ -25,8 +26,6 @@ const paymentStatusConfig: Record<string, { color: string; bg: string; label: st
   paid: { color: 'text-green-600', bg: 'bg-green-100', label: 'Paid' },
   refunded: { color: 'text-blue-600', bg: 'bg-blue-100', label: 'Refunded' },
 }
-
-const cancellableStatuses = ['pending', 'confirmed', 'preparing']
 
 function OrderTimeline({ logs }: { logs?: OrderActivityLog[] }) {
   if (!logs || logs.length === 0) return null
@@ -159,7 +158,8 @@ export default function OrderDetailClient({ id }: { id: string }) {
   const statusCfg = statusConfig[order.status] || statusConfig.pending
   const paymentCfg = paymentStatusConfig[order.payment_status] || paymentStatusConfig.pending
   const StatusIcon = statusCfg.icon
-  const isCancellable = cancellableStatuses.includes(order.status)
+  // Server-driven cancellation gate (#05): prefer API can_cancel, no hardcoded array.
+  const isCancellable = order.can_cancel ?? false
   const isOutForDelivery = order.status === 'out_for_delivery'
   const isDelivered = order.status === 'delivered'
   const canReview = isDelivered && !reviewSubmitted

@@ -141,7 +141,7 @@ class DispatchServiceTest extends TestCase
         $this->assertSame($rider1->id, $fresh->rider_id);
     }
 
-    public function test_cancels_order_when_no_riders_available(): void
+    public function test_enters_retrying_when_no_riders_available(): void
     {
         $this->createRider($this->store1, false, 10);
         $this->createRider($this->store2, false, 10);
@@ -151,10 +151,83 @@ class DispatchServiceTest extends TestCase
 
         $result = $this->service->dispatch($order);
 
-        $this->assertSame('no_rider_available', $result['status']);
+        $this->assertSame('retrying', $result['status']);
         $this->assertNull($result['store_id']);
         $this->assertNull($result['rider_id']);
+        $fresh = $order->fresh();
+        $this->assertEquals(OrderStatus::Retrying, $fresh->status);
+        $this->assertSame(0, $fresh->dispatch_attempts);
+    }
+
+    public function test_dispatch_to_retrying_creates_activity_log(): void
+    {
+        $this->createRider($this->store1, false, 10);
+        $order = $this->createConfirmedOrder(-29.85, 31.02, $this->store1);
+
+        $this->service->dispatch($order);
+
+        $log = OrderActivityLog::where('order_id', $order->id)
+            ->where('event_type', EventType::DispatchRetrying->value)
+            ->first();
+
+        $this->assertNotNull($log);
+        $this->assertSame(OrderStatus::Confirmed->value, $log->old_status);
+        $this->assertSame(OrderStatus::Retrying->value, $log->new_status);
+    }
+
+    public function test_retry_assigns_rider_when_one_becomes_available(): void
+    {
+        $order = $this->createConfirmedOrder(-29.85, 31.02, $this->store1);
+        $order->status = OrderStatus::Retrying;
+        $order->save();
+
+        $rider = $this->createRider($this->store1, true, 10);
+
+        $result = $this->service->retry($order);
+
+        $this->assertSame('assigned', $result['status']);
+        $this->assertSame($rider->id, $result['rider_id']);
+        $fresh = $order->fresh();
+        $this->assertEquals(OrderStatus::Preparing, $fresh->status);
+        $this->assertSame($rider->id, $fresh->rider_id);
+    }
+
+    public function test_retry_increments_attempts_while_still_no_riders(): void
+    {
+        $this->createRider($this->store1, false, 10);
+        $order = $this->createConfirmedOrder(-29.85, 31.02, $this->store1);
+        $order->status = OrderStatus::Retrying;
+        $order->save();
+
+        $result = $this->service->retry($order);
+
+        $this->assertSame('retrying', $result['status']);
+        $this->assertSame(1, $order->fresh()->dispatch_attempts);
+    }
+
+    public function test_retry_cancels_order_after_max_attempts(): void
+    {
+        Config::set('dispatch.max_attempts', 3);
+        $this->createRider($this->store1, false, 10);
+        $order = $this->createConfirmedOrder(-29.85, 31.02, $this->store1);
+        $order->status = OrderStatus::Retrying;
+        $order->dispatch_attempts = 3;
+        $order->save();
+
+        $result = $this->service->retry($order);
+
+        $this->assertSame('cancelled', $result['status']);
         $this->assertEquals(OrderStatus::Cancelled, $order->fresh()->status);
+    }
+
+    public function test_retry_ignores_orders_not_retrying(): void
+    {
+        $order = $this->createConfirmedOrder(-29.85, 31.02, $this->store1);
+
+        $result = $this->service->retry($order);
+
+        $this->assertSame('skipped', $result['status']);
+        $this->assertEquals(OrderStatus::Confirmed, $order->fresh()->status);
     }
 
     public function test_dispatch_creates_activity_log_on_cancellation(): void

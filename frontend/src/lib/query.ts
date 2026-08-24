@@ -75,10 +75,10 @@ export function useCareers() {
   })
 }
 
-export function useOrders() {
+export function useOrders(params?: Record<string, string>) {
   return useQuery({
-    queryKey: ['orders'],
-    queryFn: () => api.getOrders().then(r => r.data),
+    queryKey: ['orders', params],
+    queryFn: () => api.getOrders(params).then(r => r.data),
   })
 }
 

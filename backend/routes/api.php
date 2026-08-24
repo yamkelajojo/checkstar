@@ -13,7 +13,9 @@ use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\RecipeController;
 use App\Http\Controllers\Api\RiderController;
 use App\Http\Controllers\Api\SpecialController;
+use App\Http\Controllers\Api\StaffController;
 use App\Http\Controllers\Api\StoreController;
+use App\Http\Controllers\Api\StoreDispatchController;
 use App\Http\Controllers\Api\StoreOrderController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Sanctum\Http\Controllers\CsrfCookieController;
@@ -62,6 +64,15 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::patch('/store/orders/{id}/status', [StoreOrderController::class, 'updateStatus']);
         Route::get('/store/inventory', [StoreOrderController::class, 'inventory']);
         Route::patch('/store/inventory/{product}', [StoreOrderController::class, 'updateInventory']);
+        Route::get('/store/dispatch/pending', [StoreDispatchController::class, 'pending']);
+        Route::post('/store/orders/{id}/dispatch', [StoreDispatchController::class, 'dispatch']);
+        Route::post('/store/orders/{id}/reassign', [StoreDispatchController::class, 'reassign']);
+    });
+
+    // Staff management (Store Owner / Developer only)
+    Route::middleware('role:store_owner,developer')->group(function () {
+        Route::post('/store/staff', [StaffController::class, 'store']);
+        Route::delete('/store/staff/{id}', [StaffController::class, 'destroy']);
     });
 
     // Admin (developer role)
@@ -77,6 +88,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('stores', Admin\StoreController::class);
         Route::get('messages', [Admin\MessageController::class, 'index']);
         Route::get('messages/{id}', [Admin\MessageController::class, 'show']);
+        Route::post('messages/{id}/reply', [Admin\MessageController::class, 'reply']);
         Route::get('health', [Admin\HealthController::class, 'index']);
     });
 });

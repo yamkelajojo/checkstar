@@ -15,6 +15,7 @@ class ContactMessage extends Model
     {
         return [
             'is_read' => 'boolean',
+            'replied_at' => 'datetime',
         ];
     }
 
