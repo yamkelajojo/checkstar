@@ -14,20 +14,20 @@ const major = m ? Number(m[1]) : null;
 if (major !== 54) {
   console.error(
     `\n❌ EXPO SDK PIN VIOLATION: mobile/package.json expo is "${expoRange}" (major ${major}), expected major 54.\n` +
-    `   Device fleet runs Expo Go 54.0.2 — only SDK 54.0.2 will load.\n` +
+    `   Device fleet runs Expo Go 54.0.2 — project pinned to 54.0.0 (only 54.0.0 has native modules on api.expo.dev, 54.0.2/54.0.13 return empty).\n` +
     `   See mobile/README.md#sdk-pin and mobile/AGENTS.md.\n` +
-    `   To intentionally upgrade: update Expo Go on ALL devices, then bump package.json, app.json:sdkVersion, and AGENTS.md together.\n`
+    `   To intentionally upgrade: verify api.expo.dev/v2/sdks/<new>/native-modules is non-empty, update Expo Go on ALL devices, then bump package.json, app.json:sdkVersion, and AGENTS.md together.\n`
   );
   process.exit(1);
 }
 console.log(`✓ Expo SDK pin ok: expo ${expoRange} (major 54)`);
 
-// Also sanity-check app.json sdkVersion if present — must be exactly 54.0.2
+// Also sanity-check app.json sdkVersion if present — must be exactly 54.0.0 (Go 54.0.2 compatible, only 54.0.0 has modules)
 try {
   const appJson = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'app.json'), 'utf8'));
   const sdkVersion = appJson.expo?.sdkVersion;
-  if (sdkVersion && sdkVersion !== '54.0.2') {
-    console.error(`❌ app.json expo.sdkVersion is "${sdkVersion}", expected "54.0.2" to match Expo Go 54.0.2.`);
+  if (sdkVersion && sdkVersion !== '54.0.0') {
+    console.error(`❌ app.json expo.sdkVersion is "${sdkVersion}", expected "54.0.0" (only 54.0.0 has native modules; 54.0.2/54.0.13 return empty, Go 54.0.2 still runs 54.0.0).`);
     process.exit(1);
   }
 } catch {}

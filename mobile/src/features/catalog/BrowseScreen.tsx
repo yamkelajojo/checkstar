@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { View, Text, FlatList, Pressable } from 'react-native';
 import { useTheme } from '../../theme';
 import { brand } from '../../theme/colors';
@@ -14,14 +14,10 @@ import type { ProductVO } from '../../lib/product';
 export function BrowseScreen() {
   const theme = useTheme();
   const store = useDeliveryStore((s) => s.store);
-  const { data: categories = [], isLoading: catLoading, error: catError } = useCategories();
+  const { data: categories = [] } = useCategories();
   const [activeCategory, setActiveCategory] = useState<string | undefined>(undefined);
   const [summaryState, setSummaryState] = useState<{ product: ProductVO; rect: SourceRect | null } | null>(null);
-  const { data: products = [], isLoading, error, refetch, isFetching } = useProducts({ category: activeCategory, storeId: store?.id ?? null }) as any;
-  const [debugUrl, setDebugUrl] = useState<string>('loading...');
-  useEffect(() => {
-    import('../../lib/apiClient').then(m => m.getApiBaseUrl().then(setDebugUrl).catch(e => setDebugUrl(String(e))));
-  }, []);
+  const { data: products = [], isLoading } = useProducts({ category: activeCategory, storeId: store?.id ?? null });
 
   const handleRequestSummary = (product: ProductVO, rect: SourceRect | null) => {
     setSummaryState({ product, rect });
@@ -32,16 +28,6 @@ export function BrowseScreen() {
       <Text style={{ paddingTop: 56, paddingHorizontal: semanticSpacing.screenPadding, ...textStyle.h1, color: theme.colors.text.primary }}>
         Browse
       </Text>
-      {/* DEBUG banner - remove after fix */}
-      <View style={{ backgroundColor: '#fff3cd', paddingHorizontal: 12, paddingVertical: 6, marginHorizontal: 12, borderRadius: 6, marginBottom: 8 }}>
-        <Text style={{ fontSize: 10, color: '#664d03' }} selectable>API: {debugUrl}</Text>
-        <Text style={{ fontSize: 10, color: '#664d03' }} selectable>cat:{catLoading ? 'loading' : categories.length} prod:{isLoading ? 'loading' : products.length}{isFetching ? ' (fetching)' : ''}</Text>
-        {catError ? <Text style={{ fontSize: 10, color: '#842029' }} selectable>cat err: {String((catError as Error).message).slice(0,120)}</Text> : null}
-        {error ? <Text style={{ fontSize: 10, color: '#842029' }} selectable>prod err: {String((error as Error).message).slice(0,180)} — {String((error as any)?.payload ?? '').slice(0,120)}</Text> : null}
-        <Pressable onPress={() => refetch()} style={{ marginTop: 4, backgroundColor: '#664d03', paddingVertical: 4, paddingHorizontal: 8, borderRadius: 4, alignSelf: 'flex-start' }}>
-          <Text style={{ color: 'white', fontSize: 11 }}>Retry</Text>
-        </Pressable>
-      </View>
       <View style={{ flexDirection: 'row', flex: 1 }}>
         {/* Category rail */}
         <FlatList

@@ -118,10 +118,6 @@ export function createApiClient(config: ApiClientConfig) {
     if (body !== undefined) init.body = JSON.stringify(body);
 
     const url = `${config.baseUrl}${path}${toQueryString(params)}`;
-    // Debug: surface actual URL being fetched (visible in Metro logs)
-    if (attempt === 0) {
-      console.log(`[API] ${method} ${url} auth=${auth} online=${isOnline()}`);
-    }
 
     let controller: AbortController | null = null;
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
@@ -169,7 +165,6 @@ export function createApiClient(config: ApiClientConfig) {
 
       const isRetryable = isRetryableError(error, retryOptions);
       const isOffline = !isOnline();
-      console.log(`[API] fetch failed: ${error instanceof Error ? error.message : String(error)} url=${url} offline=${isOffline} online=${isOnline()}`);
       const apiError = new ApiError(
         error instanceof Error ? error.message : 'Network error',
         0,
