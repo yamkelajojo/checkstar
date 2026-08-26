@@ -22,6 +22,7 @@ class Special extends Model
     public function products(): BelongsToMany
     {
         return $this->belongsToMany(Product::class, 'product_special')
+            ->withPivot('special_price')
             ->withTimestamps();
     }
 }

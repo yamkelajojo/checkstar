@@ -20,13 +20,37 @@ class DeliveryConfirmation
 
     public function confirm(Order $order, User $actor): Order
     {
+        // Idempotent: if already delivered, paid and confirmed, short-circuit
+        $freshCheck = $order->fresh();
+        if ($freshCheck->status === \App\Enums\OrderStatus::Delivered && $freshCheck->payment_status === PaymentStatus::Paid && $freshCheck->customer_confirmed_at !== null) {
+            return $freshCheck;
+        }
+
         DB::transaction(function () use ($order, $actor) {
-            $this->orderStateMachine->transition($order, \App\Enums\OrderStatus::Delivered, $actor);
+            $fresh = Order::where('id', $order->id)->lockForUpdate()->firstOrFail();
 
-            $this->paymentStateMachine->transition($order, PaymentStatus::Paid);
+            // Only transition order if not already delivered (rider may have delivered first)
+            if ($fresh->status !== \App\Enums\OrderStatus::Delivered) {
+                if (!$this->orderStateMachine->canTransition($fresh->status, \App\Enums\OrderStatus::Delivered)) {
+                    throw new \InvalidArgumentException("Cannot confirm delivery from status {$fresh->status->value}");
+                }
+                $this->orderStateMachine->transition($fresh, \App\Enums\OrderStatus::Delivered, $actor);
+                $fresh = $fresh->fresh();
+                // Re-lock after transition to keep atomicity for payment
+                $fresh = Order::where('id', $fresh->id)->lockForUpdate()->firstOrFail();
+            }
 
-            $order->customer_confirmed_at = now();
-            $order->save();
+            // Only transition payment if not already paid (pass actor for transaction audit)
+            if ($fresh->payment_status !== PaymentStatus::Paid) {
+                $this->paymentStateMachine->transition($fresh, PaymentStatus::Paid, $actor);
+                $fresh = $fresh->fresh();
+                $fresh = Order::where('id', $fresh->id)->lockForUpdate()->firstOrFail();
+                $fresh->customer_confirmed_at = now();
+                $fresh->save();
+            } elseif ($fresh->customer_confirmed_at === null) {
+                $fresh->customer_confirmed_at = now();
+                $fresh->save();
+            }
         });
 
         return $order->fresh();

@@ -39,8 +39,8 @@ describe('canSubmit', () => {
     expect(canSubmit({ ...valid, authenticated: false })).toBe(false);
   });
 
-  it('requires a selected store', () => {
-    expect(canSubmit({ ...valid, storeSelected: false })).toBe(false);
+  it('does not require a selected store (backend auto-dispatches)', () => {
+    expect(canSubmit({ ...valid, storeSelected: false })).toBe(true);
   });
 
   it('is false while a submit is already in flight', () => {

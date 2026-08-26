@@ -12,7 +12,9 @@ interface CartState {
   clearCart: () => void
   total: () => number
   itemCount: () => number
-  syncToServer: () => Promise<void>
+  distinctCount: () => number
+  totalQuantity: () => number
+  syncToServer: () => Promise<{ data: any; dropped: any } | undefined>
 }
 
 export const useCartStore = create<CartState>()(
@@ -44,14 +46,29 @@ export const useCartStore = create<CartState>()(
         set({ items: get().items.filter(i => i.product.id !== productId) })
       },
       updateQuantity: (productId, quantity) => {
+        if (quantity <= 0) {
+          set({ items: get().items.filter(i => i.product.id !== productId) })
+          return
+        }
         set({ items: get().items.map(i => i.product.id === productId ? { ...i, quantity: Math.min(Math.max(quantity, 1), 8) } : i) })
       },
       clearCart: () => set({ items: [] }),
       total: () => get().items.reduce((sum, i) => sum + Number(i.product.effective_price ?? i.product.sale_price ?? i.product.price) * i.quantity, 0),
-      itemCount: () => get().items.length,
+      itemCount: () => get().items.reduce((sum, i) => sum + i.quantity, 0),
+      distinctCount: () => get().items.length,
+      totalQuantity: () => get().items.reduce((sum, i) => sum + i.quantity, 0),
       syncToServer: async () => {
         const items = get().items
-        await api.syncCart(items.map(i => ({ product_id: i.product.id, quantity: i.quantity })))
+        const res = await api.syncCart(items.map(i => ({ product_id: i.product.id, quantity: i.quantity })))
+        // Apply server merge: replace local draft with server state, surface dropped items
+        if (res?.data) {
+          const serverItems: typeof items = res.data.map((ci: any) => ({
+            product: ci.product,
+            quantity: ci.quantity,
+          }))
+          set({ items: serverItems })
+        }
+        return res
       },
     }),
     { name: 'cart-storage' }

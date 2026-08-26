@@ -10,7 +10,7 @@ import { fetchOrder } from '../../lib/apiClient';
 import { queryKeys } from '../../lib/queryKeys';
 import { formatZar } from '../../lib/currency';
 import { TactilePressable } from '../../components/shared/TactilePressable';
-import { copy } from '../../lib/strings';
+import { copy, formatString } from '../../lib/strings';
 import { FadeSlideIn } from '../../components/shared/FadeSlideIn';
 import type { ApiDispatchOutcome, ApiDispatchStatus } from '../../lib/types';
 import type { RootStackParamList } from '../../navigation/types';
@@ -42,7 +42,7 @@ export function OrderPlacedScreen() {
       ? copy.orders.retryingBody
       : outcome === 'cancelled'
         ? copy.orders.dispatchFailedBody
-        : copy.orders.placedBody.replace('{store}', order?.store?.name ?? 'the store');
+        : formatString(copy.orders.placedBody, { store: order?.store?.name ?? 'the store' });
 
   const dispatchStoreName = dispatch?.store_name ?? order?.store?.name ?? null;
   const dispatchRiderName = dispatch?.rider_name ?? order?.rider?.user?.name ?? null;
@@ -95,7 +95,7 @@ export function OrderPlacedScreen() {
         {outcome !== 'cancelled' ? (
           <TactilePressable
             onPress={() => navigation.replace('OrderDetail', { orderId })}
-            hapticOnPress="commit"
+            haptic="commit"
             accessibilityRole="button"
             style={{ backgroundColor: brand.primary, borderRadius: 999 }}
           >
@@ -106,7 +106,7 @@ export function OrderPlacedScreen() {
         ) : (
           <TactilePressable
             onPress={() => navigation.navigate('Checkout')}
-            hapticOnPress="commit"
+            haptic="commit"
             accessibilityRole="button"
             accessibilityLabel="Return to checkout"
             style={{ backgroundColor: brand.primary, borderRadius: 999 }}
@@ -118,7 +118,7 @@ export function OrderPlacedScreen() {
         )}
         <TactilePressable
           onPress={() => navigation.navigate('Tabs')}
-          hapticOnPress="selection"
+          haptic="selection"
           accessibilityRole="button"
         >
           <Text style={{ textAlign: 'center', color: theme.colors.textMuted, fontWeight: weights.semibold }}>

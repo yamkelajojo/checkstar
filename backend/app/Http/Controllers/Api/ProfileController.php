@@ -18,7 +18,11 @@ class ProfileController extends Controller
         ]);
 
         $user = $request->user();
-        $user->update(array_filter($validated));
+        $filtered = array_filter($validated, fn ($v) => $v !== null);
+        if (isset($filtered['email']) && $filtered['email'] !== $user->email) {
+            $filtered['email_verified_at'] = null;
+        }
+        $user->update($filtered);
 
         return response()->json(['data' => $user->fresh()]);
     }

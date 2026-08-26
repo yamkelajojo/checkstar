@@ -26,4 +26,5 @@ export const STORAGE_KEYS = {
   deliveryStore: 'checkstar.deliveryStore',
   recentSearches: 'checkstar.search.recent',
   session: 'checkstar.session',
+  apiBaseUrl: 'checkstar.api.baseUrl',
 } as const;

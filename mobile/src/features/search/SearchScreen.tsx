@@ -34,7 +34,11 @@ export function SearchScreen() {
   }, []);
 
   const searching = debounced.length >= 2;
-  const { data: results = [], isLoading } = useProducts({ search: searching ? debounced : undefined, storeId: store?.id ?? null });
+  const { data: results = [], isLoading } = useProducts({
+    search: searching ? debounced : undefined,
+    storeId: store?.id ?? null,
+    enabled: searching,
+  });
 
   const recordSearch = () => {
     if (debounced.length < 2) return;

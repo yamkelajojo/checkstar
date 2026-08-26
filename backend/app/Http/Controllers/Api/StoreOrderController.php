@@ -24,7 +24,7 @@ class StoreOrderController extends Controller
 
     public function orders(Request $request): JsonResponse
     {
-        $store = $this->storeContext->resolve($request->user());
+        $store = $this->storeContext->resolve($request->user(), $request->query('store_id') !== null ? (int) $request->query('store_id') : null);
         $storeId = $store->id;
         $orders = Order::where('store_id', $storeId)
             ->with(['items', 'rider.user', 'customer'])
@@ -36,21 +36,25 @@ class StoreOrderController extends Controller
 
     public function updateStatus(Request $request, int $id): JsonResponse
     {
-        $store = $this->storeContext->resolve($request->user());
+        $store = $this->storeContext->resolve($request->user(), $request->input('store_id') ? (int) $request->input('store_id') : null);
         $order = Order::where('id', $id)->where('store_id', $store->id)->firstOrFail();
 
         $validated = $request->validate([
-            'status' => 'required|string|in:pending,confirmed,preparing,out_for_delivery,delivered,cancelled',
+            'status' => 'required|string|in:confirmed,preparing,out_for_delivery,delivered,cancelled',
         ]);
 
-        $this->stateMachine->transition($order, OrderStatus::from($validated['status']), $request->user());
+        try {
+            $this->stateMachine->transition($order, OrderStatus::from($validated['status']), $request->user());
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(['message' => $e->getMessage(), 'reason' => 'invalid_transition'], 409);
+        }
 
         return response()->json(['data' => $order->fresh()->load('items', 'rider.user')]);
     }
 
     public function inventory(Request $request): JsonResponse
     {
-        $store = $this->storeContext->resolve($request->user());
+        $store = $this->storeContext->resolve($request->user(), $request->query('store_id') !== null ? (int) $request->query('store_id') : null);
         $items = StoreProduct::where('store_id', $store->id)
             ->with('product')
             ->get();
@@ -60,7 +64,7 @@ class StoreOrderController extends Controller
 
     public function updateInventory(Request $request, int $productId): JsonResponse
     {
-        $store = $this->storeContext->resolve($request->user());
+        $store = $this->storeContext->resolve($request->user(), $request->input('store_id') ? (int) $request->input('store_id') : null);
         $sp = StoreProduct::where('store_id', $store->id)
             ->where('product_id', $productId)
             ->firstOrFail();

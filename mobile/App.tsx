@@ -18,6 +18,7 @@ import { RootNavigator } from './src/navigation/RootNavigator';
 import type { RootStackParamList } from './src/navigation/types';
 import { TamaguiProvider } from 'tamagui';
 import config from './tamagui.config';
+import type { ServerMergeResult } from './src/features/cart/model';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -36,16 +37,30 @@ export default function App() {
   const cartSyncRef = useRef(false);
 
   useEffect(() => {
-    if (sessionStatus === 'guest') cartSyncRef.current = false;
+    if (sessionStatus === 'guest') {
+      cartSyncRef.current = false;
+      return;
+    }
     if (sessionStatus !== 'authenticated' || cartSyncRef.current) return;
+    
+    let cancelled = false;
     void performCartSync(cartSyncRef, {
       syncCart,
-      getLocalCart: () => useCart.getState().items as unknown as import('./src/features/cart/types').CartItem[],
-      setCart: (items) => useCart.getState().mergeLocalOntoServer(items as unknown as import('./src/features/cart/types').ServerCartLine[]),
+      getLocalCart: () => useCart.getState().items,
+      setCart: (items, response): ServerMergeResult => {
+        if (!cancelled) {
+          return useCart.getState().mergeLocalOntoServer(items, response);
+        }
+        return { items: [], droppedCount: 0 };
+      },
     }).catch(() => {
       // Sync is best-effort; keep local draft if server unreachable.
-      cartSyncRef.current = false;
+      if (!cancelled) cartSyncRef.current = false;
     });
+    
+    return () => {
+      cancelled = true;
+    };
   }, [sessionStatus]);
 
   useEffect(() => {
@@ -59,7 +74,13 @@ export default function App() {
     void useSession.getState().boot().catch(() => {
       void useSession.getState().signOut();
     });
-    void useDeliveryStore.getState().loadStores().catch(() => {});
+    void useDeliveryStore.getState().loadStores().catch((e: unknown) => {
+      console.warn('[delivery] failed to load stores:', e);
+    });
+
+    void Notifications.requestPermissionsAsync().catch(() => {
+      // Best-effort; local notifications simply won't display without consent.
+    });
     setUnauthorizedHandler(() => {
       void useSession.getState().signOut();
     });

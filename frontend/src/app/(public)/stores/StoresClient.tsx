@@ -6,6 +6,7 @@ import { MapPin, Navigation } from 'lucide-react'
 import StoreCard from '@/components/StoreCard'
 import type { Store } from '@/types'
 import { useStores } from '@/lib/query'
+import 'leaflet/dist/leaflet.css'
 
 export default function StoresClient() {
   const { data: stores = [], isLoading: loading, error } = useStores()

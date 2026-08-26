@@ -23,10 +23,19 @@ class OrderClaim
         $start = microtime(true);
 
         $claimed = DB::transaction(function () use ($order, $rider, $store) {
-            $fresh = Order::where('id', $order->id)
+            $query = Order::where('id', $order->id)
                 ->whereNull('rider_id')
-                ->lockForUpdate()
-                ->first();
+                ->whereIn('status', [OrderStatus::Confirmed, OrderStatus::Retrying])
+                ->lockForUpdate();
+
+            // Use SKIP LOCKED to avoid blocking concurrent claimants (first-to-claim wins)
+            try {
+                $query = $query->skipLocked();
+            } catch (\Throwable $e) {
+                // Fallback for databases that don't support SKIP LOCKED (e.g. SQLite in tests)
+            }
+
+            $fresh = $query->first();
 
             if (!$fresh) {
                 return false;

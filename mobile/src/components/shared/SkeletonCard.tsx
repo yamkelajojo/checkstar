@@ -1,11 +1,12 @@
 import { View } from 'react-native';
-import type { StyleProp, ViewStyle } from 'react-native';
+import type { DimensionValue, StyleProp, ViewStyle } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { useTheme } from '../../theme';
+import { semanticRadius, semanticSpacing } from '../../theme/spacing';
 
 interface SkeletonCardProps {
-  width?: number;
-  height?: number;
+  width?: DimensionValue;
+  height?: DimensionValue;
   orientation?: 'grid' | 'carousel';
   style?: StyleProp<ViewStyle>;
 }
@@ -14,24 +15,24 @@ interface SkeletonCardProps {
 export function SkeletonCard({ width, height, orientation = 'grid', style }: SkeletonCardProps) {
   const theme = useTheme();
   const isCarousel = orientation === 'carousel';
-  const cardWidth = width ?? (isCarousel ? 180 : '48%' as unknown as number);
+  const cardWidth = width ?? (isCarousel ? 180 : '48%');
   return (
     <Animated.View entering={FadeIn.duration(300)}>
       <View
         style={[
           {
-            width: cardWidth as number,
+            width: cardWidth,
             height: height ?? (isCarousel ? 220 : 250),
-            borderRadius: 16,
-            backgroundColor: theme.colors.surface,
+            borderRadius: semanticRadius.card,
+            backgroundColor: theme.colors.surface.primary,
             overflow: 'hidden',
           },
           style,
         ]}
       >
-        <View style={{ flex: 1, margin: 10, backgroundColor: theme.colors.hairline, borderRadius: 12 }} />
-        <View style={{ height: 12, margin: 10, marginTop: 0, backgroundColor: theme.colors.hairline, borderRadius: 6, width: '70%' }} />
-        <View style={{ height: 14, margin: 10, marginTop: 0, backgroundColor: theme.colors.surfaceElevated, borderRadius: 6, width: '40%' }} />
+        <View style={{ flex: 1, margin: semanticSpacing.cardPadding, backgroundColor: theme.colors.border.subtle, borderRadius: semanticRadius.imageFrame }} />
+        <View style={{ height: 12, margin: semanticSpacing.cardPadding, marginTop: 0, backgroundColor: theme.colors.border.subtle, borderRadius: 6, width: '70%' }} />
+        <View style={{ height: 14, margin: semanticSpacing.cardPadding, marginTop: 0, backgroundColor: theme.colors.surface.elevated, borderRadius: 6, width: '40%' }} />
       </View>
     </Animated.View>
   );

@@ -15,7 +15,7 @@ class StoreContext
 
         if ($role === UserRole::Developer->value) {
             if ($explicitStoreId === null) {
-                throw new \RuntimeException('Developer must provide a store_id');
+                abort(403, 'Developer must provide a store_id');
             }
             return Store::findOrFail($explicitStoreId);
         }
@@ -29,6 +29,6 @@ class StoreContext
             return $staff->store;
         }
 
-        throw new \RuntimeException('No store resolved for user');
+        abort(403, 'No store resolved for user');
     }
 }

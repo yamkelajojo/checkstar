@@ -185,6 +185,6 @@ class ManualDispatchTest extends TestCase
 
         $this->actingAs($developer)
             ->getJson('/api/store/dispatch/pending')
-            ->assertStatus(500);
+            ->assertStatus(403);
     }
 }

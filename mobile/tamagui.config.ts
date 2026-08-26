@@ -1,115 +1,310 @@
 import { createTamagui, createTokens, createFont } from 'tamagui';
 
-const colors = {
-  primary: '#EB6522',
-  primaryDark: '#CC4400',
-  primaryLight: '#FFE0CC',
-  star: '#fbbf24',
-  success: '#2D6A4F',
-  warning: '#E9C46A',
+// ============================================================================
+// TAMAGUI TOKENS (inlined from theme tokens to avoid import-time issues)
+// ============================================================================
+
+// Brand palette
+const brandOrange = '#EB6522';
+const brandOrangeStrong = '#CC4400';
+const brandOrangeSoft = '#FFE0CC';
+const brandOrangeBright = '#F47A3A';
+const brandOrangeDeep = '#A93D0A';
+const brandStar = '#FBBF24';
+const brandStarDark = '#A66A00';
+const brandStarSoft = '#FFF4CC';
+const brandSuccess = '#2D6A4F';
+const brandSuccessSoft = '#E5F1EB';
+const brandSuccessStrong = '#1F513B';
+const brandWarning = '#9A6700';
+const brandWarningSoft = '#FFF4D6';
+const brandWarningStrong = '#744D00';
+const brandError = '#B42318';
+const brandErrorSoft = '#FDE8E7';
+const brandErrorStrong = '#8E1B12';
+
+// Neutral — Light
+const lightBg = '#FFFCF9';
+const lightBgAlt = '#FAF7F4';
+const lightSurface = '#F5F1ED';
+const lightSurfaceElevated = '#FFFFFF';
+const lightSurfaceSunken = '#EEE8E3';
+const lightBorderSubtle = '#EEE8E3';
+const lightBorderDefault = '#E8E1DB';
+const lightBorderStrong = '#DED5CE';
+const lightTextPrimary = '#1B1816';
+const lightTextSecondary = '#6B625C';
+const lightTextTertiary = '#7B716A';
+const lightTextDisabled = '#A0968E';
+const lightTextInverse = '#FFF9F5';
+const lightTextBrand = '#B8420D';
+const lightActionPrimaryBg = '#CC4400';
+const lightActionPrimaryFg = '#FFFFFF';
+const lightActionPrimaryPressed = '#A93D0A';
+const lightActionSecondaryBg = '#FFE0CC';
+const lightActionSecondaryFg = '#A93D0A';
+const lightActionSecondaryBorder = '#F2C7B0';
+const lightOverlay = 'rgba(27, 24, 22, 0.4)';
+
+// Neutral — Dark
+const darkBg = '#0F0D0C';
+const darkBgAlt = '#14110F';
+const darkSurface = '#1C1917';
+const darkSurfaceElevated = '#26221F';
+const darkSurfaceSunken = '#0B0908';
+const darkBorderSubtle = '#29241F';
+const darkBorderDefault = '#342F2A';
+const darkBorderStrong = '#48413B';
+const darkTextPrimary = '#FFF9F5';
+const darkTextSecondary = '#C9C0B8';
+const darkTextTertiary = '#9B9189';
+const darkTextDisabled = '#706861';
+const darkTextInverse = '#1B1816';
+const darkTextBrand = '#FF9A68';
+const darkActionPrimaryBg = '#EB6522';
+const darkActionPrimaryFg = '#FFFFFF';
+const darkActionPrimaryPressed = '#F47A3A';
+const darkActionSecondaryBg = '#2A211D';
+const darkActionSecondaryFg = '#FF9A68';
+const darkActionSecondaryBorder = '#4A3A32';
+const darkOverlay = 'rgba(15, 13, 12, 0.6)';
+
+// Spacing
+const spacing = {
+  xxs: 4,
+  xs: 8,
+  sm: 12,
+  md: 16,
+  lg: 20,
+  xl: 24,
+  xxl: 32,
+  xxxl: 40,
+  huge: 48,
+  massive: 64,
+  extreme: 80,
+};
+
+// Radius
+const radius = {
+  xs: 6,
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 20,
+  xxl: 24,
+  pill: 999,
+  full: 9999,
+};
+
+const tamaguiColors = {
+  // Brand
+  brandOrange,
+  brandOrangeStrong,
+  brandOrangeSoft,
+  brandOrangeBright,
+  brandOrangeDeep,
+  brandStar,
+  brandStarDark,
+  brandStarSoft,
+  brandSuccess,
+  brandSuccessSoft,
+  brandSuccessStrong,
+  brandWarning,
+  brandWarningSoft,
+  brandWarningStrong,
+  brandError,
+  brandErrorSoft,
+  brandErrorStrong,
+
+  // Light
+  lightBg,
+  lightBgAlt,
+  lightSurface,
+  lightSurfaceElevated,
+  lightSurfaceSunken,
+  lightBorderSubtle,
+  lightBorderDefault,
+  lightBorderStrong,
+  lightTextPrimary,
+  lightTextSecondary,
+  lightTextTertiary,
+  lightTextDisabled,
+  lightTextInverse,
+  lightTextBrand,
+  lightActionPrimaryBg,
+  lightActionPrimaryFg,
+  lightActionPrimaryPressed,
+  lightActionSecondaryBg,
+  lightActionSecondaryFg,
+  lightActionSecondaryBorder,
+  lightOverlay,
+
+  // Dark
+  darkBg,
+  darkBgAlt,
+  darkSurface,
+  darkSurfaceElevated,
+  darkSurfaceSunken,
+  darkBorderSubtle,
+  darkBorderDefault,
+  darkBorderStrong,
+  darkTextPrimary,
+  darkTextSecondary,
+  darkTextTertiary,
+  darkTextDisabled,
+  darkTextInverse,
+  darkTextBrand,
+  darkActionPrimaryBg,
+  darkActionPrimaryFg,
+  darkActionPrimaryPressed,
+  darkActionSecondaryBg,
+  darkActionSecondaryFg,
+  darkActionSecondaryBorder,
+  darkOverlay,
+
+  // Status (shared)
+  statusSuccessPrimary: brandSuccess,
+  statusSuccessSoft: brandSuccessSoft,
+  statusWarningPrimary: brandWarning,
+  statusWarningSoft: brandWarningSoft,
+  statusErrorPrimary: brandError,
+  statusErrorSoft: brandErrorSoft,
+  statusStarPrimary: brandStar,
+  statusStarSoft: brandStarSoft,
+
+  // Legacy aliases (for existing tamagui usage)
+  primary: brandOrange,
+  primaryDark: brandOrangeStrong,
+  primaryLight: brandOrangeSoft,
+  star: brandStar,
+  success: brandSuccess,
+  warning: brandWarning,
   accent: '#CC0000',
 
-  light_bg: '#ffffff',
-  light_bgAlt: '#fafafa',
-  light_surface: '#f4f4f5',
-  light_surfaceElevated: '#ffffff',
-  light_border: '#f4f4f5',
-  light_hairline: '#e4e4e7',
-  light_text: '#18181b',
-  light_textMuted: '#71717a',
-  light_textFaint: '#a1a1aa',
-  light_onPrimary: '#ffffff',
-  light_overlay: 'rgba(24,24,27,0.4)',
+  light_bg: lightBg,
+  light_bgAlt: lightBgAlt,
+  light_surface: lightSurface,
+  light_surfaceElevated: lightSurfaceElevated,
+  light_border: lightBorderDefault,
+  light_hairline: lightBorderSubtle,
+  light_text: lightTextPrimary,
+  light_textMuted: lightTextSecondary,
+  light_textFaint: lightTextTertiary,
+  light_onPrimary: lightTextInverse,
+  light_overlay: lightOverlay,
 
-  dark_bg: '#09090b',
-  dark_bgAlt: '#0b0c0e',
-  dark_surface: '#18181b',
-  dark_surfaceElevated: '#27272a',
-  dark_border: '#27272a',
-  dark_hairline: '#3f3f46',
-  dark_text: '#ffffff',
-  dark_textMuted: '#a1a1aa',
-  dark_textFaint: '#71717a',
-  dark_onPrimary: '#ffffff',
-  dark_overlay: 'rgba(9,9,11,0.6)',
+  dark_bg: darkBg,
+  dark_bgAlt: darkBgAlt,
+  dark_surface: darkSurface,
+  dark_surfaceElevated: darkSurfaceElevated,
+  dark_border: darkBorderDefault,
+  dark_hairline: darkBorderSubtle,
+  dark_text: darkTextPrimary,
+  dark_textMuted: darkTextSecondary,
+  dark_textFaint: darkTextTertiary,
+  dark_onPrimary: darkTextInverse,
+  dark_overlay: darkOverlay,
 };
 
 const tokens = createTokens({
   size: {
-    xxs: 4,
-    xs: 8,
-    sm: 12,
-    md: 16,
-    lg: 24,
-    xl: 32,
-    xxl: 48,
+    xxs: spacing.xxs,
+    xs: spacing.xs,
+    sm: spacing.sm,
+    md: spacing.md,
+    true: spacing.md,
+    lg: spacing.lg,
+    xl: spacing.xl,
+    xxl: spacing.xxl,
+    xxxl: spacing.xxxl,
+    huge: spacing.huge,
+    massive: spacing.massive,
+    extreme: spacing.extreme,
   },
   space: {
-    xxs: 4,
-    xs: 8,
-    sm: 12,
-    md: 16,
-    lg: 24,
-    xl: 32,
-    xxl: 48,
+    xxs: spacing.xxs,
+    xs: spacing.xs,
+    sm: spacing.sm,
+    md: spacing.md,
+    true: spacing.md,
+    lg: spacing.lg,
+    xl: spacing.xl,
+    xxl: spacing.xxl,
+    xxxl: spacing.xxxl,
+    huge: spacing.huge,
+    massive: spacing.massive,
+    extreme: spacing.extreme,
   },
   radius: {
-    sm: 8,
-    md: 12,
-    lg: 16,
-    xl: 24,
-    pill: 999,
+    xs: radius.xs,
+    sm: radius.sm,
+    md: radius.md,
+    lg: radius.lg,
+    xl: radius.xl,
+    xxl: radius.xxl,
+    pill: radius.pill,
+    full: radius.full,
   },
   zIndex: {
-    hide: -1,
-    base: 0,
-    low: 10,
-    medium: 100,
-    high: 1000,
-    overlay: 2000,
-    modal: 3000,
-    toast: 4000,
-    tooltip: 5000,
+    xxs: -1,
+    xs: 0,
+    sm: 10,
+    md: 100,
+    true: 100,
+    lg: 1000,
+    xl: 2000,
+    xxl: 5000,
   },
-  color: colors,
+  color: tamaguiColors,
 });
+
+// Font configuration
+const fontWeightRegular = '400';
+const fontWeightMedium = '500';
+const fontWeightSemibold = '600';
+const fontWeightBold = '700';
+const fontWeightExtrabold = '800';
+const fontWeightBlack = '900';
 
 const headingFont = createFont({
   family: 'System',
   size: {
-    1: 13,
-    2: 15,
-    3: 17,
-    4: 20,
-    5: 23,
-    6: 26,
-    7: 32,
-    8: 40,
-    9: 48,
+    1: 11,   // micro
+    2: 12,   // caption
+    3: 14,   // bodySmall
+    4: 16,   // body
+    5: 17,   // bodyLarge
+    6: 17,   // title
+    7: 20,   // h3
+    8: 24,   // h2
+    9: 28,   // h1
   },
   weight: {
-    1: '400',
-    2: '500',
-    3: '600',
-    4: '700',
-    5: '800',
-    6: '900',
+    1: fontWeightRegular,
+    2: fontWeightMedium,
+    3: fontWeightSemibold,
+    4: fontWeightBold,
+    5: fontWeightExtrabold,
+    6: fontWeightBlack,
   },
   lineHeight: {
-    1: 18,
-    2: 20,
-    3: 24,
-    4: 28,
-    5: 32,
-    6: 34,
-    7: 40,
-    8: 48,
-    9: 56,
+    1: 14,
+    2: 16,
+    3: 22,
+    4: 24,
+    5: 26,
+    6: 24,
+    7: 28,
+    8: 32,
+    9: 36,
   },
   letterSpacing: {
     1: 0,
-    2: -0.4,
-    3: -0.8,
+    2: 0,
+    3: 0,
+    4: 0,
+    5: -0.4,
+    6: -0.4,
   },
 });
 
@@ -118,30 +313,30 @@ const bodyFont = createFont({
   size: {
     1: 11,
     2: 12,
-    3: 13,
-    4: 14,
-    5: 15,
-    6: 16,
-    7: 18,
-    8: 20,
-    9: 24,
+    3: 14,
+    4: 16,
+    5: 17,
+    6: 17,
+    7: 20,
+    8: 24,
+    9: 28,
   },
   weight: {
-    1: '400',
-    2: '500',
-    3: '600',
-    4: '700',
+    1: fontWeightRegular,
+    2: fontWeightMedium,
+    3: fontWeightSemibold,
+    4: fontWeightBold,
   },
   lineHeight: {
-    1: 16,
-    2: 17,
-    3: 18,
-    4: 20,
-    5: 22,
+    1: 14,
+    2: 16,
+    3: 22,
+    4: 24,
+    5: 26,
     6: 24,
-    7: 26,
-    8: 28,
-    9: 32,
+    7: 28,
+    8: 32,
+    9: 36,
   },
   letterSpacing: {
     1: 0,
@@ -149,6 +344,12 @@ const bodyFont = createFont({
   },
 });
 
+/**
+ * Tamagui config — minimal, only for primitives (Text in EmptyState, etc.)
+ * All app styling flows through the custom ThemeContext (src/theme/).
+ * This config inlines values from src/theme/ to avoid import-time issues.
+ * Do not mirror palette changes here — src/theme/ is the single source of truth.
+ */
 const config = createTamagui({
   defaultTheme: 'light',
   tokens,
@@ -158,50 +359,14 @@ const config = createTamagui({
   },
   themes: {
     light: {
-      bg: colors.light_bg,
-      bgAlt: colors.light_bgAlt,
-      surface: colors.light_surface,
-      surfaceElevated: colors.light_surfaceElevated,
-      border: colors.light_border,
-      hairline: colors.light_hairline,
-      text: colors.light_text,
-      textMuted: colors.light_textMuted,
-      textFaint: colors.light_textFaint,
-      onPrimary: colors.light_onPrimary,
-      overlay: colors.light_overlay,
-      primary: colors.primary,
-      primaryDark: colors.primaryDark,
-      primaryLight: colors.primaryLight,
-      star: colors.star,
-      success: colors.success,
-      warning: colors.warning,
-      accent: colors.accent,
-      background: colors.light_bg,
-      color: colors.light_text,
-      placeholderColor: colors.light_textFaint,
+      background: lightBg,
+      color: lightTextPrimary,
+      placeholderColor: lightTextTertiary,
     },
     dark: {
-      bg: colors.dark_bg,
-      bgAlt: colors.dark_bgAlt,
-      surface: colors.dark_surface,
-      surfaceElevated: colors.dark_surfaceElevated,
-      border: colors.dark_border,
-      hairline: colors.dark_hairline,
-      text: colors.dark_text,
-      textMuted: colors.dark_textMuted,
-      textFaint: colors.dark_textFaint,
-      onPrimary: colors.dark_onPrimary,
-      overlay: colors.dark_overlay,
-      primary: colors.primary,
-      primaryDark: colors.primaryDark,
-      primaryLight: colors.primaryLight,
-      star: colors.star,
-      success: colors.success,
-      warning: colors.warning,
-      accent: colors.accent,
-      background: colors.dark_bg,
-      color: colors.dark_text,
-      placeholderColor: colors.dark_textFaint,
+      background: darkBg,
+      color: darkTextPrimary,
+      placeholderColor: darkTextTertiary,
     },
   },
   media: {

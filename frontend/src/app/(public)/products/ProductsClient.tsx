@@ -8,13 +8,13 @@ import type { Product } from '@/types'
 import { useAllProducts } from '@/lib/query'
 
 export const FILTER_GROUPS = [
-  { label: 'All', ids: null as number[] | null },
-  { label: 'Fresh', ids: [1, 2, 3, 4] as number[] },
-  { label: 'Pantry', ids: [7, 8, 14] as number[] },
-  { label: 'Drinks', ids: [5, 12] as number[] },
-  { label: 'Home', ids: [9, 13] as number[] },
-  { label: 'Care', ids: [10, 11] as number[] },
-  { label: 'Other', ids: [6, 15] as number[] },
+  { label: 'All', slugs: null as string[] | null },
+  { label: 'Fresh', slugs: ['fruits-vegetables', 'meat-poultry', 'bakery', 'dairy-eggs'] as string[] },
+  { label: 'Pantry', slugs: ['pantry-staples', 'frozen-foods', 'ready-meals-deli'] as string[] },
+  { label: 'Drinks', slugs: ['beverages', 'wines-spirits'] as string[] },
+  { label: 'Home', slugs: ['household', 'pet-supplies'] as string[] },
+  { label: 'Care', slugs: ['baby-toddler', 'health-beauty'] as string[] },
+  { label: 'Other', slugs: ['snacks-treats', 'stationery-school'] as string[] },
 ] as const
 
 export default function ProductsClient() {
@@ -59,9 +59,15 @@ export default function ProductsClient() {
   }, [products.length])
 
   const filtered = products.filter(p => {
-    const activeIds = FILTER_GROUPS.find(g => g.label === activeGroup)?.ids
-    const matchesCategory = activeIds ? (activeIds as number[]).includes(p.category_id) : true
-    return matchesCategory
+    const activeSlugs = FILTER_GROUPS.find(g => g.label === activeGroup)?.slugs
+    if (!activeSlugs) return true
+    const slug = p.category?.slug
+    if (slug) return (activeSlugs as string[]).includes(slug)
+    // Fallback to legacy ID mapping for resilience if category not eager-loaded
+    const legacyMap: Record<string, number[]> = {
+      Fresh: [1,2,3,4], Pantry: [7,8,14], Drinks: [5,12], Home: [9,13], Care: [10,11], Other: [6,15]
+    }
+    return legacyMap[activeGroup]?.includes((p as any).category_id) ?? true
   })
 
   return (

@@ -131,10 +131,12 @@ export default function DispatchConsoleClient() {
                     <input value={riderInputs[order.id] ?? ''} onChange={e => setRiderInputs(s => ({ ...s, [order.id]: e.target.value }))} placeholder="Rider ID" className="w-24 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none" />
                     <button onClick={() => handleDispatch(order.id)} className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors">Dispatch</button>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <input value={reassignInputs[order.id] ?? ''} onChange={e => setReassignInputs(s => ({ ...s, [order.id]: e.target.value }))} placeholder="New Rider ID (reassign)" className="w-40 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none" />
-                    <button onClick={() => handleReassign(order.id)} className="px-3 py-2 border border-gray-200 rounded-lg text-sm hover:bg-gray-50 transition-colors">Reassign</button>
-                  </div>
+                  {(order.status === 'preparing' && (order as any).rider_id) && (
+                    <div className="flex items-center gap-2">
+                      <input value={reassignInputs[order.id] ?? ''} onChange={e => setReassignInputs(s => ({ ...s, [order.id]: e.target.value }))} placeholder="New Rider ID (reassign)" className="w-40 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none" />
+                      <button onClick={() => handleReassign(order.id)} className="px-3 py-2 border border-gray-200 rounded-lg text-sm hover:bg-gray-50 transition-colors">Reassign</button>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

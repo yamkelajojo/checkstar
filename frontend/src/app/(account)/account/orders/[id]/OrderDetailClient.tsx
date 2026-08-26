@@ -87,6 +87,12 @@ export default function OrderDetailClient({ id }: { id: string }) {
   const [reviewSubmitted, setReviewSubmitted] = useState(false)
 
   useEffect(() => {
+    if ((order as any)?.review || (order as any)?.rider_rating != null) {
+      setReviewSubmitted(true)
+    }
+  }, [order])
+
+  useEffect(() => {
     checkAuth()
   }, [checkAuth])
 
@@ -133,6 +139,7 @@ export default function OrderDetailClient({ id }: { id: string }) {
     try {
       await api.reviewRider(Number(id), { rating, comment: reviewComment || undefined })
       setReviewSubmitted(true)
+      queryClient.invalidateQueries({ queryKey: ['order', id] })
     } catch (err: any) {
       setMutationError(err.message)
     } finally {
@@ -172,7 +179,8 @@ export default function OrderDetailClient({ id }: { id: string }) {
   const isCancellable = order.can_cancel ?? false
   const isOutForDelivery = order.status === 'out_for_delivery'
   const isDelivered = order.status === 'delivered'
-  const canReview = isDelivered && !reviewSubmitted
+  const alreadyReviewed = !!(order as any).review || (order as any).rider_rating != null
+  const canReview = isDelivered && !reviewSubmitted && !alreadyReviewed
 
   return (
     <>

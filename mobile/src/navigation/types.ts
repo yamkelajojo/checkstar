@@ -2,7 +2,6 @@ import type { NavigatorScreenParams } from '@react-navigation/native';
 import type { ApiDispatchOutcome } from '../lib/types';
 
 export type RootStackParamList = {
-  Splash: undefined;
   Onboarding: undefined;
   Tabs: NavigatorScreenParams<CustomerTabParamList> | undefined;
   ProductDetail: { slug: string };

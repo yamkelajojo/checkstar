@@ -18,7 +18,7 @@ export function useCategories() {
   });
 }
 
-export function useProducts(params: CatalogParams) {
+export function useProducts(params: CatalogParams & { enabled?: boolean }) {
   return useQuery({
     queryKey: queryKeys.products({ ...params, page: undefined }),
     queryFn: async (): Promise<ProductVO[]> => {
@@ -30,6 +30,7 @@ export function useProducts(params: CatalogParams) {
       });
       return result.data.map(mapProduct);
     },
+    enabled: params.enabled ?? true,
   });
 }
 

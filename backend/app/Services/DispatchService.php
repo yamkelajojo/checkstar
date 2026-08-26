@@ -52,18 +52,24 @@ class DispatchService
             return $this->result(null, null, 'skipped');
         }
 
+        // If coordinates are missing, cancel immediately instead of retrying indefinitely
+        if ($order->delivery_latitude === null || $order->delivery_longitude === null) {
+            $this->cancelOrder($order, 'Delivery coordinates missing');
+            return $this->result(null, null, 'cancelled', null, 'Delivery coordinates missing');
+        }
+
         $claimed = $this->tryStores($order);
         if ($claimed !== null) {
             return $claimed;
         }
 
-        if ($order->dispatch_attempts + 1 >= $this->policy->maxAttempts()) {
+        $order->dispatch_attempts += 1;
+        $order->save();
+
+        if ($order->dispatch_attempts >= $this->policy->maxAttempts()) {
             $this->cancelOrder($order, 'No available riders after ' . $this->policy->maxAttempts() . ' dispatch attempts');
             return $this->result(null, null, 'cancelled');
         }
-
-        $order->dispatch_attempts += 1;
-        $order->save();
 
         return $this->result(null, null, 'retrying');
     }

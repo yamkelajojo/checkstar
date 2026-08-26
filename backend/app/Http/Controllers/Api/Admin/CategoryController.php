@@ -9,11 +9,19 @@ use Illuminate\Http\Request;
 
 class CategoryController extends Controller
 {
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $categories = Category::orderBy('sort_order')->get();
-
-        return response()->json(['data' => $categories]);
+        $perPage = $request->has('per_page') ? max(1, min((int) $request->query('per_page'), 100)) : 50;
+        $paginator = Category::orderBy('sort_order')->paginate($perPage);
+        if ($request->has('per_page') || $request->has('page')) {
+            return response()->json($paginator);
+        }
+        return response()->json(['data' => $paginator->items(), 'meta' => [
+            'current_page' => $paginator->currentPage(),
+            'last_page' => $paginator->lastPage(),
+            'per_page' => $paginator->perPage(),
+            'total' => $paginator->total(),
+        ]]);
     }
 
     public function store(Request $request): JsonResponse

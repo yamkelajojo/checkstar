@@ -35,15 +35,28 @@ class OrderIntake
             $subtotal = 0;
             $orderItems = [];
 
+            // Consolidate duplicate product entries to enforce quantity caps
+            $consolidated = [];
             foreach ($validated['items'] as $item) {
-                $product = Product::findOrFail($item['product_id']);
-                $price = $this->pricingService->effectivePrice($product);
-                $total = $price * $item['quantity'];
+                $pid = (int) $item['product_id'];
+                $consolidated[$pid] = ($consolidated[$pid] ?? 0) + (int) $item['quantity'];
+            }
+
+            foreach ($consolidated as $productId => $quantity) {
+                $product = Product::with('specials')->findOrFail($productId);
+                if (!$product->is_active) {
+                    throw new \InvalidArgumentException("Product {$product->name} is not available");
+                }
+                if ($quantity > 8) {
+                    throw new \InvalidArgumentException("Quantity for {$product->name} exceeds maximum of 8");
+                }
+                $price = $this->pricingService->effectivePrice($product, $product->specials);
+                $total = $price * $quantity;
                 $subtotal += $total;
 
                 $orderItems[] = [
                     'product_id' => $product->id,
-                    'quantity' => $item['quantity'],
+                    'quantity' => $quantity,
                     'unit_price' => $price,
                     'total_price' => $total,
                     'product_snapshot' => json_encode([
@@ -55,21 +68,38 @@ class OrderIntake
                 ];
             }
 
-            $order = Order::create([
-                'order_number' => 'CS-' . now()->format('Ymd') . '-' . strtoupper(Str::random(4)),
-                'customer_id' => $customer->id,
-                'store_id' => null,
-                'status' => OrderStatus::Pending,
-                'payment_status' => PaymentStatus::Pending,
-                'payment_method' => $validated['payment_method'] ?? 'cash_on_delivery',
-                'delivery_address' => $validated['delivery_address'],
-                'delivery_latitude' => $validated['delivery_latitude'],
-                'delivery_longitude' => $validated['delivery_longitude'],
-                'delivery_notes' => $validated['delivery_notes'] ?? null,
-                'subtotal' => $subtotal,
-                'delivery_fee' => 0,
-                'total' => $subtotal,
-            ]);
+            $deliveryFee = (float) config('dispatch.delivery_fee', 0);
+            $total = $subtotal + $deliveryFee;
+
+            // Retry order number generation on collision (1.6M combos, but handle race)
+            $attempts = 0;
+            do {
+                $orderNumber = 'CS-' . now()->format('Ymd') . '-' . strtoupper(Str::random(4));
+                try {
+                    $order = Order::create([
+                        'order_number' => $orderNumber,
+                        'customer_id' => $customer->id,
+                        'store_id' => null,
+                        'status' => OrderStatus::Pending,
+                        'payment_status' => PaymentStatus::Pending,
+                        'payment_method' => $validated['payment_method'] ?? 'cash_on_delivery',
+                        'delivery_address' => $validated['delivery_address'],
+                        'delivery_latitude' => $validated['delivery_latitude'],
+                        'delivery_longitude' => $validated['delivery_longitude'],
+                        'delivery_notes' => $validated['delivery_notes'] ?? null,
+                        'subtotal' => $subtotal,
+                        'delivery_fee' => $deliveryFee,
+                        'total' => $total,
+                    ]);
+                    break;
+                } catch (\Illuminate\Database\QueryException $e) {
+                    if (str_contains($e->getMessage(), 'order_number') && $attempts < 5) {
+                        $attempts++;
+                        continue;
+                    }
+                    throw $e;
+                }
+            } while (true);
 
             foreach ($orderItems as $oi) {
                 $order->items()->create($oi);

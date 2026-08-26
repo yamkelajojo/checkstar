@@ -8,14 +8,29 @@ class RiderStatsRecorder
 {
     public function recordReview(Rider $rider, int $rating): void
     {
-        $currentTotal = $rider->total_deliveries ?? 0;
-        $currentAvg = (float) ($rider->average_rating ?? 0);
+        // Use fresh rider with lock to avoid lost updates
+        $fresh = \App\Models\Rider::where('id', $rider->id)->lockForUpdate()->first();
+        if (!$fresh) {
+            return;
+        }
 
-        $rider->average_rating = round(
-            (($currentAvg * $currentTotal) + $rating) / ($currentTotal + 1),
-            2
-        );
-        $rider->total_deliveries = $currentTotal + 1;
-        $rider->save();
+        // Incremental weighted average without full table scan
+        // total_deliveries reflects completed deliveries, not review count — so use review count for averaging
+        $reviewCount = \App\Models\Review::where('rider_id', $fresh->id)->count();
+        // reviewCount includes the review just created, so it is already +1
+        // For averaging we use prior count
+        $priorCount = max(0, $reviewCount - 1);
+        $currentAvg = (float) ($fresh->average_rating ?? 0);
+
+        if ($priorCount === 0) {
+            $fresh->average_rating = round((float) $rating, 2);
+        } else {
+            $fresh->average_rating = round(
+                (($currentAvg * $priorCount) + $rating) / ($priorCount + 1),
+                2
+            );
+        }
+
+        $fresh->save();
     }
 }

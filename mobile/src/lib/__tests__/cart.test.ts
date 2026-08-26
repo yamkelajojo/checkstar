@@ -37,12 +37,10 @@ describe('decrementItem', () => {
   });
 });
 
-type ServerCartLine = { productId: string; quantity: number; storeProductId: number | null };
-
 describe('mergeWithServer', () => {
   it('keeps the server quantity for products present on the server', () => {
     const local = [line('p1', 5)];
-    const server: ServerCartLine[] = [{ productId: 'p1', quantity: 2, storeProductId: 7 }];
+    const server: CartItem[] = [{ productId: 'p1', quantity: 2, storeProductId: 7 }];
     const next = cartRules.mergeWithServer(local, server);
     expect(next.find((i) => i.productId === 'p1')?.quantity).toBe(2);
     expect(next.find((i) => i.productId === 'p1')?.storeProductId).toBe(7);
@@ -50,14 +48,14 @@ describe('mergeWithServer', () => {
 
   it('adds local-only items so nothing is lost on sign-in', () => {
     const local = [line('p1', 1), line('p2', 1)];
-    const server: ServerCartLine[] = [{ productId: 'p1', quantity: 1, storeProductId: null }];
+    const server: CartItem[] = [{ productId: 'p1', quantity: 1, storeProductId: null }];
     const next = cartRules.mergeWithServer(local, server);
     expect(next.map((i) => i.productId).sort()).toEqual(['p1', 'p2']);
   });
 
   it('caps quantities at 8', () => {
     const local = [line('p1', 8)];
-    const server: ServerCartLine[] = [{ productId: 'p2', quantity: 20, storeProductId: null }];
+    const server: CartItem[] = [{ productId: 'p2', quantity: 20, storeProductId: null }];
     const next = cartRules.mergeWithServer(local, server);
     expect(next.find((i) => i.productId === 'p2')?.quantity).toBe(8);
   });

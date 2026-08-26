@@ -9,6 +9,7 @@ import { brand } from '../theme/colors';
 import { useCart } from '../features/cart/store';
 import { cartRules } from '../features/cart/model';
 import { Text, View } from 'react-native';
+import { semanticRadius } from '../theme/spacing';
 
 const Tab = createBottomTabNavigator();
 
@@ -21,11 +22,12 @@ export function CustomerTabs() {
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: brand.primary,
-        tabBarInactiveTintColor: theme.colors.textFaint,
+        tabBarActiveTintColor: brand.orange,
+        tabBarInactiveTintColor: theme.name === 'dark' ? theme.colors.text.secondary : theme.colors.text.tertiary,
         tabBarStyle: {
-          backgroundColor: theme.colors.surfaceElevated,
-          borderTopColor: theme.colors.hairline,
+          backgroundColor: theme.colors.surface.elevated,
+          borderTopColor: theme.name === 'dark' ? theme.colors.border.default : theme.colors.border.subtle,
+          borderTopWidth: theme.name === 'dark' ? 2 : 1,
           height: 56,
           paddingTop: 6,
         },
@@ -57,8 +59,8 @@ export function CustomerTabs() {
                     right: -10,
                     minWidth: 16,
                     height: 16,
-                    borderRadius: 8,
-                    backgroundColor: brand.primary,
+                    borderRadius: semanticRadius.badge,
+                    backgroundColor: brand.orange,
                     alignItems: 'center',
                     justifyContent: 'center',
                     paddingHorizontal: 4,

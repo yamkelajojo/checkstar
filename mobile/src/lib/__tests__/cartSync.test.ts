@@ -1,4 +1,5 @@
 import { performCartSync } from '../cartSync';
+import { applyServerMerge } from '../../features/cart/model';
 import type { CartItem } from '../../features/cart/types';
 
 const line = (productId: string, quantity: number): CartItem => ({ productId, storeProductId: null, quantity });
@@ -13,7 +14,11 @@ describe('performCartSync', () => {
     const result = await performCartSync(hasSynced, {
       syncCart,
       getLocalCart: () => local,
-      setCart: (items) => { stored = items; },
+      setCart: (draft, resp) => {
+        const merged = applyServerMerge(draft, resp);
+        stored = merged.items;
+        return merged;
+      },
     });
     expect(syncCart).toHaveBeenCalledWith([{ product_id: 1, quantity: 2 }]);
     expect(stored).toEqual([{ productId: '1', storeProductId: 10, quantity: 5 }]);
@@ -27,7 +32,7 @@ describe('performCartSync', () => {
     const result = await performCartSync(hasSynced, {
       syncCart,
       getLocalCart: () => [],
-      setCart: () => {},
+      setCart: () => ({ items: [], droppedCount: 0 }),
     });
     expect(syncCart).not.toHaveBeenCalled();
     expect(result).toBeNull();
@@ -39,7 +44,7 @@ describe('performCartSync', () => {
     const response = { data: [{ product_id: 1, quantity: 1, store_product_id: null }], dropped: [] };
     const syncCart = jest.fn().mockResolvedValue(response);
     const hasSynced = { current: false };
-    const deps = { syncCart, getLocalCart: () => local, setCart: () => {} };
+    const deps = { syncCart, getLocalCart: () => local, setCart: () => ({ items: [], droppedCount: 0 }) };
     await performCartSync(hasSynced, deps);
     await performCartSync(hasSynced, deps);
     expect(syncCart).toHaveBeenCalledTimes(1);
@@ -54,7 +59,11 @@ describe('performCartSync', () => {
     const result = await performCartSync(hasSynced, {
       syncCart,
       getLocalCart: () => local,
-      setCart: (items) => { stored = items; },
+      setCart: (draft, resp) => {
+        const merged = applyServerMerge(draft, resp);
+        stored = merged.items;
+        return merged;
+      },
     });
     expect(stored.map((i) => i.productId)).toEqual(['2']);
     expect(result?.droppedCount).toBe(1);

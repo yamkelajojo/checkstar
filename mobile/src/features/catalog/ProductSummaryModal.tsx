@@ -152,7 +152,7 @@ export function ProductSummaryModal({ product, storeProductId = null, sourceRect
               />
               <TactilePressable
                 onPress={addToCart}
-                hapticOnPress="commit"
+                haptic="commit"
                 accessibilityRole="button"
                 accessibilityLabel={`Add ${product.name} to cart`}
                 style={{ backgroundColor: brand.primary, borderRadius: 999, paddingHorizontal: 18 }}
@@ -165,7 +165,7 @@ export function ProductSummaryModal({ product, storeProductId = null, sourceRect
 
             <TactilePressable
               onPress={viewFullDetails}
-              hapticOnPress="selection"
+              haptic="selection"
               accessibilityRole="button"
               style={{ alignSelf: 'flex-start' }}
             >

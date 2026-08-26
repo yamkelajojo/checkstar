@@ -37,7 +37,7 @@ class ProductController extends Controller
     public function index(Request $request): JsonResponse
     {
         $query = Product::where('is_active', true)
-            ->with('category');
+            ->with(['category', 'specials']);
 
         if ($request->filled('category')) {
             $query->whereHas('category', fn ($q) => $q->where('slug', $request->category));
@@ -49,14 +49,29 @@ class ProductController extends Controller
 
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('tags', 'like', "%{$search}%");
+            $escaped = addcslashes($search, '%_\\');
+            $query->where(function ($q) use ($escaped, $search) {
+                $q->where('name', 'like', "%{$escaped}%")
+                    ->orWhere('tags', 'like', "%{$escaped}%");
+                // Also support exact tag match in JSON array
+                try {
+                    $q->orWhereJsonContains('tags', $search);
+                } catch (\Throwable $e) {
+                    // fallback to LIKE if DB doesn't support JSON contains
+                }
             });
         }
 
         if ($request->filled('tag')) {
-            $query->where('tags', 'like', "%\"{$request->tag}\"%");
+            $tag = $request->tag;
+            $escapedTag = addcslashes($tag, '%_\\');
+            $query->where(function ($q) use ($tag, $escapedTag) {
+                $q->where('tags', 'like', "%\"{$escapedTag}\"%");
+                try {
+                    $q->orWhereJsonContains('tags', $tag);
+                } catch (\Throwable $e) {
+                }
+            });
         }
 
         $rawPerPage = $request->query('per_page', 20);

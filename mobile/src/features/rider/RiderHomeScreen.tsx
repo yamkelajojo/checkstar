@@ -22,8 +22,10 @@ import { EmptyState } from '../../components/shared/EmptyState';
 import { useToast } from '../../components/shared/GlassToast';
 import { copy } from '../../lib/strings';
 import type { RootStackParamList } from '../../navigation/types';
+import { useAdaptivePoll, createAdaptiveRefetchInterval } from '../../lib/adaptivePoll';
 
-const POLL_MS = 15_000;
+const BASE_POLL_MS = 15_000;
+const MAX_POLL_MS = 60_000;
 
 export function RiderHomeScreen() {
   const theme = useTheme();
@@ -38,15 +40,33 @@ export function RiderHomeScreen() {
     queryKey: queryKeys.riderStats,
     queryFn: fetchRiderStats,
   });
+
+  const activePoll = useAdaptivePoll(queryClient, queryKeys.activeDeliveries as unknown as unknown[], {
+    baseIntervalMs: BASE_POLL_MS,
+    maxIntervalMs: MAX_POLL_MS,
+    backoffMultiplier: 2,
+    shouldPoll: () => true, // Always poll active deliveries
+    onError: (error) => console.warn('[RiderHome] Active deliveries polling error:', error),
+  });
+
+  const availablePoll = useAdaptivePoll(queryClient, queryKeys.availableOrders as unknown as unknown[], {
+    baseIntervalMs: BASE_POLL_MS,
+    maxIntervalMs: MAX_POLL_MS,
+    backoffMultiplier: 2,
+    shouldPoll: () => isAvailable, // Only poll when available
+    onError: (error) => console.warn('[RiderHome] Available orders polling error:', error),
+  });
+
   const { data: active = [] } = useQuery({
     queryKey: queryKeys.activeDeliveries,
     queryFn: fetchActiveDeliveries,
-    refetchInterval: POLL_MS,
+    refetchInterval: createAdaptiveRefetchInterval(activePoll),
   });
+
   const { data: available = [] } = useQuery({
     queryKey: queryKeys.availableOrders,
     queryFn: fetchAvailableOrders,
-    refetchInterval: isAvailable ? POLL_MS : false,
+    refetchInterval: createAdaptiveRefetchInterval(availablePoll),
   });
 
   const invalidate = () => {
@@ -59,6 +79,12 @@ export function RiderHomeScreen() {
     setToggling(true);
     try {
       await toggleAvailability();
+      // Refresh session user to reflect new availability (RiderHomeScreen derives isAvailable from session)
+      try {
+        const { fetchCurrentUser } = await import('../../lib/apiClient');
+        const fresh = await fetchCurrentUser();
+        useSession.setState({ user: fresh });
+      } catch {}
       toast.show(isAvailable ? copy.rider.goOffline : copy.rider.goOnline, { tone: isAvailable ? 'default' : 'success' });
       invalidate();
     } catch {
@@ -89,7 +115,7 @@ export function RiderHomeScreen() {
     <TactilePressable
       key={order.id}
       variant="card"
-      hapticOnPress="selection"
+      haptic="selection"
       onPress={() => navigation.navigate('RiderOrderDetail', { orderId: order.id })}
       accessibilityRole="button"
       style={{ backgroundColor: theme.colors.surface, borderRadius: 16 }}
@@ -133,7 +159,7 @@ export function RiderHomeScreen() {
 
         <TactilePressable
           onPress={onToggle}
-          hapticOnPress="commit"
+          haptic="commit"
           disabled={toggling}
           accessibilityRole="button"
           accessibilityState={{ checked: isAvailable }}
@@ -180,7 +206,7 @@ export function RiderHomeScreen() {
                 </Text>
                 <TactilePressable
                   onPress={() => onClaim(o.id)}
-                  hapticOnPress="commit"
+                  haptic="commit"
                   accessibilityRole="button"
                   style={{ backgroundColor: brand.primary, borderRadius: 999, marginTop: 4 }}
                 >

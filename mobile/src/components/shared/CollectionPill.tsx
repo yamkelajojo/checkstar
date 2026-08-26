@@ -1,7 +1,8 @@
 import { TactilePressable } from './TactilePressable';
 import { useTheme } from '../../theme';
 import { brand } from '../../theme/colors';
-import { typeScale, weights, letterSpacing } from '../../theme/typography';
+import { textStyle, fontWeight, letterSpacing } from '../../theme/typography';
+import { semanticRadius, semanticSpacing } from '../../theme/spacing';
 import { useReducedMotion } from './useReducedMotion';
 import { FadeSlideIn } from './FadeSlideIn';
 import { Text as TamaguiText } from 'tamagui';
@@ -18,12 +19,12 @@ export function CollectionPill({ label, active = false, onPress }: CollectionPil
   const reduceMotion = useReducedMotion();
   const content = (
     <TamaguiText
-      fontSize={typeScale.caption}
-      fontWeight={weights.bold}
+      fontSize={textStyle.caption.size}
+      fontWeight={fontWeight.bold}
       letterSpacing={letterSpacing.wide}
       textTransform="uppercase"
-      color={active ? theme.colors.onPrimary : brand.primary}
-      paddingHorizontal={16}
+      color={active ? theme.colors.text.inverse : theme.colors.text.brand}
+      paddingHorizontal={semanticSpacing.cardPadding}
     >
       {label}
     </TamaguiText>
@@ -32,12 +33,12 @@ export function CollectionPill({ label, active = false, onPress }: CollectionPil
     return (
       <TactilePressable
         onPress={onPress}
-        hapticOnPress={undefined}
+        haptic={undefined}
         accessibilityRole="button"
         accessibilityState={{ selected: active }}
         style={{
-          borderRadius: 999,
-          backgroundColor: active ? brand.primary : theme.colors.surface,
+          borderRadius: semanticRadius.chip,
+          backgroundColor: active ? brand.orange : theme.colors.surface.primary,
           minWidth: 56,
         }}
       >
@@ -49,12 +50,12 @@ export function CollectionPill({ label, active = false, onPress }: CollectionPil
     <FadeSlideIn>
       <TactilePressable
         onPress={onPress}
-        hapticOnPress="tap"
+        haptic="tap"
         accessibilityRole="button"
         accessibilityState={{ selected: active }}
         style={{
-          borderRadius: 999,
-          backgroundColor: active ? brand.primary : theme.colors.surface,
+          borderRadius: semanticRadius.chip,
+          backgroundColor: active ? brand.orange : theme.colors.surface.primary,
           minWidth: 56,
         }}
       >

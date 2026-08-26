@@ -1,6 +1,6 @@
 import type { Category, Product, Store, Order, Rider, Special, Recipe, CommunityPost, CareerListing, User, CartItem, Paginated, OrderPlacementResult } from '@/types'
 
-const BASE = '/api'
+const BASE = process.env.NEXT_PUBLIC_API_URL || '/api'
 
 function getCookie(name: string): string | null {
   const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'))
@@ -33,11 +33,16 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     if (xsrfToken) headers['X-XSRF-TOKEN'] = xsrfToken
   }
 
-  if (!(init?.body instanceof FormData)) {
+  if (init?.body && !(init.body instanceof FormData)) {
     headers['Content-Type'] = 'application/json'
   }
 
-  const res = await fetch(`${BASE}${path}`, { credentials: 'include', headers, ...init })
+  // Sanctum CSRF cookie endpoint lives at /sanctum/csrf-cookie, not /api/sanctum/csrf-cookie
+  const isCsrf = path === '/sanctum/csrf-cookie'
+  const url = isCsrf
+    ? (BASE.endsWith('/api') ? BASE.replace(/\/api$/, '') : BASE) + path
+    : `${BASE}${path}`
+  const res = await fetch(url, { credentials: 'include', headers, ...init })
   if (!res.ok) {
     const payload = await res.json().catch(() => ({ message: res.statusText }))
     const message = (payload as { message?: string } | null)?.message ?? `Request failed: ${res.status}`

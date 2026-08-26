@@ -9,9 +9,19 @@ use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        return response()->json(['data' => User::with('rider')->orderByDesc('created_at')->get()]);
+        $perPage = $request->has('per_page') ? max(1, min((int) $request->query('per_page'), 100)) : 50;
+        $paginator = User::with('rider')->orderByDesc('created_at')->paginate($perPage);
+        if ($request->has('per_page') || $request->has('page')) {
+            return response()->json($paginator);
+        }
+        return response()->json(['data' => $paginator->items(), 'meta' => [
+            'current_page' => $paginator->currentPage(),
+            'last_page' => $paginator->lastPage(),
+            'per_page' => $paginator->perPage(),
+            'total' => $paginator->total(),
+        ]]);
     }
 
     public function update(Request $request, int $id): JsonResponse

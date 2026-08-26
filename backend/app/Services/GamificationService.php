@@ -24,6 +24,11 @@ class GamificationService
 
         $rider->xp += $xpGained;
 
+        // Increment delivery count on completed delivery (not on review)
+        if ($event === GameEvent::DeliveryCompleted) {
+            $rider->total_deliveries = ($rider->total_deliveries ?? 0) + 1;
+        }
+
         $newLevel = null;
         $expectedLevel = (int) floor($rider->xp / self::XP_PER_LEVEL) + 1;
         if ($expectedLevel > $rider->level) {
@@ -39,7 +44,7 @@ class GamificationService
             }
         }
 
-        if ($rider->total_deliveries >= 100) {
+        if ($event === GameEvent::DeliveryCompleted && $rider->total_deliveries >= 100) {
             $badge = $this->awardBadge($rider, BadgeType::Century);
             if ($badge) {
                 $newBadges[] = $badge;
@@ -57,18 +62,15 @@ class GamificationService
 
     private function awardBadge(Rider $rider, BadgeType $badgeType): ?RiderBadge
     {
-        $exists = RiderBadge::where('rider_id', $rider->id)
-            ->where('badge_type', $badgeType->value)
-            ->exists();
-
-        if ($exists) {
+        try {
+            $badge = RiderBadge::firstOrCreate(
+                ['rider_id' => $rider->id, 'badge_type' => $badgeType->value],
+                ['awarded_at' => now()]
+            );
+            return $badge->wasRecentlyCreated ? $badge : null;
+        } catch (\Illuminate\Database\QueryException $e) {
+            // Concurrent insert race — badge already awarded
             return null;
         }
-
-        return RiderBadge::create([
-            'rider_id' => $rider->id,
-            'badge_type' => $badgeType->value,
-            'awarded_at' => now(),
-        ]);
     }
 }

@@ -16,18 +16,34 @@ export default function ContactClient() {
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState('')
 
+  const getCookie = (name: string) => {
+    const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'))
+    return match ? decodeURIComponent(match[2]) : null
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSending(true)
     setError('')
     setSuccess(false)
     try {
+      // Ensure CSRF cookie for Laravel Sanctum stateful requests
+      try { await fetch('/sanctum/csrf-cookie', { credentials: 'include' }) } catch {}
+      const xsrf = getCookie('XSRF-TOKEN')
       const res = await fetch('/api/contact', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          ...(xsrf ? { 'X-XSRF-TOKEN': xsrf } : {}),
+        },
         body: JSON.stringify(form),
       })
-      if (!res.ok) throw new Error('Failed to send message.')
+      if (!res.ok) {
+        const payload = await res.json().catch(() => ({}))
+        throw new Error((payload as any)?.message || 'Failed to send message.')
+      }
       setSuccess(true)
       setForm({ name: '', email: '', phone: '', subject: '', message: '' })
     } catch (err: any) {
@@ -99,14 +115,13 @@ export default function ContactClient() {
                   />
                 </div>
                 <div>
-                  <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-1">Subject *</label>
+                  <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
                   <input
                     id="subject"
-                    required
                     value={form.subject}
                     onChange={e => setForm(p => ({ ...p, subject: e.target.value }))}
                     className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none"
-                    placeholder="How can we help?"
+                    placeholder="How can we help? (optional)"
                   />
                 </div>
                 <div>

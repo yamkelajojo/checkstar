@@ -4,6 +4,16 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { ProductVO } from '../../lib/product';
+import { formatZar } from '../../lib/currency';
+import { savingsPercent } from '../../lib/pricing';
+import { useTheme } from '../../theme';
+import { brand } from '../../theme/colors';
+import { fontWeight, textStyle, letterSpacing } from '../../theme/typography';
+import { semanticSpacing, semanticRadius } from '../../theme/spacing';
+import { TactilePressable } from './TactilePressable';
+import { Stepper } from './Stepper';
+import { useCart } from '../../features/cart/store';
+import type { RootStackParamList } from '../../navigation/types';
 
 export interface BadgeRect {
   x: number;
@@ -11,15 +21,6 @@ export interface BadgeRect {
   width: number;
   height: number;
 }
-import { formatZar } from '../../lib/currency';
-import { savingsPercent } from '../../lib/pricing';
-import { useTheme } from '../../theme';
-import { brand } from '../../theme/colors';
-import { weights, typeScale, letterSpacing } from '../../theme/typography';
-import { TactilePressable } from './TactilePressable';
-import { Stepper } from './Stepper';
-import { useCart } from '../../features/cart/store';
-import type { RootStackParamList } from '../../navigation/types';
 
 interface ProductCardProps {
   product: ProductVO;
@@ -36,36 +37,47 @@ interface ProductCardProps {
 export function ProductCard({ product, storeProductId = null, style, onRequestSummary }: ProductCardProps) {
   const theme = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const quantity = useCart((s) => s.items.find((i) => i.productId === String(product.id))?.quantity ?? 0);
+  const quantity = useCart((s) => {
+    const pid = String(product.id);
+    if (storeProductId != null) {
+      return s.items.find((i) => i.productId === pid && i.storeProductId === storeProductId)?.quantity
+        ?? s.items.find((i) => i.productId === pid)?.quantity ?? 0;
+    }
+    return s.items.find((i) => i.productId === pid)?.quantity ?? 0;
+  });
   const add = useCart((s) => s.add);
   const decrement = useCart((s) => s.decrement);
   const badgeRef = useRef<View>(null);
 
-  const [imageSource, setImageSource] = useState<{ uri: string } | null>(
-    product.images[0] ? { uri: product.images[0] } : null,
-  );
+  const resolveImage = (imgs: unknown): { uri: string } | null => {
+    if (!imgs) return null;
+    if (Array.isArray(imgs)) return imgs[0] ? { uri: String(imgs[0]) } : null;
+    if (typeof imgs === 'string') return imgs ? { uri: imgs } : null;
+    return null;
+  };
+  const [imageSource, setImageSource] = useState<{ uri: string } | null>(resolveImage(product.images));
   useEffect(() => {
-    setImageSource(product.images[0] ? { uri: product.images[0] } : null);
+    setImageSource(resolveImage(product.images));
   }, [product.images]);
 
   const onSale = product.salePriceCents != null && product.salePriceCents < product.basePriceCents;
   const pctOff = onSale ? savingsPercent(product.basePriceCents, product.effectivePriceCents) : 0;
-  const imageTint = theme.name === 'dark' ? 'rgba(24,24,27,0.4)' : 'rgba(255,255,255,0.9)';
+  const imageTint = theme.name === 'dark' ? 'rgba(27,24,22,0.4)' : 'rgba(255,255,255,0.9)';
 
   return (
     <TactilePressable
       variant="card"
-      hapticOnPress="selection"
+      haptic="selection"
       onPress={() => navigation.navigate('ProductDetail', { slug: product.slug })}
       accessibilityRole="button"
       accessibilityLabel={product.name}
-      style={[{ flex: 1, minWidth: '47%', borderRadius: 16 }, style]}
+      style={[{ flex: 1, minWidth: '47%', borderRadius: semanticRadius.card }, style]}
     >
-      <View style={{ backgroundColor: theme.colors.surface, borderRadius: 16, padding: 10, gap: 8, minHeight: 235 }}>
+      <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: semanticRadius.card, padding: semanticSpacing.cardPadding, gap: semanticSpacing.elementGap, minHeight: 235 }}>
         <View
           style={{
             height: 130,
-            borderRadius: 12,
+            borderRadius: semanticRadius.imageFrame,
             backgroundColor: imageTint,
             alignItems: 'center',
             justifyContent: 'center',
@@ -77,7 +89,7 @@ export function ProductCard({ product, storeProductId = null, style, onRequestSu
               width: 92,
               height: 92,
               borderRadius: 46,
-              backgroundColor: theme.name === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(24,24,27,0.04)',
+              backgroundColor: theme.name === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(27,24,22,0.04)',
               alignItems: 'center',
               justifyContent: 'center',
             }}
@@ -87,30 +99,31 @@ export function ProductCard({ product, storeProductId = null, style, onRequestSu
                 source={imageSource}
                 style={{ width: 84, height: 84, transform: [{ rotate: '-14deg' }] }}
                 resizeMode="contain"
+                onError={() => setImageSource(null)}
               />
             ) : (
-              <Text style={{ color: theme.colors.textFaint, fontSize: 40 }}>🛒</Text>
+              <Text style={{ color: theme.colors.text.tertiary, fontSize: 40 }}>🛒</Text>
             )}
           </View>
           {onSale && (
             <View
               style={{
                 position: 'absolute',
-                top: 8,
-                right: 8,
-                backgroundColor: brand.primary,
-                borderRadius: 999,
-                paddingHorizontal: 8,
+                top: semanticSpacing.tightGap,
+                right: semanticSpacing.tightGap,
+                backgroundColor: brand.orange,
+                borderRadius: semanticRadius.badge,
+                paddingHorizontal: semanticSpacing.inlineGap,
                 paddingVertical: 3,
               }}
             >
-              <Text style={{ color: '#fff', fontSize: 11, fontWeight: weights.bold }}>{pctOff}% OFF</Text>
+              <Text style={{ color: theme.colors.text.inverse, fontSize: 11, fontWeight: fontWeight.bold }}>{pctOff}% OFF</Text>
             </View>
           )}
         </View>
 
         <View style={{ gap: 2 }}>
-          <Text numberOfLines={2} style={{ fontSize: typeScale.body, fontWeight: weights.semibold, color: theme.colors.text }}>
+          <Text numberOfLines={2} style={{ ...textStyle.title, color: theme.colors.text.primary }}>
             {product.name}
           </Text>
           {onRequestSummary ? (
@@ -119,15 +132,18 @@ export function ProductCard({ product, storeProductId = null, style, onRequestSu
               onPress={() => {
                 const fallback = () => onRequestSummary(product, null);
                 const ref = badgeRef.current as unknown as { measureInWindow?: (cb: (x: number, y: number, w: number, h: number) => void) => void } | null;
-                if (ref?.measureInWindow) {
+                if (typeof ref?.measureInWindow === 'function') {
                   try {
+                    let measured = false;
                     ref.measureInWindow((x, y, w, h) => {
+                      measured = true;
                       if (Number.isFinite(x) && Number.isFinite(y) && w > 0 && h > 0) {
                         onRequestSummary(product, { x, y, width: w, height: h });
                       } else {
                         fallback();
                       }
                     });
+                    if (!measured) fallback();
                     return;
                   } catch {
                     // fall through to fallback
@@ -137,15 +153,16 @@ export function ProductCard({ product, storeProductId = null, style, onRequestSu
               }}
               accessibilityRole="button"
               accessibilityLabel={`About ${product.name}`}
+              testID={`summary-trigger-${product.id}`}
               hitSlop={4}
               style={{ alignSelf: 'flex-start' }}
             >
-              <Text style={{ fontSize: typeScale.caption, color: theme.colors.textMuted }}>
+              <Text style={{ ...textStyle.caption, color: theme.colors.text.secondary }}>
                 {formatZar(product.effectivePriceCents)} / {product.unit}
               </Text>
             </Pressable>
           ) : (
-            <Text style={{ fontSize: typeScale.caption, color: theme.colors.textMuted }}>
+            <Text style={{ ...textStyle.caption, color: theme.colors.text.secondary }}>
               {formatZar(product.effectivePriceCents)} / {product.unit}
             </Text>
           )}
@@ -155,12 +172,12 @@ export function ProductCard({ product, storeProductId = null, style, onRequestSu
           {quantity === 0 ? (
             <TactilePressable
               onPress={() => add(String(product.id), 1, storeProductId)}
-              hapticOnPress="tap"
+              haptic="tap"
               accessibilityRole="button"
               accessibilityLabel={`Add ${product.name} to cart`}
-              style={{ backgroundColor: brand.primary, borderRadius: 999, paddingHorizontal: 18, minWidth: 96 }}
+              style={{ backgroundColor: brand.orange, borderRadius: semanticRadius.buttonPill, paddingHorizontal: 18, minWidth: 96 }}
             >
-              <Text style={{ color: '#fff', fontWeight: weights.bold, letterSpacing: letterSpacing.wide, textTransform: 'uppercase', fontSize: typeScale.caption }}>
+              <Text style={{ color: theme.colors.text.inverse, fontWeight: fontWeight.bold, letterSpacing: letterSpacing.wide, textTransform: 'uppercase', ...textStyle.caption }}>
                 Add +
               </Text>
             </TactilePressable>
@@ -168,7 +185,7 @@ export function ProductCard({ product, storeProductId = null, style, onRequestSu
             <Stepper
               quantity={quantity}
               onIncrement={() => add(String(product.id), 1, storeProductId)}
-              onDecrement={() => decrement(String(product.id))}
+              onDecrement={() => decrement(String(product.id), storeProductId)}
             />
           )}
         </View>

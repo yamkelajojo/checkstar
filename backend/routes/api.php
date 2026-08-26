@@ -20,11 +20,11 @@ use App\Http\Controllers\Api\StoreOrderController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Sanctum\Http\Controllers\CsrfCookieController;
 
-// Auth
-Route::get('/sanctum/csrf-cookie', [CsrfCookieController::class, 'show']);
-Route::post('/auth/register', [AuthController::class, 'register']);
-Route::post('/auth/register/rider', [AuthController::class, 'registerRider']);
-Route::post('/auth/login', [AuthController::class, 'login']);
+// Auth — throttle to prevent brute-force & spam
+Route::get('/sanctum/csrf-cookie', [CsrfCookieController::class, 'show'])->middleware('throttle:60,1');
+Route::post('/auth/register', [AuthController::class, 'register'])->middleware('throttle:10,1');
+Route::post('/auth/register/rider', [AuthController::class, 'registerRider'])->middleware('throttle:10,1');
+Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:10,1');
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout']);
@@ -35,18 +35,18 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Customer orders
     Route::get('/orders', [OrderController::class, 'index']);
-    Route::post('/orders', [OrderController::class, 'store']);
+    Route::post('/orders', [OrderController::class, 'store'])->middleware('throttle:20,1');
     Route::get('/orders/{id}', [OrderController::class, 'show']);
-    Route::post('/orders/{id}/cancel', [OrderController::class, 'cancel']);
-    Route::post('/orders/{id}/confirm', [OrderController::class, 'confirmDelivery']);
-    Route::post('/orders/{id}/review', [OrderController::class, 'review']);
+    Route::post('/orders/{id}/cancel', [OrderController::class, 'cancel'])->middleware('throttle:20,1');
+    Route::post('/orders/{id}/confirm', [OrderController::class, 'confirmDelivery'])->middleware('throttle:20,1');
+    Route::post('/orders/{id}/review', [OrderController::class, 'review'])->middleware('throttle:20,1');
 
     // Cart
     Route::get('/cart', [CartController::class, 'show']);
-    Route::post('/cart/sync', [CartController::class, 'sync']);
+    Route::post('/cart/sync', [CartController::class, 'sync'])->middleware('throttle:30,1');
 
     // Rider
-    Route::prefix('rider')->group(function () {
+    Route::prefix('rider')->middleware('role:rider')->group(function () {
         Route::get('/available-orders', [RiderController::class, 'availableOrders']);
         Route::post('/claim/{order}', [RiderController::class, 'claim']);
         Route::get('/active-deliveries', [RiderController::class, 'activeDeliveries']);
@@ -105,4 +105,4 @@ Route::get('/recipes', [RecipeController::class, 'index']);
 Route::get('/recipes/{slug}', [RecipeController::class, 'show']);
 Route::get('/community-posts', [CommunityPostController::class, 'index']);
 Route::get('/careers', [CareerController::class, 'index']);
-Route::post('/contact', [ContactController::class, 'store']);
+Route::post('/contact', [ContactController::class, 'store'])->middleware('throttle:10,1');

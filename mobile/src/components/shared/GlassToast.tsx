@@ -5,7 +5,9 @@ import Animated, { useSharedValue, useAnimatedStyle, withTiming, withDelay } fro
 import { BlurView } from 'expo-blur';
 import { brand } from '../../theme/colors';
 import { useReducedMotion } from './useReducedMotion';
-import { haptics as haptic } from '../../lib';
+import { haptic } from '../../lib/haptics';
+import { textStyle } from '../../theme/typography';
+import { semanticRadius } from '../../theme/spacing';
 
 type ToastTone = 'default' | 'success' | 'warning';
 
@@ -37,8 +39,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const show = useCallback((message: string, options?: ToastOptions) => {
     const id = ++idRef.current;
     const tone = options?.tone ?? 'default';
-    if (tone === 'success') void haptic('success');
-    if (tone === 'warning') void haptic('warning');
+    if (tone === 'success') void haptic.success();
+    if (tone === 'warning') void haptic.warning();
     setToast({ id, message, tone });
     if (hideTimer.current) clearTimeout(hideTimer.current);
     hideTimer.current = setTimeout(() => setToast((current) => (current?.id === id ? null : current)), 2600);
@@ -51,7 +53,11 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const toneColor =
-    toast?.tone === 'success' ? brand.success : toast?.tone === 'warning' ? brand.accent : brand.primary;
+    toast?.tone === 'success'
+      ? brand.success
+      : toast?.tone === 'warning'
+        ? brand.warning
+        : brand.orange;
 
   return (
     <ToastContext.Provider value={{ show }}>
@@ -79,7 +85,7 @@ function ToastCard({ toast, color }: { toast: ToastState; color: string }) {
   return (
     <View pointerEvents="none" style={{ position: 'absolute', left: 16, right: 16, top: 60, alignItems: 'center' }}>
       <Animated.View style={style}>
-        <BlurView intensity={70} tint="systemMaterialDark" style={{ borderRadius: 16, overflow: 'hidden' }}>
+        <BlurView intensity={70} tint="systemMaterialDark" style={{ borderRadius: semanticRadius.card, overflow: 'hidden' }}>
           <View
             style={{
               flexDirection: 'row',
@@ -89,11 +95,11 @@ function ToastCard({ toast, color }: { toast: ToastState; color: string }) {
               paddingVertical: 14,
               borderWidth: 1,
               borderColor: 'rgba(120,120,128,0.24)',
-              borderRadius: 16,
+              borderRadius: semanticRadius.card,
             }}
           >
             <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: color }} />
-            <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600', flexShrink: 1 }}>{toast.message}</Text>
+            <Text style={{ color: '#fff', ...textStyle.bodySmall, fontWeight: '600', flexShrink: 1 }}>{toast.message}</Text>
           </View>
         </BlurView>
       </Animated.View>

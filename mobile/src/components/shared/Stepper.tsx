@@ -3,7 +3,8 @@ import { Minus, Plus } from 'lucide-react-native';
 import { TactilePressable } from './TactilePressable';
 import { useTheme } from '../../theme';
 import { brand } from '../../theme/colors';
-import { weights } from '../../theme/typography';
+import { fontWeight } from '../../theme/typography';
+import { semanticRadius } from '../../theme/spacing';
 
 interface StepperProps {
   quantity: number;
@@ -14,41 +15,43 @@ interface StepperProps {
 /** Inline quantity stepper with tactile +/- buttons and screen-reader labels. */
 export function Stepper({ quantity, onIncrement, onDecrement }: StepperProps) {
   const theme = useTheme();
-  const buttonStyle = { width: 36, borderRadius: 999 };
+  const buttonStyle = { width: 36, borderRadius: semanticRadius.buttonPill };
   return (
     <View
       style={{
         flexDirection: 'row',
         alignItems: 'center',
         gap: 10,
-        backgroundColor: theme.colors.surface,
-        borderRadius: 999,
+        backgroundColor: theme.colors.surface.primary,
+        borderRadius: semanticRadius.buttonPill,
         paddingHorizontal: 4,
       }}
     >
       <TactilePressable
         onPress={onDecrement}
-        hapticOnPress="tap"
+        haptic="tap"
         accessibilityRole="button"
         accessibilityLabel="Decrease quantity"
+        testID="stepper-decrease"
         style={buttonStyle}
       >
-        <Minus size={16} color={quantity <= 1 ? theme.colors.textFaint : brand.primary} />
+        <Minus size={16} color={quantity <= 1 ? theme.colors.text.tertiary : brand.orange} />
       </TactilePressable>
       <Text
-        style={{ minWidth: 20, textAlign: 'center', fontWeight: weights.bold, color: theme.colors.text }}
+        style={{ minWidth: 20, textAlign: 'center', fontWeight: fontWeight.bold, color: theme.colors.text.primary }}
         accessibilityLiveRegion="polite"
       >
         {quantity}
       </Text>
       <TactilePressable
         onPress={onIncrement}
-        hapticOnPress="tap"
+        haptic="tap"
         accessibilityRole="button"
         accessibilityLabel="Increase quantity"
+        testID="stepper-increase"
         style={buttonStyle}
       >
-        <Plus size={16} color={brand.primary} />
+        <Plus size={16} color={brand.orange} />
       </TactilePressable>
     </View>
   );

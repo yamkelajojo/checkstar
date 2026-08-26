@@ -9,8 +9,6 @@
     "@react-navigation/native-stack": "^7.18.6",
     "@tamagui/animations-react-native": "^2.7.7",
     "@tamagui/babel-plugin": "^2.7.7",
-    "@tamagui/config": "^2.7.7",
-    "@tamagui/lucide-icons-2": "^2.7.7",
     "@tanstack/react-query": "^5.101.4",
     "expo": "~54.0.13",
     "expo-blur": "~15.0.8",
@@ -19,6 +17,7 @@
     "expo-image": "~3.0.11",
     "expo-linear-gradient": "~15.0.8",
     "expo-location": "~19.0.8",
+    "expo-network": "^55.0.15",
     "expo-notifications": "~0.32.17",
     "expo-secure-store": "~15.0.8",
     "expo-status-bar": "~3.0.9",
@@ -53,10 +52,11 @@
     "web": "expo start --web",
     "test": "jest",
     "typecheck": "tsc --noEmit",
+    "doctor": "expo-doctor",
     "check:sdk-pin": "node ./scripts/check-expo-sdk.js",
     "postinstall": "node ./scripts/check-expo-sdk.js"
   },
-  "expoSdkPin": "⚠️ PINNED TO SDK 54 — Expo Go 54.0.2 on iPhone 17 fleet. Do NOT bump expo major without updating Go on all devices. See mobile/README.md#sdk-pin, AGENTS.md, app.json:sdkVersion",
+  "expoSdkPin": "⚠️ PINNED TO SDK 54.0.2 — Expo Go 54.0.2 on iPhone 17 fleet. Do NOT bump expo without updating Go on all devices. See mobile/README.md#sdk-pin, AGENTS.md, app.json:sdkVersion",
   "engines": {
     "node": ">=20.19 <23"
   },
@@ -68,7 +68,7 @@
       "**/__tests__/**/*.test.tsx"
     ],
     "transformIgnorePatterns": [
-      "node_modules/(?!(tamagui|@tamagui|react-native|expo|@expo|@react-native|@react-navigation|expo-modules-core|expo-haptics|expo-secure-store|expo-image|expo-blur|expo-location|expo-notifications|expo-font|expo-linear-gradient|expo-asset|expo-constants|expo-file-system|expo-keep-awake|expo-crypto|expo-random|expo-application|expo-device|expo-network|expo-system-ui|expo-web-browser|expo-linking|expo-sharing|expo-print|expo-document-picker|expo-media-library|expo-image-picker|expo-camera|expo-av|expo-video|expo-audio|expo-speech|expo-contacts|expo-calendar|expo-task-manager|expo-background-fetch|expo-sensors|expo-brightness|expo-battery|expo-screen-orientation|expo-updates|expo-splash-screen|expo-dev-client|expo-dev-launcher|expo-dev-menu|expo-build-properties|expo-application|expo-dev-server|expo-dev-client|expo-dev-menu|expo-dev-launcher)/)"
+      "node_modules/(?!(tamagui|@tamagui|react-native|expo|@expo|@react-native|@react-navigation|expo-modules-core|expo-haptics|expo-secure-store|expo-image|expo-blur|expo-location|expo-notifications|expo-font|expo-linear-gradient|expo-asset|expo-constants|expo-file-system|expo-keep-awake|expo-crypto|expo-random|expo-application|expo-device|expo-network|expo-system-ui|expo-web-browser|expo-linking|expo-sharing|expo-print|expo-document-picker|expo-media-library|expo-image-picker|expo-camera|expo-av|expo-video|expo-audio|expo-speech|expo-contacts|expo-calendar|expo-task-manager|expo-background-fetch|expo-sensors|expo-brightness|expo-battery|expo-screen-orientation|expo-updates|expo-splash-screen|expo-dev-client|expo-dev-launcher|expo-dev-menu|expo-build-properties|expo-application|expo-dev-server|expo-dev-client|expo-dev-menu|expo-dev-launcher|react-native-pager-view)/)"
     ]
   },
   "private": true

@@ -1,11 +1,12 @@
 import { View, Text, FlatList, ScrollView } from 'react-native';
 import { Search, MapPin, Store } from 'lucide-react-native';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTheme } from '../../theme';
 import { brand } from '../../theme/colors';
-import { typeScale, weights } from '../../theme/typography';
+import { textStyle, fontWeight } from '../../theme/typography';
+import { semanticSpacing, semanticRadius } from '../../theme/spacing';
 import { useCategories, useProducts, useSpecials } from '../catalog/hooks';
 import { ProductCard } from '../../components/shared/ProductCard';
 import { CollectionPill } from '../../components/shared/CollectionPill';
@@ -27,78 +28,91 @@ export function HomeScreen() {
   const { data: categories = [] } = useCategories();
   const { data: products = [], isLoading } = useProducts({ storeId: store?.id ?? null, featured: true });
   const { data: specials = [] } = useSpecials(store?.id ?? null);
-  const subtotal = useCart((s) => cartSubtotal(s.items, products));
+  const cartItems = useCart((s) => s.items);
+  const needsAll = cartItems.length > 0 && cartItems.some((ci) => !products.some((p) => String(p.id) === ci.productId));
+  const { data: allProducts = [] } = useQuery({
+    queryKey: ['products-all', store?.id],
+    queryFn: async () => {
+      const { fetchProducts } = await import('../../lib/apiClient');
+      const { mapProduct } = await import('../../lib/product');
+      const result = await fetchProducts({ store_id: store?.id ?? undefined });
+      return result.data.map(mapProduct);
+    },
+    enabled: needsAll,
+  });
+  const priceSource = needsAll && allProducts.length > 0 ? allProducts : products;
+  const subtotal = cartSubtotal(cartItems, priceSource);
   const storeName = store?.name ?? 'Choose your store';
 
   return (
     <ScrollView
-      style={{ flex: 1, backgroundColor: theme.colors.bg }}
-      contentContainerStyle={{ paddingBottom: 32 }}
+      style={{ flex: 1, backgroundColor: theme.colors.background.primary }}
+      contentContainerStyle={{ paddingBottom: semanticSpacing.xl }}
       showsVerticalScrollIndicator={false}
     >
       {/* Header: delivery Store + search entry */}
-      <View style={{ paddingHorizontal: 16, paddingTop: 56, gap: 12 }}>
+      <View style={{ paddingHorizontal: semanticSpacing.screenPadding, paddingTop: 56, gap: semanticSpacing.inlineGap }}>
         <FadeSlideIn>
           <TactilePressable
             onPress={() => navigation.navigate('Search')}
-            hapticOnPress="selection"
+            haptic="selection"
             accessibilityRole="button"
             accessibilityLabel="Search for products"
             style={{
               flexDirection: 'row',
               alignItems: 'center',
-              gap: 8,
-              backgroundColor: theme.colors.surface,
-              borderRadius: 999,
-              paddingHorizontal: 16,
+              gap: semanticSpacing.inlineGap,
+              backgroundColor: theme.colors.surface.primary,
+              borderRadius: semanticRadius.buttonPill,
+              paddingHorizontal: semanticSpacing.md,
               height: 44,
             }}
           >
-            <Search size={18} color={theme.colors.textMuted} />
-            <Text style={{ color: theme.colors.textMuted, fontSize: typeScale.body }}>Search for products</Text>
+            <Search size={18} color={theme.colors.text.secondary} />
+            <Text style={{ color: theme.colors.text.secondary, ...textStyle.body }}>Search for products</Text>
           </TactilePressable>
         </FadeSlideIn>
 
         <TactilePressable
           onPress={() => navigation.navigate('StorePicker')}
-          hapticOnPress="selection"
+          haptic="selection"
           accessibilityRole="button"
           accessibilityLabel="Choose delivery store"
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: semanticSpacing.xxs }}
         >
-          <MapPin size={16} color={brand.primary} />
-          <Text style={{ fontWeight: weights.semibold, color: theme.colors.text, fontSize: typeScale.body }}>
+          <MapPin size={16} color={brand.orange} />
+          <Text style={{ fontWeight: fontWeight.semibold, color: theme.colors.text.primary, ...textStyle.body }}>
             {storeName}
           </Text>
         </TactilePressable>
         {subtotal < FREE_DELIVERY_THRESHOLD_CENTS && subtotal > 0 && (
-          <Text style={{ color: theme.colors.textMuted, fontSize: typeScale.caption }}>
+          <Text style={{ color: theme.colors.text.secondary, ...textStyle.caption }}>
             Free delivery over R {FREE_DELIVERY_THRESHOLD_CENTS / 100},00 — add more to qualify.
           </Text>
         )}
       </View>
 
       {/* Specials carousel */}
-      <View style={{ marginTop: 16 }}>
-        <SectionTitle title="Best Deals" icon={<Tag size={16} color={brand.primary} />} />
+      <View style={{ marginTop: semanticSpacing.lg }}>
+        <SectionTitle title="Best Deals" icon={<Tag size={16} color={brand.orange} />} />
         {specials.length > 0 ? (
           <FlatList
             horizontal
             data={specials}
             keyExtractor={(p) => String(p.id)}
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}
+            contentContainerStyle={{ paddingHorizontal: semanticSpacing.screenPadding, gap: semanticSpacing.inlineGap }}
             renderItem={({ item }) => <ProductCard product={item} />}
           />
         ) : (
-          <Text style={{ color: theme.colors.textMuted, paddingHorizontal: 16 }}>No Specials right now — new deals land every week.</Text>
+          <Text style={{ color: theme.colors.text.secondary, paddingHorizontal: semanticSpacing.screenPadding }}>No Specials right now — new deals land every week.</Text>
         )}
       </View>
 
       {/* Categories */}
-      <View style={{ marginTop: 20 }}>
-        <SectionTitle title="Shop by category" icon={<Store size={16} color={brand.primary} />} />
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}>
+      <View style={{ marginTop: semanticSpacing.xl }}>
+        <SectionTitle title="Shop by category" icon={<Store size={16} color={brand.orange} />} />
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: semanticSpacing.screenPadding, gap: semanticSpacing.inlineGap }}>
           {categories.map((c) => (
             <CollectionPill
               key={c.id}
@@ -110,17 +124,17 @@ export function HomeScreen() {
       </View>
 
       {/* Featured grid */}
-      <View style={{ marginTop: 20, paddingHorizontal: 16 }}>
+      <View style={{ marginTop: semanticSpacing.xl, paddingHorizontal: semanticSpacing.screenPadding }}>
         <SectionTitle title="Featured" icon={null} />
         {isLoading ? (
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: semanticSpacing.inlineGap }}>
             <SkeletonCard />
             <SkeletonCard />
           </View>
         ) : products.length === 0 ? (
           <EmptyState icon={Tag} title="No featured products yet" caption="Check back soon." />
         ) : (
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: semanticSpacing.inlineGap }}>
             {products.map((p) => (
               <ProductCard key={p.id} product={p} style={{ width: '47%' }} />
             ))}
@@ -134,9 +148,9 @@ export function HomeScreen() {
 function SectionTitle({ title, icon }: { title: string; icon: React.ReactNode | null }) {
   const theme = useTheme();
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, marginBottom: 12 }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: semanticSpacing.inlineGap, paddingHorizontal: semanticSpacing.screenPadding, marginBottom: semanticSpacing.inlineGap }}>
       {icon}
-      <Text style={{ fontSize: typeScale.heading, fontWeight: weights.bold, color: theme.colors.text }}>{title}</Text>
+      <Text style={{ ...textStyle.h3, fontWeight: fontWeight.bold, color: theme.colors.text.primary }}>{title}</Text>
     </View>
   );
 }

@@ -5,11 +5,12 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTheme } from '../../theme';
 import { brand } from '../../theme/colors';
-import { typeScale, weights, letterSpacing } from '../../theme/typography';
+import { textStyle, fontWeight, letterSpacing } from '../../theme/typography';
+import { semanticSpacing, semanticRadius } from '../../theme/spacing';
 import { TactilePressable } from '../../components/shared/TactilePressable';
 import { AnimatedError, useErrorShake } from '../../components/shared/AnimatedError';
 import { Logo } from '../../components/shared/Logo';
-import { copy } from '../../lib/strings';
+import { copy, formatString } from '../../lib/strings';
 import { login, register, registerRider, syncCart } from '../../lib/apiClient';
 import { useSession } from '../../stores/session';
 import { useCart } from '../cart/store';
@@ -37,7 +38,7 @@ async function syncDraftCartAfterAuth(role: ApiUser['role'], notifyDropped: (cou
       cart.items.map((i) => ({ product_id: Number(i.productId), quantity: i.quantity })),
     );
     const { items, droppedCount } = applyServerMerge(cart.items, response);
-    cart.mergeLocalOntoServer(items);
+    cart.mergeLocalOntoServer(items, response);
     if (droppedCount > 0) notifyDropped(droppedCount);
   } catch {
     // Keep the local draft; the server cart can be synced on the next sign-in.
@@ -103,15 +104,20 @@ export function AuthScreen() {
         res = await register(name.trim(), email.trim(), password, phone.trim() || undefined);
       }
       const token = res.token ?? '';
+      // Keep fallback for mocked responses where token may be missing, but warn: empty token will cause unauthenticated requests
+      if (!token) {
+        // Allow empty for backward compat with older mocks, but session will be unauthenticated
+        console.warn('Auth response missing token');
+      }
       await signIn(token, res.user);
       void queryClient.invalidateQueries({ queryKey: queryKeys.orders });
       void syncDraftCartAfterAuth(res.user.role, (count) => {
-        toast.show(copy.cart.syncDropped.replace('{n}', String(count)));
+        toast.show(formatString(copy.cart.syncDropped, { n: count }));
       });
       if (intent === 'checkout') {
         navigation.goBack();
       } else {
-        navigation.navigate('Tabs');
+        navigation.goBack();
       }
     } catch (e) {
       const message = e instanceof Error ? e.message : copy.auth.badCredentials;
@@ -122,24 +128,32 @@ export function AuthScreen() {
     }
   };
 
+  const inputTokens = theme.componentTokens.input;
   const inputStyle = {
-    backgroundColor: theme.colors.surface,
-    borderRadius: 14,
-    paddingHorizontal: 16,
+    backgroundColor: inputTokens.background,
+    borderRadius: semanticRadius.input,
+    paddingHorizontal: semanticSpacing.md,
     height: 52,
-    color: theme.colors.text,
-    fontSize: typeScale.body,
+    color: inputTokens.text,
+    fontSize: textStyle.body.size,
+    borderWidth: 1,
+    borderColor: inputTokens.border,
+  };
+
+  const inputStyleFocused = {
+    ...inputStyle,
+    borderColor: inputTokens.focusBorder,
   };
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: theme.colors.bg }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={{ padding: 24, paddingTop: 64, gap: 8 }} keyboardShouldPersistTaps="handled">
-        <Logo variant="lockup" size={26} tone={theme.name === 'dark' ? 'light' : 'dark'} />
-        <Text style={{ fontSize: typeScale.title, fontWeight: weights.extrabold, color: theme.colors.text, marginTop: 16 }}>
+    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: theme.colors.background.primary }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <ScrollView contentContainerStyle={{ padding: semanticSpacing.screenPadding, paddingTop: 64, gap: semanticSpacing.xs }} keyboardShouldPersistTaps="handled">
+        <Logo variant="lockup" size={26} tone={theme.name} />
+        <Text style={{ ...textStyle.h2, color: theme.colors.text.primary, marginTop: semanticSpacing.md }}>
           {title}
         </Text>
         {isRider && (
-          <Text style={{ color: theme.colors.textMuted, fontSize: typeScale.body }}>{copy.auth.asRiderNote}</Text>
+          <Text style={{ color: theme.colors.text.secondary, ...textStyle.body }}>{copy.auth.asRiderNote}</Text>
         )}
 
         <Animated.View style={animatedStyle}>
@@ -148,70 +162,70 @@ export function AuthScreen() {
               value={name}
               onChangeText={setName}
               placeholder={copy.auth.name}
-              placeholderTextColor={theme.colors.textFaint}
+              placeholderTextColor={inputTokens.placeholder}
               autoCapitalize="words"
-              style={[inputStyle, { marginBottom: 10 }]}
+              style={[inputStyle, { marginBottom: semanticSpacing.xs }]}
             />
           )}
           <TextInput
             value={email}
             onChangeText={setEmail}
             placeholder={copy.auth.email}
-            placeholderTextColor={theme.colors.textFaint}
+            placeholderTextColor={inputTokens.placeholder}
             keyboardType="email-address"
             autoCapitalize="none"
             autoComplete="email"
-            style={[inputStyle, { marginBottom: 10 }]}
+            style={[inputStyle, { marginBottom: semanticSpacing.xs }]}
           />
           {mode !== 'signin' && (
             <TextInput
               value={phone}
               onChangeText={setPhone}
               placeholder={copy.auth.phoneOptional}
-              placeholderTextColor={theme.colors.textFaint}
+              placeholderTextColor={inputTokens.placeholder}
               keyboardType="phone-pad"
               autoComplete="tel"
-              style={[inputStyle, { marginBottom: 10 }]}
+              style={[inputStyle, { marginBottom: semanticSpacing.xs }]}
             />
           )}
           <TextInput
             value={password}
             onChangeText={setPassword}
             placeholder={copy.auth.password}
-            placeholderTextColor={theme.colors.textFaint}
+            placeholderTextColor={inputTokens.placeholder}
             secureTextEntry
             autoCapitalize="none"
-            style={[inputStyle, { marginBottom: 10 }]}
+            style={[inputStyle, { marginBottom: semanticSpacing.xs }]}
           />
           {mode !== 'signin' && (
             <TextInput
               value={confirm}
               onChangeText={setConfirm}
               placeholder={copy.auth.confirmPassword}
-              placeholderTextColor={theme.colors.textFaint}
+              placeholderTextColor={inputTokens.placeholder}
               secureTextEntry
               autoCapitalize="none"
-              style={[inputStyle, { marginBottom: 10 }]}
+              style={[inputStyle, { marginBottom: semanticSpacing.xs }]}
             />
           )}
           {isRider && (
-            <View style={{ flexDirection: 'row', gap: 10, marginBottom: 10 }}>
+            <View style={{ flexDirection: 'row', gap: semanticSpacing.inlineGap, marginBottom: semanticSpacing.xs }}>
               {(['bike', 'car'] as const).map((v) => {
                 const active = vehicle === v;
                 return (
                   <TactilePressable
                     key={v}
                     onPress={() => setVehicle(v)}
-                    hapticOnPress="selection"
+                    haptic="selection"
                     accessibilityRole="button"
                     accessibilityState={{ selected: active }}
                     style={{
                       flex: 1,
-                      borderRadius: 999,
-                      backgroundColor: active ? brand.primary : theme.colors.surface,
+                      borderRadius: semanticRadius.buttonPill,
+                      backgroundColor: active ? brand.orange : theme.colors.surface.primary,
                     }}
                   >
-                    <Text style={{ color: active ? '#fff' : theme.colors.textMuted, fontWeight: weights.bold, textTransform: 'uppercase', letterSpacing: letterSpacing.wide, fontSize: typeScale.caption }}>
+                    <Text style={{ color: active ? theme.colors.text.inverse : theme.colors.text.secondary, fontWeight: fontWeight.bold, textTransform: 'uppercase', letterSpacing: letterSpacing.wide, ...textStyle.caption }}>
                       {v === 'bike' ? copy.auth.vehicleBike : copy.auth.vehicleCar}
                     </Text>
                   </TactilePressable>
@@ -225,12 +239,12 @@ export function AuthScreen() {
 
         <TactilePressable
           onPress={submit}
-          hapticOnPress="commit"
+          haptic="commit"
           disabled={submitting}
           accessibilityRole="button"
-          style={{ backgroundColor: brand.primary, borderRadius: 999, marginTop: 8, opacity: submitting ? 0.6 : 1 }}
+          style={{ backgroundColor: theme.colors.action.primary.background, borderRadius: semanticRadius.buttonPill, marginTop: semanticSpacing.xs, opacity: submitting ? 0.6 : 1 }}
         >
-          <Text style={{ color: '#fff', textAlign: 'center', fontWeight: weights.bold, textTransform: 'uppercase', letterSpacing: letterSpacing.wide }}>
+          <Text style={{ color: theme.colors.action.primary.foreground, textAlign: 'center', fontWeight: fontWeight.bold, textTransform: 'uppercase', letterSpacing: letterSpacing.wide, ...textStyle.buttonPrimary }}>
             {submitting ? '…' : title}
           </Text>
         </TactilePressable>
@@ -240,11 +254,11 @@ export function AuthScreen() {
             setError(null);
             setMode(mode === 'signin' ? 'register' : 'signin');
           }}
-          hapticOnPress="selection"
+          haptic="selection"
           accessibilityRole="button"
-          style={{ marginTop: 12 }}
+          style={{ marginTop: semanticSpacing.sm }}
         >
-          <Text style={{ textAlign: 'center', color: theme.colors.textMuted, fontWeight: weights.medium }}>
+          <Text style={{ textAlign: 'center', color: theme.colors.text.secondary, fontWeight: fontWeight.medium, ...textStyle.bodySmall }}>
             {mode === 'signin' ? copy.auth.switchToRegister : copy.auth.switchToSignIn}
           </Text>
         </TactilePressable>
@@ -255,10 +269,10 @@ export function AuthScreen() {
               setError(null);
               setMode('rider');
             }}
-            hapticOnPress="selection"
+            haptic="selection"
             accessibilityRole="button"
           >
-            <Text style={{ textAlign: 'center', color: brand.primary, fontWeight: weights.semibold }}>
+            <Text style={{ textAlign: 'center', color: theme.colors.text.brand, fontWeight: fontWeight.semibold, ...textStyle.bodySmall }}>
               {copy.auth.registerAsRider}
             </Text>
           </TactilePressable>
@@ -269,10 +283,10 @@ export function AuthScreen() {
               setError(null);
               setMode('register');
             }}
-            hapticOnPress="selection"
+            haptic="selection"
             accessibilityRole="button"
           >
-            <Text style={{ textAlign: 'center', color: theme.colors.textMuted, fontWeight: weights.medium }}>
+            <Text style={{ textAlign: 'center', color: theme.colors.text.secondary, fontWeight: fontWeight.medium, ...textStyle.bodySmall }}>
               {copy.auth.backToCustomer}
             </Text>
           </TactilePressable>

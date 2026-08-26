@@ -1,8 +1,9 @@
 import Svg, { Path } from 'react-native-svg';
 import { Text, View } from 'react-native';
 import type { StyleProp, TextStyle, ViewStyle } from 'react-native';
+import { useTheme } from '../../theme';
 import { brand } from '../../theme/colors';
-import { typeScale, weights, letterSpacing } from '../../theme/typography';
+import { textStyle, fontWeight, letterSpacing } from '../../theme/typography';
 import { copy } from '../../lib/strings';
 
 const STAR_WING_PATH =
@@ -18,8 +19,9 @@ interface LogoProps {
 }
 
 function StarIcon({ size, tone }: { size: number; tone: 'light' | 'dark' }) {
-  const wingFill = tone === 'dark' ? '#ffffff' : '#18181b';
-  const checkColor = brand.primary;
+  const theme = useTheme();
+  const wingFill = tone === 'dark' ? theme.colors.text.inverse : theme.colors.text.primary;
+  const checkColor = brand.orange;
   return (
     <Svg width={size} height={size} viewBox="0 0 300 400">
       <Path d={STAR_WING_PATH} fill={wingFill} />
@@ -29,26 +31,27 @@ function StarIcon({ size, tone }: { size: number; tone: 'light' | 'dark' }) {
 }
 
 function Wordmark({ tone, size }: { tone: 'light' | 'dark'; size: number }) {
-  const color = tone === 'dark' ? '#ffffff' : '#18181b';
+  const theme = useTheme();
+  const color = tone === 'dark' ? theme.colors.text.inverse : theme.colors.text.primary;
   return (
     <View>
       <Text
         style={{
           fontSize: size,
-          fontWeight: weights.extrabold,
+          fontWeight: fontWeight.extrabold,
           letterSpacing: letterSpacing.tight,
           color,
           lineHeight: size * 1.05,
         }}
       >
-        <Text style={{ color: brand.primary }}>Check</Text>
+        <Text style={{ color: brand.orange }}>Check</Text>
         <Text style={{ color }}>star</Text>
       </Text>
       <Text
         style={{
           fontSize: size * 0.34,
-          color: brand.primary,
-          fontWeight: weights.bold,
+          color: brand.orange,
+          fontWeight: fontWeight.bold,
           fontStyle: 'italic',
         }}
       >
@@ -59,19 +62,24 @@ function Wordmark({ tone, size }: { tone: 'light' | 'dark'; size: number }) {
 }
 
 export function Logo({ variant, size = 28, tone = 'dark', style }: LogoProps) {
+  const theme = useTheme();
+  const resolvedTone = tone === 'dark' ? 'dark' : 'light';
+  // If tone is 'light', we want light theme colors (dark text on light bg)
+  // If tone is 'dark', we want dark theme colors (light text on dark bg)
+  // The theme context gives us current app theme, but logo needs explicit tone
   const iconSize = size * 1.7;
   if (variant === 'stacked') {
     return (
       <View style={[{ alignItems: 'center' }, style]}>
-        <StarIcon size={iconSize} tone={tone} />
-        <Wordmark tone={tone} size={size} />
+        <StarIcon size={iconSize} tone={resolvedTone} />
+        <Wordmark tone={resolvedTone} size={size} />
       </View>
     );
   }
   return (
     <View style={[{ flexDirection: 'row', alignItems: 'center', gap: 10 }, style]}>
-      <StarIcon size={size} tone={tone} />
-      <Wordmark tone={tone} size={size * 0.82} />
+      <StarIcon size={size} tone={resolvedTone} />
+      <Wordmark tone={resolvedTone} size={size * 0.82} />
     </View>
   );
 }

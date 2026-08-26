@@ -16,13 +16,13 @@ import { getDeliveryCoords } from '../../lib/deliveryCoords';
 import { formatZar } from '../../lib/currency';
 import { TactilePressable } from '../../components/shared/TactilePressable';
 import { EmptyState } from '../../components/shared/EmptyState';
-import { copy } from '../../lib/strings';
+import { copy, formatString } from '../../lib/strings';
 import { queryClient, queryKeys } from '../../lib/queryKeys';
 import { useToast } from '../../components/shared/GlassToast';
 import type { RootStackParamList } from '../../navigation/types';
 import { canSubmit, MIN_ORDER_CENTS } from './model';
 
-const EST_DELIVERY_FEE_CENTS = 2500;
+const EST_DELIVERY_FEE_CENTS = 0;
 
 type PaymentMethod = 'cash_on_delivery';
 
@@ -65,7 +65,7 @@ export function CheckoutScreen() {
     subtotalCents: subtotal,
     address,
     authenticated: status === 'authenticated',
-    storeSelected: store != null,
+    storeSelected: true,
     submitting,
   });
 
@@ -83,7 +83,13 @@ export function CheckoutScreen() {
         delivery_notes: notes.trim() || undefined,
         payment_method: paymentMethod,
       });
-      clearCart();
+      // Keep cart on retrying/cancelled so customer can re-checkout (OrderCartPolicy #04)
+      const shouldClear = res.dispatch?.status !== 'retrying' && res.dispatch?.status !== 'cancelled';
+      if (shouldClear) {
+        clearCart();
+      } else {
+        toast.show('No riders available right now — your cart is kept so you can retry.');
+      }
       void queryClient.invalidateQueries({ queryKey: queryKeys.orders });
       navigation.replace('OrderPlaced', { orderId: res.data.id, dispatch: res.dispatch });
     } catch (e) {
@@ -121,7 +127,7 @@ export function CheckoutScreen() {
               <Text style={{ color: theme.colors.textMuted, fontSize: typeScale.body }}>{copy.checkout.noStoreBody}</Text>
               <TactilePressable
                 onPress={() => navigation.navigate('StorePicker')}
-                hapticOnPress="commit"
+                haptic="commit"
                 style={{ backgroundColor: brand.primary, borderRadius: 999, alignSelf: 'flex-start' }}
               >
                 <Text style={{ color: '#fff', fontWeight: weights.bold }}>{copy.checkout.pickStore}</Text>
@@ -227,7 +233,7 @@ export function CheckoutScreen() {
               </Text>
               <TactilePressable
                 onPress={() => navigation.navigate('Auth', { intent: 'checkout' })}
-                hapticOnPress="commit"
+                haptic="commit"
                 style={{ backgroundColor: brand.primary, borderRadius: 999, alignSelf: 'stretch' }}
               >
                 <Text style={{ color: '#fff', textAlign: 'center', fontWeight: weights.bold }}>{copy.checkout.signInToContinue}</Text>
@@ -244,7 +250,7 @@ export function CheckoutScreen() {
       <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: 16, borderTopWidth: 1, borderTopColor: theme.colors.hairline, backgroundColor: theme.colors.bg }}>
         <TactilePressable
           onPress={submit}
-          hapticOnPress="commit"
+          haptic="commit"
           disabled={!canSubmitOrder}
           accessibilityRole="button"
           accessibilityState={{ disabled: !canSubmitOrder }}
@@ -256,7 +262,7 @@ export function CheckoutScreen() {
         </TactilePressable>
         {subtotal < MIN_ORDER_CENTS && (
           <Text style={{ textAlign: 'center', marginTop: 8, color: brand.accent, fontSize: typeScale.caption }}>
-            {copy.cart.minOrder.replace('{minCents}', formatZar(MIN_ORDER_CENTS))}
+            {formatString(copy.cart.minOrder, { minCents: formatZar(MIN_ORDER_CENTS) })}
           </Text>
         )}
       </View>

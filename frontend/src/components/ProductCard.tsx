@@ -13,7 +13,7 @@ interface Props {
 export default function ProductCard({ product }: Props) {
   const addItem = useCartStore(s => s.addItem)
   const price = Number(product.effective_price ?? product.sale_price ?? product.price)
-  const hasSale = product.effective_price !== null && product.effective_price !== undefined && product.effective_price < product.price
+  const hasSale = product.effective_price != null && Number(product.effective_price) < Number(product.price)
 
   return (
     <motion.div

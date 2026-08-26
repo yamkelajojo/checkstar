@@ -1,9 +1,9 @@
 /**
  * GreenBidder-style formatters.
  * Centralised string formatting for prices, dates, numbers.
+ * Currency formatting (formatZar) lives in ./currency and is re-exported
+ * via the lib barrel (src/lib/index.ts).
  */
-
-// formatZar is re-exported from ./currency
 
 /** Formats a date as "15 Aug 2026" */
 export function formatDate(date: string | Date): string {

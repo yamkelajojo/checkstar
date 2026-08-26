@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useSession } from '../stores/session';
+import { useNavigationSignal } from '../stores/navigationSignal';
 import { storage, STORAGE_KEYS } from '../lib/storage';
 import { SplashScreen } from '../features/onboarding/SplashScreen';
 import { OnboardingScreen } from '../features/onboarding/OnboardingScreen';
@@ -21,23 +22,30 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 export function RootNavigator() {
   const status = useSession((s) => s.status);
   const user = useSession((s) => s.user);
-  const [onboardingSeen, setOnboardingSeen] = useState(true);
+  const signal = useNavigationSignal((s) => s.v);
+  const [onboardingSeen, setOnboardingSeen] = useState<boolean | undefined>(undefined);
+  const prevBranch = useRef<string | null>(null);
 
   useEffect(() => {
     if (status === 'guest') {
-      storage.get<boolean>(STORAGE_KEYS.onboardingSeen).then((seen) => setOnboardingSeen(seen !== false));
+      storage.get<boolean>(STORAGE_KEYS.onboardingSeen).then((seen) => setOnboardingSeen(seen === true));
     }
-  }, [status]);
+  }, [status, signal]);
 
   if (status === 'boot') {
     return <SplashScreen />;
   }
 
   const isRider = user?.role === 'rider';
-  const showOnboarding = status === 'guest' && !onboardingSeen;
+  const showOnboarding = status === 'guest' && onboardingSeen === false;
+  const branch = showOnboarding ? 'onboarding' : isRider ? 'rider' : 'customer';
+  const navigatorKey = `${branch}-${signal}`;
+
+  // Keep prev branch in sync for potential analytics/deep-link handling
+  prevBranch.current = branch;
 
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator key={navigatorKey} screenOptions={{ headerShown: false }}>
       {showOnboarding ? (
         <>
           <Stack.Screen name="Onboarding" component={OnboardingScreen} />

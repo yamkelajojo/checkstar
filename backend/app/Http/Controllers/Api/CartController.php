@@ -21,6 +21,7 @@ class CartController extends Controller
 
         $result = $items->map(function ($ci) {
             return [
+                'product_id' => $ci->product_id,
                 'product' => $ci->product,
                 'quantity' => $ci->quantity,
                 'store_product_id' => $ci->store_product_id,
@@ -47,26 +48,42 @@ class CartController extends Controller
         $user = $request->user();
         $dropped = [];
 
-        $merged = DB::transaction(function () use ($user, $validated, &$dropped) {
-            foreach ($validated['items'] as $item) {
-                $product = Product::find($item['product_id']);
+        // Consolidate duplicate product entries in payload
+        $consolidated = [];
+        foreach ($validated['items'] as $item) {
+            $pid = (int) $item['product_id'];
+            $consolidated[$pid] = ($consolidated[$pid] ?? 0) + (int) $item['quantity'];
+        }
+
+        $merged = DB::transaction(function () use ($user, $consolidated, &$dropped) {
+            foreach ($consolidated as $productId => $quantity) {
+                $product = Product::find($productId);
 
                 if ($product === null || !$product->is_active) {
-                    $dropped[] = ['product_id' => $item['product_id'], 'reason' => 'product_unavailable'];
+                    $dropped[] = ['product_id' => $productId, 'reason' => 'product_unavailable'];
                     continue;
                 }
 
-                $existing = $user->cartItems()->where('product_id', $product->id)->first();
+                $capped = min($quantity, self::MAX_QUANTITY);
+                $existing = $user->cartItems()->where('product_id', $product->id)->lockForUpdate()->first();
 
                 if ($existing) {
                     $existing->update([
-                        'quantity' => min($existing->quantity + $item['quantity'], self::MAX_QUANTITY),
+                        'quantity' => min($existing->quantity + $capped, self::MAX_QUANTITY),
                     ]);
                 } else {
-                    $user->cartItems()->create([
-                        'product_id' => $product->id,
-                        'quantity' => $item['quantity'],
-                    ]);
+                    try {
+                        $user->cartItems()->create([
+                            'product_id' => $product->id,
+                            'quantity' => $capped,
+                        ]);
+                    } catch (\Illuminate\Database\QueryException $e) {
+                        // Race: another sync inserted same product, retry as update
+                        $retry = $user->cartItems()->where('product_id', $product->id)->first();
+                        if ($retry) {
+                            $retry->update(['quantity' => min($retry->quantity + $capped, self::MAX_QUANTITY)]);
+                        }
+                    }
                 }
             }
 

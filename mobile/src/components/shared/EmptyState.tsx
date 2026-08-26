@@ -10,7 +10,9 @@ import Animated, {
 import type { LucideIcon } from 'lucide-react-native';
 import { useTheme } from '../../theme';
 import { useReducedMotion } from './useReducedMotion';
-import { YStack, Text as TamaguiText } from 'tamagui';
+import { Text as TamaguiText } from 'tamagui';
+import { textStyle } from '../../theme/typography';
+import { semanticSpacing } from '../../theme/spacing';
 
 const EASE_SETTLE = Easing.out(Easing.cubic);
 
@@ -41,13 +43,13 @@ export function EmptyState({ icon: Icon, title, caption, action }: EmptyStatePro
   }));
 
   return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 }}>
-      <Animated.View style={[{ alignItems: 'center', gap: 8 }, style]}>
-        <Icon size={44} color={theme.colors.textFaint} />
-        <TamaguiText fontSize={17} fontWeight="700" color={theme.colors.text} textAlign="center">
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: semanticSpacing.screenPadding }}>
+      <Animated.View style={[{ alignItems: 'center', gap: semanticSpacing.tightGap }, style]}>
+        <Icon size={44} color={theme.colors.text.tertiary} />
+        <TamaguiText {...textStyle.h3} color={theme.colors.text.primary} textAlign="center">
           {title}
         </TamaguiText>
-        <TamaguiText fontSize={14} color={theme.colors.textMuted} textAlign="center">
+        <TamaguiText {...textStyle.bodySmall} color={theme.colors.text.secondary} textAlign="center">
           {caption}
         </TamaguiText>
         {action}

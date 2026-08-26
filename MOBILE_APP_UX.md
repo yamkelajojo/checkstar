@@ -1,6 +1,8 @@
 # Checkstar Mobile App — UX & Page Map
 
-> Living doc. Updates as we discuss. The page map is derived from the Flutter grocery app (`Flutter-GroceryApp-main`) as a **UX reference only** — the build stack is **React Native (Expo SDK 54) + TypeScript** (see `docs/adr/0001-mobile-react-native-expo.md`). Reuse its UX patterns; do not port its Dart code.
+> Living doc. Updates as we discuss. The page map is derived from the Flutter grocery app (`Flutter-GroceryApp-main`) as a **UX reference only** — the build stack is **React Native (Expo SDK 54 — PINNED, see `mobile/README.md#sdk-pin`) + TypeScript** (see `docs/adr/0001-mobile-react-native-expo.md`). Reuse its UX patterns; do not port its Dart code.
+>
+> ⚠️ **SDK PIN:** Mobile is locked to **SDK 54** to match **Expo Go 54.0.2** on device fleet (iPhone 17). Upgrading to 55+ breaks loading. See `mobile/AGENTS.md` banner and `mobile/app.json:sdkVersion` — do not upgrade without updating Go on all devices.
 >
 > **Priority:** Customer (buyer) first. **Rider** second (can be mocked / non-working). Store Owner & Manager dashboards are OUT of scope for now.
 

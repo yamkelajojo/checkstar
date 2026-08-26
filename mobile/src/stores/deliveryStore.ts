@@ -23,7 +23,17 @@ export const useDeliveryStore = create<DeliveryStoreState>((set, get) => ({
     const stores = await fetchStores();
     set({ stores });
     const cached = await storage.get<ApiStore>(STORAGE_KEYS.deliveryStore);
-    if (cached && !get().store) set({ store: cached });
+    if (cached) {
+      const current = get().store;
+      // Validate cached store still exists in backend; clear stale selection
+      const exists = stores.some((s) => s.id === cached.id);
+      if (!exists) {
+        await storage.remove(STORAGE_KEYS.deliveryStore);
+        if (current?.id === cached.id) set({ store: null });
+        return;
+      }
+      if (!current) set({ store: cached });
+    }
   },
 
   async chooseStore(store, from) {

@@ -6,6 +6,7 @@ use App\Enums\OrderStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Rider;
+use App\Services\DispatchPolicy;
 use App\Services\RiderOrderService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -13,26 +14,44 @@ use Illuminate\Http\Request;
 class RiderController extends Controller
 {
     private RiderOrderService $riderOrderService;
+    private DispatchPolicy $dispatchPolicy;
 
-    public function __construct(RiderOrderService $riderOrderService)
+    public function __construct(RiderOrderService $riderOrderService, DispatchPolicy $dispatchPolicy)
     {
         $this->riderOrderService = $riderOrderService;
+        $this->dispatchPolicy = $dispatchPolicy;
     }
 
     private function getRider(Request $request): Rider
     {
-        return $request->user()->rider;
+        $rider = $request->user()->rider;
+        abort_unless($rider, 403, 'Rider profile not found');
+        return $rider;
     }
 
     public function availableOrders(Request $request): JsonResponse
     {
-        $rider = $this->getRider($request);
+        $rider = $request->user()->rider;
+        abort_unless($rider, 403, 'Rider profile not found');
 
-        $orders = Order::where('store_id', $rider->store_id)
-            ->whereIn('status', [OrderStatus::Confirmed, OrderStatus::Retrying])
+        // Show orders either assigned to rider's store OR retrying/unassigned but within delivery radius
+        $orders = Order::whereIn('status', [OrderStatus::Confirmed, OrderStatus::Retrying])
             ->whereNull('rider_id')
             ->with('items')
-            ->get();
+            ->get()
+            ->filter(function (Order $order) use ($rider) {
+                // Directly assigned to rider's store
+                if ($order->store_id !== null) {
+                    return $order->store_id === $rider->store_id;
+                }
+                // Retrying / unassigned: check if rider's store is eligible for delivery location
+                if ($order->delivery_latitude === null || $order->delivery_longitude === null) {
+                    return false;
+                }
+                $eligible = $this->dispatchPolicy->eligibleStores((float) $order->delivery_latitude, (float) $order->delivery_longitude);
+                return $eligible->contains(fn ($sd) => $sd['store']->id === $rider->store_id);
+            })
+            ->values();
 
         return response()->json(['data' => $orders]);
     }

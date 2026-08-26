@@ -6,7 +6,9 @@ use App\Enums\OrderStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Review;
+use App\Enums\GameEvent;
 use App\Services\DeliveryConfirmation;
+use App\Services\GamificationService;
 use App\Services\OrderCancellationPolicy;
 use App\Services\OrderIntake;
 use App\Services\OrderStateMachine;
@@ -21,27 +23,43 @@ class OrderController extends Controller
     private DeliveryConfirmation $deliveryConfirmation;
     private OrderIntake $orderIntake;
     private OrderCancellationPolicy $cancellationPolicy;
+    private GamificationService $gamification;
 
-    public function __construct(OrderStateMachine $stateMachine, RiderStatsRecorder $riderStats, DeliveryConfirmation $deliveryConfirmation, OrderIntake $orderIntake, OrderCancellationPolicy $cancellationPolicy)
+    public function __construct(OrderStateMachine $stateMachine, RiderStatsRecorder $riderStats, DeliveryConfirmation $deliveryConfirmation, OrderIntake $orderIntake, OrderCancellationPolicy $cancellationPolicy, GamificationService $gamification)
     {
         $this->stateMachine = $stateMachine;
         $this->riderStats = $riderStats;
         $this->deliveryConfirmation = $deliveryConfirmation;
         $this->orderIntake = $orderIntake;
         $this->cancellationPolicy = $cancellationPolicy;
+        $this->gamification = $gamification;
     }
 
     public function index(Request $request): JsonResponse
     {
-        $orders = $request->user()->orders()
+        $perPage = $request->has('per_page')
+            ? max(1, min((int) $request->query('per_page'), 100))
+            : 50;
+
+        $paginator = $request->user()->orders()
             ->with(['items', 'store', 'rider.user'])
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->query('status')))
             ->orderBy('created_at', $request->query('sort') === 'oldest' ? 'asc' : 'desc')
-            ->get();
+            ->paginate($perPage);
 
-        $orders->each(fn (Order $order) => $this->appendCanCancel($order));
+        $paginator->getCollection()->each(fn (Order $order) => $this->appendCanCancel($order));
 
-        return response()->json(['data' => $orders]);
+        // Preserve wrapper shape for frontend/mobile; add pagination meta
+        if ($request->has('per_page') || $request->has('page')) {
+            return response()->json($paginator);
+        }
+
+        return response()->json(['data' => $paginator->items(), 'meta' => [
+            'current_page' => $paginator->currentPage(),
+            'last_page' => $paginator->lastPage(),
+            'per_page' => $paginator->perPage(),
+            'total' => $paginator->total(),
+        ]]);
     }
 
     public function store(Request $request): JsonResponse
@@ -50,14 +68,20 @@ class OrderController extends Controller
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
             'items.*.quantity' => 'required|integer|min:1|max:8',
-            'delivery_address' => 'required|string',
+            'delivery_address' => 'required|string|max:500',
             'delivery_latitude' => 'required|numeric|between:-90,90',
             'delivery_longitude' => 'required|numeric|between:-180,180',
-            'delivery_notes' => 'nullable|string',
+            'delivery_notes' => 'nullable|string|max:1000',
             'payment_method' => 'nullable|in:cash_on_delivery',
         ]);
 
-        $result = $this->orderIntake->place($validated, $request->user());
+        try {
+            $result = $this->orderIntake->place($validated, $request->user());
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        } catch (\Illuminate\Database\QueryException $e) {
+            return response()->json(['message' => 'Could not place order'], 500);
+        }
 
         $order = $result->order->load('rider.user', 'store');
 
@@ -127,7 +151,11 @@ class OrderController extends Controller
             return response()->json(['message' => 'Not your order'], 403);
         }
 
-        $confirmed = $this->deliveryConfirmation->confirm($order, $request->user());
+        try {
+            $confirmed = $this->deliveryConfirmation->confirm($order, $request->user());
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(['message' => $e->getMessage(), 'reason' => 'invalid_transition'], 409);
+        }
 
         return response()->json(['data' => $confirmed]);
     }
@@ -149,23 +177,30 @@ class OrderController extends Controller
             return response()->json(['message' => 'No rider assigned to this order'], 422);
         }
 
+        if ($order->status !== \App\Enums\OrderStatus::Delivered) {
+            return response()->json(['message' => 'Order must be delivered before reviewing'], 422);
+        }
+
         if ($order->review) {
             return response()->json(['message' => 'Already reviewed'], 422);
         }
 
-        Review::create([
-            'order_id' => $order->id,
-            'reviewer_id' => $request->user()->id,
-            'rider_id' => $order->rider_id,
-            'rating' => $validated['rating'],
-            'comment' => $validated['comment'] ?? null,
-        ]);
+        \Illuminate\Support\Facades\DB::transaction(function () use ($order, $request, $validated) {
+            Review::create([
+                'order_id' => $order->id,
+                'reviewer_id' => $request->user()->id,
+                'rider_id' => $order->rider_id,
+                'rating' => $validated['rating'],
+                'comment' => $validated['comment'] ?? null,
+            ]);
 
-        $order->rider_rating = $validated['rating'];
-        $order->rider_review = $validated['comment'] ?? null;
-        $order->save();
+            $order->rider_rating = $validated['rating'];
+            $order->rider_review = $validated['comment'] ?? null;
+            $order->save();
 
-        $this->riderStats->recordReview($order->rider, $validated['rating']);
+            $this->riderStats->recordReview($order->rider, $validated['rating']);
+            $this->gamification->handleEvent($order->rider->fresh(), GameEvent::RatingReceived);
+        });
 
         return response()->json(['data' => $order->fresh()], 201);
     }

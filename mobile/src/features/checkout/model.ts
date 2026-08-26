@@ -22,7 +22,6 @@ export function canSubmit(input: CanSubmitInput): boolean {
     input.subtotalCents >= MIN_ORDER_CENTS &&
     input.address.trim().length >= MIN_ADDRESS_LENGTH &&
     input.authenticated &&
-    input.storeSelected &&
     !input.submitting
   );
 }

@@ -4,70 +4,129 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
   cancelAnimation,
+  interpolate,
 } from 'react-native-reanimated';
 import type { PressableProps, StyleProp, ViewStyle } from 'react-native';
 import { Pressable, StyleSheet } from 'react-native';
 import { useReducedMotion } from './useReducedMotion';
-import { haptics as haptic } from '../../lib';
-import type { HapticIntent } from '../../lib/haptics';
+import { haptic } from '../../lib/haptics';
+import { haptic as hapticAlias } from '../../lib/haptics';
 import { YStack } from 'tamagui';
-
-const PRESS_IN = { damping: 18, stiffness: 450 };
-const PRESS_OUT = { damping: 22, stiffness: 400 };
+import { PRESS_IN_SPRING, PRESS_OUT_SPRING, CARD_PRESS_IN_SPRING, CARD_PRESS_OUT_SPRING } from '../../theme/motion';
 
 type Variant = 'default' | 'compact' | 'card' | 'assertive';
 
+type HapticMode = boolean | 'tap' | 'light' | 'commit' | 'impact' | 'success' | 'warning' | 'error' | 'selection';
+
 interface TactilePressableProps extends Omit<PressableProps, 'style'> {
   variant?: Variant;
-  hapticOnPress?: HapticIntent;
+  pressScale?: number;
+  haptic?: HapticMode;
+  disabled?: boolean;
   style?: StyleProp<ViewStyle>;
 }
 
 /**
- * GreenBidder-style spring-compress pressable. Scaled to a 44pt hit target
- * and snaps to end state under Reduce Motion.
- * Uses Tamagui Stack for layout, Reanimated for spring compression.
+ * TactilePressable — The Atomic Interactive Element
+ *
+ * Every pressable thing in the app uses this. Provides:
+ *
+ *     • Spring-physics compression on press (scale + lift)
+ *     • Optional haptic feedback (off by default — opt-in per instance)
+ *     • UI-thread animation via Reanimated
+ *
+ * ─── Variants ──────────────────────────────────────────────────
+ * default    → compress (0.97) + lift (-1px). Buttons, small cards.
+ * compact    → compress (0.98) only. Chips, list rows, small tappables.
+ * card       → compress (0.985) only, gentle spring. Big content cards.
+ *              Lifts read as "floaty" on large surfaces — use card
+ *              variant when the user presses a full-width listing card.
+ * assertive  → compress (0.95) + sink (+1px). Destructive actions.
+ *
+ * ─── Haptic ───────────────────────────────────────────────────
+ * Off by default. Pass haptic prop to enable:
+ *   <TactilePressable haptic onPress={...}>           light tap
+ *   <TactilePressable haptic="commit" onPress={...}>  medium
+ *   <TactilePressable haptic="success" ...>           success pattern
+ *   <TactilePressable haptic="selection" ...>         toggle tick
  */
 export function TactilePressable({
-  variant = 'default',
-  hapticOnPress = 'tap',
-  style,
-  onPress,
   children,
+  style,
+  variant = 'default',
+  pressScale,
+  haptic: hapticMode = false,
+  disabled = false,
+  onPress,
+  onPressIn: externalPressIn,
+  onPressOut: externalPressOut,
   ...rest
 }: TactilePressableProps) {
   const reduceMotion = useReducedMotion();
-  const scale = useSharedValue(1);
+  const pressed = useSharedValue(0);
 
-  const scaleStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+  const config = (() => {
+    switch (variant) {
+      case 'compact':
+        return { scale: pressScale ?? 0.98, lift: 0, useCardSpring: false };
+      case 'card':
+        return { scale: pressScale ?? 0.985, lift: 0, useCardSpring: true };
+      case 'assertive':
+        return { scale: pressScale ?? 0.95, lift: 1, useCardSpring: false };
+      default:
+        return { scale: pressScale ?? 0.97, lift: -1, useCardSpring: false };
+    }
+  })();
 
-  const handlePressIn = useCallback(() => {
-    if (reduceMotion) return;
-    scale.value = withSpring(0.96, PRESS_IN);
-  }, [reduceMotion, scale]);
+  const animatedStyle = useAnimatedStyle(() => {
+    const scale = interpolate(pressed.value, [0, 1], [1, config.scale]);
+    const translateY = interpolate(pressed.value, [0, 1], [0, config.lift]);
+    return {
+      transform: [{ scale }, { translateY }],
+    };
+  });
 
-  const handlePressOut = useCallback(() => {
-    cancelAnimation(scale);
-    scale.value = withSpring(1, PRESS_OUT);
-  }, [reduceMotion, scale]);
+  const fireHaptic = () => {
+    if (!hapticMode) return;
+    if (hapticMode === true || hapticMode === 'tap') haptic.tap();
+    else if (hapticMode === 'light') haptic.light();
+    else if (hapticMode === 'commit') haptic.commit();
+    else if (hapticMode === 'impact') haptic.impact();
+    else if (hapticMode === 'success') haptic.success();
+    else if (hapticMode === 'warning') haptic.warning();
+    else if (hapticMode === 'error') haptic.error();
+    else if (hapticMode === 'selection') haptic.selection();
+  };
 
-  const handlePress = useCallback(
-    (event: any) => {
-      if (hapticOnPress) void haptic(hapticOnPress);
-      onPress?.(event);
-    },
-    [onPress, hapticOnPress],
-  );
+  const handlePressIn = (e: any) => {
+    if (!disabled && !reduceMotion) {
+      const inSpring = config.useCardSpring ? CARD_PRESS_IN_SPRING : PRESS_IN_SPRING;
+      pressed.value = withSpring(1, inSpring);
+      fireHaptic();
+    }
+    externalPressIn?.(e);
+  };
+
+  const handlePressOut = (e: any) => {
+    if (!disabled && !reduceMotion) {
+      const outSpring = config.useCardSpring ? CARD_PRESS_OUT_SPRING : PRESS_OUT_SPRING;
+      pressed.value = withSpring(0, outSpring);
+    }
+    externalPressOut?.(e);
+  };
 
   return (
-    <Animated.View style={[styles.base, variantStyle[variant], scaleStyle, style]}>
+    <Animated.View
+      style={[styles.base, variantStyle[variant], animatedStyle, style]}
+    >
       <YStack alignItems="center" justifyContent="center">
         <Pressable
           {...rest}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}
-          onPress={handlePress}
+          onPress={disabled ? undefined : onPress}
+          disabled={disabled}
         >
           {children}
         </Pressable>

@@ -101,7 +101,7 @@ describe('OrderPlacedScreen', () => {
       { orderId: 7, dispatch: { status: 'assigned', store_name: 'Checkstar Musgrave', rider_name: 'Thabo', claim_latency_ms: 42 } },
       { status: 'confirmed' },
     );
-    expect(await screen.findByText(/Checkstar Musgrave/)).toBeTruthy();
+    expect((await screen.findAllByText(/Checkstar Musgrave/)).length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText(/Thabo/)).toBeTruthy();
     expect(screen.getByText(/42ms/)).toBeTruthy();
   });

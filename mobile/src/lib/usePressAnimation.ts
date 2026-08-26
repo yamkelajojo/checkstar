@@ -5,7 +5,7 @@ import {
   withSpring,
 } from 'react-native-reanimated';
 import { useReducedMotion } from '../components/shared/useReducedMotion';
-import { haptics as haptic } from '.';
+import { haptic } from './haptics';
 
 const PRESS_IN = { damping: 18, stiffness: 450 };
 const PRESS_OUT = { damping: 22, stiffness: 400 };
@@ -42,7 +42,7 @@ export function usePressAnimation(
     if (targetOpacity !== 1) {
       opacity.value = withSpring(targetOpacity, PRESS_IN);
     }
-    if (hapticOnPress) haptic('tap');
+    if (hapticOnPress) haptic.tap();
   }, [reduceMotion, targetScale, targetOpacity, hapticOnPress]);
 
   const onPressOut = useCallback(() => {

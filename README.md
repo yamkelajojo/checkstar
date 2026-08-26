@@ -1,0 +1,31 @@
+# Checkstar
+
+Durban supermarket chain — web (Next.js) + delivery (Laravel) + mobile (Expo).
+
+## ⚠️ Mobile SDK Pin — Read First
+
+**Mobile is pinned to Expo SDK 54** (`mobile/package.json:expo ~54.0.13`, `mobile/app.json:sdkVersion 54.0.0`) to match **Expo Go 54.0.2** on the device fleet (iPhone 17 — latest in App Store 2026-08-23). Upgrading to SDK 55/56/57 causes `SDK version mismatch` → **app won't load**.
+
+- Source of truth: `mobile/AGENTS.md` (banner), `mobile/README.md#sdk-pin`
+- Guard: `mobile/scripts/check-expo-sdk.js` runs on `postinstall` and as `npm run check:sdk-pin` — fails CI if major ≠ 54
+- To upgrade: update Expo Go on **all** devices, then bump `mobile/package.json`, `mobile/app.json`, `mobile/AGENTS.md`, and `mobile/README.md` together
+
+## Docs
+
+- `CONTEXT.md` — ubiquitous language (Customer, Rider, Store, Dispatch, etc.)
+- `MOBILE_APP_UX.md` — mobile UX map (SDK 54 pinned)
+- `mobile/README.md` — run instructions + SDK pin changelog
+- `mobile/AGENTS.md` — versioned Expo docs link
+
+## Quick start
+
+```bash
+# backend (Laravel)
+cd backend && composer install && php artisan migrate && php artisan serve
+
+# frontend (Next.js)
+cd frontend && npm ci && npm run dev
+
+# mobile (Expo Go 54.0.2)
+cd mobile && npm ci && npx expo start --clear --tunnel
+```

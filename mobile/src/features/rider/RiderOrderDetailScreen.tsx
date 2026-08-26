@@ -77,8 +77,17 @@ export function RiderOrderDetailScreen() {
 
   const onBought = async () => {
     const ids = allItemIds(order.items);
-    setBoughtIds(ids);
-    await run(() => markItemsBought(orderId, ids), copy.rider.markItemsBoughtShort);
+    setBusy(true);
+    try {
+      await markItemsBought(orderId, ids);
+      setBoughtIds(ids);
+      toast.show(copy.rider.markItemsBoughtShort, { tone: 'success' });
+      invalidate();
+    } catch (e) {
+      toast.show(e instanceof Error ? e.message : 'Action failed.');
+    } finally {
+      setBusy(false);
+    }
   };
 
   const onOutForDelivery = async () => {
@@ -121,7 +130,7 @@ export function RiderOrderDetailScreen() {
                 <TactilePressable
                   key={item.id}
                   onPress={() => isPreparing && toggleItem(item.id)}
-                  hapticOnPress={isPreparing ? 'selection' : undefined}
+                  haptic={isPreparing ? 'selection' : undefined}
                   disabled={!isPreparing}
                   accessibilityRole="button"
                   accessibilityState={{ checked: isPreparing ? bought : undefined }}
@@ -164,7 +173,7 @@ export function RiderOrderDetailScreen() {
           <>
             <TactilePressable
               onPress={onBought}
-              hapticOnPress="commit"
+              haptic="commit"
               disabled={busy}
               accessibilityRole="button"
               style={{ backgroundColor: brand.primary, borderRadius: 999, opacity: busy ? 0.6 : 1 }}
@@ -176,7 +185,7 @@ export function RiderOrderDetailScreen() {
             {allSelected && (
               <TactilePressable
                 onPress={onOutForDelivery}
-                hapticOnPress="commit"
+                haptic="commit"
                 accessibilityRole="button"
                 style={{ backgroundColor: brand.success, borderRadius: 999 }}
               >
@@ -190,7 +199,7 @@ export function RiderOrderDetailScreen() {
         {isOutForDelivery && (
           <TactilePressable
             onPress={onDelivered}
-            hapticOnPress="commit"
+            haptic="commit"
             disabled={busy}
             accessibilityRole="button"
             style={{ backgroundColor: brand.success, borderRadius: 999, opacity: busy ? 0.6 : 1 }}
@@ -205,7 +214,7 @@ export function RiderOrderDetailScreen() {
             {copy.rider.delivered} ✓
           </Text>
         )}
-        <TactilePressable onPress={() => navigation.goBack()} hapticOnPress="selection" accessibilityRole="button">
+        <TactilePressable onPress={() => navigation.goBack()} haptic="selection" accessibilityRole="button">
           <Text style={{ textAlign: 'center', color: theme.colors.textMuted, fontWeight: weights.medium }}>{copy.orders.done}</Text>
         </TactilePressable>
       </View>

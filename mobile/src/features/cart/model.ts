@@ -1,5 +1,5 @@
 import type { ApiCartSyncResponse } from '../../lib/types';
-import type { CartAddTarget, CartItem, ServerCartLine } from './types';
+import type { CartAddTarget, CartItem } from './types';
 
 const cap = (n: number) => Math.min(Math.max(n, 0), 8);
 
@@ -44,15 +44,26 @@ export const cartRules = {
     );
   },
 
-  removeItem(items: CartItem[], productId: string): CartItem[] {
+  removeItem(items: CartItem[], productId: string, storeProductId: number | null = null): CartItem[] {
+    // If storeProductId provided, match both; otherwise match productId only for backward compat
+    if (storeProductId !== null && storeProductId !== undefined) {
+      return items.filter((i) => !(i.productId === productId && i.storeProductId === storeProductId));
+    }
     return items.filter((i) => i.productId !== productId);
   },
 
-  decrementItem(items: CartItem[], productId: string): CartItem[] {
-    const existing = items.find((i) => i.productId === productId);
+  decrementItem(items: CartItem[], productId: string, storeProductId: number | null = null): CartItem[] {
+    const existing = storeProductId !== null && storeProductId !== undefined
+      ? items.find((i) => i.productId === productId && i.storeProductId === storeProductId)
+      : items.find((i) => i.productId === productId);
     if (!existing) return items;
-    if (existing.quantity <= 1) return cartRules.removeItem(items, productId);
-    return items.map((i) => (i.productId === productId ? { ...i, quantity: i.quantity - 1 } : i));
+    if (existing.quantity <= 1) return cartRules.removeItem(items, productId, storeProductId);
+    return items.map((i) => {
+      const match = storeProductId !== null && storeProductId !== undefined
+        ? i.productId === productId && i.storeProductId === storeProductId
+        : i.productId === productId;
+      return match ? { ...i, quantity: i.quantity - 1 } : i;
+    });
   },
 
   /**
@@ -60,7 +71,7 @@ export const cartRules = {
    * server wins for products on the server, local-only products are kept,
    * every quantity capped at 8.
    */
-  mergeWithServer(local: CartItem[], server: ServerCartLine[]): CartItem[] {
+  mergeWithServer(local: CartItem[], server: CartItem[]): CartItem[] {
     const merged: CartItem[] = server.map((s) => ({
       productId: s.productId,
       storeProductId: s.storeProductId,

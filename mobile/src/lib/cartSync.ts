@@ -1,11 +1,11 @@
-import { applyServerMerge } from '../features/cart/model';
+import { applyServerMerge, type ServerMergeResult } from '../features/cart/model';
 import type { CartItem } from '../features/cart/types';
 import type { ApiCartSyncResponse } from './types';
 
 export interface CartSyncDeps {
   syncCart: (items: { product_id: number; quantity: number }[]) => Promise<ApiCartSyncResponse>;
   getLocalCart: () => CartItem[];
-  setCart: (items: CartItem[]) => void;
+  setCart: (items: CartItem[], response: ApiCartSyncResponse) => ServerMergeResult;
 }
 
 /**
@@ -25,10 +25,9 @@ export async function performCartSync(
   }
   const payload = local.map((i) => ({ product_id: Number(i.productId), quantity: i.quantity }));
   const response = await deps.syncCart(payload);
-  const { items, droppedCount } = applyServerMerge(local, response);
-  deps.setCart(items);
+  const result = deps.setCart(local, response);
   hasSyncedRef.current = true;
-  return { droppedCount };
+  return { droppedCount: result.droppedCount };
 }
 
 let globalHasSynced = false;

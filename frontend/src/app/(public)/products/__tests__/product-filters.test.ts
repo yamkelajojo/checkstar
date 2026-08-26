@@ -10,52 +10,54 @@ describe('ProductsClient filter groups', () => {
     expect(FILTER_GROUPS.map(g => g.label)).toEqual(['All', 'Fresh', 'Pantry', 'Drinks', 'Home', 'Care', 'Other'])
   })
 
-  it('covers all 15 category IDs exactly once across 6 groups', () => {
-    const allIds = FILTER_GROUPS.filter(g => g.ids !== null).flatMap(g => g.ids as number[])
-    expect(allIds).toHaveLength(15)
-    expect(new Set(allIds).size).toBe(15)
-    expect([...allIds].sort((a, b) => a - b)).toEqual(Array.from({ length: 15 }, (_, i) => i + 1))
+  it('covers all 15 category slugs exactly once across 6 groups', () => {
+    const allSlugs = FILTER_GROUPS.filter(g => (g as any).slugs !== null).flatMap(g => (g as any).slugs as string[])
+    expect(allSlugs).toHaveLength(15)
+    expect(new Set(allSlugs).size).toBe(15)
+    expect([...allSlugs].sort()).toEqual([
+      'baby-toddler','bakery','beverages','dairy-eggs','frozen-foods','fruits-vegetables','health-beauty','household','meat-poultry','pantry-staples','pet-supplies','ready-meals-deli','snacks-treats','stationery-school','wines-spirits'
+    ].sort())
   })
 
   it('maps Fresh correctly', () => {
-    expect(FILTER_GROUPS.find(g => g.label === 'Fresh')?.ids).toEqual([1, 2, 3, 4])
+    expect(FILTER_GROUPS.find(g => g.label === 'Fresh')?.slugs).toEqual(['fruits-vegetables', 'meat-poultry', 'bakery', 'dairy-eggs'])
   })
   it('maps Pantry correctly', () => {
-    expect(FILTER_GROUPS.find(g => g.label === 'Pantry')?.ids).toEqual([7, 8, 14])
+    expect(FILTER_GROUPS.find(g => g.label === 'Pantry')?.slugs).toEqual(['pantry-staples', 'frozen-foods', 'ready-meals-deli'])
   })
   it('maps Drinks correctly', () => {
-    expect(FILTER_GROUPS.find(g => g.label === 'Drinks')?.ids).toEqual([5, 12])
+    expect(FILTER_GROUPS.find(g => g.label === 'Drinks')?.slugs).toEqual(['beverages', 'wines-spirits'])
   })
   it('maps Home correctly', () => {
-    expect(FILTER_GROUPS.find(g => g.label === 'Home')?.ids).toEqual([9, 13])
+    expect(FILTER_GROUPS.find(g => g.label === 'Home')?.slugs).toEqual(['household', 'pet-supplies'])
   })
   it('maps Care correctly', () => {
-    expect(FILTER_GROUPS.find(g => g.label === 'Care')?.ids).toEqual([10, 11])
+    expect(FILTER_GROUPS.find(g => g.label === 'Care')?.slugs).toEqual(['baby-toddler', 'health-beauty'])
   })
   it('maps Other correctly', () => {
-    expect(FILTER_GROUPS.find(g => g.label === 'Other')?.ids).toEqual([6, 15])
+    expect(FILTER_GROUPS.find(g => g.label === 'Other')?.slugs).toEqual(['snacks-treats', 'stationery-school'])
   })
 
-  it('filter logic: All matches everything, groups match only their ids', () => {
+  it('filter logic: All matches everything, groups match only their slugs', () => {
     const products = [
-      { category_id: 1 }, // Fresh
-      { category_id: 7 }, // Pantry
-      { category_id: 5 }, // Drinks
-      { category_id: 9 }, // Home
-      { category_id: 10 }, // Care
-      { category_id: 6 }, // Other
+      { category: { slug: 'fruits-vegetables' }, category_id: 1 },
+      { category: { slug: 'pantry-staples' }, category_id: 7 },
+      { category: { slug: 'beverages' }, category_id: 5 },
+      { category: { slug: 'household' }, category_id: 9 },
+      { category: { slug: 'baby-toddler' }, category_id: 10 },
+      { category: { slug: 'snacks-treats' }, category_id: 6 },
     ]
     const filterByGroup = (groupLabel: string) => {
-      const activeIds = FILTER_GROUPS.find(g => g.label === groupLabel)?.ids
-      return products.filter(p => (activeIds ? (activeIds as number[]).includes(p.category_id) : true))
+      const activeSlugs = (FILTER_GROUPS.find(g => g.label === groupLabel) as any)?.slugs
+      return products.filter(p => (activeSlugs ? (activeSlugs as string[]).includes(p.category.slug) : true))
     }
     expect(filterByGroup('All')).toHaveLength(6)
-    expect(filterByGroup('Fresh')).toEqual([{ category_id: 1 }])
-    expect(filterByGroup('Pantry')).toEqual([{ category_id: 7 }])
-    expect(filterByGroup('Drinks')).toEqual([{ category_id: 5 }])
-    expect(filterByGroup('Home')).toEqual([{ category_id: 9 }])
-    expect(filterByGroup('Care')).toEqual([{ category_id: 10 }])
-    expect(filterByGroup('Other')).toEqual([{ category_id: 6 }])
+    expect(filterByGroup('Fresh')).toEqual([{ category: { slug: 'fruits-vegetables' }, category_id: 1 }])
+    expect(filterByGroup('Pantry')).toEqual([{ category: { slug: 'pantry-staples' }, category_id: 7 }])
+    expect(filterByGroup('Drinks')).toEqual([{ category: { slug: 'beverages' }, category_id: 5 }])
+    expect(filterByGroup('Home')).toEqual([{ category: { slug: 'household' }, category_id: 9 }])
+    expect(filterByGroup('Care')).toEqual([{ category: { slug: 'baby-toddler' }, category_id: 10 }])
+    expect(filterByGroup('Other')).toEqual([{ category: { slug: 'snacks-treats' }, category_id: 6 }])
   })
 
   it('ProductsClient has only one set of category buttons and is single-line horizontally scrollable', () => {

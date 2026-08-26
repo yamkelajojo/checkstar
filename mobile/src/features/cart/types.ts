@@ -9,10 +9,4 @@ export interface CartAddTarget {
   storeProductId: number | null;
 }
 
-export interface ServerCartLine {
-  productId: string;
-  quantity: number;
-  storeProductId: number | null;
-}
-
 export const MAX_QUANTITY = 8;

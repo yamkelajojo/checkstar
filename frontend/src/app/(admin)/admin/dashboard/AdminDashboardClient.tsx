@@ -48,12 +48,36 @@ export default function AdminDashboardClient() {
 
   const { data: contactData, isLoading: contactLoading, error: contactError } = useQuery({
     queryKey: ['contact-messages'],
-    queryFn: () => fetch('/api/admin/messages', { credentials: 'include' }).then(r => r.json()),
+    queryFn: async () => {
+      const getCookie = (name: string) => {
+        const m = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'))
+        return m ? decodeURIComponent(m[2]) : null
+      }
+      const xsrf = getCookie('XSRF-TOKEN')
+      const res = await fetch('/api/admin/messages', {
+        credentials: 'include',
+        headers: { 'Accept': 'application/json', ...(xsrf ? { 'X-XSRF-TOKEN': xsrf } : {}) },
+      })
+      if (!res.ok) throw new Error(`Messages: ${res.status}`)
+      return res.json()
+    },
   })
 
   const { data: healthData, isLoading: healthLoading, error: healthError } = useQuery({
     queryKey: ['admin-health'],
-    queryFn: () => fetch('/api/admin/health', { credentials: 'include' }).then(r => r.json()),
+    queryFn: async () => {
+      const getCookie = (name: string) => {
+        const m = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'))
+        return m ? decodeURIComponent(m[2]) : null
+      }
+      const xsrf = getCookie('XSRF-TOKEN')
+      const res = await fetch('/api/admin/health', {
+        credentials: 'include',
+        headers: { 'Accept': 'application/json', ...(xsrf ? { 'X-XSRF-TOKEN': xsrf } : {}) },
+      })
+      if (!res.ok) throw new Error(`Health: ${res.status}`)
+      return res.json()
+    },
   })
 
   const productsCount = products.length || 0
@@ -67,7 +91,7 @@ export default function AdminDashboardClient() {
   const loading = productsLoading || categoriesLoading || ordersLoading || storesLoading || specialsLoading || recipesLoading || contactLoading || healthLoading
   const error = productsError?.message || categoriesError?.message || ordersError?.message || storesError?.message || specialsError?.message || recipesError?.message || contactError?.message || healthError?.message || null
   const stats = { products: productsCount, categories: categoriesCount, orders: ordersCount, stores: storesCount, specials: specialsCount, recipes: recipesCount }
-  const recentOrders = (orders as Order[]).slice(0, 5).reverse()
+  const recentOrders = [...(orders as Order[])].sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 5)
 
   const fetchData = () => {
     queryClient.invalidateQueries({ queryKey: ['products'] })

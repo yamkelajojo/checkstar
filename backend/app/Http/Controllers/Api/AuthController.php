@@ -46,8 +46,11 @@ class AuthController extends Controller
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
             'phone' => 'nullable|string|max:20',
-            'vehicle_type' => 'nullable|string|max:50',
+            'vehicle_type' => 'nullable|string|in:motorbike,scooter,bicycle,bike,car',
             'banking_details' => 'nullable|array',
+            'banking_details.bank' => 'nullable|string|max:100',
+            'banking_details.account_number' => 'nullable|string|max:50',
+            'banking_details.branch_code' => 'nullable|string|max:20',
         ]);
 
         $user = User::create([
@@ -101,6 +104,21 @@ class AuthController extends Controller
 
     public function logout(Request $request): JsonResponse
     {
+        // Revoke Sanctum token if present (mobile / Bearer flow)
+        $user = $request->user();
+        if ($user) {
+            $token = $user->currentAccessToken();
+            if ($token) {
+                $token->delete();
+            } else {
+                // Fallback: revoke all tokens if current cannot be determined
+                // (e.g. transient test) — but avoid blanket delete in session flow
+                if (!$request->hasSession() || $request->bearerToken()) {
+                    $user->tokens()->delete();
+                }
+            }
+        }
+
         if ($request->hasSession()) {
             Auth::guard('web')->logout();
             $request->session()->invalidate();

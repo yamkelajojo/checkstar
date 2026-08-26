@@ -39,7 +39,7 @@ export function StorePickerScreen() {
                   void chooseStore(item, 'pick');
                   navigation.goBack();
                 }}
-                hapticOnPress="selection"
+                haptic="selection"
                 accessibilityRole="button"
                 accessibilityState={{ selected: active }}
                 style={{

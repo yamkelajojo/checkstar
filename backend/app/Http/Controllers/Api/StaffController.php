@@ -25,11 +25,27 @@ class StaffController extends Controller
 
         $store = $this->storeContext->resolve($request->user(), $validated['store_id'] ?? null);
 
-        $assignment = StoreStaff::create([
-            'user_id' => $validated['user_id'],
-            'store_id' => $store->id,
-            'role' => $validated['role'],
-        ]);
+        // Validate duplicate assignment gracefully (avoid 500 on unique violation)
+        $existing = StoreStaff::where('user_id', $validated['user_id'])
+            ->where('store_id', $store->id)
+            ->first();
+        if ($existing) {
+            return response()->json(['message' => 'User already assigned to this store', 'reason' => 'duplicate_assignment'], 409);
+        }
+        $global = StoreStaff::where('user_id', $validated['user_id'])->first();
+        if ($global) {
+            return response()->json(['message' => 'User already assigned to another store', 'reason' => 'already_assigned'], 409);
+        }
+
+        try {
+            $assignment = StoreStaff::create([
+                'user_id' => $validated['user_id'],
+                'store_id' => $store->id,
+                'role' => $validated['role'],
+            ]);
+        } catch (\Illuminate\Database\QueryException $e) {
+            return response()->json(['message' => 'Assignment conflict', 'reason' => 'duplicate_assignment'], 409);
+        }
 
         return response()->json(['data' => $assignment->load('user', 'store')], 201);
     }

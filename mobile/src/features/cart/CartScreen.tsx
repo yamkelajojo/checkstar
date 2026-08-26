@@ -4,7 +4,8 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTheme } from '../../theme';
 import { brand } from '../../theme/colors';
-import { typeScale, weights } from '../../theme/typography';
+import { textStyle, fontWeight } from '../../theme/typography';
+import { semanticSpacing, semanticRadius } from '../../theme/spacing';
 import { useCart } from './store';
 import { cartRules } from './model';
 import { useProducts } from '../catalog/hooks';
@@ -33,7 +34,7 @@ export function CartScreen() {
 
   if (items.length === 0) {
     return (
-      <View style={{ flex: 1, backgroundColor: theme.colors.bg }}>
+      <View style={{ flex: 1, backgroundColor: theme.colors.background.primary }}>
         <Header title="Cart" />
         <EmptyState
           icon={ShoppingCart}
@@ -42,10 +43,10 @@ export function CartScreen() {
           action={
             <TactilePressable
               onPress={() => navigation.navigate('Tabs', { screen: 'Browse' })}
-              hapticOnPress="tap"
-              style={{ backgroundColor: brand.primary, borderRadius: 999, paddingHorizontal: 24, marginTop: 12 }}
+              haptic="tap"
+              style={{ backgroundColor: brand.orange, borderRadius: semanticRadius.buttonPill, paddingHorizontal: 24, marginTop: semanticSpacing.sm }}
             >
-              <Text style={{ color: '#fff', fontWeight: weights.bold, textTransform: 'uppercase', fontSize: typeScale.caption }}>
+              <Text style={{ color: theme.colors.text.inverse, fontWeight: fontWeight.bold, textTransform: 'uppercase', ...textStyle.caption }}>
                 {copy.cart.browseSpecials}
               </Text>
             </TactilePressable>
@@ -56,14 +57,14 @@ export function CartScreen() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: theme.colors.bg }}>
+    <View style={{ flex: 1, backgroundColor: theme.colors.background.primary }}>
       <Header title="Cart" />
       <FlatList
         data={items}
         keyExtractor={(i) => i.productId}
-        contentContainerStyle={{ padding: 16, gap: 12 }}
+        contentContainerStyle={{ padding: semanticSpacing.screenPadding, gap: semanticSpacing.inlineGap }}
         ListHeaderComponent={
-          <Text style={{ fontSize: typeScale.caption, color: theme.colors.textMuted }}>{copy.cart.trustNote}</Text>
+          <Text style={{ ...textStyle.caption, color: theme.colors.text.secondary }}>{copy.cart.trustNote}</Text>
         }
         renderItem={({ item, index }) => {
           const product = products.find((p) => p.id === Number(item.productId));
@@ -74,21 +75,21 @@ export function CartScreen() {
                 style={{
                   flexDirection: 'row',
                   alignItems: 'center',
-                  gap: 12,
-                  backgroundColor: theme.colors.surface,
-                  borderRadius: 16,
-                  padding: 12,
+                  gap: semanticSpacing.inlineGap,
+                  backgroundColor: theme.colors.surface.primary,
+                  borderRadius: semanticRadius.card,
+                  padding: semanticSpacing.md,
                 }}
               >
                 <View style={{ flex: 1, gap: 2 }}>
-                  <Text numberOfLines={2} style={{ fontWeight: weights.semibold, color: theme.colors.text }}>
+                  <Text numberOfLines={2} style={{ fontWeight: fontWeight.semibold, color: theme.colors.text.primary }}>
                     {product.name}
                   </Text>
-                  <Text style={{ fontSize: typeScale.caption, color: theme.colors.textMuted }}>
+                  <Text style={{ ...textStyle.caption, color: theme.colors.text.secondary }}>
                     {formatZar(product.effectivePriceCents)} each
                   </Text>
                 </View>
-                <Text style={{ fontWeight: weights.bold, color: theme.colors.text }}>
+                <Text style={{ fontWeight: fontWeight.bold, color: theme.colors.text.primary }}>
                   {formatZar(priceOf(item.productId) * item.quantity)}
                 </Text>
                 <Stepper
@@ -102,33 +103,33 @@ export function CartScreen() {
         }}
       />
       {/* Sticky totals bar */}
-      <View style={{ borderTopWidth: 1, borderTopColor: theme.colors.hairline, padding: 16, gap: 8, backgroundColor: theme.colors.bg }}>
+      <View style={{ borderTopWidth: 1, borderTopColor: theme.colors.border.subtle, padding: semanticSpacing.screenPadding, gap: semanticSpacing.xs, backgroundColor: theme.colors.background.primary }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-          <Text style={{ color: theme.colors.textMuted }}>Subtotal ({quantity} items)</Text>
-          <Text style={{ fontWeight: weights.bold, color: theme.colors.text }}>{formatZar(subtotal)}</Text>
+          <Text style={{ color: theme.colors.text.secondary }}>Subtotal ({quantity} items)</Text>
+          <Text style={{ fontWeight: fontWeight.bold, color: theme.colors.text.primary }}>{formatZar(subtotal)}</Text>
         </View>
         {subtotal < MIN_ORDER_CENTS && (
-          <Text style={{ color: brand.accent, fontSize: typeScale.caption }}>
+          <Text style={{ color: brand.error, ...textStyle.caption }}>
             {copy.cart.minOrder.replace('{minCents}', formatZar(MIN_ORDER_CENTS))}
           </Text>
         )}
         <TactilePressable
           onPress={() => navigation.navigate('Checkout')}
-          hapticOnPress="commit"
+          haptic="commit"
           disabled={!canCheckout}
           accessibilityRole="button"
           accessibilityState={{ disabled: !canCheckout }}
           style={{
-            backgroundColor: canCheckout ? brand.primary : theme.colors.surface,
-            borderRadius: 999,
+            backgroundColor: canCheckout ? theme.colors.action.primary.background : theme.colors.surface.primary,
+            borderRadius: semanticRadius.buttonPill,
             opacity: canCheckout ? 1 : 0.6,
           }}
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-            <Text style={{ color: canCheckout ? '#fff' : theme.colors.textMuted, fontWeight: weights.bold, textTransform: 'uppercase', letterSpacing: 1 }}>
+            <Text style={{ color: canCheckout ? theme.colors.action.primary.foreground : theme.colors.text.secondary, fontWeight: fontWeight.bold, textTransform: 'uppercase', letterSpacing: 1, ...textStyle.caption }}>
               {copy.cart.checkOut}
             </Text>
-            <ArrowRight size={18} color={canCheckout ? '#fff' : theme.colors.textMuted} />
+            <ArrowRight size={18} color={canCheckout ? theme.colors.action.primary.foreground : theme.colors.text.secondary} />
           </View>
         </TactilePressable>
       </View>
@@ -139,7 +140,7 @@ export function CartScreen() {
 function Header({ title }: { title: string }) {
   const theme = useTheme();
   return (
-    <Text style={{ paddingTop: 56, paddingHorizontal: 16, fontSize: typeScale.title, fontWeight: weights.extrabold, color: theme.colors.text }}>
+    <Text style={{ paddingTop: 56, paddingHorizontal: semanticSpacing.screenPadding, ...textStyle.h1, color: theme.colors.text.primary }}>
       {title}
     </Text>
   );
