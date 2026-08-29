@@ -1,81 +1,29 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useMemo } from 'react'
 import { motion } from 'motion/react'
-import { MapPin, Navigation } from 'lucide-react'
 import StoreCard from '@/components/StoreCard'
-import type { Store } from '@/types'
+import MapContainer from '@/components/MapContainer'
+import type { MapMarker } from '@/components/MapContainer'
 import { useStores } from '@/lib/query'
-import 'leaflet/dist/leaflet.css'
 
 export default function StoresClient() {
   const { data: stores = [], isLoading: loading, error } = useStores()
   const fetchError = error ? 'Failed to load stores' : null
-  const [mapReady, setMapReady] = useState(false)
-  const mapRef = useRef<HTMLDivElement>(null)
-  const mapInstance = useRef<any>(null)
-  const markersRef = useRef<any[]>([])
-  const leafletRef = useRef<any>(null)
 
-  const initializedRef = useRef(false)
+  const markers: MapMarker[] = useMemo(
+    () =>
+      stores.map(s => ({
+        position: [s.latitude, s.longitude] as [number, number],
+        popup: `<strong>${s.name}</strong><br/>${s.address}, ${s.city}`,
+      })),
+    [stores]
+  )
 
-  useEffect(() => {
-    const el = mapRef.current
-    if (!el || initializedRef.current) return
-    initializedRef.current = true
-
-    async function initMap() {
-      const L = await import('leaflet')
-      leafletRef.current = L
-      delete (L.Icon.Default.prototype as any)._getIconUrl
-      L.Icon.Default.mergeOptions({
-        iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-        iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-        shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-      })
-
-      const map = L.map(el!).setView([-29.8587, 31.0218], 11)
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors',
-      }).addTo(map)
-
-      mapInstance.current = map
-      setMapReady(true)
-    }
-
-    initMap()
-
-    return () => {
-      if (mapInstance.current) {
-        mapInstance.current.remove()
-        mapInstance.current = null
-      }
-    }
-  }, [])
-
-  useEffect(() => {
-    const L = leafletRef.current
-    if (!mapReady || !mapInstance.current || !L || stores.length === 0) return
-
-    markersRef.current.forEach(m => mapInstance.current.removeLayer(m))
-    markersRef.current = []
-
-    const bounds: [number, number][] = []
-
-    stores.forEach(store => {
-      const marker = L.marker([store.latitude, store.longitude])
-        .addTo(mapInstance.current)
-        .bindPopup(
-          `<strong>${store.name}</strong><br/>${store.address}, ${store.city}`
-        )
-      markersRef.current.push(marker)
-      bounds.push([store.latitude, store.longitude])
-    })
-
-    if (bounds.length > 0) {
-      mapInstance.current.fitBounds(bounds, { padding: [50, 50] })
-    }
-  }, [stores, mapReady])
+  const bounds = useMemo(
+    () => stores.map(s => [s.latitude, s.longitude] as [number, number]),
+    [stores]
+  )
 
   return (
     <>
@@ -89,9 +37,14 @@ export default function StoresClient() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="h-[400px] rounded-xl overflow-hidden border border-gray-100 mb-12"
+          className="h-[400px] rounded-xl overflow-hidden border border-white/5 mb-12"
         >
-          <div ref={mapRef} className="w-full h-full" />
+          <MapContainer
+            center={[-29.825, 31.00]}
+            zoom={11}
+            markers={markers}
+            fitBounds={bounds.length > 0 ? bounds : undefined}
+          />
         </motion.div>
 
         {fetchError ? (

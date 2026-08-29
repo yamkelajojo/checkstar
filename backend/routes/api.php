@@ -7,16 +7,19 @@ use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\CommunityPostController;
 use App\Http\Controllers\Api\ContactController;
+use App\Http\Controllers\Api\FulfillmentController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\RecipeController;
 use App\Http\Controllers\Api\RiderController;
+use App\Http\Controllers\Api\RoutingController;
 use App\Http\Controllers\Api\SpecialController;
 use App\Http\Controllers\Api\StaffController;
 use App\Http\Controllers\Api\StoreController;
 use App\Http\Controllers\Api\StoreDispatchController;
 use App\Http\Controllers\Api\StoreOrderController;
+use App\Http\Controllers\Api\TrackingController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Sanctum\Http\Controllers\CsrfCookieController;
 
@@ -91,6 +94,18 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('messages/{id}/reply', [Admin\MessageController::class, 'reply']);
         Route::get('health', [Admin\HealthController::class, 'index']);
     });
+
+    // User tracking events (authenticated customers)
+    Route::post('/tracking/events', [TrackingController::class, 'storeEvent'])->middleware('throttle:100,1');
+    Route::post('/tracking/events/batch', [TrackingController::class, 'storeBatch'])->middleware('throttle:20,1');
+
+    // Operations dashboard (store_owner, store_manager, logistics_officer, developer)
+    Route::middleware('role:store_owner,store_manager,logistics_officer,developer')->prefix('operations')->group(function () {
+        Route::get('/metrics', [\App\Http\Controllers\Api\OperationsController::class, 'metrics']);
+        Route::get('/events', [\App\Http\Controllers\Api\OperationsController::class, 'events']);
+        Route::get('/audit-logs', [\App\Http\Controllers\Api\OperationsController::class, 'auditLogs']);
+        Route::get('/audit-logs/{entityType}/{entityId}', [\App\Http\Controllers\Api\OperationsController::class, 'auditLogsForEntity']);
+    });
 });
 
 // Public routes
@@ -106,3 +121,16 @@ Route::get('/recipes/{slug}', [RecipeController::class, 'show']);
 Route::get('/community-posts', [CommunityPostController::class, 'index']);
 Route::get('/careers', [CareerController::class, 'index']);
 Route::post('/contact', [ContactController::class, 'store'])->middleware('throttle:10,1');
+
+// Fulfillment (public - no auth required for validation)
+Route::post('/fulfillment/validate', [FulfillmentController::class, 'validate'])->middleware('throttle:30,1');
+Route::get('/fulfillment/nearest-store', [FulfillmentController::class, 'nearestStore'])->middleware('throttle:30,1');
+
+// Routing (public - no auth required)
+Route::get('/routing/route', [RoutingController::class, 'route'])->middleware('throttle:30,1');
+Route::get('/routing/geometry', [RoutingController::class, 'geometry'])->middleware('throttle:30,1');
+
+// Behavioral tracking endpoints (fire-and-forget, never block)
+Route::post('/tracking/view', [TrackingController::class, 'view'])->middleware('throttle:60,1');
+Route::post('/tracking/search', [TrackingController::class, 'search'])->middleware('throttle:60,1');
+Route::post('/tracking/contact', [TrackingController::class, 'contact'])->middleware('throttle:60,1');

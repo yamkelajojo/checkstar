@@ -1,78 +1,29 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useMemo } from 'react'
 import { motion } from 'motion/react'
 import { MapPin, Phone, Clock, ChevronLeft, Navigation, Mail } from 'lucide-react'
 import Link from 'next/link'
 import { useStore } from '@/lib/query'
-import 'leaflet/dist/leaflet.css'
+import MapContainer from '@/components/MapContainer'
+import type { MapMarker } from '@/components/MapContainer'
 
 export default function StoreDetailClient({ slug }: { slug: string }) {
-  const mapRef = useRef<HTMLDivElement>(null)
-  const mapInstanceRef = useRef<any>(null)
-
   const { data: store, isLoading: loading, error } = useStore(slug)
   const fetchError = error ? 'Failed to load store' : null
 
-  useEffect(() => {
-    if (!store || !mapRef.current) return
-    const s = store
-    const el = mapRef.current
-    let cancelled = false
-    let map: any = null
-
-    async function initMap() {
-      const L = await import('leaflet')
-      if (cancelled) return
-      // Avoid mutating global prototype on every mount
-      if (!(L.Icon.Default.prototype as any)._checkstarPatched) {
-        delete (L.Icon.Default.prototype as any)._getIconUrl
-        L.Icon.Default.mergeOptions({
-          iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-          iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-          shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-        })
-        ;(L.Icon.Default.prototype as any)._checkstarPatched = true
-      }
-
-      // Clean previous map if re-initializing (slug change)
-      if (mapInstanceRef.current) {
-        try { mapInstanceRef.current.remove() } catch {}
-        mapInstanceRef.current = null
-      }
-      if (el.dataset.initialized) delete el.dataset.initialized
-
-      map = L.map(el).setView([s.latitude, s.longitude], 15)
-
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors',
-      }).addTo(map)
-
-      L.marker([s.latitude, s.longitude])
-        .addTo(map)
-        .bindPopup(`<strong>${s.name}</strong><br/>${s.address}`)
-        .openPopup()
-
-      el.dataset.initialized = 'true'
-      mapInstanceRef.current = map
-      // Fix tiles not rendering until resize
-      setTimeout(() => { try { map.invalidateSize() } catch {} }, 100)
-    }
-
-    initMap()
-
-    return () => {
-      cancelled = true
-      if (map) {
-        try { map.remove() } catch {}
-      }
-      if (mapInstanceRef.current) {
-        try { mapInstanceRef.current.remove() } catch {}
-        mapInstanceRef.current = null
-      }
-      if (el) delete el.dataset.initialized
-    }
-  }, [store])
+  const markers: MapMarker[] = useMemo(
+    () =>
+      store
+        ? [
+            {
+              position: [store.latitude, store.longitude] as [number, number],
+              popup: `<strong>${store.name}</strong><br/>${store.address}`,
+            },
+          ]
+        : [],
+    [store]
+  )
 
   const renderTradingHours = () => {
     if (!store?.trading_hours) return null
@@ -183,9 +134,13 @@ export default function StoreDetailClient({ slug }: { slug: string }) {
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="lg:col-span-3 h-[400px] rounded-xl overflow-hidden border border-gray-100"
+            className="lg:col-span-3 h-[400px] rounded-xl overflow-hidden border border-white/5"
           >
-            <div ref={mapRef} className="w-full h-full" />
+            <MapContainer
+              center={[store.latitude, store.longitude]}
+              zoom={15}
+              markers={markers}
+            />
           </motion.div>
         </div>
       </main>
