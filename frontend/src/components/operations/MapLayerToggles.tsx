@@ -16,12 +16,19 @@ const LAYERS: LayerToggle[] = [
   { id: 'demand', label: 'Demand', icon: BarChart3, color: '#10B981' },
 ]
 
+export interface MapLayerData {
+  traffic: Array<{ lat: number; lng: number; count: number }>
+  routes: Array<{ rider_id: number; lat: number; lng: number }>
+  demand: Array<{ lat: number; lng: number; count: number }>
+}
+
 interface MapLayerTogglesProps {
   map: any
+  data: MapLayerData | null
   onToggle?: (layerId: string, active: boolean) => void
 }
 
-export default function MapLayerToggles({ map, onToggle }: MapLayerTogglesProps) {
+export default function MapLayerToggles({ map, data, onToggle }: MapLayerTogglesProps) {
   const [active, setActive] = useState<Set<string>>(new Set())
   const layersRef = useRef<Map<string, any>>(new Map())
 
@@ -40,8 +47,8 @@ export default function MapLayerToggles({ map, onToggle }: MapLayerTogglesProps)
         if (wasActive && layersRef.current.has(layerId)) {
           map.removeLayer(layersRef.current.get(layerId))
           layersRef.current.delete(layerId)
-        } else if (!wasActive) {
-          const layer = createOverlayLayer(layerId, map)
+        } else if (!wasActive && data) {
+          const layer = buildLayer(layerId, data, map)
           if (layer) {
             layer.addTo(map)
             layersRef.current.set(layerId, layer)
@@ -52,7 +59,7 @@ export default function MapLayerToggles({ map, onToggle }: MapLayerTogglesProps)
       onToggle?.(layerId, !wasActive)
       return next
     })
-  }, [map, onToggle])
+  }, [map, data, onToggle])
 
   useEffect(() => {
     return () => {
@@ -88,63 +95,50 @@ export default function MapLayerToggles({ map, onToggle }: MapLayerTogglesProps)
   )
 }
 
-function createOverlayLayer(layerId: string, map: any): any {
+function buildLayer(layerId: string, data: MapLayerData, map: any): any {
   const L = (window as any).L
   if (!L) return null
 
+  const layer = L.layerGroup()
+
   switch (layerId) {
     case 'traffic': {
-      // Simulated traffic circles around Durban hotspots
-      const hotspots = [
-        [-29.8587, 31.0218, 2000],
-        [-29.7284, 31.0781, 1500],
-        [-29.8193, 30.8732, 1200],
-      ]
-      const layer = L.layerGroup()
-      hotspots.forEach(([lat, lng, radius]) => {
+      if (data.traffic.length === 0) return null
+      const maxCount = Math.max(...data.traffic.map(p => p.count))
+      data.traffic.forEach(({ lat, lng, count }) => {
+        const radius = 300 + (count / maxCount) * 1700
         L.circle([lat, lng], {
           radius,
           color: '#F59E0B',
           fillColor: '#F59E0B',
-          fillOpacity: 0.15,
+          fillOpacity: 0.08 + (count / maxCount) * 0.12,
           weight: 1,
         }).addTo(layer)
       })
       return layer
     }
     case 'routes': {
-      // Simulated delivery routes
-      const routes = [
-        [[-29.8587, 31.0218], [-29.845, 31.015], [-29.830, 31.010]],
-        [[-29.7284, 31.0781], [-29.735, 31.065], [-29.740, 31.050]],
-      ]
-      const layer = L.layerGroup()
-      routes.forEach(coords => {
-        L.polyline(coords as any, {
+      if (data.routes.length === 0) return null
+      data.routes.forEach(({ lat, lng }) => {
+        L.circleMarker([lat, lng], {
+          radius: 6,
           color: '#3B82F6',
-          weight: 3,
-          opacity: 0.7,
-          dashArray: '8, 6',
+          fillColor: '#3B82F6',
+          fillOpacity: 0.9,
+          weight: 2,
         }).addTo(layer)
       })
       return layer
     }
     case 'demand': {
-      // Simulated demand heatmap
-      const points = [
-        [-29.8587, 31.0218, 0.8],
-        [-29.850, 31.015, 0.6],
-        [-29.840, 31.010, 0.4],
-        [-29.7284, 31.0781, 0.7],
-        [-29.735, 31.065, 0.5],
-      ]
-      const layer = L.layerGroup()
-      points.forEach(([lat, lng, intensity]) => {
+      if (data.demand.length === 0) return null
+      const maxDemand = Math.max(...data.demand.map(p => p.count))
+      data.demand.forEach(({ lat, lng, count }) => {
         L.circleMarker([lat, lng], {
-          radius: 20 + (intensity as number) * 30,
+          radius: 15 + (count / maxDemand) * 35,
           color: '#10B981',
           fillColor: '#10B981',
-          fillOpacity: (intensity as number) * 0.4,
+          fillOpacity: (count / maxDemand) * 0.35,
           weight: 0,
         }).addTo(layer)
       })

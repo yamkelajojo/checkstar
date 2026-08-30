@@ -104,6 +104,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // Operations — core
         Route::get('/metrics', [\App\Http\Controllers\Api\OperationsController::class, 'metrics']);
         Route::get('/alerts', [\App\Http\Controllers\Api\OperationsController::class, 'alerts']);
+        Route::get('/map-layers', [\App\Http\Controllers\Api\OperationsController::class, 'mapLayers']);
         Route::get('/events', [\App\Http\Controllers\Api\OperationsController::class, 'events']);
         Route::get('/audit-logs', [\App\Http\Controllers\Api\OperationsController::class, 'auditLogs']);
         Route::get('/audit-logs/{entityType}/{entityId}', [\App\Http\Controllers\Api\OperationsController::class, 'auditLogsForEntity']);

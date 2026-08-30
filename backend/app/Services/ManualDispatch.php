@@ -58,6 +58,18 @@ class ManualDispatch
         return $this->orderClaim->claim($order, $rider, $contextStore);
     }
 
+    /**
+     * Assign a rider to an order by IDs. Resolves models internally so
+     * controllers don't need to touch Order/Rider directly.
+     */
+    public function assignByIds(int $orderId, int $riderId, Store $contextStore): ClaimResult|array
+    {
+        $order = Order::findOrFail($orderId);
+        $rider = Rider::findOrFail($riderId);
+
+        return $this->dispatchToRider($order, $rider, $contextStore);
+    }
+
     public function reassign(Order $order, Rider $newRider): Order|array
     {
         if ($order->status !== OrderStatus::Preparing || $order->rider_id === null) {

@@ -3,8 +3,6 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Order;
-use App\Models\Rider;
 use App\Services\AuditService;
 use App\Services\DispatchSuggestionService;
 use App\Services\ManualDispatch;
@@ -45,13 +43,13 @@ class DispatchController extends Controller
             $request->input('store_id')
         );
 
-        $order = Order::findOrFail($validated['order_id']);
-        $rider = Rider::findOrFail($validated['rider_id']);
-
-        $result = $this->manualDispatch->dispatchToRider($order, $rider, $store);
+        $result = $this->manualDispatch->assignByIds(
+            $validated['order_id'],
+            $validated['rider_id'],
+            $store
+        );
 
         if (is_array($result)) {
-            // dispatch failed — log dispatch_failed audit event
             $this->auditService->log(
                 $request->user()->id,
                 'dispatch_failed',
