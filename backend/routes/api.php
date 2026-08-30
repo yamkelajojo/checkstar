@@ -105,6 +105,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/events', [\App\Http\Controllers\Api\OperationsController::class, 'events']);
         Route::get('/audit-logs', [\App\Http\Controllers\Api\OperationsController::class, 'auditLogs']);
         Route::get('/audit-logs/{entityType}/{entityId}', [\App\Http\Controllers\Api\OperationsController::class, 'auditLogsForEntity']);
+        Route::get('/dispatch-suggestion/{orderId}', [\App\Http\Controllers\Api\OperationsController::class, 'dispatchSuggestion']);
+        Route::post('/assign-rider', [\App\Http\Controllers\Api\OperationsController::class, 'assignRider']);
+        Route::get('/analytics/sales', [\App\Http\Controllers\Api\OperationsController::class, 'analyticsSales']);
+        Route::get('/analytics/products', [\App\Http\Controllers\Api\OperationsController::class, 'analyticsProducts']);
+        Route::get('/analytics/riders', [\App\Http\Controllers\Api\OperationsController::class, 'analyticsRiders']);
     });
 });
 

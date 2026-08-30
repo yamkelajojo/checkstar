@@ -1,13 +1,16 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { motion, AnimatePresence, LayoutGroup } from '@/lib/motion'
 import { orchestratedLayout } from '@/lib/motion/variants'
 import { spring } from '@/lib/motion/tokens'
 import { Maximize2, Minimize2 } from 'lucide-react'
 import MapContainer from '@/components/MapContainer'
 import MetricsHud from '@/components/operations/MetricsHud'
-import EventFeedPlaceholder from '@/components/operations/EventFeedPlaceholder'
+import EventFeed from '@/components/operations/EventFeed'
+import AlertBanner from '@/components/operations/AlertBanner'
+import { getDispatchChime } from '@/lib/audio/dispatch-chime'
+import { useHotkeys } from '@/lib/hooks/useHotkeys'
 
 interface Metrics {
   active_riders: number
@@ -22,35 +25,53 @@ export default function OperationsPage() {
   const [metrics, setMetrics] = useState<Metrics | null>(null)
   const [metricsLoading, setMetricsLoading] = useState(true)
   const [expanded, setExpanded] = useState(false)
+  const chimeRef = useRef(getDispatchChime())
+  const prevPendingRef = useRef(0)
 
-  useEffect(() => {
-    async function fetchMetrics() {
-      try {
-        const res = await fetch('/api/operations/metrics', { credentials: 'include' })
-        if (res.ok) {
-          const data = await res.json()
-          setMetrics(data)
+  const fetchMetrics = useCallback(async () => {
+    try {
+      const res = await fetch('/api/operations/metrics', { credentials: 'include' })
+      if (res.ok) {
+        const data = await res.json()
+        setMetrics(data)
+
+        // Play chime on new pending orders
+        if (prevPendingRef.current > 0 && data.pending_orders > prevPendingRef.current) {
+          chimeRef.current.play()
         }
-      } catch {
-        // Silent fail
-      } finally {
-        setMetricsLoading(false)
+        prevPendingRef.current = data.pending_orders
       }
+    } catch {
+      // Silent fail
+    } finally {
+      setMetricsLoading(false)
     }
-    fetchMetrics()
-    const interval = setInterval(fetchMetrics, 15000)
-    return () => clearInterval(interval)
   }, [])
 
   useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      const tag = (e.target as HTMLElement)?.tagName
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
-      if (e.key === 'Escape' && expanded) setExpanded(false)
-      if (e.key === 'f' && !e.ctrlKey && !e.metaKey) setExpanded(prev => !prev)
+    fetchMetrics()
+    const interval = setInterval(fetchMetrics, 15000)
+    return () => clearInterval(interval)
+  }, [fetchMetrics])
+
+  // Unlock chime on first interaction
+  useEffect(() => {
+    const unlock = () => {
+      chimeRef.current.unlock()
+      window.removeEventListener('click', unlock)
+      window.removeEventListener('keydown', unlock)
     }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+    window.addEventListener('click', unlock)
+    window.addEventListener('keydown', unlock)
+    return () => {
+      window.removeEventListener('click', unlock)
+      window.removeEventListener('keydown', unlock)
+    }
+  }, [])
+
+  useHotkeys({
+    'escape': () => setExpanded(false),
+    'f': () => setExpanded(prev => !prev),
   }, [expanded])
 
   const sharedSpring = { type: 'spring' as const, ...spring.layout }
@@ -72,7 +93,7 @@ export default function OperationsPage() {
           </div>
           <div className="flex items-center gap-4">
             <motion.span layout transition={sharedSpring} className="text-xs text-gray-400">
-              Live Dashboard
+              Press <kbd className="px-1 py-0.5 bg-gray-100 rounded text-[10px] font-mono">F</kbd> fullscreen
             </motion.span>
             <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
           </div>
@@ -139,12 +160,15 @@ export default function OperationsPage() {
                   exit={orchestratedLayout.panelExit}
                   transition={sharedSpring}
                 >
-                  <EventFeedPlaceholder />
+                  <EventFeed />
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
         </motion.div>
+
+        {/* Alerts */}
+        <AlertBanner />
       </div>
     </LayoutGroup>
   )

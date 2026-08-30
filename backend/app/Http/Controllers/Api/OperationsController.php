@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\Order;
 use App\Models\Rider;
-use App\Models\User;
+use App\Services\AnalyticsService;
 use App\Services\AuditService;
+use App\Services\DispatchSuggestionService;
+use App\Services\EventFeedService;
 use App\Services\StoreContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -16,12 +18,23 @@ use Illuminate\Support\Facades\DB;
 
 class OperationsController extends Controller
 {
+    protected AnalyticsService $analyticsService;
     protected AuditService $auditService;
+    protected DispatchSuggestionService $dispatchSuggestionService;
+    protected EventFeedService $eventFeedService;
     protected StoreContext $storeContext;
 
-    public function __construct(AuditService $auditService, StoreContext $storeContext)
-    {
+    public function __construct(
+        AnalyticsService $analyticsService,
+        AuditService $auditService,
+        DispatchSuggestionService $dispatchSuggestionService,
+        EventFeedService $eventFeedService,
+        StoreContext $storeContext
+    ) {
+        $this->analyticsService = $analyticsService;
         $this->auditService = $auditService;
+        $this->dispatchSuggestionService = $dispatchSuggestionService;
+        $this->eventFeedService = $eventFeedService;
         $this->storeContext = $storeContext;
     }
 
@@ -67,44 +80,11 @@ class OperationsController extends Controller
         $cursor = $request->input('cursor');
         $limit = min((int) $request->input('limit', 50), 50);
 
-        $orderEvents = Order::select(
-            'id',
-            DB::raw("'order_state_change' as type"),
-            'status',
-            DB::raw("'info' as severity"),
-            DB::raw("CONCAT('Order #', id, ' ', status) as message"),
-            DB::raw("'order' as entity_type"),
-            'id as entity_id',
-            'created_at'
-        )
-            ->when($cursor, fn ($q) => $q->where('created_at', '<', $cursor))
-            ->orderByDesc('created_at')
-            ->limit($limit);
-
-        $riderEvents = Rider::select(
-            'id',
-            DB::raw("'rider_availability' as type"),
-            DB::raw("is_available as status"),
-            DB::raw("'info' as severity"),
-            DB::raw("CONCAT('Rider #', id, ' went ', IF(is_available, 'available', 'unavailable')) as message"),
-            DB::raw("'rider' as entity_type"),
-            'id as entity_id',
-            'updated_at as created_at'
-        )
-            ->when($cursor, fn ($q) => $q->where('updated_at', '<', $cursor))
-            ->orderByDesc('updated_at')
-            ->limit($limit);
-
-        $events = $orderEvents->union($riderEvents)
-            ->orderByDesc('created_at')
-            ->limit($limit)
-            ->get();
-
-        $nextCursor = $events->isNotEmpty() ? $events->last()->created_at : null;
+        $result = $this->eventFeedService->getEvents($cursor, $limit);
 
         return response()->json([
-            'events' => $events,
-            'next_cursor' => $nextCursor,
+            'events' => $result->events,
+            'next_cursor' => $result->nextCursor,
         ]);
     }
 
@@ -133,5 +113,73 @@ class OperationsController extends Controller
         $logs = $this->auditService->forEntity($entityType, $entityId);
 
         return response()->json(['audit_logs' => $logs]);
+    }
+
+    public function dispatchSuggestion(int $orderId): JsonResponse
+    {
+        $suggestion = $this->dispatchSuggestionService->getSuggestion($orderId);
+
+        if (!$suggestion) {
+            return response()->json(['error' => 'Order not found'], 404);
+        }
+
+        return response()->json($suggestion);
+    }
+
+    public function assignRider(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'order_id' => 'required|integer|exists:orders,id',
+            'rider_id' => 'required|integer|exists:riders,id',
+        ]);
+
+        $result = $this->dispatchSuggestionService->assignRider(
+            $validated['order_id'],
+            $validated['rider_id']
+        );
+
+        if (!$result->success) {
+            return response()->json(['error' => $result->error], 422);
+        }
+
+        $this->auditService->log(
+            $request->user()->id,
+            'dispatched',
+            'order',
+            $validated['order_id'],
+            ['rider_id' => $validated['rider_id']]
+        );
+
+        return response()->json($result);
+    }
+
+    public function analyticsSales(Request $request): JsonResponse
+    {
+        $store = $this->storeContext->resolve($request->user(), $request->input('store_id'));
+        $period = $request->input('period', '30d');
+
+        $data = $this->analyticsService->getSalesData($store->id, $period);
+
+        return response()->json($data);
+    }
+
+    public function analyticsProducts(Request $request): JsonResponse
+    {
+        $store = $this->storeContext->resolve($request->user(), $request->input('store_id'));
+        $limit = min((int) $request->input('limit', 10), 50);
+
+        $data = $this->analyticsService->getProductsData($store->id, $limit);
+
+        return response()->json($data);
+    }
+
+    public function analyticsRiders(Request $request): JsonResponse
+    {
+        $store = $this->storeContext->resolve($request->user(), $request->input('store_id'));
+        $period = $request->input('period', '30d');
+
+        $data = $this->analyticsService->getRidersData($store->id, $period);
+
+        return response()->json($data);
     }
 }
