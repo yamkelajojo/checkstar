@@ -4,21 +4,7 @@ import { useEffect, useState, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from '@/lib/motion'
 import { staggerContainer, item as itemVariant } from '@/lib/motion/variants'
 import EventItem from './EventItem'
-
-interface FeedEvent {
-  id: number
-  type: string
-  severity: string
-  message: string
-  entity_type: string
-  entity_id: number
-  created_at: string
-}
-
-interface EventFeedResponse {
-  events: FeedEvent[]
-  next_cursor: string | null
-}
+import type { FeedEvent, EventFeedResponse } from '@/types'
 
 const POLL_INTERVAL = 5000
 const MAX_EVENTS = 200

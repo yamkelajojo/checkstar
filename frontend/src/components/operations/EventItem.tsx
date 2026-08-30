@@ -1,16 +1,7 @@
 'use client'
 
 import { useMemo } from 'react'
-
-interface FeedEvent {
-  id: number
-  type: string
-  severity: string
-  message: string
-  entity_type: string
-  entity_id: number
-  created_at: string
-}
+import type { FeedEvent } from '@/types'
 
 const SEVERITY_COLORS: Record<string, string> = {
   info: 'bg-sky-400',

@@ -49,15 +49,5 @@ export default function OrdersByHourChart({ data }: { data: HourData[] }) {
     },
   }), [])
 
-  return (
-    <div className="h-[220px]">
-      {data.some(d => d.count > 0) ? (
-        <Bar data={chartData} options={options} />
-      ) : (
-        <div className="h-full flex items-center justify-center text-xs text-gray-400">
-          No order data
-        </div>
-      )}
-    </div>
-  )
+  return <Bar data={chartData} options={options} />
 }

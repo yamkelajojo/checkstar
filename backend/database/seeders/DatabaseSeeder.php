@@ -34,8 +34,11 @@ class DatabaseSeeder extends Seeder
             CategorySeeder::class,
             ProductSeeder::class,
             RiderSeeder::class,
+            OrderSeeder::class,
             RecipeSeeder::class,
             CommunityPostSeeder::class,
+            UserTrackingSeeder::class,
+            RiderDeliverySeeder::class,
         ]);
     }
 }

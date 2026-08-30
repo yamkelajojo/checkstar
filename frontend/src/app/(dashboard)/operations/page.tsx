@@ -9,6 +9,7 @@ import MapContainer from '@/components/MapContainer'
 import MetricsHud from '@/components/operations/MetricsHud'
 import EventFeed from '@/components/operations/EventFeed'
 import AlertBanner from '@/components/operations/AlertBanner'
+import MapLayerToggles from '@/components/operations/MapLayerToggles'
 import { getDispatchChime } from '@/lib/audio/dispatch-chime'
 import { useHotkeys } from '@/lib/hooks/useHotkeys'
 
@@ -25,6 +26,7 @@ export default function OperationsPage() {
   const [metrics, setMetrics] = useState<Metrics | null>(null)
   const [metricsLoading, setMetricsLoading] = useState(true)
   const [expanded, setExpanded] = useState(false)
+  const [mapInstance, setMapInstance] = useState<any>(null)
   const chimeRef = useRef(getDispatchChime())
   const prevPendingRef = useRef(0)
 
@@ -72,7 +74,7 @@ export default function OperationsPage() {
   useHotkeys({
     'escape': () => setExpanded(false),
     'f': () => setExpanded(prev => !prev),
-  }, [expanded])
+  })
 
   const sharedSpring = { type: 'spring' as const, ...spring.layout }
 
@@ -131,8 +133,10 @@ export default function OperationsPage() {
               style={expanded ? { height: '100vh' } : { minHeight: 'calc(100vh - 140px)' }}
             >
               <div className="absolute inset-0 z-10">
-                <MapContainer center={[-29.825, 31.00]} zoom={12.5} />
+                <MapContainer center={[-29.825, 31.00]} zoom={12.5} onMapReady={setMapInstance} />
               </div>
+
+              {mapInstance && <MapLayerToggles map={mapInstance} />}
 
               <motion.button
                 layout

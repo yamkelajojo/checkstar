@@ -53,15 +53,5 @@ export default function TopProductsChart({ data }: { data: Product[] }) {
     },
   }), [])
 
-  return (
-    <div className="h-[220px]">
-      {data.length > 0 ? (
-        <Bar data={chartData} options={options} />
-      ) : (
-        <div className="h-full flex items-center justify-center text-xs text-gray-400">
-          No product data
-        </div>
-      )}
-    </div>
-  )
+  return <Bar data={chartData} options={options} />
 }

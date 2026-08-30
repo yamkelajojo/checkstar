@@ -56,15 +56,5 @@ export default function RevenueChart({ data }: { data: RevenuePoint[] }) {
     },
   }), [])
 
-  return (
-    <div className="h-[220px]">
-      {data.length > 0 ? (
-        <Line data={chartData} options={options} />
-      ) : (
-        <div className="h-full flex items-center justify-center text-xs text-gray-400">
-          No revenue data
-        </div>
-      )}
-    </div>
-  )
+  return <Line data={chartData} options={options} />
 }

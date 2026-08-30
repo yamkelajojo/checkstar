@@ -5,6 +5,7 @@ import { motion } from '@/lib/motion'
 import { staggerContainer, item as itemVariant } from '@/lib/motion/variants'
 import { ArrowLeft, TrendingUp, ShoppingBag, DollarSign, Users } from 'lucide-react'
 import Link from 'next/link'
+import ChartCard from '@/components/operations/charts/ChartCard'
 import RevenueChart from '@/components/operations/charts/RevenueChart'
 import OrdersByHourChart from '@/components/operations/charts/OrdersByHourChart'
 import TopProductsChart from '@/components/operations/charts/TopProductsChart'
@@ -128,40 +129,28 @@ export default function AnalyticsPage() {
 
         {/* Charts Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <motion.div variants={itemVariant} initial="hidden" animate="visible" className="bg-white rounded-xl border border-gray-100 p-5">
-            <h3 className="text-xs font-semibold text-gray-500 mb-3">Revenue Over Time</h3>
-            {loading ? (
-              <div className="h-[220px] bg-gray-50 rounded animate-pulse" />
-            ) : (
+          <motion.div variants={itemVariant} initial="hidden" animate="visible">
+            <ChartCard title="Revenue Over Time" loading={loading} hasData={(sales?.revenue_over_time?.length ?? 0) > 0} emptyMessage="No revenue data">
               <RevenueChart data={sales?.revenue_over_time ?? []} />
-            )}
+            </ChartCard>
           </motion.div>
 
-          <motion.div variants={itemVariant} initial="hidden" animate="visible" className="bg-white rounded-xl border border-gray-100 p-5">
-            <h3 className="text-xs font-semibold text-gray-500 mb-3">Orders by Hour</h3>
-            {loading ? (
-              <div className="h-[220px] bg-gray-50 rounded animate-pulse" />
-            ) : (
+          <motion.div variants={itemVariant} initial="hidden" animate="visible">
+            <ChartCard title="Orders by Hour" loading={loading} hasData={(sales?.orders_by_hour?.some(d => d.count > 0)) ?? false} emptyMessage="No order data">
               <OrdersByHourChart data={sales?.orders_by_hour ?? []} />
-            )}
+            </ChartCard>
           </motion.div>
 
-          <motion.div variants={itemVariant} initial="hidden" animate="visible" className="bg-white rounded-xl border border-gray-100 p-5">
-            <h3 className="text-xs font-semibold text-gray-500 mb-3">Top Products</h3>
-            {loading ? (
-              <div className="h-[220px] bg-gray-50 rounded animate-pulse" />
-            ) : (
+          <motion.div variants={itemVariant} initial="hidden" animate="visible">
+            <ChartCard title="Top Products" loading={loading} hasData={(products?.top_products?.length ?? 0) > 0} emptyMessage="No product data">
               <TopProductsChart data={products?.top_products ?? []} />
-            )}
+            </ChartCard>
           </motion.div>
 
-          <motion.div variants={itemVariant} initial="hidden" animate="visible" className="bg-white rounded-xl border border-gray-100 p-5">
-            <h3 className="text-xs font-semibold text-gray-500 mb-3">Rider Utilization</h3>
-            {loading ? (
-              <div className="h-[220px] bg-gray-50 rounded animate-pulse" />
-            ) : (
+          <motion.div variants={itemVariant} initial="hidden" animate="visible">
+            <ChartCard title="Rider Utilization" loading={loading} hasData={(riders?.rider_utilization?.length ?? 0) > 0} emptyMessage="No rider data">
               <RiderUtilizationChart data={riders?.rider_utilization ?? []} />
-            )}
+            </ChartCard>
           </motion.div>
         </div>
 

@@ -101,15 +101,21 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Operations dashboard (store_owner, store_manager, logistics_officer, developer)
     Route::middleware('role:store_owner,store_manager,logistics_officer,developer')->prefix('operations')->group(function () {
+        // Operations — core
         Route::get('/metrics', [\App\Http\Controllers\Api\OperationsController::class, 'metrics']);
+        Route::get('/alerts', [\App\Http\Controllers\Api\OperationsController::class, 'alerts']);
         Route::get('/events', [\App\Http\Controllers\Api\OperationsController::class, 'events']);
         Route::get('/audit-logs', [\App\Http\Controllers\Api\OperationsController::class, 'auditLogs']);
         Route::get('/audit-logs/{entityType}/{entityId}', [\App\Http\Controllers\Api\OperationsController::class, 'auditLogsForEntity']);
-        Route::get('/dispatch-suggestion/{orderId}', [\App\Http\Controllers\Api\OperationsController::class, 'dispatchSuggestion']);
-        Route::post('/assign-rider', [\App\Http\Controllers\Api\OperationsController::class, 'assignRider']);
-        Route::get('/analytics/sales', [\App\Http\Controllers\Api\OperationsController::class, 'analyticsSales']);
-        Route::get('/analytics/products', [\App\Http\Controllers\Api\OperationsController::class, 'analyticsProducts']);
-        Route::get('/analytics/riders', [\App\Http\Controllers\Api\OperationsController::class, 'analyticsRiders']);
+
+        // Dispatch
+        Route::get('/dispatch-suggestion/{orderId}', [\App\Http\Controllers\Api\DispatchController::class, 'suggestion']);
+        Route::post('/assign-rider', [\App\Http\Controllers\Api\DispatchController::class, 'assignRider']);
+
+        // Analytics
+        Route::get('/analytics/sales', [\App\Http\Controllers\Api\AnalyticsController::class, 'sales']);
+        Route::get('/analytics/products', [\App\Http\Controllers\Api\AnalyticsController::class, 'products']);
+        Route::get('/analytics/riders', [\App\Http\Controllers\Api\AnalyticsController::class, 'riders']);
     });
 });
 

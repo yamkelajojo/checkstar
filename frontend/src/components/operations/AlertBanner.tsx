@@ -9,7 +9,6 @@ interface Alert {
   type: 'order_pending' | 'rider_idle' | 'delivery_slow'
   severity: 'warning' | 'info'
   message: string
-  created_at: Date
 }
 
 const ALERT_ICONS = {
@@ -23,33 +22,10 @@ export default function AlertBanner() {
 
   const checkAlerts = useCallback(async () => {
     try {
-      const res = await fetch('/api/operations/metrics', { credentials: 'include' })
+      const res = await fetch('/api/operations/alerts', { credentials: 'include' })
       if (!res.ok) return
       const data = await res.json()
-
-      const newAlerts: Alert[] = []
-
-      if (data.pending_orders > 3) {
-        newAlerts.push({
-          id: 'high-pending',
-          type: 'order_pending',
-          severity: 'warning',
-          message: `${data.pending_orders} orders pending — may need attention`,
-          created_at: new Date(),
-        })
-      }
-
-      if (data.active_riders === 0 && data.pending_orders > 0) {
-        newAlerts.push({
-          id: 'no-riders',
-          type: 'rider_idle',
-          severity: 'warning',
-          message: 'No riders available — orders cannot be dispatched',
-          created_at: new Date(),
-        })
-      }
-
-      setAlerts(newAlerts)
+      setAlerts(data.alerts ?? [])
     } catch {
       // Silent fail
     }

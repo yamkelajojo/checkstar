@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Product;
+use App\Models\StoreProduct;
 use App\Services\PricingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ProductController extends Controller
 {
@@ -32,6 +34,55 @@ class ProductController extends Controller
         }
 
         return $product;
+    }
+
+    private function appendStoreAvailability(Product $product): void
+    {
+        $storeProducts = StoreProduct::where('product_id', $product->id)
+            ->where('is_available', true)
+            ->where('stock_quantity', '>', 0)
+            ->with('store:id,name,slug')
+            ->get();
+
+        $product->store_count = $storeProducts->count();
+        $product->stores = $storeProducts->map(fn (StoreProduct $sp) => [
+            'store_product_id' => $sp->id,
+            'id' => $sp->store->id,
+            'name' => $sp->store->name,
+            'slug' => $sp->store->slug,
+            'stock_quantity' => $sp->stock_quantity,
+            'is_available' => $sp->is_available,
+        ])->values();
+    }
+
+    private function appendTrackingMetrics(array $products): void
+    {
+        $productIds = array_map(fn (Product $p) => $p->id, $products);
+        if (empty($productIds)) return;
+
+        $tracking = DB::table('user_tracking_events')
+            ->where('event_type', 'product_view')
+            ->whereIn('product_id', $productIds)
+            ->select('product_id', DB::raw('COUNT(*) as view_count'))
+            ->groupBy('product_id')
+            ->get()
+            ->keyBy('product_id');
+
+        $cartEvents = DB::table('user_tracking_events')
+            ->where('event_type', 'add_to_cart')
+            ->whereIn('product_id', $productIds)
+            ->select('product_id', DB::raw('COUNT(*) as cart_count'))
+            ->groupBy('product_id')
+            ->get()
+            ->keyBy('product_id');
+
+        foreach ($products as $product) {
+            $views = $tracking->get($product->id)?->view_count ?? 0;
+            $carts = $cartEvents->get($product->id)?->cart_count ?? 0;
+            $product->view_count = (int) $views;
+            $product->cart_count = (int) $carts;
+            $product->conversion_rate = $views > 0 ? round($carts / $views * 100, 1) : 0.0;
+        }
     }
 
     public function index(Request $request): JsonResponse
@@ -84,7 +135,10 @@ class ProductController extends Controller
         foreach ($products as $product) {
             $this->absolutizeImages($product);
             $product->effective_price = $this->pricingService->effectivePrice($product, $product->specials ?? collect());
+            $this->appendStoreAvailability($product);
         }
+
+        $this->appendTrackingMetrics($products->items());
 
         return response()->json($products);
     }
@@ -98,6 +152,8 @@ class ProductController extends Controller
 
         $this->absolutizeImages($product);
         $product->effective_price = $this->pricingService->effectivePrice($product, $product->specials ?? collect());
+        $this->appendStoreAvailability($product);
+        $this->appendTrackingMetrics([$product]);
 
         return response()->json(['data' => $product]);
     }

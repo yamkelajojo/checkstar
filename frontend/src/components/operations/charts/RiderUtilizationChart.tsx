@@ -46,15 +46,5 @@ export default function RiderUtilizationChart({ data }: { data: RiderUtil[] }) {
     },
   }), [])
 
-  return (
-    <div className="h-[220px]">
-      {data.length > 0 ? (
-        <Bar data={chartData} options={options} />
-      ) : (
-        <div className="h-full flex items-center justify-center text-xs text-gray-400">
-          No rider data
-        </div>
-      )}
-    </div>
-  )
+  return <Bar data={chartData} options={options} />
 }

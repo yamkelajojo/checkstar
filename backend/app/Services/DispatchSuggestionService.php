@@ -58,57 +58,6 @@ class DispatchSuggestionService
         ];
     }
 
-    public function assignRider(int $orderId, int $riderId): object
-    {
-        return DB::transaction(function () use ($orderId, $riderId) {
-            $order = DB::table('orders')
-                ->where('id', $orderId)
-                ->where('status', 'pending')
-                ->lockForUpdate()
-                ->first();
-
-            if (!$order) {
-                return (object) ['success' => false, 'error' => 'Order not found or not pending'];
-            }
-
-            $rider = DB::table('riders')
-                ->where('id', $riderId)
-                ->where('is_available', true)
-                ->lockForUpdate()
-                ->first();
-
-            if (!$rider) {
-                return (object) ['success' => false, 'error' => 'Rider not available'];
-            }
-
-            DB::table('orders')
-                ->where('id', $orderId)
-                ->update([
-                    'rider_id' => $riderId,
-                    'status' => 'confirmed',
-                    'updated_at' => now(),
-                ]);
-
-            DB::table('riders')
-                ->where('id', $riderId)
-                ->update([
-                    'is_available' => false,
-                    'updated_at' => now(),
-                ]);
-
-            $updatedOrder = DB::table('orders')->where('id', $orderId)->first();
-
-            return (object) [
-                'success' => true,
-                'order' => [
-                    'id' => $updatedOrder->id,
-                    'rider_id' => $updatedOrder->rider_id,
-                    'status' => $updatedOrder->status,
-                ],
-            ];
-        });
-    }
-
     private function haversineDistance(float $lat1, float $lng1, float $lat2, float $lng2): float
     {
         $dLat = deg2rad($lat2 - $lat1);

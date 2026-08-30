@@ -29,3 +29,18 @@ export interface Dispatch {
   store_name?: string | null
 }
 export interface OrderPlacementResult { data: Order; dispatch: Dispatch }
+
+export interface FeedEvent {
+  id: number
+  type: string
+  severity: string
+  message: string
+  entity_type: string
+  entity_id: number
+  created_at: string
+}
+
+export interface EventFeedResponse {
+  events: FeedEvent[]
+  next_cursor: string | null
+}
