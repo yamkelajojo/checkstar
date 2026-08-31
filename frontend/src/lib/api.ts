@@ -1,4 +1,4 @@
-import type { Category, Product, Store, Order, Rider, Special, Recipe, CommunityPost, CareerListing, User, CartItem, Paginated, OrderPlacementResult } from '@/types'
+import type { Category, Product, Store, Order, Rider, Special, Recipe, CommunityPost, CareerListing, User, CartItem, Paginated, OrderPlacementResult, Banner } from '@/types'
 import type { MapLayerData } from '@/components/operations/MapLayerToggles'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL || '/api'
@@ -76,6 +76,7 @@ export const api = {
   },
   getProduct: (slug: string) => request<{ data: Product }>(`/products/${slug}`).then(r => r.data),
   getSpecials: () => request<{ data: Special[] }>('/specials'),
+  getBanners: () => request<{ data: Banner[] }>('/banners'),
   getStores: () => request<{ data: Store[] }>('/stores'),
   getStore: (slug: string) => request<{ data: Store }>(`/stores/${slug}`),
   getRecipes: () => request<{ data: Recipe[] }>('/recipes'),

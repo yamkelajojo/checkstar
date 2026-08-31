@@ -44,3 +44,20 @@ export interface EventFeedResponse {
   events: FeedEvent[]
   next_cursor: string | null
 }
+
+export interface BannerSlide {
+  title: string
+  subtitle?: string
+  ctaLabel?: string
+  url?: string
+  bgType: 'solid' | 'gradient' | 'radial'
+  colors: string[]
+  pattern?: string
+}
+
+export interface Banner {
+  id: number
+  name: string
+  slides: BannerSlide[]
+  store?: Store
+}

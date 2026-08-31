@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from './api'
-import type { Category, Product, Store, Order, Rider, Special, Recipe, CommunityPost, CareerListing, User, CartItem } from '@/types'
+import type { Category, Product, Store, Order, Rider, Special, Recipe, CommunityPost, CareerListing, User, CartItem, Banner } from '@/types'
 
 export function useTrendingProducts() {
   return useQuery({
@@ -49,6 +49,13 @@ export function useSpecials() {
   return useQuery({
     queryKey: ['specials'],
     queryFn: () => api.getSpecials().then(r => r.data),
+  })
+}
+
+export function useBanners() {
+  return useQuery({
+    queryKey: ['banners'],
+    queryFn: () => api.getBanners().then(r => r.data),
   })
 }
 

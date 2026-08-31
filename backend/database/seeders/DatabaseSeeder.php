@@ -40,6 +40,7 @@ class DatabaseSeeder extends Seeder
             UserTrackingSeeder::class,
             RiderDeliverySeeder::class,
             SpecialSeeder::class,
+            BannerSeeder::class,
         ]);
     }
 }
