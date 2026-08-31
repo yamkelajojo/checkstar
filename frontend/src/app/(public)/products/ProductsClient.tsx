@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { motion } from 'motion/react'
-import { Search, SlidersHorizontal } from 'lucide-react'
+import { Search, SlidersHorizontal, ShoppingCart } from 'lucide-react'
 import ProductCard from '@/components/ProductCard'
 import type { Product } from '@/types'
 import { useAllProducts } from '@/lib/query'
@@ -104,7 +104,7 @@ export default function ProductsClient() {
                     role="tab"
                     aria-selected={isActive}
                     onClick={() => setActiveGroup(isActive && group.label !== 'All' ? 'All' : group.label)}
-                    className={`shrink-0 snap-start whitespace-nowrap px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                    className={`shrink-0 snap-start whitespace-nowrap px-3 py-1.5 rounded-full text-sm font-light transition-colors ${
                       isActive ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     }`}
                   >
@@ -135,10 +135,16 @@ export default function ProductsClient() {
               ))}
             </div>
           ) : filtered.length === 0 ? (
-            <div className="text-center py-16 text-gray-400">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8, filter: 'blur(8px)' }}
+              animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+              transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+              className="text-center py-16 text-gray-400"
+            >
+              <ShoppingCart size={40} className="mx-auto mb-3 opacity-50" />
               <p className="text-lg">No products found</p>
               <p className="text-sm mt-1">Try adjusting your search or filter.</p>
-            </div>
+            </motion.div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
               {filtered.map(product => (

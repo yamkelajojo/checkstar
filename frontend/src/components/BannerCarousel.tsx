@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -29,14 +29,16 @@ export function BannerCarousel({ banners }: BannerCarouselProps) {
   const [currentBanner, setCurrentBanner] = useState(0);
   const [currentSlide, setCurrentSlide] = useState(0);
 
-  const activeBanners = banners.filter(b => b.slides && b.slides.length > 0);
-  if (activeBanners.length === 0) return null;
+  const activeBanners = useMemo(
+    () => banners.filter(b => b.slides && b.slides.length > 0),
+    [banners]
+  );
 
-  const banner = activeBanners[currentBanner];
-  const slide = banner.slides[currentSlide];
-  const totalSlides = banner.slides.length;
+  const totalSlides = activeBanners[currentBanner]?.slides.length ?? 0;
 
   useEffect(() => {
+    if (activeBanners.length === 0) return;
+
     const timer = setInterval(() => {
       setCurrentSlide(prev => {
         if (prev < totalSlides - 1) return prev + 1;
@@ -47,6 +49,11 @@ export function BannerCarousel({ banners }: BannerCarouselProps) {
 
     return () => clearInterval(timer);
   }, [totalSlides, activeBanners.length]);
+
+  if (activeBanners.length === 0) return null;
+
+  const banner = activeBanners[currentBanner];
+  const slide = banner.slides[currentSlide];
 
   const goTo = (bannerIdx: number, slideIdx: number) => {
     setCurrentBanner(bannerIdx);
