@@ -100,3 +100,42 @@
     scrollbar-color: rgba(100, 116, 139, 0.5) transparent;
   }
 }
+
+.product-carousel .swiper-button-next,
+.product-carousel .swiper-button-prev {
+  color: var(--color-primary);
+  width: 20px;
+  height: 20px;
+}
+
+.product-carousel .swiper-button-next::after,
+.product-carousel .swiper-button-prev::after {
+  font-size: 14px;
+}
+
+.product-carousel .swiper-pagination-bullet {
+  background: var(--color-text-muted);
+  opacity: 0.3;
+}
+
+.product-carousel .swiper-pagination-bullet-active {
+  background: var(--color-primary);
+  opacity: 1;
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.marquee {
+  animation: marquee 30s linear infinite;
+}
+
+.marquee:hover {
+  animation-play-state: paused;
+}

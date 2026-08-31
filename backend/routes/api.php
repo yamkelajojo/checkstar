@@ -95,6 +95,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('health', [Admin\HealthController::class, 'index']);
     });
 
+    // Banner management (developer, store_owner, store_manager)
+    Route::prefix('admin')->middleware('role:developer,store_owner,store_manager')->group(function () {
+        Route::apiResource('banners', \App\Http\Controllers\Api\BannerController::class)->only(['index', 'store', 'show', 'update', 'destroy']);
+    });
+
     // User tracking events (authenticated customers)
     Route::post('/tracking/events', [TrackingController::class, 'storeEvent'])->middleware('throttle:100,1');
     Route::post('/tracking/events/batch', [TrackingController::class, 'storeBatch'])->middleware('throttle:20,1');
@@ -125,6 +130,9 @@ Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/categories/{slug}', [CategoryController::class, 'show']);
 Route::get('/products', [ProductController::class, 'index']);
 Route::get('/products/{slug}', [ProductController::class, 'show']);
+Route::get('/products/trending', [\App\Http\Controllers\Api\ProductCarouselController::class, 'trending']);
+Route::get('/products/popular', [\App\Http\Controllers\Api\ProductCarouselController::class, 'popular']);
+Route::get('/products/new-arrivals', [\App\Http\Controllers\Api\ProductCarouselController::class, 'newArrivals']);
 Route::get('/specials', [SpecialController::class, 'index']);
 Route::get('/stores', [StoreController::class, 'index']);
 Route::get('/stores/{slug}', [StoreController::class, 'show']);
@@ -132,6 +140,7 @@ Route::get('/recipes', [RecipeController::class, 'index']);
 Route::get('/recipes/{slug}', [RecipeController::class, 'show']);
 Route::get('/community-posts', [CommunityPostController::class, 'index']);
 Route::get('/careers', [CareerController::class, 'index']);
+Route::get('/banners', [\App\Http\Controllers\Api\BannerController::class, 'index']);
 Route::post('/contact', [ContactController::class, 'store'])->middleware('throttle:10,1');
 
 // Fulfillment (public - no auth required for validation)

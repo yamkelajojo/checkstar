@@ -3,25 +3,25 @@
 import { motion } from 'motion/react'
 import Link from 'next/link'
 import { ArrowRight, ShoppingBag, Bike, Store } from 'lucide-react'
-
-const stagger = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.1 } },
-}
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 30 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.5 } },
-}
+import { fadeUp, stagger } from '@/lib/motion/variants'
+import { ProductCarousel } from '@/components/ProductCarousel'
+import { AirtimeTicker } from '@/components/AirtimeTicker'
+import { DownloadTheApp } from '@/components/DownloadTheApp'
+import { CommunityBanner } from '@/components/CommunityBanner'
+import { useTrendingProducts, usePopularProducts, useNewArrivals } from '@/lib/query'
 
 export default function HomePage() {
+  const { data: trending = [] } = useTrendingProducts()
+  const { data: popular = [] } = usePopularProducts()
+  const { data: newArrivals = [] } = useNewArrivals()
+
   return (
     <>
       <main>
         <section className="relative bg-gradient-to-br from-primary-light via-white to-white overflow-hidden">
           <div className="max-w-7xl mx-auto px-4 py-20 md:py-32">
             <motion.div variants={stagger} initial="hidden" animate="show" className="max-w-2xl">
-              <motion.h1 variants={fadeUp} className="font-display text-4xl md:text-6xl font-bold text-gray-900 leading-tight">
+              <motion.h1 variants={fadeUp} className="font-display text-2xl sm:text-4xl md:text-6xl font-bold text-gray-900 leading-tight">
                 Fresh groceries,{' '}
                 <span className="text-primary">delivered fast</span>
               </motion.h1>
@@ -52,7 +52,7 @@ export default function HomePage() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="font-display text-2xl font-bold text-center mb-12"
+            className="font-display text-lg sm:text-2xl font-bold text-center mb-12"
           >
             How it works
           </motion.h2>
@@ -72,12 +72,22 @@ export default function HomePage() {
                 <div className="w-14 h-14 bg-primary-light rounded-2xl flex items-center justify-center mx-auto mb-4">
                   <item.icon className="text-primary" size={28} />
                 </div>
-                <h3 className="font-display text-lg font-semibold mb-2">{item.title}</h3>
+                <h3 className="font-display text-base sm:text-lg font-semibold mb-2">{item.title}</h3>
                 <p className="text-sm text-gray-500">{item.desc}</p>
               </motion.div>
             ))}
           </motion.div>
         </section>
+
+        <AirtimeTicker />
+
+        <div className="max-w-7xl mx-auto px-4">
+          <ProductCarousel title="Trending Now" products={trending} href="/products" />
+          <ProductCarousel title="Most Bought" products={popular} href="/products" />
+          <ProductCarousel title="New Arrivals" products={newArrivals} href="/products" />
+        </div>
+
+        <DownloadTheApp />
 
         <section className="bg-gray-50">
           <div className="max-w-7xl mx-auto px-4 py-16 text-center">
@@ -85,7 +95,7 @@ export default function HomePage() {
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="font-display text-2xl font-bold mb-4"
+              className="font-display text-lg sm:text-2xl font-bold mb-4"
             >
               Ready to get started?
             </motion.h2>
@@ -115,6 +125,8 @@ export default function HomePage() {
             </motion.div>
           </div>
         </section>
+
+        <CommunityBanner />
       </main>
     </>
   )

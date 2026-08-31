@@ -1,4 +1,5 @@
 import type { Category, Product, Store, Order, Rider, Special, Recipe, CommunityPost, CareerListing, User, CartItem, Paginated, OrderPlacementResult } from '@/types'
+import type { MapLayerData } from '@/components/operations/MapLayerToggles'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL || '/api'
 
@@ -55,6 +56,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 export const api = {
   // Public
   getCategories: () => request<{ data: Category[] }>('/categories'),
+  getTrendingProducts: () => request<{ data: Product[] }>('/products/trending').then(r => r.data),
+  getPopularProducts: () => request<{ data: Product[] }>('/products/popular').then(r => r.data),
+  getNewArrivals: () => request<{ data: Product[] }>('/products/new-arrivals').then(r => r.data),
   getAllProducts: async (params?: Record<string, string>): Promise<Product[]> => {
     const query: Record<string, string> = { per_page: '100', ...params }
     const all: Product[] = []
@@ -117,4 +121,20 @@ export const api = {
   getRiderHistory: () => request<{ data: Order[] }>('/rider/history'),
   getActiveDeliveries: () => request<{ data: Order[] }>('/rider/active-deliveries'),
   getRiderProfile: () => request<Rider>('/rider/profile'),
+  // Operations dashboard
+  getOperationsMetrics: () => request<{ active_riders: number; total_riders: number; orders_this_hour: number; pending_orders: number; active_deliveries: number; delivered_today: number }>('/operations/metrics'),
+  getOperationsAlerts: () => request<{ alerts: Array<{ id: string; type: string; severity: string; message: string }> }>('/operations/alerts'),
+  getOperationsMapLayers: () => request<MapLayerData>('/operations/map-layers'),
+  getOperationsEvents: (params?: Record<string, string>) => request<{ events: unknown[]; next_cursor: string | null }>(`/operations/events${params ? `?${new URLSearchParams(params)}` : ''}`),
+  getOperationsAuditLogs: (params?: Record<string, string>) => request<{ audit_logs: unknown[] }>(`/operations/audit-logs${params ? `?${new URLSearchParams(params)}` : ''}`),
+  getDispatchSuggestion: (orderId: number) => request<unknown>(`/operations/dispatch-suggestion/${orderId}`),
+  assignRider: (orderId: number, riderId: number, storeId?: number) => request<{ success: boolean; order: Order }>('/operations/assign-rider', { method: 'POST', body: JSON.stringify({ order_id: orderId, rider_id: riderId, ...(storeId ? { store_id: storeId } : {}) }) }),
+  // Operations analytics
+  getAnalyticsSales: (period?: string) => request<unknown>(`/operations/analytics/sales${period ? `?period=${period}` : ''}`),
+  getAnalyticsProducts: (limit?: number) => request<unknown>(`/operations/analytics/products${limit ? `?limit=${limit}` : ''}`),
+  getAnalyticsRiders: (period?: string) => request<unknown>(`/operations/analytics/riders${period ? `?period=${period}` : ''}`),
+  // Contact
+  submitContact: (data: { name: string; email: string; subject?: string; message: string }) => request<unknown>('/contact', { method: 'POST', body: JSON.stringify(data) }),
+  // Admin health
+  getAdminHealth: () => request<unknown>('/admin/health'),
 }

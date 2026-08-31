@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import './MapContainer.css'
 
 export interface MapMarker {
@@ -19,10 +19,8 @@ export interface MapContainerProps {
   fitBounds?: [number, number][]
 }
 
-const DARK_TILE_URL = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-const DARK_TILE_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/">CARTO</a>'
-const FALLBACK_TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
-const FALLBACK_TILE_ATTRIBUTION = '&copy; OpenStreetMap contributors'
+const TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+const TILE_ATTRIBUTION = '&copy; OpenStreetMap contributors'
 
 const DURBAN_CENTER: [number, number] = [-29.825, 31.00]
 const DEFAULT_ZOOM = 12.5
@@ -41,7 +39,6 @@ export default function MapContainer({
   const markersRef = useRef<any[]>([])
   const leafletRef = useRef<any>(null)
   const initializedRef = useRef(false)
-  const [tileError, setTileError] = useState(false)
 
   useEffect(() => {
     const el = mapRef.current
@@ -72,23 +69,12 @@ export default function MapContainer({
         attributionControl: true,
       })
 
-      const tileUrl = tileError ? FALLBACK_TILE_URL : DARK_TILE_URL
-      const tileAttr = tileError ? FALLBACK_TILE_ATTRIBUTION : DARK_TILE_ATTRIBUTION
+      const tileUrl = TILE_URL
+      const tileAttr = TILE_ATTRIBUTION
 
       const tileLayer = L.tileLayer(tileUrl, {
         attribution: tileAttr,
         maxZoom: 18,
-      })
-
-      tileLayer.on('tileerror', () => {
-        if (!tileError) {
-          map!.removeLayer(tileLayer)
-          L.tileLayer(FALLBACK_TILE_URL, {
-            attribution: FALLBACK_TILE_ATTRIBUTION,
-            maxZoom: 18,
-          }).addTo(map!)
-          setTileError(true)
-        }
       })
 
       tileLayer.addTo(map)

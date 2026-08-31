@@ -2,6 +2,27 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from './api'
 import type { Category, Product, Store, Order, Rider, Special, Recipe, CommunityPost, CareerListing, User, CartItem } from '@/types'
 
+export function useTrendingProducts() {
+  return useQuery({
+    queryKey: ['products', 'trending'],
+    queryFn: () => api.getTrendingProducts(),
+  })
+}
+
+export function usePopularProducts() {
+  return useQuery({
+    queryKey: ['products', 'popular'],
+    queryFn: () => api.getPopularProducts(),
+  })
+}
+
+export function useNewArrivals() {
+  return useQuery({
+    queryKey: ['products', 'new-arrivals'],
+    queryFn: () => api.getNewArrivals(),
+  })
+}
+
 export function useCategories() {
   return useQuery({
     queryKey: ['categories'],
