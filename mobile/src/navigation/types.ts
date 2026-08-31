@@ -13,6 +13,18 @@ export type RootStackParamList = {
   OrderDetail: { orderId: number; fromNotification?: boolean };
   RiderHome: undefined;
   RiderOrderDetail: { orderId: number; fromNotification?: boolean };
+  RouteExplorer: {
+    storeName: string;
+    storeLat?: number;
+    storeLng?: number;
+    deliveryAddress?: string | null;
+    deliveryLat?: number;
+    deliveryLng?: number;
+    distanceKm?: number;
+    durationMinutes?: number;
+    source?: string;
+    geometry?: string | null;
+  };
 };
 
 export type CustomerTabParamList = {

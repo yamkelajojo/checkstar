@@ -52,7 +52,7 @@ export default function ProductCard({ product }: Props) {
             onClick={() => addItem(product)}
             className="bg-primary text-white p-1.5 rounded-lg hover:bg-primary-dark transition-colors"
           >
-            <ShoppingCart size={15} />
+            <ShoppingCart size={15} strokeWidth={1} />
           </motion.button>
         </div>
       </div>

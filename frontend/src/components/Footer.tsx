@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { Facebook, Instagram, Linkedin } from 'lucide-react'
 
 export default function Footer() {
   return (
@@ -37,9 +38,22 @@ export default function Footer() {
             </div>
           </div>
         </div>
-        <div className="border-t border-gray-700 mt-8 pt-8 text-center text-xs text-gray-500">
+      <div className="border-t border-gray-700 mt-8 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <a href="https://facebook.com/search/222005974816586/local_search" target="_blank" rel="noopener noreferrer" aria-label="Checkstar on Facebook" className="text-gray-400 hover:text-white transition-colors">
+            <Facebook size={20} />
+          </a>
+          <a href="https://instagram.com/checkstar_supermarket/" target="_blank" rel="noopener noreferrer" aria-label="Checkstar on Instagram" className="text-gray-400 hover:text-white transition-colors">
+            <Instagram size={20} />
+          </a>
+          <a href="https://linkedin.com/company/checkstar-sa" target="_blank" rel="noopener noreferrer" aria-label="Checkstar on LinkedIn" className="text-gray-400 hover:text-white transition-colors">
+            <Linkedin size={20} />
+          </a>
+        </div>
+        <div className="text-xs text-gray-500">
           &copy; {new Date().getFullYear()} Checkstar. All rights reserved.
         </div>
+      </div>
       </div>
     </footer>
   )

@@ -13,16 +13,8 @@ import {
   RefreshCw, LayoutDashboard, ArrowUpRight,
   ShoppingCart, Bike,
 } from 'lucide-react'
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.4 } },
-}
-
-const stagger = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.08 } },
-}
+import { fadeUpTight as fadeUp, staggerTight as stagger } from '@/lib/motion/variants'
+import { api } from '@/lib/api'
 
 const managementLinks = [
   { href: '/admin/products', label: 'Products', icon: ShoppingBag, desc: 'Manage product catalog, pricing, and inventory' },
@@ -48,36 +40,12 @@ export default function AdminDashboardClient() {
 
   const { data: contactData, isLoading: contactLoading, error: contactError } = useQuery({
     queryKey: ['contact-messages'],
-    queryFn: async () => {
-      const getCookie = (name: string) => {
-        const m = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'))
-        return m ? decodeURIComponent(m[2]) : null
-      }
-      const xsrf = getCookie('XSRF-TOKEN')
-      const res = await fetch('/api/admin/messages', {
-        credentials: 'include',
-        headers: { 'Accept': 'application/json', ...(xsrf ? { 'X-XSRF-TOKEN': xsrf } : {}) },
-      })
-      if (!res.ok) throw new Error(`Messages: ${res.status}`)
-      return res.json()
-    },
+    queryFn: () => api.getMessages(),
   })
 
   const { data: healthData, isLoading: healthLoading, error: healthError } = useQuery({
     queryKey: ['admin-health'],
-    queryFn: async () => {
-      const getCookie = (name: string) => {
-        const m = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'))
-        return m ? decodeURIComponent(m[2]) : null
-      }
-      const xsrf = getCookie('XSRF-TOKEN')
-      const res = await fetch('/api/admin/health', {
-        credentials: 'include',
-        headers: { 'Accept': 'application/json', ...(xsrf ? { 'X-XSRF-TOKEN': xsrf } : {}) },
-      })
-      if (!res.ok) throw new Error(`Health: ${res.status}`)
-      return res.json()
-    },
+    queryFn: () => api.getAdminHealth(),
   })
 
   const productsCount = products.length || 0
@@ -86,7 +54,7 @@ export default function AdminDashboardClient() {
   const storesCount = stores.length || 0
   const specialsCount = specials.length || 0
   const recipesCount = recipes.length || 0
-  const contactCount = contactData?.data?.length ?? contactData?.length ?? null
+  const contactCount = Array.isArray(contactData?.data) ? (contactData.data as unknown[]).length : Array.isArray(contactData) ? (contactData as unknown[]).length : null
 
   const loading = productsLoading || categoriesLoading || ordersLoading || storesLoading || specialsLoading || recipesLoading || contactLoading || healthLoading
   const error = productsError?.message || categoriesError?.message || ordersError?.message || storesError?.message || specialsError?.message || recipesError?.message || contactError?.message || healthError?.message || null

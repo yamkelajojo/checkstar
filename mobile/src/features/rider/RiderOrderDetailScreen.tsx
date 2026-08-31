@@ -1,12 +1,11 @@
-import { useState } from 'react';
-import { View, Text, ScrollView } from 'react-native';
+import { useState, useEffect } from 'react';
+import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { Check } from 'lucide-react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useTheme } from '../../theme';
-import { brand } from '../../theme/colors';
 import { typeScale, weights, letterSpacing } from '../../theme/typography';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { fetchOrder, markItemsBought, markOutForDelivery, markDelivered } from '../../lib/apiClient';
+import { fetchOrder, fetchRouteGeometry, markItemsBought, markOutForDelivery, markDelivered } from '../../lib/apiClient';
 import { queryKeys } from '../../lib/queryKeys';
 import { formatZar } from '../../lib/currency';
 import { TactilePressable } from '../../components/shared/TactilePressable';
@@ -14,19 +13,14 @@ import { SkeletonCard } from '../../components/shared/SkeletonCard';
 import { useToast } from '../../components/shared/GlassToast';
 import { copy } from '../../lib/strings';
 import { toggleBoughtId, allItemsSelected, allItemIds } from './model';
-
-const STATUS_LABEL: Record<string, string> = {
-  pending: 'Pending',
-  confirmed: 'Confirmed',
-  preparing: 'Preparing',
-  out_for_delivery: 'Out for delivery',
-  delivered: 'Delivered',
-  cancelled: 'Cancelled',
-};
+import { RouteMap } from '../../components/shared/RouteMap';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../../navigation/types';
+import { ORDER_STATUS_LABEL as STATUS_LABEL } from '../../lib/status';
 
 export function RiderOrderDetailScreen() {
   const theme = useTheme();
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute();
   const { orderId } = route.params as { orderId: number };
   const queryClient = useQueryClient();
@@ -34,9 +28,29 @@ export function RiderOrderDetailScreen() {
   const [boughtIds, setBoughtIds] = useState<number[]>([]);
   const [busy, setBusy] = useState(false);
 
+  // Reset boughtIds when navigating to a different order
+  useEffect(() => {
+    setBoughtIds([]);
+  }, [orderId]);
+
   const { data: order, isLoading } = useQuery({
     queryKey: queryKeys.order(orderId),
     queryFn: () => fetchOrder(orderId),
+  });
+
+  const hasRouteCoords = order?.store?.latitude != null && order?.store?.longitude != null &&
+    order?.delivery_latitude != null && order?.delivery_longitude != null;
+
+  const { data: routeGeometry } = useQuery({
+    queryKey: ['routeGeometry', orderId],
+    queryFn: () => fetchRouteGeometry(
+      order!.store!.latitude!,
+      order!.store!.longitude!,
+      order!.delivery_latitude!,
+      order!.delivery_longitude!
+    ),
+    enabled: hasRouteCoords,
+    staleTime: 5 * 60 * 1000,
   });
 
   const invalidate = () => {
@@ -60,7 +74,7 @@ export function RiderOrderDetailScreen() {
 
   if (isLoading || !order) {
     return (
-      <View style={{ flex: 1, backgroundColor: theme.colors.bg, padding: 16, paddingTop: 72 }}>
+        <View style={{ flex: 1, backgroundColor: theme.colors.legacy.bg, padding: 16, paddingTop: 72 }}>
         <SkeletonCard height={360} width={undefined} />
       </View>
     );
@@ -99,30 +113,74 @@ export function RiderOrderDetailScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: theme.colors.bg }}>
+    <View style={{ flex: 1, backgroundColor: theme.colors.legacy.bg }}>
       <ScrollView contentContainerStyle={{ paddingBottom: 140 }} showsVerticalScrollIndicator={false}>
         <View style={{ paddingTop: 56, paddingHorizontal: 16, gap: 16 }}>
           <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' }}>
-            <Text style={{ fontSize: typeScale.title, fontWeight: weights.extrabold, color: theme.colors.text }}>
+            <Text style={{ fontSize: typeScale.title, fontWeight: weights.extrabold, color: theme.colors.text.primary }}>
               Order #{order.id}
             </Text>
-            <Text style={{ color: brand.primary, fontWeight: weights.bold, textTransform: 'capitalize' }}>
+            <Text style={{ color: theme.colors.text.brand, fontWeight: weights.bold, textTransform: 'capitalize' }}>
               {STATUS_LABEL[order.status] ?? order.status}
             </Text>
           </View>
 
-          <View style={{ backgroundColor: theme.colors.surface, borderRadius: 16, padding: 16, gap: 6 }}>
-            <Text style={{ fontWeight: weights.bold, color: theme.colors.text }}>{copy.orders.delivery}</Text>
-            <Text style={{ color: theme.colors.textMuted, fontSize: typeScale.body }}>
+          <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: 16, padding: 16, gap: 6 }}>
+            <Text style={{ fontWeight: weights.bold, color: theme.colors.text.primary }}>{copy.orders.delivery}</Text>
+            <Text style={{ color: theme.colors.text.secondary, fontSize: typeScale.body }}>
               {order.delivery_address ?? '—'}
             </Text>
             {order.delivery_notes != null && (
-              <Text style={{ color: theme.colors.textFaint, fontSize: typeScale.caption }}>Notes: {order.delivery_notes}</Text>
+              <Text style={{ color: theme.colors.text.tertiary, fontSize: typeScale.caption }}>Notes: {order.delivery_notes}</Text>
             )}
           </View>
 
-          <View style={{ backgroundColor: theme.colors.surface, borderRadius: 16, padding: 16, gap: 10 }}>
-            <Text style={{ fontWeight: weights.bold, color: theme.colors.text }}>{copy.orders.items}</Text>
+          <RouteMap
+            storeName={order.store?.name ?? 'Checkstar'}
+            storeLat={order.store?.latitude ?? undefined}
+            storeLng={order.store?.longitude ?? undefined}
+            deliveryAddress={order.delivery_address}
+            deliveryLat={order.delivery_latitude ?? undefined}
+            deliveryLng={order.delivery_longitude ?? undefined}
+            distanceKm={routeGeometry?.distance_km ?? (hasRouteCoords ? 3.2 : undefined)}
+            durationMinutes={routeGeometry?.duration_minutes ?? (hasRouteCoords ? 15 : undefined)}
+            source={routeGeometry?.source ?? 'mock_fallback'}
+            geometry={routeGeometry?.geometry ?? null}
+          />
+
+          {hasRouteCoords && (
+            <TouchableOpacity
+              onPress={() => navigation.navigate('RouteExplorer', {
+                storeName: order.store?.name ?? 'Checkstar',
+                storeLat: order.store?.latitude ?? undefined,
+                storeLng: order.store?.longitude ?? undefined,
+                deliveryAddress: order.delivery_address ?? null,
+                deliveryLat: order.delivery_latitude ?? undefined,
+                deliveryLng: order.delivery_longitude ?? undefined,
+                distanceKm: routeGeometry?.distance_km ?? 3.2,
+                durationMinutes: routeGeometry?.duration_minutes ?? 15,
+                source: routeGeometry?.source ?? 'osrm',
+                geometry: routeGeometry?.geometry ?? null,
+              })}
+              accessibilityRole="button"
+              accessibilityLabel="Open immersive route explorer"
+              style={{
+                backgroundColor: theme.colors.action.primary.background,
+                borderRadius: 999,
+                paddingVertical: 14,
+                paddingHorizontal: 24,
+                alignItems: 'center',
+                marginTop: 8,
+              }}
+            >
+              <Text style={{ color: theme.colors.action.primary.foreground, fontWeight: weights.bold, textTransform: 'uppercase', letterSpacing: letterSpacing.wide }}>
+                Explore Route
+              </Text>
+            </TouchableOpacity>
+          )}
+
+          <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: 16, padding: 16, gap: 10 }}>
+            <Text style={{ fontWeight: weights.bold, color: theme.colors.text.primary }}>{copy.orders.items}</Text>
             {order.items.map((item) => {
               const name = (item.product_snapshot as { name?: string } | null)?.name ?? `Item ${item.product_id}`;
               const bought = boughtIds.includes(item.id);
@@ -142,18 +200,18 @@ export function RiderOrderDetailScreen() {
                       height: 24,
                       borderRadius: 12,
                       borderWidth: 1.5,
-                      borderColor: bought ? brand.primary : theme.colors.hairline,
-                      backgroundColor: bought ? brand.primary : 'transparent',
+                      borderColor: bought ? theme.colors.action.primary.background : theme.colors.hairline,
+                      backgroundColor: bought ? theme.colors.action.primary.background : 'transparent',
                       alignItems: 'center',
                       justifyContent: 'center',
                     }}
                   >
-                    {bought && <Check size={14} color="#fff" strokeWidth={3} />}
+                    {bought && <Check size={14} color={theme.colors.action.primary.foreground} strokeWidth={3} />}
                   </View>
-                  <Text style={{ flex: 1, color: theme.colors.text, fontSize: typeScale.body }}>
+                  <Text style={{ flex: 1, color: theme.colors.text.primary, fontSize: typeScale.body }}>
                     {item.quantity} × {name}
                   </Text>
-                  <Text style={{ color: theme.colors.textMuted, fontSize: typeScale.body }}>
+                  <Text style={{ color: theme.colors.text.secondary, fontSize: typeScale.body }}>
                     {item.unit_price_cents != null ? formatZar(item.unit_price_cents * item.quantity) : ''}
                   </Text>
                 </TactilePressable>
@@ -161,14 +219,14 @@ export function RiderOrderDetailScreen() {
             })}
             <View style={{ height: 1, backgroundColor: theme.colors.hairline }} />
             <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-              <Text style={{ color: theme.colors.textMuted }}>{copy.checkout.total}</Text>
-              <Text style={{ fontWeight: weights.bold, color: theme.colors.text }}>{formatZar(order.total_cents ?? 0)}</Text>
+              <Text style={{ color: theme.colors.text.secondary }}>{copy.checkout.total}</Text>
+              <Text style={{ fontWeight: weights.bold, color: theme.colors.text.primary }}>{formatZar(order.total_cents ?? 0)}</Text>
             </View>
           </View>
         </View>
       </ScrollView>
 
-      <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: 16, borderTopWidth: 1, borderTopColor: theme.colors.hairline, backgroundColor: theme.colors.bg, gap: 8 }}>
+      <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: 16, borderTopWidth: 1, borderTopColor: theme.colors.hairline, backgroundColor: theme.colors.legacy.bg, gap: 8 }}>
         {isPreparing && (
           <>
             <TactilePressable
@@ -176,9 +234,9 @@ export function RiderOrderDetailScreen() {
               haptic="commit"
               disabled={busy}
               accessibilityRole="button"
-              style={{ backgroundColor: brand.primary, borderRadius: 999, opacity: busy ? 0.6 : 1 }}
+              style={{ backgroundColor: theme.colors.action.primary.background, borderRadius: 999, opacity: busy ? 0.6 : 1 }}
             >
-              <Text style={{ color: '#fff', textAlign: 'center', fontWeight: weights.bold, textTransform: 'uppercase', letterSpacing: letterSpacing.wide }}>
+              <Text style={{ color: theme.colors.action.primary.foreground, textAlign: 'center', fontWeight: weights.bold, textTransform: 'uppercase', letterSpacing: letterSpacing.wide }}>
                 {copy.rider.markItemsBought}
               </Text>
             </TactilePressable>
@@ -187,9 +245,9 @@ export function RiderOrderDetailScreen() {
                 onPress={onOutForDelivery}
                 haptic="commit"
                 accessibilityRole="button"
-                style={{ backgroundColor: brand.success, borderRadius: 999 }}
+                style={{ backgroundColor: theme.colors.status.success.primary, borderRadius: 999 }}
               >
-                <Text style={{ color: '#fff', textAlign: 'center', fontWeight: weights.bold, textTransform: 'uppercase', letterSpacing: letterSpacing.wide }}>
+                <Text style={{ color: theme.colors.action.primary.foreground, textAlign: 'center', fontWeight: weights.bold, textTransform: 'uppercase', letterSpacing: letterSpacing.wide }}>
                   {copy.rider.outForDelivery}
                 </Text>
               </TactilePressable>
@@ -202,20 +260,20 @@ export function RiderOrderDetailScreen() {
             haptic="commit"
             disabled={busy}
             accessibilityRole="button"
-            style={{ backgroundColor: brand.success, borderRadius: 999, opacity: busy ? 0.6 : 1 }}
+            style={{ backgroundColor: theme.colors.status.success.primary, borderRadius: 999, opacity: busy ? 0.6 : 1 }}
           >
-            <Text style={{ color: '#fff', textAlign: 'center', fontWeight: weights.bold, textTransform: 'uppercase', letterSpacing: letterSpacing.wide }}>
+            <Text style={{ color: theme.colors.action.primary.foreground, textAlign: 'center', fontWeight: weights.bold, textTransform: 'uppercase', letterSpacing: letterSpacing.wide }}>
               {copy.rider.markDelivered}
             </Text>
           </TactilePressable>
         )}
         {isDelivered && (
-          <Text style={{ textAlign: 'center', color: brand.success, fontWeight: weights.bold, textTransform: 'uppercase', letterSpacing: letterSpacing.wide }}>
+          <Text style={{ textAlign: 'center', color: theme.colors.status.success.primary, fontWeight: weights.bold, textTransform: 'uppercase', letterSpacing: letterSpacing.wide }}>
             {copy.rider.delivered} ✓
           </Text>
         )}
         <TactilePressable onPress={() => navigation.goBack()} haptic="selection" accessibilityRole="button">
-          <Text style={{ textAlign: 'center', color: theme.colors.textMuted, fontWeight: weights.medium }}>{copy.orders.done}</Text>
+          <Text style={{ textAlign: 'center', color: theme.colors.text.secondary, fontWeight: weights.medium }}>{copy.orders.done}</Text>
         </TactilePressable>
       </View>
     </View>

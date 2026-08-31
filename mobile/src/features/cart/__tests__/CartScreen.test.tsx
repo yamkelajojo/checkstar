@@ -1,13 +1,13 @@
 import { render, fireEvent, screen } from '@testing-library/react-native';
 import { CartScreen } from '../CartScreen';
 import { useCart } from '../store';
-import { useProducts } from '../../catalog/hooks';
+import { useAllProducts } from '../../catalog/hooks';
 import { useDeliveryStore } from '../../../stores/deliveryStore';
 import { formatZar } from '../../../lib/currency';
 import { copy } from '../../../lib/strings';
 import { TestWrapper } from '../../../test/utils';
 
-jest.mock('../../catalog/hooks', () => ({ useProducts: jest.fn() }));
+jest.mock('../../catalog/hooks', () => ({ useAllProducts: jest.fn() }));
 
 const mockNavigate = jest.fn();
 jest.mock('@react-navigation/native', () => ({
@@ -48,8 +48,8 @@ function setCart(items: CartLine[]) {
 beforeEach(() => {
   mockNavigate.mockClear();
   useCart.setState({ items: [] });
-  useDeliveryStore.setState({ store });
-  (useProducts as jest.Mock).mockReturnValue({ data: [bread, premium] });
+  useDeliveryStore.setState({ fulfillmentStore: store });
+  (useAllProducts as jest.Mock).mockReturnValue({ data: [bread, premium], isLoading: false });
 });
 
 describe('CartScreen', () => {

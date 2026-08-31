@@ -5,34 +5,29 @@ namespace App\Http\Controllers\Api;
 use App\Enums\OrderStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
-use App\Models\Review;
-use App\Enums\GameEvent;
 use App\Services\DeliveryConfirmation;
-use App\Services\GamificationService;
 use App\Services\OrderCancellationPolicy;
 use App\Services\OrderIntake;
 use App\Services\OrderStateMachine;
-use App\Services\RiderStatsRecorder;
+use App\Services\ReviewService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class OrderController extends Controller
 {
     private OrderStateMachine $stateMachine;
-    private RiderStatsRecorder $riderStats;
     private DeliveryConfirmation $deliveryConfirmation;
     private OrderIntake $orderIntake;
     private OrderCancellationPolicy $cancellationPolicy;
-    private GamificationService $gamification;
+    private ReviewService $reviewService;
 
-    public function __construct(OrderStateMachine $stateMachine, RiderStatsRecorder $riderStats, DeliveryConfirmation $deliveryConfirmation, OrderIntake $orderIntake, OrderCancellationPolicy $cancellationPolicy, GamificationService $gamification)
+    public function __construct(OrderStateMachine $stateMachine, DeliveryConfirmation $deliveryConfirmation, OrderIntake $orderIntake, OrderCancellationPolicy $cancellationPolicy, ReviewService $reviewService)
     {
         $this->stateMachine = $stateMachine;
-        $this->riderStats = $riderStats;
         $this->deliveryConfirmation = $deliveryConfirmation;
         $this->orderIntake = $orderIntake;
         $this->cancellationPolicy = $cancellationPolicy;
-        $this->gamification = $gamification;
+        $this->reviewService = $reviewService;
     }
 
     public function index(Request $request): JsonResponse
@@ -167,41 +162,23 @@ class OrderController extends Controller
             'comment' => 'nullable|string|max:500',
         ]);
 
-        $order = Order::with('rider')->findOrFail($id);
+        $order = Order::findOrFail($id);
 
         if ($request->user()->cannot('review', $order)) {
             return response()->json(['message' => 'Not your order'], 403);
         }
 
-        if (!$order->rider_id) {
-            return response()->json(['message' => 'No rider assigned to this order'], 422);
+        $result = $this->reviewService->submitReview(
+            $request->user(),
+            $id,
+            $validated['rating'],
+            $validated['comment'] ?? null,
+        );
+
+        if (!$result['success']) {
+            return response()->json(['message' => $result['message']], 422);
         }
 
-        if ($order->status !== \App\Enums\OrderStatus::Delivered) {
-            return response()->json(['message' => 'Order must be delivered before reviewing'], 422);
-        }
-
-        if ($order->review) {
-            return response()->json(['message' => 'Already reviewed'], 422);
-        }
-
-        \Illuminate\Support\Facades\DB::transaction(function () use ($order, $request, $validated) {
-            Review::create([
-                'order_id' => $order->id,
-                'reviewer_id' => $request->user()->id,
-                'rider_id' => $order->rider_id,
-                'rating' => $validated['rating'],
-                'comment' => $validated['comment'] ?? null,
-            ]);
-
-            $order->rider_rating = $validated['rating'];
-            $order->rider_review = $validated['comment'] ?? null;
-            $order->save();
-
-            $this->riderStats->recordReview($order->rider, $validated['rating']);
-            $this->gamification->handleEvent($order->rider->fresh(), GameEvent::RatingReceived);
-        });
-
-        return response()->json(['data' => $order->fresh()], 201);
+        return response()->json(['data' => $result['order']], 201);
     }
 }

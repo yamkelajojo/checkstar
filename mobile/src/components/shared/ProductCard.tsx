@@ -1,9 +1,9 @@
-import { View, Text, Image, Pressable } from 'react-native';
+import { View, Text, Image, Pressable, Modal } from 'react-native';
 import type { StyleProp, ViewStyle } from 'react-native';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { ProductVO } from '../../lib/product';
+import type { ProductVO, StoreAvailabilityVO } from '../../lib/product';
 import { formatZar } from '../../lib/currency';
 import { savingsPercent } from '../../lib/pricing';
 import { useTheme } from '../../theme';
@@ -13,6 +13,7 @@ import { semanticSpacing, semanticRadius } from '../../theme/spacing';
 import { TactilePressable } from './TactilePressable';
 import { Stepper } from './Stepper';
 import { useCart } from '../../features/cart/store';
+import { useDeliveryStore } from '../../stores/deliveryStore';
 import type { RootStackParamList } from '../../navigation/types';
 
 export interface BadgeRect {
@@ -71,7 +72,7 @@ export function ProductCard({ product, storeProductId = null, style, onRequestSu
       onPress={() => navigation.navigate('ProductDetail', { slug: product.slug })}
       accessibilityRole="button"
       accessibilityLabel={product.name}
-      style={[{ flex: 1, minWidth: '47%', borderRadius: semanticRadius.card }, style]}
+      style={[{ borderRadius: semanticRadius.card }, style]}
     >
       <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: semanticRadius.card, padding: semanticSpacing.cardPadding, gap: semanticSpacing.elementGap, minHeight: 235 }}>
         <View
@@ -175,9 +176,9 @@ export function ProductCard({ product, storeProductId = null, style, onRequestSu
               haptic="tap"
               accessibilityRole="button"
               accessibilityLabel={`Add ${product.name} to cart`}
-              style={{ backgroundColor: brand.orange, borderRadius: semanticRadius.buttonPill, paddingHorizontal: 18, minWidth: 96 }}
+              style={{ backgroundColor: brand.orange, borderRadius: semanticRadius.buttonPill, paddingHorizontal: 14, minWidth: 80, paddingVertical: 6 }}
             >
-              <Text style={{ color: theme.colors.text.inverse, fontWeight: fontWeight.bold, letterSpacing: letterSpacing.wide, textTransform: 'uppercase', ...textStyle.caption }}>
+              <Text style={{ color: theme.colors.text.inverse, fontWeight: fontWeight.semibold, textTransform: 'uppercase', ...textStyle.caption }}>
                 Add +
               </Text>
             </TactilePressable>

@@ -12,6 +12,7 @@ import AlertBanner from '@/components/operations/AlertBanner'
 import MapLayerToggles, { MapLayerData } from '@/components/operations/MapLayerToggles'
 import { getDispatchChime } from '@/lib/audio/dispatch-chime'
 import { useHotkeys } from '@/lib/hooks/useHotkeys'
+import { api } from '@/lib/api'
 
 interface Metrics {
   active_riders: number
@@ -33,17 +34,13 @@ export default function OperationsPage() {
 
   const fetchMetrics = useCallback(async () => {
     try {
-      const res = await fetch('/api/operations/metrics', { credentials: 'include' })
-      if (res.ok) {
-        const data = await res.json()
-        setMetrics(data)
+      const data = await api.getOperationsMetrics()
+      setMetrics(data)
 
-        // Play chime on new pending orders
-        if (prevPendingRef.current > 0 && data.pending_orders > prevPendingRef.current) {
-          chimeRef.current.play()
-        }
-        prevPendingRef.current = data.pending_orders
+      if (prevPendingRef.current > 0 && data.pending_orders > prevPendingRef.current) {
+        chimeRef.current.play()
       }
+      prevPendingRef.current = data.pending_orders
     } catch {
       // Silent fail
     } finally {
@@ -53,11 +50,8 @@ export default function OperationsPage() {
 
   const fetchMapLayers = useCallback(async () => {
     try {
-      const res = await fetch('/api/operations/map-layers', { credentials: 'include' })
-      if (res.ok) {
-        const data = await res.json()
-        setMapLayerData(data)
-      }
+      const data = await api.getOperationsMapLayers()
+      setMapLayerData(data)
     } catch {
       // Silent fail
     }

@@ -3,7 +3,7 @@ import { Text, View } from 'react-native';
 import type { StyleProp, TextStyle, ViewStyle } from 'react-native';
 import { useTheme } from '../../theme';
 import { brand } from '../../theme/colors';
-import { textStyle, fontWeight, letterSpacing } from '../../theme/typography';
+import { textStyle, fontWeight, letterSpacing, fontFamily } from '../../theme/typography';
 import { copy } from '../../lib/strings';
 
 const STAR_WING_PATH =
@@ -42,6 +42,7 @@ function Wordmark({ tone, size }: { tone: 'light' | 'dark'; size: number }) {
           letterSpacing: letterSpacing.tight,
           color,
           lineHeight: size * 1.05,
+          fontFamily: fontFamily.primary,
         }}
       >
         <Text style={{ color: brand.orange }}>Check</Text>
@@ -51,8 +52,9 @@ function Wordmark({ tone, size }: { tone: 'light' | 'dark'; size: number }) {
         style={{
           fontSize: size * 0.34,
           color: brand.orange,
-          fontWeight: fontWeight.bold,
-          fontStyle: 'italic',
+          fontWeight: fontWeight.regular,
+          fontStyle: 'normal',
+          fontFamily: fontFamily.accent,
         }}
       >
         {copy.app.tagline}

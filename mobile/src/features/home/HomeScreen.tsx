@@ -114,10 +114,12 @@ export function HomeScreen() {
             accessibilityLabel="Choose delivery store"
             style={{ flexDirection: 'row', alignItems: 'center', gap: semanticSpacing.xxs }}
           >
-            <MapPin size={16} color={brand.orange} />
-            <Text style={{ fontWeight: fontWeight.semibold, color: theme.colors.text.primary, ...textStyle.body }}>
-              {storeName}
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: semanticSpacing.xxs }}>
+              <MapPin size={16} color={brand.orange} />
+              <Text style={{ fontWeight: fontWeight.semibold, color: theme.colors.text.primary, ...textStyle.body }}>
+                {storeName}
+              </Text>
+            </View>
           </TactilePressable>
           {subtotal < FREE_DELIVERY_THRESHOLD_CENTS && subtotal > 0 && (
             <Text style={{ color: theme.colors.text.secondary, ...textStyle.caption }}>

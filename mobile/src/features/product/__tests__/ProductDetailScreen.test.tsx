@@ -2,6 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react-nativ
 import { ProductDetailScreen } from '../ProductDetailScreen';
 import { useProduct } from '../../catalog/hooks';
 import { useCart } from '../../cart/store';
+import { useDeliveryStore } from '../../../stores/deliveryStore';
 import { TestWrapper } from '../../../test/utils';
 import type { ProductVO } from '../../../lib/product';
 
@@ -9,9 +10,16 @@ jest.mock('../../catalog/hooks', () => ({
   useProduct: (slug: string) => mockUseProduct(slug),
 }));
 
+jest.mock('react-native-safe-area-context', () => ({
+  SafeAreaProvider: ({ children }: { children: React.ReactNode }) => children,
+  useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
+}));
+
 const mockUseRoute = jest.fn();
+const mockNavigate = jest.fn();
 jest.mock('@react-navigation/native', () => ({
   useRoute: () => mockUseRoute(),
+  useNavigation: () => ({ navigate: mockNavigate, goBack: jest.fn() }),
 }));
 
 const mockUseProduct = jest.fn();
@@ -36,6 +44,8 @@ const vo = (): ProductVO =>
     isFeatured: false,
     isActive: true,
     stockLabel: '',
+    storeCount: 1,
+    stores: [{ id: 1, name: 'Checkstar Umgeni', slug: 'umgeni', isAvailable: true, stockQuantity: 10 }],
   }) as ProductVO;
 
 beforeEach(() => {
@@ -43,6 +53,10 @@ beforeEach(() => {
   mockUseRoute.mockReturnValue({ params: { slug: 'spinach' } });
   mockUseProduct.mockReturnValue({ data: vo(), isLoading: false });
   useCart.setState({ items: [] });
+  useDeliveryStore.setState({
+    fulfillmentStore: { id: 1, name: 'Checkstar Umgeni', slug: 'umgeni', delivery_radius_km: 10 },
+    stores: [{ id: 1, name: 'Checkstar Umgeni', slug: 'umgeni', delivery_radius_km: 10 }],
+  });
 });
 
 const renderDetail = async () => render(<ProductDetailScreen />, { wrapper: TestWrapper });
@@ -64,8 +78,8 @@ describe('loaded product', () => {
     await renderDetail();
     expect(screen.getByText('Baby Spinach')).toBeTruthy();
     expect(screen.getByText('Green Farms')).toBeTruthy();
-    expect(screen.getByText('\u2022 Rich in iron')).toBeTruthy();
-    expect(screen.getByText('\u2022 Washed and ready')).toBeTruthy();
+    expect(screen.getByText(/Rich in iron/)).toBeTruthy();
+    expect(screen.getByText(/Washed and ready/)).toBeTruthy();
     expect(screen.getByText('Fresh baby spinach leaves.')).toBeTruthy();
     expect(screen.getByText(/Keep refrigerated\./)).toBeTruthy();
   });
@@ -107,12 +121,12 @@ describe('specials display', () => {
     onSale.salePriceCents = 2000;
     mockUseProduct.mockReturnValue({ data: onSale, isLoading: false });
     await renderDetail();
-    expect(screen.getByText('Special offer')).toBeTruthy();
+    expect(screen.getByText(/Special Offer/i)).toBeTruthy();
   });
 
   it('shows no special flag at full price', async () => {
     await renderDetail();
-    expect(screen.queryByText('Special offer')).toBeNull();
+    expect(screen.queryByText(/Special Offer/i)).toBeNull();
   });
 });
 

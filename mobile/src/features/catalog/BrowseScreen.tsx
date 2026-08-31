@@ -1,26 +1,52 @@
 import { useState } from 'react';
-import { View, Text, FlatList, Pressable } from 'react-native';
+import { View, Text, FlatList } from 'react-native';
 import { useTheme } from '../../theme';
-import { brand } from '../../theme/colors';
-import { textStyle, fontWeight } from '../../theme/typography';
+import { textStyle } from '../../theme/typography';
 import { semanticSpacing } from '../../theme/spacing';
-import { useCategories, useProducts } from './hooks';
+import { useCategories, useInfiniteProducts } from './hooks';
 import { ProductCard } from '../../components/shared/ProductCard';
+import { CollectionPill } from '../../components/shared/CollectionPill';
+import { FadeEdgeScroll } from '../../components/shared/FadeEdgeScroll';
 import { ProductSummaryModal, type SourceRect } from './ProductSummaryModal';
 import { SkeletonCard } from '../../components/shared/SkeletonCard';
+import { ProductCardSkeleton } from '../../components/shared/ProductCardSkeleton';
+import { FadeSlideIn } from '../../components/shared/FadeSlideIn';
 import { useDeliveryStore } from '../../stores/deliveryStore';
-import type { ProductVO } from '../../lib/product';
+import type { ProductVO, StoreAvailabilityVO } from '../../lib/product';
+import { findStoreAvailability } from '../../lib/product';
 
 export function BrowseScreen() {
   const theme = useTheme();
-  const store = useDeliveryStore((s) => s.store);
+  const store = useDeliveryStore((s) => s.fulfillmentStore);
   const { data: categories = [] } = useCategories();
   const [activeCategory, setActiveCategory] = useState<string | undefined>(undefined);
   const [summaryState, setSummaryState] = useState<{ product: ProductVO; rect: SourceRect | null } | null>(null);
-  const { data: products = [], isLoading } = useProducts({ category: activeCategory, storeId: store?.id ?? null });
+  const { 
+    data, 
+    isLoading, 
+    isFetchingNextPage, 
+    hasNextPage, 
+    fetchNextPage 
+  } = useInfiniteProducts({ category: activeCategory, storeId: store?.id ?? null });
+
+  // Flatten all pages into a single array
+  const products = data?.pages.flatMap((page) => page.products) ?? [];
 
   const handleRequestSummary = (product: ProductVO, rect: SourceRect | null) => {
     setSummaryState({ product, rect });
+  };
+
+  const handleLoadMore = () => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  };
+
+  // Helper to get effective storeProductId for a product (fulfillment store only)
+  const getStoreProductId = (product: ProductVO): number | null => {
+    if (!store) return null;
+    const avail = findStoreAvailability(product, store.id);
+    return avail?.storeProductId ?? null;
   };
 
   return (
@@ -28,68 +54,71 @@ export function BrowseScreen() {
       <Text style={{ paddingTop: 56, paddingHorizontal: semanticSpacing.screenPadding, ...textStyle.h1, color: theme.colors.text.primary }}>
         Browse
       </Text>
-      <View style={{ flexDirection: 'row', flex: 1 }}>
-        {/* Category rail */}
-        <FlatList
-          data={[{ id: 0, name: 'All', slug: '' }, ...categories]}
-          keyExtractor={(c) => String(c.id)}
-          style={{ width: 96, backgroundColor: theme.colors.background.secondary }}
-          contentContainerStyle={{ paddingTop: semanticSpacing.xs }}
-          showsVerticalScrollIndicator={false}
-          renderItem={({ item }) => {
-            const active = item.id === 0 ? activeCategory == null : activeCategory === item.slug;
+
+      {/* Horizontal category filter — GreenBidder pattern: scrollable pills with fade edge, no desktop sidebar leak */}
+      <View style={{ marginTop: semanticSpacing.xs }}>
+        <FadeEdgeScroll
+          fadeWidth={24}
+          contentPaddingLeft={semanticSpacing.screenPadding}
+          contentPaddingRight={semanticSpacing.screenPadding}
+          backgroundColor={theme.colors.background.primary}
+        >
+          {[{ id: 0, name: 'All', slug: '' }, ...categories].map((cat) => {
+            const active = cat.id === 0 ? activeCategory == null : activeCategory === cat.slug;
             return (
-              <Pressable
-                onPress={() => setActiveCategory(item.id === 0 ? undefined : item.slug)}
-                accessibilityRole="button"
-                accessibilityState={{ selected: active }}
-                style={{
-                  paddingVertical: 14,
-                  paddingHorizontal: 10,
-                  backgroundColor: active ? theme.colors.surface.primary : 'transparent',
-                  borderLeftWidth: 3,
-                  borderLeftColor: active ? brand.orange : 'transparent',
-                }}
-              >
-                <Text
-                  numberOfLines={2}
-                  style={{
-                    ...textStyle.caption,
-                    fontWeight: active ? fontWeight.bold : fontWeight.medium,
-                    color: active ? brand.orange : theme.colors.text.secondary,
-                  }}
-                >
-                  {item.name}
-                </Text>
-              </Pressable>
+              <CollectionPill
+                key={String(cat.id)}
+                label={cat.name}
+                active={active}
+                onPress={() => setActiveCategory(cat.id === 0 ? undefined : cat.slug)}
+              />
             );
-          }}
-        />
-        {/* Product list */}
-        <FlatList
-          style={{ flex: 1 }}
-          data={isLoading ? [] : products}
-          keyExtractor={(p) => String(p.id)}
-          numColumns={2}
-          columnWrapperStyle={{ gap: semanticSpacing.inlineGap, paddingHorizontal: semanticSpacing.md }}
-          contentContainerStyle={{ gap: semanticSpacing.inlineGap, paddingVertical: semanticSpacing.xs }}
-          showsVerticalScrollIndicator={false}
-          ListEmptyComponent={
-            isLoading ? (
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: semanticSpacing.inlineGap }}>
-                <SkeletonCard />
-                <SkeletonCard />
-              </View>
-            ) : (
-              <Text style={{ color: theme.colors.text.secondary, padding: semanticSpacing.md }}>No products here yet.</Text>
-            )
-          }
-          renderItem={({ item }) => <ProductCard product={item} onRequestSummary={handleRequestSummary} />}
-        />
+          })}
+        </FadeEdgeScroll>
       </View>
 
+      {/* Full-width 2-col product grid with infinite scroll */}
+      <FlatList
+        style={{ flex: 1, marginTop: semanticSpacing.sm }}
+        data={isLoading ? [] : products}
+        keyExtractor={(p) => String(p.id)}
+        numColumns={2}
+        columnWrapperStyle={{ gap: semanticSpacing.inlineGap, paddingHorizontal: semanticSpacing.md }}
+        contentContainerStyle={{ gap: semanticSpacing.inlineGap, paddingVertical: semanticSpacing.xs, paddingBottom: semanticSpacing.xl }}
+        showsVerticalScrollIndicator={false}
+        onEndReached={handleLoadMore}
+        onEndReachedThreshold={0.5}
+        ListEmptyComponent={
+          isLoading ? (
+            <View style={{ flexDirection: 'row', gap: semanticSpacing.inlineGap, paddingHorizontal: semanticSpacing.md }}>
+              <ProductCardSkeleton />
+              <ProductCardSkeleton />
+            </View>
+          ) : (
+            <Text style={{ color: theme.colors.text.secondary, padding: semanticSpacing.md }}>No products here yet.</Text>
+          )
+        }
+        ListFooterComponent={
+          isFetchingNextPage ? (
+            <View style={{ padding: semanticSpacing.md, alignItems: 'center' }}>
+              <SkeletonCard width={120} height={16} orientation="carousel" />
+            </View>
+          ) : null
+        }
+        renderItem={({ item, index }) => (
+            <FadeSlideIn delay={index * 40} distance={16}>
+              <ProductCard product={item} storeProductId={getStoreProductId(item)} onRequestSummary={handleRequestSummary} />
+            </FadeSlideIn>
+          )}
+      />
+
       {summaryState != null && (
-        <ProductSummaryModal product={summaryState.product} sourceRect={summaryState.rect} onClose={() => setSummaryState(null)} />
+        <ProductSummaryModal 
+          product={summaryState.product} 
+          storeProductId={getStoreProductId(summaryState.product)}
+          sourceRect={summaryState.rect} 
+          onClose={() => setSummaryState(null)} 
+        />
       )}
     </View>
   );

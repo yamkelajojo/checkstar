@@ -107,6 +107,7 @@ class RiderOrderService
                         if ($sp->stock_quantity < $item->quantity) {
                             throw new \InvalidArgumentException("Insufficient stock for product {$sp->product_id}");
                         }
+                        $sp->reserved_quantity = max(0, ($sp->reserved_quantity ?? 0) - $item->quantity);
                         $sp->decrement('stock_quantity', $item->quantity);
                     }
                 }

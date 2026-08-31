@@ -98,7 +98,7 @@ export default function StoreDetailClient({ slug }: { slug: string }) {
             className="lg:col-span-2 space-y-6"
           >
             <div>
-              <h1 className="font-display text-3xl font-bold mb-1">{store.name}</h1>
+              <h1 className="font-display text-xl sm:text-3xl font-bold mb-1">{store.name}</h1>
               <div className="flex items-center gap-1.5 text-sm text-gray-400">
                 <MapPin size={14} />
                 <span>{store.address}, {store.city}</span>

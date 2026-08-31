@@ -14,12 +14,12 @@ jest.mock('../../../lib/storage', () => {
 });
 
 const mockUseCategories = jest.fn();
-const mockUseProducts = jest.fn();
+const mockUseInfiniteProducts = jest.fn();
 const mockGoBack = jest.fn();
 
 jest.mock('../../catalog/hooks', () => ({
   useCategories: () => mockUseCategories(),
-  useProducts: (params: unknown) => mockUseProducts(params),
+  useInfiniteProducts: (params: unknown) => mockUseInfiniteProducts(params),
 }));
 
 jest.mock('@react-navigation/native', () => ({
@@ -37,9 +37,9 @@ const advance = async (ms: number) => {
 beforeEach(() => {
   jest.clearAllMocks();
   mockUseCategories.mockReturnValue({ data: categories });
-  mockUseProducts.mockReturnValue({ data: [], isLoading: false });
+  mockUseInfiniteProducts.mockReturnValue({ data: { pages: [], pageParams: [] }, isLoading: false, hasNextPage: false, fetchNextPage: jest.fn() });
   useDeliveryStore.setState({
-    store: { id: 5, name: 'U', slug: 'u', delivery_radius_km: 8 },
+    fulfillmentStore: { id: 5, name: 'U', slug: 'u', delivery_radius_km: 8 },
     stores: [],
   });
   (storage.get as jest.Mock).mockResolvedValue(null);
@@ -79,7 +79,7 @@ describe('idle state', () => {
     await flush();
     await type('m');
     await advance(500);
-    expect(mockUseProducts).toHaveBeenCalledWith(
+    expect(mockUseInfiniteProducts).toHaveBeenCalledWith(
       expect.objectContaining({ enabled: false, storeId: 5 }),
     );
   });
@@ -91,13 +91,13 @@ describe('debounced searching', () => {
     await flush();
     await type('mi');
     await advance(200);
-    expect(mockUseProducts).not.toHaveBeenCalledWith(
+    expect(mockUseInfiniteProducts).not.toHaveBeenCalledWith(
       expect.objectContaining({ search: 'mi' }),
     );
 
     await type('mil');
     await advance(450);
-    expect(mockUseProducts).toHaveBeenLastCalledWith(
+    expect(mockUseInfiniteProducts).toHaveBeenLastCalledWith(
       expect.objectContaining({ search: 'mil', enabled: true }),
     );
   });
@@ -111,9 +111,11 @@ describe('debounced searching', () => {
   });
 
   it('renders result cards when products match', async () => {
-    mockUseProducts.mockReturnValue({
-      data: [{ id: 9, name: 'Full Cream Milk' }],
+    mockUseInfiniteProducts.mockReturnValue({
+      data: { pages: [{ products: [{ id: 9, name: 'Full Cream Milk', stores: [] }] }], pageParams: [] },
       isLoading: false,
+      hasNextPage: false,
+      fetchNextPage: jest.fn(),
     });
     await renderSearch();
     await flush();
@@ -126,7 +128,7 @@ describe('debounced searching', () => {
 
 describe('saving searches', () => {
   const primeResults = () =>
-    mockUseProducts.mockReturnValue({ data: [{ id: 1, name: 'X' }], isLoading: false });
+    mockUseInfiniteProducts.mockReturnValue({ data: { pages: [{ products: [{ id: 1, name: 'X', stores: [] }] }], pageParams: [] }, isLoading: false, hasNextPage: false, fetchNextPage: jest.fn() });
 
   it('persists the debounced term newest-first, deduped, capped at five', async () => {
     (storage.get as jest.Mock).mockResolvedValue(['bread', 'eggs']);
@@ -180,30 +182,31 @@ describe('saving searches', () => {
 });
 
 describe('leaving the screen', () => {
-  it('goes back when Cancel is tapped', async () => {
+  it('goes back when the back arrow is tapped', async () => {
     await renderSearch();
     await flush();
+    const backButton = screen.getAllByRole('button')[0];
     await act(async () => {
-      fireEvent.press(screen.getByRole('button', { name: 'Cancel' }));
+      fireEvent.press(backButton);
     });
     expect(mockGoBack).toHaveBeenCalled();
   });
 });
 
 describe('edge cases', () => {
-  it('shows loading state while searching', async () => {
-    mockUseProducts.mockReturnValue({ data: [], isLoading: true });
+  it('shows skeleton cards while loading search results', async () => {
+    mockUseInfiniteProducts.mockReturnValue({ data: { pages: [], pageParams: [] }, isLoading: true, hasNextPage: false, fetchNextPage: jest.fn() });
     await renderSearch();
     await flush();
 
     await type('milk');
     await advance(450);
 
-    expect(screen.getByText('Searching\u2026')).toBeTruthy();
+    expect(screen.queryByText(/No matches/)).toBeNull();
   });
 
   it('handles empty search results gracefully', async () => {
-    mockUseProducts.mockReturnValue({ data: [], isLoading: false });
+    mockUseInfiniteProducts.mockReturnValue({ data: { pages: [], pageParams: [] }, isLoading: false, hasNextPage: false, fetchNextPage: jest.fn() });
     await renderSearch();
     await flush();
 
@@ -222,7 +225,7 @@ describe('edge cases', () => {
     await type('m');
     await advance(200);
     // Query should still be disabled for single character
-    expect(mockUseProducts).toHaveBeenCalledWith(
+    expect(mockUseInfiniteProducts).toHaveBeenCalledWith(
       expect.objectContaining({ enabled: false }),
     );
   });

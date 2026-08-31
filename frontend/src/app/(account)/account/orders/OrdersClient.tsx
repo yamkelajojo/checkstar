@@ -4,19 +4,10 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'motion/react'
-import { Package, ChevronRight, Loader2, ShoppingBag, Clock, CheckCircle, XCircle, Bike, AlertCircle } from 'lucide-react'
+import { ChevronRight, Loader2, ShoppingBag, Package } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth-store'
 import { useOrders } from '@/lib/query'
-
-const statusConfig: Record<string, { color: string; bg: string; icon: any; label: string }> = {
-  pending: { color: 'text-yellow-600', bg: 'bg-yellow-100', icon: Clock, label: 'Pending' },
-  confirmed: { color: 'text-blue-600', bg: 'bg-blue-100', icon: AlertCircle, label: 'Confirmed' },
-  retrying: { color: 'text-amber-600', bg: 'bg-amber-100', icon: Clock, label: 'Finding Rider' },
-  preparing: { color: 'text-indigo-600', bg: 'bg-indigo-100', icon: Package, label: 'Preparing' },
-  out_for_delivery: { color: 'text-purple-600', bg: 'bg-purple-100', icon: Bike, label: 'Out for Delivery' },
-  delivered: { color: 'text-green-600', bg: 'bg-green-100', icon: CheckCircle, label: 'Delivered' },
-  cancelled: { color: 'text-red-600', bg: 'bg-red-100', icon: XCircle, label: 'Cancelled' },
-}
+import { statusConfig } from '@/lib/motion/variants'
 
 export default function OrdersClient() {
   const router = useRouter()

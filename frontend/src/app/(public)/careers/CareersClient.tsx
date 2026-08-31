@@ -3,11 +3,7 @@
 import { motion } from 'motion/react'
 import { Briefcase, MapPin, Clock, Calendar, ArrowRight, Building } from 'lucide-react'
 import { useCareers } from '@/lib/query'
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 30 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.5 } },
-}
+import { fadeUp } from '@/lib/motion/variants'
 
 export default function CareersClient() {
   const { data: listings = [], isLoading: loading, error } = useCareers()
@@ -24,7 +20,7 @@ export default function CareersClient() {
     <>
       <main className="max-w-5xl mx-auto px-4 py-8">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <h1 className="font-display text-4xl font-bold mb-2">Careers</h1>
+          <h1 className="font-display text-2xl sm:text-4xl font-bold mb-2">Careers</h1>
           <p className="text-gray-500 mb-8">Join the Checkstar team — view current job openings in Durban.</p>
         </motion.div>
 
@@ -59,7 +55,7 @@ export default function CareersClient() {
           >
             {Object.entries(grouped).map(([department, deptListings]) => (
               <motion.div key={department} variants={fadeUp}>
-                <h2 className="font-display text-xl font-bold mb-4 flex items-center gap-2">
+                <h2 className="font-display text-base sm:text-xl font-bold mb-4 flex items-center gap-2">
                   <Building size={20} className="text-primary" />
                   {department}
                 </h2>
@@ -71,7 +67,7 @@ export default function CareersClient() {
                     >
                       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                         <div className="flex-1">
-                          <h3 className="font-display text-lg font-semibold text-gray-900 mb-2">
+                          <h3 className="font-display text-base sm:text-lg font-semibold text-gray-900 mb-2">
                             {listing.title}
                           </h3>
                           <div className="flex flex-wrap items-center gap-3 text-sm text-gray-500 mb-3">

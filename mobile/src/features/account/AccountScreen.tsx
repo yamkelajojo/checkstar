@@ -1,10 +1,11 @@
-import { View, Text, FlatList, TextInput, Alert, Platform } from 'react-native';
-import { LogOut, Package, Settings, Wifi, WifiOff } from 'lucide-react-native';
+import React from 'react';
+import { View, Text, FlatList, TextInput, Alert, Platform, TouchableOpacity } from 'react-native';
+import { LogOut, Package, Settings, Wifi, WifiOff, ChevronDown, ChevronUp } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTheme } from '../../theme';
 import { brand } from '../../theme/colors';
-import { textStyle, fontWeight } from '../../theme/typography';
+import { textStyle, fontWeight, typeScale } from '../../theme/typography';
 import { semanticSpacing, semanticRadius } from '../../theme/spacing';
 import { useSession } from '../../stores/session';
 import { useQuery } from '@tanstack/react-query';
@@ -19,15 +20,7 @@ import { useToast } from '../../components/shared/GlassToast';
 import type { RootStackParamList } from '../../navigation/types';
 import { getApiBaseUrl, setApiBaseUrl, resetApiClient } from '../../lib/apiClient';
 import { storage, STORAGE_KEYS } from '../../lib/storage';
-
-const STATUS_LABEL: Record<string, string> = {
-  pending: 'Pending',
-  confirmed: 'Confirmed',
-  preparing: 'Preparing',
-  out_for_delivery: 'Out for delivery',
-  delivered: 'Delivered',
-  cancelled: 'Cancelled',
-};
+import { ORDER_STATUS_LABEL as STATUS_LABEL } from '../../lib/status';
 
 function getLocalIp(): string {
   if (Platform.OS === 'android') return '10.0.2.2';
@@ -49,14 +42,39 @@ export function AccountScreen() {
   });
 
   const name = user?.name ?? 'Guest';
+  const role = user?.role ?? 'customer';
+  const initial = name?.[0]?.toUpperCase() ?? '?';
+  const roleLabel = role === 'rider' ? '🚲 Rider' : role === 'store_owner' ? '🏪 Owner' : role === 'store_manager' ? '📋 Manager' : role === 'logistics_officer' ? '📦 Logistics' : role === 'developer' ? '💻 Developer' : '👤 Customer';
+
+  const [devExpanded, setDevExpanded] = React.useState(false);
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background.primary }}>
-      <View style={{ paddingTop: 56, paddingHorizontal: semanticSpacing.screenPadding, gap: semanticSpacing.inlineGap }}>
-        <Logo variant="lockup" size={26} tone={theme.name} />
-        <Text style={{ ...textStyle.h3, fontWeight: fontWeight.bold, color: theme.colors.text.primary }}>
+      {/* Profile header with layered logo */}
+      <View style={{ paddingTop: 36, paddingHorizontal: semanticSpacing.screenPadding, alignItems: 'center', gap: semanticSpacing.md }}>
+        {/* Logo overlaid above profile image */}
+        <View style={{ position: 'relative', alignItems: 'center' }}>
+          <Logo variant="stacked" size={30} tone={theme.name} style={{ zIndex: 2 }} />
+        </View>
+
+        {/* Profile image container shifted downward for overlap */}
+        <View style={{ width: 96, height: 96, borderRadius: 48, backgroundColor: theme.colors.surface.elevated, alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: theme.colors.surface, marginTop: semanticSpacing.xxs, zIndex: 1 }}>
+          <Text style={{ fontSize: 42, fontWeight: fontWeight.black, color: brand.orange }}>
+            {initial}
+          </Text>
+        </View>
+
+        <Text style={{ ...textStyle.h2, fontWeight: fontWeight.bold, color: theme.colors.text.primary, textAlign: 'center', marginTop: -semanticSpacing.md }}>
           {name}
         </Text>
+
+        <Text style={{ color: theme.colors.text.secondary, ...textStyle.caption, textAlign: 'center' }}>
+          {roleLabel}
+        </Text>
+      </View>
+
+      {/* Sign out inline */}
+      <View style={{ paddingHorizontal: semanticSpacing.screenPadding, paddingTop: semanticSpacing.md, paddingBottom: semanticSpacing.md }}>
         {status === 'authenticated' ? (
           <TactilePressable
             onPress={async () => {
@@ -65,16 +83,17 @@ export function AccountScreen() {
             }}
             haptic="tap"
             accessibilityRole="button"
-            style={{ alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: semanticSpacing.xxs }}
+            accessibilityLabel="Sign out"
+            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: semanticSpacing.xxs, backgroundColor: theme.colors.surface.primary, borderRadius: semanticRadius.buttonPill, paddingVertical: semanticSpacing.sm, paddingHorizontal: semanticSpacing.md }}
           >
-            <LogOut size={16} color={theme.colors.text.secondary} />
-            <Text style={{ color: theme.colors.text.secondary, ...textStyle.bodySmall }}>Sign out</Text>
+            <LogOut size={18} color={theme.colors.text.secondary} />
+            <Text style={{ color: theme.colors.text.secondary, fontWeight: fontWeight.semibold, ...textStyle.body }}>Sign Out</Text>
           </TactilePressable>
         ) : (
           <TactilePressable
             onPress={() => navigation.navigate('Auth')}
             haptic="commit"
-            style={{ backgroundColor: brand.orange, borderRadius: semanticRadius.buttonPill, paddingHorizontal: semanticSpacing.lg, alignSelf: 'flex-start' }}
+            style={{ backgroundColor: brand.orange, borderRadius: semanticRadius.buttonPill, paddingVertical: semanticSpacing.md, alignItems: 'center' }}
           >
             <Text style={{ color: theme.colors.text.inverse, fontWeight: fontWeight.bold, ...textStyle.buttonPrimary }}>Sign in</Text>
           </TactilePressable>
@@ -124,12 +143,28 @@ export function AccountScreen() {
         />
       )}
 
+      {/* Developer settings — collapsed by default */}
       {__DEV__ && (
-        <DebugSection
-          theme={theme}
-          toast={toast}
-          getLocalIp={getLocalIp}
-        />
+        <View style={{ marginTop: semanticSpacing.xl, paddingHorizontal: semanticSpacing.screenPadding }}>
+          <TactilePressable
+            onPress={() => setDevExpanded(!devExpanded)}
+            haptic="tap"
+            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: semanticSpacing.sm, paddingHorizontal: semanticSpacing.md, backgroundColor: theme.colors.surface.primary, borderRadius: semanticRadius.card, borderWidth: 1, borderColor: theme.colors.border.subtle }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: semanticSpacing.inlineGap }}>
+              <Settings size={18} color={theme.colors.text.secondary} />
+              <Text style={{ ...textStyle.h4, fontWeight: fontWeight.bold, color: theme.colors.text.primary }}>
+                Developer Settings
+              </Text>
+            </View>
+            {devExpanded ? <ChevronUp size={16} color={theme.colors.text.secondary} /> : <ChevronDown size={16} color={theme.colors.text.secondary} />}
+          </TactilePressable>
+          {devExpanded && (
+            <View style={{ marginTop: semanticSpacing.xs }}>
+              <DebugSection theme={theme} toast={toast} getLocalIp={getLocalIp} />
+            </View>
+          )}
+        </View>
       )}
     </View>
   );
@@ -263,5 +298,3 @@ function DebugSection({ theme, toast, getLocalIp }: { theme: ReturnType<typeof u
     </View>
   );
 }
-
-import React from 'react';

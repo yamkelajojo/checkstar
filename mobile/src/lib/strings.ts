@@ -143,6 +143,7 @@ export const copy = {
     emptyActive: 'No active deliveries.',
     claim: 'Claim',
     claimed: 'Claimed',
+    claiming: 'Claiming...',
     markItemsBought: 'Mark items bought',
     markItemsBoughtShort: 'Bought',
     outForDelivery: 'Out for delivery',

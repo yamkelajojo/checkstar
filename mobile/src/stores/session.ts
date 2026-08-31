@@ -3,6 +3,7 @@ import type { ApiUser } from '../lib/types';
 import { setAuthToken, tokenStorage, forceTokenRefresh } from '../lib/apiClient';
 import { getGlobalSyncRef } from '../lib/cartSync';
 import { storage, STORAGE_KEYS } from '../lib/storage';
+import { queryClient } from '../lib/queryKeys';
 
 export type SessionStatus = 'boot' | 'authenticated' | 'guest';
 
@@ -61,6 +62,8 @@ export const useSession = create<SessionState>((set) => ({
     try {
       getGlobalSyncRef().current = false;
     } catch {}
+    // Clear all cached queries to prevent stale data leakage between sessions
+    queryClient.clear();
     set({ status: 'guest', token: null, user: null });
   },
 }));

@@ -1,4 +1,4 @@
-import type { ApiProduct } from './types';
+import type { ApiProduct, ApiStoreAvailability } from './types';
 import { effectivePriceCents } from './pricing';
 
 /** Converts a Rand decimal string ("12.50") from the API into whole cents. */
@@ -6,6 +6,15 @@ export function toCents(rand: string | number): number {
   const num = typeof rand === 'string' ? parseFloat(rand) : rand;
   if (!Number.isFinite(num)) return 0;
   return Math.round(num * 100);
+}
+
+export interface StoreAvailabilityVO {
+  storeProductId: number;
+  id: number;
+  name: string;
+  slug: string;
+  stockQuantity: number;
+  isAvailable: boolean;
 }
 
 export interface ProductVO {
@@ -27,6 +36,8 @@ export interface ProductVO {
   isFeatured: boolean;
   isActive: boolean;
   stockLabel: string;
+  storeCount: number;
+  stores: StoreAvailabilityVO[];
 }
 
 export function mapProduct(api: ApiProduct): ProductVO {
@@ -36,6 +47,15 @@ export function mapProduct(api: ApiProduct): ProductVO {
     api.specials && api.specials.length > 0
       ? toCents(api.specials[0].sale_price ?? 0) || null
       : null;
+
+  const stores = (api.stores ?? []).map((s: ApiStoreAvailability) => ({
+    storeProductId: s.store_product_id,
+    id: s.id,
+    name: s.name,
+    slug: s.slug,
+    stockQuantity: s.stock_quantity,
+    isAvailable: s.is_available,
+  }));
 
   return {
     id: api.id,
@@ -56,5 +76,12 @@ export function mapProduct(api: ApiProduct): ProductVO {
     isFeatured: api.is_featured,
     isActive: api.is_active,
     stockLabel: api.is_active ? 'In stock' : 'Out of stock',
+    storeCount: api.store_count ?? 0,
+    stores,
   };
+}
+
+export function findStoreAvailability(product: ProductVO, storeId: number | null): StoreAvailabilityVO | undefined {
+  if (!storeId) return undefined;
+  return product.stores.find((s) => s.id === storeId && s.isAvailable && s.stockQuantity > 0);
 }

@@ -7,6 +7,8 @@ const valid = {
   authenticated: true,
   storeSelected: true,
   submitting: false,
+  validatingFulfillment: false,
+  fulfillmentValid: true,
 };
 
 describe('canSubmit', () => {
@@ -40,10 +42,22 @@ describe('canSubmit', () => {
   });
 
   it('does not require a selected store (backend auto-dispatches)', () => {
-    expect(canSubmit({ ...valid, storeSelected: false })).toBe(true);
+    expect(canSubmit({ ...valid, storeSelected: false, fulfillmentValid: true })).toBe(true);
   });
 
   it('is false while a submit is already in flight', () => {
     expect(canSubmit({ ...valid, submitting: true })).toBe(false);
+  });
+
+  it('is false while fulfillment is still being validated', () => {
+    expect(canSubmit({ ...valid, validatingFulfillment: true, fulfillmentValid: false })).toBe(false);
+  });
+
+  it('is false when fulfillment validation fails', () => {
+    expect(canSubmit({ ...valid, fulfillmentValid: false })).toBe(false);
+  });
+
+  it('is false when fulfillment has not been validated yet', () => {
+    expect(canSubmit({ ...valid, fulfillmentValid: undefined })).toBe(false);
   });
 });

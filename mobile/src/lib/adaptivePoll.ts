@@ -16,6 +16,8 @@ export interface AdaptivePollState {
   onError: (error: unknown) => void;
   shouldPoll: () => boolean;
   setIsPolling: (v: boolean) => void;
+  /** Read the live (mutating) interval — used by createAdaptiveRefetchInterval. */
+  getIntervalMs: () => number;
 }
 
 /**
@@ -64,12 +66,14 @@ export function useAdaptivePoll(
     onError: handleError,
     shouldPoll,
     setIsPolling: (v: boolean) => { isPollingRef.current = v; },
+    getIntervalMs: () => intervalRef.current,
   };
 }
 
 /**
  * Creates a refetchInterval function for useQuery that implements adaptive polling.
  * The interval increases exponentially on consecutive errors, resets on success.
+ * Uses getIntervalMs() to always read the live (mutating) interval value.
  */
 export function createAdaptiveRefetchInterval(
   adaptivePoll: AdaptivePollState,
@@ -78,11 +82,11 @@ export function createAdaptiveRefetchInterval(
     if (!adaptivePoll.shouldPoll()) return false;
     if (query.state.error) {
       adaptivePoll.onError(query.state.error);
-      return adaptivePoll.intervalMs;
+      return adaptivePoll.getIntervalMs();
     }
     if (query.state.data) {
       adaptivePoll.onSuccess();
     }
-    return adaptivePoll.intervalMs;
+    return adaptivePoll.getIntervalMs();
   };
 }

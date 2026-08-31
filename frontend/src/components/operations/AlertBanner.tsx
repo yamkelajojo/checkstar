@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { motion, AnimatePresence } from '@/lib/motion'
 import { AlertTriangle, X, Clock, User } from 'lucide-react'
+import { api } from '@/lib/api'
 
 interface Alert {
   id: string
@@ -22,10 +23,8 @@ export default function AlertBanner() {
 
   const checkAlerts = useCallback(async () => {
     try {
-      const res = await fetch('/api/operations/alerts', { credentials: 'include' })
-      if (!res.ok) return
-      const data = await res.json()
-      setAlerts(data.alerts ?? [])
+      const data = await api.getOperationsAlerts()
+      setAlerts((data.alerts ?? []) as Alert[])
     } catch {
       // Silent fail
     }

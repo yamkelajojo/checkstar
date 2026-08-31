@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { motion } from 'motion/react'
 import { Send, MapPin, Phone, Mail, Clock, Loader2, CheckCircle } from 'lucide-react'
+import { api, ApiError } from '@/lib/api'
 
 const stores = [
   { name: 'Checkstar Berea', address: '123 Berea Road, Berea, Durban', phone: '(031) 201-1234', hours: 'Mon–Sat 7am–8pm, Sun 8am–6pm' },
@@ -16,38 +17,18 @@ export default function ContactClient() {
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState('')
 
-  const getCookie = (name: string) => {
-    const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'))
-    return match ? decodeURIComponent(match[2]) : null
-  }
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSending(true)
     setError('')
     setSuccess(false)
     try {
-      // Ensure CSRF cookie for Laravel Sanctum stateful requests
-      try { await fetch('/sanctum/csrf-cookie', { credentials: 'include' }) } catch {}
-      const xsrf = getCookie('XSRF-TOKEN')
-      const res = await fetch('/api/contact', {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          ...(xsrf ? { 'X-XSRF-TOKEN': xsrf } : {}),
-        },
-        body: JSON.stringify(form),
-      })
-      if (!res.ok) {
-        const payload = await res.json().catch(() => ({}))
-        throw new Error((payload as any)?.message || 'Failed to send message.')
-      }
+      await api.submitContact({ name: form.name, email: form.email, subject: form.subject || undefined, message: form.message })
       setSuccess(true)
       setForm({ name: '', email: '', phone: '', subject: '', message: '' })
-    } catch (err: any) {
-      setError(err.message || 'Something went wrong.')
+    } catch (err) {
+      const msg = err instanceof ApiError ? err.message : err instanceof Error ? err.message : 'Something went wrong.'
+      setError(msg)
     } finally {
       setSending(false)
     }
@@ -57,7 +38,7 @@ export default function ContactClient() {
     <>
       <main className="max-w-6xl mx-auto px-4 py-8">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <h1 className="font-display text-4xl font-bold mb-2">Contact Us</h1>
+          <h1 className="font-display text-2xl sm:text-4xl font-bold mb-2">Contact Us</h1>
           <p className="text-gray-500 mb-12">We&apos;d love to hear from you. Get in touch with our team.</p>
         </motion.div>
 
@@ -74,7 +55,7 @@ export default function ContactClient() {
                 className="bg-green-50 rounded-xl p-8 text-center"
               >
                 <CheckCircle size={40} className="text-green-600 mx-auto mb-3" />
-                <h2 className="font-display text-xl font-bold text-green-800 mb-2">Message Sent!</h2>
+                <h2 className="font-display text-base sm:text-xl font-bold text-green-800 mb-2">Message Sent!</h2>
                 <p className="text-green-600 text-sm">We&apos;ll get back to you as soon as possible.</p>
               </motion.div>
             ) : (
@@ -157,7 +138,7 @@ export default function ContactClient() {
             className="lg:col-span-2 space-y-6"
           >
             <div className="bg-gray-50 rounded-xl p-6 space-y-3">
-              <h2 className="font-display text-lg font-semibold">Our Details</h2>
+              <h2 className="font-display text-base sm:text-lg font-semibold">Our Details</h2>
               <div className="space-y-3 text-sm">
                 <div className="flex items-start gap-3">
                   <MapPin size={16} className="text-primary mt-0.5" />

@@ -32,7 +32,7 @@ export default function CartDrawer({ open, onClose }: Props) {
             className="fixed right-0 top-0 bottom-0 w-full max-w-md bg-white z-50 shadow-xl"
           >
             <div className="flex items-center justify-between p-4 border-b border-gray-100">
-              <h2 className="font-display text-lg font-semibold">Your Cart</h2>
+              <h2 className="font-display text-base sm:text-lg font-semibold">Your Cart</h2>
               <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600">
                 <X size={20} />
               </button>
@@ -40,10 +40,22 @@ export default function CartDrawer({ open, onClose }: Props) {
 
             <div className="flex-1 overflow-y-auto p-4">
               {items.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 text-gray-400">
-                  <ShoppingBag size={48} className="mb-4" />
-                  <p className="text-sm">Your cart is empty</p>
-                </div>
+                <motion.div
+                  initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ duration: 0.35, ease: [0.4, 0.01, 0.165, 0.99] }}
+                  className="flex flex-col items-center justify-center py-16 text-[#968D84]"
+                >
+                  <motion.div
+                    initial={{ rotate: -5, scale: 0.9 }}
+                    animate={{ rotate: 0, scale: 1 }}
+                    transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
+                  >
+                    <ShoppingBag size={48} className="mb-4" />
+                  </motion.div>
+                  <p className="text-sm font-medium">Your cart is empty</p>
+                  <p className="text-xs mt-1 opacity-60">Add some groceries to get started</p>
+                </motion.div>
               ) : (
                 <div className="flex flex-col gap-3">
                   {items.map(item => (

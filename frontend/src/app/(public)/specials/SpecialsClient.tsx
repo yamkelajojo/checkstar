@@ -4,16 +4,7 @@ import { motion } from 'motion/react'
 import { Calendar, Clock, Tag } from 'lucide-react'
 import ProductCard from '@/components/ProductCard'
 import { useSpecials } from '@/lib/query'
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 30 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.5 } },
-}
-
-const stagger = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.1 } },
-}
+import { fadeUp, stagger } from '@/lib/motion/variants'
 
 function formatDate(d: string) {
   return new Date(d).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -27,7 +18,7 @@ export default function SpecialsClient() {
     <>
       <main className="max-w-7xl mx-auto px-4 py-8">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <h1 className="font-display text-4xl font-bold mb-2">Specials</h1>
+          <h1 className="font-display text-2xl sm:text-4xl font-bold mb-2">Specials</h1>
           <p className="text-gray-500 mb-8">Limited-time offers on your favourite products.</p>
         </motion.div>
 
@@ -50,11 +41,16 @@ export default function SpecialsClient() {
             ))}
           </div>
         ) : specials.length === 0 ? (
-          <div className="text-center py-16 text-gray-400">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8, filter: 'blur(8px)' }}
+            animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+            transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+            className="text-center py-16 text-gray-400"
+          >
             <Tag size={40} className="mx-auto mb-3 opacity-50" />
             <p className="text-lg">No specials right now</p>
             <p className="text-sm mt-1">Check back soon for new deals.</p>
-          </div>
+          </motion.div>
         ) : (
           <motion.div variants={stagger} initial="hidden" animate="show" className="space-y-16">
             {specials.map(special => {
@@ -70,7 +66,7 @@ export default function SpecialsClient() {
                       />
                       <div className="absolute inset-0 bg-gradient-to-r from-black/50 to-transparent flex items-center p-8">
                         <div>
-                          <h2 className="font-display text-2xl md:text-3xl font-bold text-white mb-2">
+                          <h2 className="font-display text-lg sm:text-2xl md:text-3xl font-bold text-white mb-2">
                             {special.title}
                           </h2>
                           {special.description && (
@@ -83,7 +79,7 @@ export default function SpecialsClient() {
 
                   {!special.banner_image && (
                     <div className="mb-4">
-                      <h2 className="font-display text-2xl font-bold">{special.title}</h2>
+                      <h2 className="font-display text-lg sm:text-2xl font-bold">{special.title}</h2>
                       {special.description && (
                         <p className="text-gray-500 text-sm mt-1">{special.description}</p>
                       )}

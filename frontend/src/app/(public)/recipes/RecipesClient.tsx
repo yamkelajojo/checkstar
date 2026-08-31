@@ -5,11 +5,7 @@ import Link from 'next/link'
 import { motion } from 'motion/react'
 import { Clock, Users, ChefHat, ArrowRight } from 'lucide-react'
 import { useRecipes } from '@/lib/query'
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 30 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.5 } },
-}
+import { fadeUp } from '@/lib/motion/variants'
 
 export default function RecipesClient() {
   const { data: recipes = [], isLoading: loading, error } = useRecipes()
@@ -25,7 +21,7 @@ export default function RecipesClient() {
     <>
       <main className="max-w-7xl mx-auto px-4 py-8">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <h1 className="font-display text-4xl font-bold mb-2">Recipes</h1>
+          <h1 className="font-display text-2xl sm:text-4xl font-bold mb-2">Recipes</h1>
           <p className="text-gray-500 mb-8">Discover delicious recipes made with Checkstar ingredients.</p>
         </motion.div>
 
@@ -37,11 +33,11 @@ export default function RecipesClient() {
           >
             <button
               onClick={() => setActiveCategory(null)}
-              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                activeCategory === null
-                  ? 'bg-primary text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
+className={`px-3 py-1.5 rounded-full text-sm font-light transition-colors ${
+                  activeCategory === null
+                    ? 'bg-primary text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
             >
               All
             </button>
@@ -49,7 +45,7 @@ export default function RecipesClient() {
               <button
                 key={cat}
                 onClick={() => setActiveCategory(activeCategory === cat ? null : cat)}
-                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                className={`px-3 py-1.5 rounded-full text-sm font-normal transition-colors ${
                   activeCategory === cat
                     ? 'bg-primary text-white'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -73,10 +69,15 @@ export default function RecipesClient() {
             ))}
           </div>
         ) : filtered.length === 0 ? (
-          <div className="text-center py-16 text-gray-400">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8, filter: 'blur(8px)' }}
+            animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+            transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+            className="text-center py-16 text-gray-400"
+          >
             <ChefHat size={40} className="mx-auto mb-3 opacity-50" />
             <p className="text-lg">No recipes found</p>
-          </div>
+          </motion.div>
         ) : (
           <motion.div
             initial="hidden"
@@ -102,7 +103,7 @@ export default function RecipesClient() {
                       )}
                     </div>
                     <div className="p-5">
-                      <h3 className="font-display text-lg font-semibold group-hover:text-primary transition-colors mb-2">
+                      <h3 className="font-display text-base sm:text-lg font-semibold group-hover:text-primary transition-colors mb-2">
                         {recipe.title}
                       </h3>
                       {recipe.description && (

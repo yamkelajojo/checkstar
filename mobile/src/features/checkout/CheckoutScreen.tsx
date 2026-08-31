@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { View, Text, TextInput, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
-import { Store, Lock, CheckCircle2 } from 'lucide-react-native';
+import { Store, Lock, CheckCircle2, AlertCircle, MapPin } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTheme } from '../../theme';
@@ -8,14 +8,14 @@ import { brand } from '../../theme/colors';
 import { typeScale, weights, letterSpacing } from '../../theme/typography';
 import { useCart } from '../cart/store';
 import { cartRules } from '../cart/model';
-import { useProducts } from '../catalog/hooks';
-import { useDeliveryStore } from '../../stores/deliveryStore';
+import { useAllProducts } from '../catalog/hooks';
 import { useSession } from '../../stores/session';
-import { placeOrder } from '../../lib/apiClient';
+import { placeOrder, validateFulfillment } from '../../lib/apiClient';
 import { getDeliveryCoords } from '../../lib/deliveryCoords';
 import { formatZar } from '../../lib/currency';
 import { TactilePressable } from '../../components/shared/TactilePressable';
 import { EmptyState } from '../../components/shared/EmptyState';
+import { haptic } from '../../lib/haptics';
 import { copy, formatString } from '../../lib/strings';
 import { queryClient, queryKeys } from '../../lib/queryKeys';
 import { useToast } from '../../components/shared/GlassToast';
@@ -23,18 +23,26 @@ import type { RootStackParamList } from '../../navigation/types';
 import { canSubmit, MIN_ORDER_CENTS } from './model';
 
 const EST_DELIVERY_FEE_CENTS = 0;
+const VALIDATION_DEBOUNCE_MS = 500;
 
 type PaymentMethod = 'cash_on_delivery';
+
+interface FulfillmentStoreInfo {
+  id: number;
+  name: string;
+  slug: string;
+  latitude: number;
+  longitude: number;
+  delivery_radius_km: number;
+}
 
 export function CheckoutScreen() {
   const theme = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const store = useDeliveryStore((s) => s.store);
   const items = useCart((s) => s.items);
   const clearCart = useCart((s) => s.clear);
   const status = useSession((s) => s.status);
   const toast = useToast();
-  const { data: products = [] } = useProducts({ storeId: store?.id ?? null });
 
   const [address, setAddress] = useState('');
   const [notes, setNotes] = useState('');
@@ -42,6 +50,10 @@ export function CheckoutScreen() {
   const [usedFallbackLocation, setUsedFallbackLocation] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fulfillmentStore, setFulfillmentStore] = useState<FulfillmentStoreInfo | null>(null);
+  const [fulfillmentError, setFulfillmentError] = useState<string | null>(null);
+  const [validatingFulfillment, setValidatingFulfillment] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -57,6 +69,7 @@ export function CheckoutScreen() {
     };
   }, []);
 
+  const { data: products = [] } = useAllProducts({ storeId: undefined });
   const priceOf = (id: string) => products.find((p) => p.id === Number(id))?.effectivePriceCents ?? 0;
   const subtotal = cartRules.subtotalCents(items, priceOf);
   const total = subtotal + EST_DELIVERY_FEE_CENTS;
@@ -65,11 +78,84 @@ export function CheckoutScreen() {
     subtotalCents: subtotal,
     address,
     authenticated: status === 'authenticated',
-    storeSelected: true,
+    storeSelected: fulfillmentStore != null,
     submitting,
+    validatingFulfillment,
+    fulfillmentValid: fulfillmentStore != null && fulfillmentError == null,
   });
 
+  // Validate fulfillment when cart or address/coords change (debounced)
+  useEffect(() => {
+    if (items.length === 0) return;
+
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    debounceRef.current = setTimeout(() => {
+      let cancelled = false;
+
+      const validate = async () => {
+        setValidatingFulfillment(true);
+        setFulfillmentError(null);
+
+        try {
+          const coords = await getDeliveryCoords();
+
+          const result = await validateFulfillment({
+            items: items.map((i) => ({ product_id: Number(i.productId), quantity: i.quantity })),
+            latitude: coords.latitude,
+            longitude: coords.longitude,
+          });
+
+          if (!cancelled) {
+            if (result.success && result.store) {
+              setFulfillmentStore({
+                id: result.store.id,
+                name: result.store.name,
+                slug: result.store.slug,
+                latitude: result.store.latitude,
+                longitude: result.store.longitude,
+                delivery_radius_km: result.store.delivery_radius_km,
+              });
+            } else {
+              setFulfillmentStore(null);
+              setFulfillmentError(result.reason || 'Cannot fulfill order from any store');
+            }
+          }
+        } catch {
+          if (!cancelled) {
+            setFulfillmentStore(null);
+            setFulfillmentError('Could not validate fulfillment. Please try again.');
+          }
+        } finally {
+          if (!cancelled) setValidatingFulfillment(false);
+        }
+      };
+
+      void validate();
+
+      return () => { cancelled = true; };
+    }, VALIDATION_DEBOUNCE_MS);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [items, address]); // Re-validate when cart or address changes
+
   const submit = async () => {
+    if (!canSubmitOrder) {
+      haptic.warning();
+      setError('Please complete all fields and ensure fulfillment is valid before placing your order.');
+      return;
+    }
+    // Safety check - should not be possible due to disabled button, but guard anyway
+    if (status !== 'authenticated') {
+      setError('Please sign in to place an order.');
+      return;
+    }
+    if (fulfillmentError || !fulfillmentStore) {
+      setError('Cannot place order: fulfillment validation failed. Please check your address.');
+      return;
+    }
     setSubmitting(true);
     setError(null);
     try {
@@ -91,6 +177,7 @@ export function CheckoutScreen() {
         toast.show('No riders available right now — your cart is kept so you can retry.');
       }
       void queryClient.invalidateQueries({ queryKey: queryKeys.orders });
+      haptic.success();
       navigation.replace('OrderPlaced', { orderId: res.data.id, dispatch: res.dispatch });
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not place the order.');
@@ -101,14 +188,14 @@ export function CheckoutScreen() {
 
   const row = (label: string, value: string, strong = false) => (
     <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-      <Text style={{ color: theme.colors.textMuted, fontSize: typeScale.body }}>{label}</Text>
-      <Text style={{ fontWeight: strong ? weights.bold : weights.semibold, color: theme.colors.text }}>{value}</Text>
+      <Text style={{ color: theme.colors.text.secondary, fontSize: typeScale.body }}>{label}</Text>
+      <Text style={{ fontWeight: strong ? weights.bold : weights.semibold, color: theme.colors.text.primary }}>{value}</Text>
     </View>
   );
 
   if (items.length === 0) {
     return (
-      <View style={{ flex: 1, backgroundColor: theme.colors.bg }}>
+      <View style={{ flex: 1, backgroundColor: theme.colors.background.primary }}>
         <ScreenTitle title={copy.checkout.title} />
         <EmptyState icon={Store} title="Nothing to check out" caption="Your cart is empty." />
       </View>
@@ -116,49 +203,68 @@ export function CheckoutScreen() {
   }
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: theme.colors.bg }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: theme.colors.background.primary }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={{ paddingBottom: 140 }} keyboardShouldPersistTaps="handled">
         <ScreenTitle title={copy.checkout.title} />
 
         <View style={{ padding: 16, gap: 14 }}>
-          {store == null && (
-            <View style={{ backgroundColor: theme.colors.surface, borderRadius: 16, padding: 16, gap: 8 }}>
-              <Text style={{ fontWeight: weights.bold, color: theme.colors.text }}>{copy.checkout.noStoreTitle}</Text>
-              <Text style={{ color: theme.colors.textMuted, fontSize: typeScale.body }}>{copy.checkout.noStoreBody}</Text>
-              <TactilePressable
-                onPress={() => navigation.navigate('StorePicker')}
-                haptic="commit"
-                style={{ backgroundColor: brand.primary, borderRadius: 999, alignSelf: 'flex-start' }}
-              >
-                <Text style={{ color: '#fff', fontWeight: weights.bold }}>{copy.checkout.pickStore}</Text>
-              </TactilePressable>
+          {validatingFulfillment && (
+            <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: 16, padding: 16, gap: 8 }}>
+              <Text style={{ fontWeight: weights.bold, color: theme.colors.text.primary }}>Finding best fulfillment store...</Text>
+              <Text style={{ color: theme.colors.text.secondary, fontSize: typeScale.body }}>We're checking which store can fulfill your complete order</Text>
             </View>
           )}
 
-          {store != null && (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-              <Store size={18} color={brand.primary} />
-              <Text style={{ color: theme.colors.textMuted, fontSize: typeScale.body }}>
-                Fulfilled by <Text style={{ fontWeight: weights.bold, color: theme.colors.text }}>{store.name}</Text>
+          {fulfillmentError && (
+            <View style={{ backgroundColor: theme.colors.status.error.soft, borderRadius: 16, padding: 16, gap: 8, borderWidth: 1, borderColor: theme.colors.status.error.primary }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <AlertCircle size={20} color={theme.colors.status.error.strong} />
+                <Text style={{ color: theme.colors.status.error.strong, fontWeight: weights.semibold, fontSize: typeScale.body }}>
+                  Cannot fulfill order
+                </Text>
+              </View>
+              <Text style={{ color: theme.colors.status.error.strong, fontSize: typeScale.body }}>
+                {fulfillmentError}
               </Text>
             </View>
           )}
 
+          {fulfillmentStore && !fulfillmentError && (
+            <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: 16, padding: 16, gap: 8 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <MapPin size={18} color={brand.primary} />
+                <Text style={{ color: theme.colors.text.secondary, fontSize: typeScale.body }}>
+                  Your full order will be fulfilled from <Text style={{ fontWeight: weights.bold, color: theme.colors.text.primary }}>{fulfillmentStore.name}</Text>
+                </Text>
+              </View>
+              <Text style={{ color: theme.colors.text.tertiary, fontSize: typeScale.caption }}>
+                This store has all selected items available and is within delivery range
+              </Text>
+            </View>
+          )}
+
+          {!validatingFulfillment && !fulfillmentStore && !fulfillmentError && (
+            <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: 16, padding: 16, gap: 8 }}>
+              <Text style={{ fontWeight: weights.bold, color: theme.colors.text.primary }}>Unable to determine fulfillment store</Text>
+              <Text style={{ color: theme.colors.text.secondary, fontSize: typeScale.body }}>Please enter your delivery address to continue</Text>
+            </View>
+          )}
+
           <View style={{ gap: 6 }}>
-            <Text style={{ fontWeight: weights.semibold, color: theme.colors.text }}>{copy.checkout.deliveryAddress}</Text>
+            <Text style={{ fontWeight: weights.semibold, color: theme.colors.text.primary }}>{copy.checkout.deliveryAddress}</Text>
             <TextInput
               value={address}
               onChangeText={setAddress}
               placeholder={copy.checkout.deliveryAddressPlaceholder}
-              placeholderTextColor={theme.colors.textFaint}
+              placeholderTextColor={theme.colors.text.tertiary}
               multiline
               numberOfLines={2}
               style={{
-                backgroundColor: theme.colors.surface,
+                backgroundColor: theme.colors.surface.sunken,
                 borderRadius: 14,
                 paddingHorizontal: 16,
                 paddingVertical: 14,
-                color: theme.colors.text,
+                color: theme.colors.text.primary,
                 fontSize: typeScale.body,
                 minHeight: 64,
                 textAlignVertical: 'top',
@@ -167,39 +273,39 @@ export function CheckoutScreen() {
           </View>
 
           <View style={{ gap: 6 }}>
-            <Text style={{ fontWeight: weights.semibold, color: theme.colors.text }}>{copy.checkout.deliveryNotes}</Text>
+            <Text style={{ fontWeight: weights.semibold, color: theme.colors.text.primary }}>{copy.checkout.deliveryNotes}</Text>
             <TextInput
               value={notes}
               onChangeText={setNotes}
               placeholder={copy.checkout.deliveryNotesPlaceholder}
-              placeholderTextColor={theme.colors.textFaint}
+              placeholderTextColor={theme.colors.text.tertiary}
               multiline
               numberOfLines={2}
               style={{
-                backgroundColor: theme.colors.surface,
+                backgroundColor: theme.colors.surface.sunken,
                 borderRadius: 14,
                 paddingHorizontal: 16,
                 paddingVertical: 14,
-                color: theme.colors.text,
+                color: theme.colors.text.primary,
                 fontSize: typeScale.body,
                 minHeight: 64,
                 textAlignVertical: 'top',
               }}
             />
             {usedFallbackLocation && (
-              <Text style={{ color: theme.colors.textMuted, fontSize: typeScale.caption }}>
+              <Text style={{ color: theme.colors.text.secondary, fontSize: typeScale.caption }}>
                 {copy.checkout.locationFallback}
               </Text>
             )}
           </View>
 
           <View style={{ gap: 6 }}>
-            <Text style={{ fontWeight: weights.semibold, color: theme.colors.text }}>{copy.checkout.paymentMethod}</Text>
+            <Text style={{ fontWeight: weights.semibold, color: theme.colors.text.primary }}>{copy.checkout.paymentMethod}</Text>
             <View
               accessibilityRole="radio"
               accessibilityState={{ selected: true }}
               style={{
-                backgroundColor: theme.colors.surface,
+                backgroundColor: theme.colors.surface.primary,
                 borderRadius: 14,
                 padding: 14,
                 flexDirection: 'row',
@@ -211,24 +317,24 @@ export function CheckoutScreen() {
             >
               <CheckCircle2 size={20} color={brand.primary} />
               <View style={{ flex: 1, gap: 2 }}>
-                <Text style={{ fontWeight: weights.semibold, color: theme.colors.text }}>{copy.checkout.cashOnDelivery}</Text>
-                <Text style={{ color: theme.colors.textMuted, fontSize: typeScale.caption }}>{copy.checkout.cashOnDeliveryNote}</Text>
+                <Text style={{ fontWeight: weights.semibold, color: theme.colors.text.primary }}>{copy.checkout.cashOnDelivery}</Text>
+                <Text style={{ color: theme.colors.text.secondary, fontSize: typeScale.caption }}>{copy.checkout.cashOnDeliveryNote}</Text>
               </View>
             </View>
           </View>
 
-          <View style={{ backgroundColor: theme.colors.surface, borderRadius: 16, padding: 16, gap: 10 }}>
-            <Text style={{ fontWeight: weights.bold, color: theme.colors.text }}>{copy.checkout.summary}</Text>
+          <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: 16, padding: 16, gap: 10 }}>
+            <Text style={{ fontWeight: weights.bold, color: theme.colors.text.primary }}>{copy.checkout.summary}</Text>
             {row(`${cartRules.totalQuantity(items)} items`, formatZar(subtotal))}
             {row(copy.checkout.estimatedDelivery, formatZar(EST_DELIVERY_FEE_CENTS))}
-            <View style={{ height: 1, backgroundColor: theme.colors.hairline }} />
+            <View style={{ height: 1, backgroundColor: theme.colors.border.subtle }} />
             {row(copy.checkout.total, formatZar(total), true)}
           </View>
 
           {status !== 'authenticated' && (
-            <View style={{ backgroundColor: theme.colors.surface, borderRadius: 16, padding: 16, gap: 8, alignItems: 'center' }}>
-              <Lock size={20} color={theme.colors.textMuted} />
-              <Text style={{ color: theme.colors.textMuted, fontSize: typeScale.body, textAlign: 'center' }}>
+            <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: 16, padding: 16, gap: 8, alignItems: 'center' }}>
+              <Lock size={20} color={theme.colors.text.secondary} />
+              <Text style={{ color: theme.colors.text.secondary, fontSize: typeScale.body, textAlign: 'center' }}>
                 {copy.checkout.signInPrompt}
               </Text>
               <TactilePressable
@@ -242,26 +348,26 @@ export function CheckoutScreen() {
           )}
 
           {error != null && (
-            <Text style={{ color: brand.accent, fontSize: typeScale.body }}>{error}</Text>
+            <Text style={{ color: theme.colors.status.error.strong, fontSize: typeScale.body }}>{error}</Text>
           )}
         </View>
       </ScrollView>
 
-      <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: 16, borderTopWidth: 1, borderTopColor: theme.colors.hairline, backgroundColor: theme.colors.bg }}>
+      <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: 16, borderTopWidth: 1, borderTopColor: theme.colors.border.subtle, backgroundColor: theme.colors.background.primary }}>
         <TactilePressable
           onPress={submit}
           haptic="commit"
           disabled={!canSubmitOrder}
           accessibilityRole="button"
           accessibilityState={{ disabled: !canSubmitOrder }}
-          style={{ backgroundColor: canSubmitOrder ? brand.primary : theme.colors.surface, borderRadius: 999, opacity: canSubmitOrder ? 1 : 0.6 }}
+          style={{ backgroundColor: canSubmitOrder ? brand.primary : theme.colors.surface.primary, borderRadius: 999, opacity: canSubmitOrder ? 1 : 0.6 }}
         >
-          <Text style={{ color: canSubmitOrder ? '#fff' : theme.colors.textMuted, textAlign: 'center', fontWeight: weights.bold, textTransform: 'uppercase', letterSpacing: letterSpacing.wide }}>
+          <Text style={{ color: canSubmitOrder ? '#fff' : theme.colors.text.secondary, textAlign: 'center', fontWeight: weights.bold, textTransform: 'uppercase', letterSpacing: letterSpacing.wide }}>
             {submitting ? copy.checkout.placingOrder : `${copy.checkout.placeOrder} · ${formatZar(total)}`}
           </Text>
         </TactilePressable>
         {subtotal < MIN_ORDER_CENTS && (
-          <Text style={{ textAlign: 'center', marginTop: 8, color: brand.accent, fontSize: typeScale.caption }}>
+          <Text style={{ textAlign: 'center', marginTop: 8, color: theme.colors.status.error.strong, fontSize: typeScale.caption }}>
             {formatString(copy.cart.minOrder, { minCents: formatZar(MIN_ORDER_CENTS) })}
           </Text>
         )}
@@ -273,7 +379,7 @@ export function CheckoutScreen() {
 function ScreenTitle({ title }: { title: string }) {
   const theme = useTheme();
   return (
-    <Text style={{ paddingTop: 56, paddingHorizontal: 16, fontSize: typeScale.title, fontWeight: weights.extrabold, color: theme.colors.text }}>
+    <Text style={{ paddingTop: 56, paddingHorizontal: 16, fontSize: typeScale.title, fontWeight: weights.extrabold, color: theme.colors.text.primary }}>
       {title}
     </Text>
   );

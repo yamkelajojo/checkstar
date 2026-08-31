@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { api } from '@/lib/api'
 
 interface User {
   id: number
@@ -20,13 +21,8 @@ export function useRole() {
   useEffect(() => {
     async function fetchUser() {
       try {
-        const res = await fetch('/api/auth/user', { credentials: 'include' })
-        if (res.ok) {
-          const data = await res.json()
-          setUser(data.user ?? data)
-        } else {
-          router.push('/login')
-        }
+        const data = await api.getUser()
+        setUser(data.user ?? data as unknown as User)
       } catch {
         router.push('/login')
       } finally {

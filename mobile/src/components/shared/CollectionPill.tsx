@@ -19,16 +19,27 @@ export function CollectionPill({ label, active = false, onPress }: CollectionPil
   const reduceMotion = useReducedMotion();
   const content = (
     <TamaguiText
-      fontSize={textStyle.caption.size}
-      fontWeight={fontWeight.bold}
+      fontSize={textStyle.micro.size}
+      fontWeight={fontWeight.medium}
       letterSpacing={letterSpacing.wide}
       textTransform="uppercase"
       color={active ? theme.colors.text.inverse : theme.colors.text.brand}
-      paddingHorizontal={semanticSpacing.cardPadding}
+      paddingHorizontal={semanticSpacing.inlineGap}
     >
       {label}
     </TamaguiText>
   );
+  // Compact filter pill: 28px height, lighter visual weight
+  const pillStyle = {
+    borderRadius: semanticRadius.chip,
+    backgroundColor: active ? brand.orange : theme.colors.surface.elevated,
+    minWidth: 48,
+    height: 28,
+    minHeight: 28 as const,
+    justifyContent: 'center' as const,
+    borderWidth: 1,
+    borderColor: active ? brand.orange : theme.colors.border.subtle,
+  };
   if (reduceMotion) {
     return (
       <TactilePressable
@@ -36,11 +47,7 @@ export function CollectionPill({ label, active = false, onPress }: CollectionPil
         haptic={undefined}
         accessibilityRole="button"
         accessibilityState={{ selected: active }}
-        style={{
-          borderRadius: semanticRadius.chip,
-          backgroundColor: active ? brand.orange : theme.colors.surface.primary,
-          minWidth: 56,
-        }}
+        style={pillStyle}
       >
         {content}
       </TactilePressable>
@@ -53,11 +60,7 @@ export function CollectionPill({ label, active = false, onPress }: CollectionPil
         haptic="tap"
         accessibilityRole="button"
         accessibilityState={{ selected: active }}
-        style={{
-          borderRadius: semanticRadius.chip,
-          backgroundColor: active ? brand.orange : theme.colors.surface.primary,
-          minWidth: 56,
-        }}
+        style={pillStyle}
       >
         {content}
       </TactilePressable>

@@ -1,22 +1,22 @@
 import { cartRules, applyServerMerge } from '../../features/cart/model';
 import type { CartItem } from '../../features/cart/types';
 
-const id = { productId: 'p1', storeProductId: 5 as number | null };
+const id = { productId: 'p1' };
 
-const line = (productId: string, quantity: number, storeProductId: number | null = null): CartItem =>
-  ({ productId, storeProductId, quantity });
+const line = (productId: string, quantity: number): CartItem =>
+  ({ productId, quantity });
 
 describe('addItem', () => {
   it('adds a new item to an empty cart', () => {
-    expect(cartRules.addItem([], id, 1)).toEqual([line('p1', 1, 5)]);
+    expect(cartRules.addItem([], id, 1)).toEqual([line('p1', 1)]);
   });
 
   it('increments quantity when the same product is already present', () => {
-    expect(cartRules.addItem([line('p1', 2, 5)], id, 1)).toEqual([line('p1', 3, 5)]);
+    expect(cartRules.addItem([line('p1', 2)], id, 1)).toEqual([line('p1', 3)]);
   });
 
   it('caps quantity at 8', () => {
-    expect(cartRules.addItem([line('p1', 7, 5)], id, 2)).toEqual([line('p1', 8, 5)]);
+    expect(cartRules.addItem([line('p1', 7)], id, 2)).toEqual([line('p1', 8)]);
   });
 });
 
@@ -40,22 +40,21 @@ describe('decrementItem', () => {
 describe('mergeWithServer', () => {
   it('keeps the server quantity for products present on the server', () => {
     const local = [line('p1', 5)];
-    const server: CartItem[] = [{ productId: 'p1', quantity: 2, storeProductId: 7 }];
+    const server: CartItem[] = [{ productId: 'p1', quantity: 2 }];
     const next = cartRules.mergeWithServer(local, server);
     expect(next.find((i) => i.productId === 'p1')?.quantity).toBe(2);
-    expect(next.find((i) => i.productId === 'p1')?.storeProductId).toBe(7);
   });
 
   it('adds local-only items so nothing is lost on sign-in', () => {
     const local = [line('p1', 1), line('p2', 1)];
-    const server: CartItem[] = [{ productId: 'p1', quantity: 1, storeProductId: null }];
+    const server: CartItem[] = [{ productId: 'p1', quantity: 1 }];
     const next = cartRules.mergeWithServer(local, server);
     expect(next.map((i) => i.productId).sort()).toEqual(['p1', 'p2']);
   });
 
   it('caps quantities at 8', () => {
     const local = [line('p1', 8)];
-    const server: CartItem[] = [{ productId: 'p2', quantity: 20, storeProductId: null }];
+    const server: CartItem[] = [{ productId: 'p2', quantity: 20 }];
     const next = cartRules.mergeWithServer(local, server);
     expect(next.find((i) => i.productId === 'p2')?.quantity).toBe(8);
   });
@@ -92,11 +91,11 @@ describe('applyServerMerge', () => {
   ) => ({ data, dropped });
 
   it('replaces the draft with the server lines mapped into cart items', () => {
-    const draft = [line('1', 3, null)];
+    const draft = [line('1', 3)];
     const result = applyServerMerge(draft, syncResponse([
       { product_id: 1, quantity: 4, store_product_id: 11 },
     ]));
-    expect(result.items).toEqual([{ productId: '1', storeProductId: 11, quantity: 4 }]);
+    expect(result.items).toEqual([{ productId: '1', quantity: 4 }]);
     expect(result.droppedCount).toBe(0);
   });
 

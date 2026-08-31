@@ -117,6 +117,29 @@ export function OrderPlacedScreen() {
           </TactilePressable>
         )}
         <TactilePressable
+          onPress={() => navigation.navigate('RouteExplorer', {
+            storeName: (dispatchStoreName || order?.store?.name) ?? 'Checkstar',
+            storeLat: order?.store?.latitude ?? undefined,
+            storeLng: order?.store?.longitude ?? undefined,
+            deliveryAddress: order?.delivery_address ?? null,
+            deliveryLat: order?.delivery_latitude ?? undefined,
+            deliveryLng: order?.delivery_longitude ?? undefined,
+            distanceKm: 3.2,
+            durationMinutes: 15,
+            source: 'osrm',
+            geometry: null,
+          })}
+          haptic="selection"
+          accessibilityRole="button"
+          accessibilityLabel="Open immersive route explorer"
+          style={{ backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 999, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', paddingVertical: 12, paddingHorizontal: 16 }}
+        >
+          <Text style={{ color: theme.colors.text.tertiary, textAlign: 'center', fontWeight: weights.medium, fontSize: typeScale.caption, letterSpacing: letterSpacing.wide }}>
+            Open Immersive Route Explorer →
+          </Text>
+        </TactilePressable>
+
+        <TactilePressable
           onPress={() => navigation.navigate('Tabs')}
           haptic="selection"
           accessibilityRole="button"

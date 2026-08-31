@@ -4,6 +4,8 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { isNavLinkActive } from '@/lib/navigation'
 
+import { startNavigation } from '@/lib/navigation/transition-service';
+
 interface Props {
   href: string
   label: string
@@ -14,10 +16,16 @@ export default function NavLink({ href, label, onNavigate }: Props) {
   const pathname = usePathname()
   const active = isNavLinkActive(pathname, href)
 
+  const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    onNavigate?.();
+    // Trigger navigation lifecycle for smooth transition
+    startNavigation();
+  };
+
   return (
     <Link
       href={href}
-      onClick={onNavigate}
+      onClick={handleClick}
       aria-current={active ? 'page' : undefined}
       className={`text-sm transition-colors ${
         active

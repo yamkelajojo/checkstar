@@ -11,7 +11,8 @@ const config: Config = {
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
-        display: ['Figtree', 'system-ui', 'sans-serif'],
+        display: ['Handlee', 'Figtree', 'system-ui', 'sans-serif'],
+        accent: ['Handlee', 'system-ui', 'sans-serif'],
       },
     },
   },

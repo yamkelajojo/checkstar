@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { motion, AnimatePresence } from '@/lib/motion'
 import { spring } from '@/lib/motion/tokens'
 import { X, Navigation, Clock, User, ChevronRight } from 'lucide-react'
+import { api, ApiError } from '@/lib/api'
 
 interface Rider {
   id: number
@@ -55,9 +56,7 @@ export default function DispatchPanel({ orderId, onClose, onAssigned }: Dispatch
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch(`/api/operations/dispatch-suggestion/${orderId}`, { credentials: 'include' })
-      if (!res.ok) throw new Error('Failed to load suggestion')
-      const data = await res.json()
+      const data = await api.getDispatchSuggestion(orderId) as unknown as DispatchSuggestion
       setSuggestion(data)
     } catch {
       setError('Could not load rider suggestions')
@@ -76,20 +75,12 @@ export default function DispatchPanel({ orderId, onClose, onAssigned }: Dispatch
     setAssigning(true)
     setError(null)
     try {
-      const res = await fetch('/api/operations/assign-rider', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ order_id: orderId, rider_id: riderId }),
-      })
-      if (!res.ok) {
-        const data = await res.json()
-        throw new Error(data.error || 'Assignment failed')
-      }
+      await api.assignRider(orderId, riderId)
       onAssigned?.()
       onClose()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Assignment failed')
+      const msg = e instanceof ApiError ? (e.payload as { error?: string })?.error || e.message : e instanceof Error ? e.message : 'Assignment failed'
+      setError(msg)
     } finally {
       setAssigning(false)
     }

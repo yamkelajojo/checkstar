@@ -70,7 +70,7 @@ export default function CartClient() {
       <main className="max-w-4xl mx-auto px-4 py-8">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <div className="flex items-center justify-between mb-8">
-            <h1 className="font-display text-3xl font-bold">Your Cart</h1>
+            <h1 className="font-display text-xl sm:text-3xl font-bold">Your Cart</h1>
             {items.length > 0 && (
               <span className="text-sm text-gray-400">{items.length} {items.length === 1 ? 'item' : 'items'}</span>
             )}
@@ -153,7 +153,7 @@ export default function CartClient() {
 
               <div className="lg:col-span-1">
                 <div className="bg-gray-50 rounded-xl p-6 sticky top-24">
-                  <h2 className="font-display text-lg font-semibold mb-4">Order Summary</h2>
+                  <h2 className="font-display text-base sm:text-lg font-semibold mb-4">Order Summary</h2>
 
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between text-gray-500">

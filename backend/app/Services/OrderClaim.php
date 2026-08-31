@@ -50,14 +50,31 @@ class OrderClaim
             $fresh->store_id = $store->id;
             $fresh->save();
 
-            $this->syncStoreProductIds($fresh);
+        $this->syncStoreProductIds($fresh);
 
-            return true;
+        // Reserve inventory at claim time to prevent concurrent oversell
+        $this->reserveInventory($fresh);
+
+        return true;
         });
 
         $elapsed = (int) round((microtime(true) - $start) * 1000);
 
         return new ClaimResult($order->fresh(), $elapsed, $claimed);
+    }
+
+    private function reserveInventory(Order $order): void
+    {
+        foreach ($order->items as $item) {
+            $storeProductId = $item->store_product_id;
+            if ($storeProductId) {
+                $sp = StoreProduct::where('id', $storeProductId)->lockForUpdate()->first();
+                if ($sp) {
+                    $sp->reserved_quantity += $item->quantity;
+                    $sp->save();
+                }
+            }
+        }
     }
 
     private function syncStoreProductIds(Order $order): void

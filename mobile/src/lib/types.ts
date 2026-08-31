@@ -26,6 +26,17 @@ export interface ApiProduct {
   key_points?: string[] | null;
   storage_tip?: string | null;
   brand?: string | null;
+  store_count?: number;
+  stores?: ApiStoreAvailability[];
+}
+
+export interface ApiStoreAvailability {
+  store_product_id: number;
+  id: number;
+  name: string;
+  slug: string;
+  stock_quantity: number;
+  is_available: boolean;
 }
 
 export interface ApiSpecial {
@@ -146,4 +157,55 @@ export interface ApiPagination<T> {
   current_page: number;
   last_page: number;
   per_page: number;
+}
+
+export interface ApiFulfillmentStore {
+  id: number;
+  name: string;
+  slug: string;
+  latitude: number;
+  longitude: number;
+  delivery_radius_km: number;
+}
+
+export interface ApiFulfillmentUnfulfillableItem {
+  product_id: number;
+  product_name: string;
+  requested_quantity: number;
+  reason: string;
+}
+
+export interface ApiFulfillmentValidateResponse {
+  success: boolean;
+  store: ApiFulfillmentStore | null;
+  eligible_stores: ApiFulfillmentStore[];
+  unfulfillable_items: ApiFulfillmentUnfulfillableItem[];
+  reason: string | null;
+}
+
+export interface ApiNearestStoreResponse {
+  store: {
+    id: number;
+    name: string;
+    slug: string;
+    address: string;
+    city: string;
+    phone: string;
+    latitude: number;
+    longitude: number;
+    delivery_radius_km: number;
+    distance_km: number;
+  } | null;
+  message?: string;
+}
+
+export interface ApiRouteResponse {
+  distance_km: number;
+  duration_minutes: number;
+  geometry: string | null;
+  source: 'osrm' | 'haversine_fallback';
+}
+
+export interface ApiRouteGeometryResponse {
+  geometry: string | null;
 }

@@ -117,7 +117,7 @@ export function ProductSummaryModal({ product, storeProductId = null, sourceRect
                 )}
               </View>
               <View style={{ flex: 1, gap: 4 }}>
-                <Text numberOfLines={2} style={{ fontSize: typeScale.body, fontWeight: weights.bold, color: theme.colors.text }}>
+                <Text numberOfLines={2} style={{ fontSize: typeScale.body, fontWeight: weights.bold, color: theme.colors.text.primary }}>
                   {product.name}
                 </Text>
                 <Text style={{ fontSize: typeScale.caption, color: theme.colors.textMuted }}>per {product.unit}</Text>
@@ -134,7 +134,7 @@ export function ProductSummaryModal({ product, storeProductId = null, sourceRect
             </View>
 
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <Text style={{ fontSize: typeScale.price, fontWeight: weights.black, color: theme.colors.text }}>
+              <Text style={{ fontSize: typeScale.price, fontWeight: weights.black, color: theme.colors.text.primary }}>
                 {formatZar(product.effectivePriceCents)}
               </Text>
               {onSale && (

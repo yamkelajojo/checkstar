@@ -19,14 +19,22 @@ class OrderIntake
     private DispatchService $dispatchService;
     private DispatchPolicy $dispatchPolicy;
     private OrderCartPolicy $cartPolicy;
+    private StoreFulfillmentService $fulfillmentService;
 
-    public function __construct(PricingService $pricingService, OrderStateMachine $stateMachine, DispatchService $dispatchService, DispatchPolicy $dispatchPolicy, OrderCartPolicy $cartPolicy)
-    {
+    public function __construct(
+        PricingService $pricingService,
+        OrderStateMachine $stateMachine,
+        DispatchService $dispatchService,
+        DispatchPolicy $dispatchPolicy,
+        OrderCartPolicy $cartPolicy,
+        StoreFulfillmentService $fulfillmentService,
+    ) {
         $this->pricingService = $pricingService;
         $this->stateMachine = $stateMachine;
         $this->dispatchService = $dispatchService;
         $this->dispatchPolicy = $dispatchPolicy;
         $this->cartPolicy = $cartPolicy;
+        $this->fulfillmentService = $fulfillmentService;
     }
 
     public function place(array $validated, User $customer): OrderIntakeResult
@@ -68,6 +76,17 @@ class OrderIntake
                 ];
             }
 
+            // Resolve fulfillment store BEFORE creating order
+            $customerLat = (float) $validated['delivery_latitude'];
+            $customerLng = (float) $validated['delivery_longitude'];
+            $fulfillmentResult = $this->fulfillmentService->resolve($consolidated, $customerLat, $customerLng);
+
+            if (!$fulfillmentResult->success) {
+                throw new \InvalidArgumentException($fulfillmentResult->reason ?? 'Cannot fulfill order from any store');
+            }
+
+            $fulfillmentStore = $fulfillmentResult->store;
+
             $deliveryFee = (float) config('dispatch.delivery_fee', 0);
             $total = $subtotal + $deliveryFee;
 
@@ -79,7 +98,7 @@ class OrderIntake
                     $order = Order::create([
                         'order_number' => $orderNumber,
                         'customer_id' => $customer->id,
-                        'store_id' => null,
+                        'store_id' => $fulfillmentStore->id,
                         'status' => OrderStatus::Pending,
                         'payment_status' => PaymentStatus::Pending,
                         'payment_method' => $validated['payment_method'] ?? 'cash_on_delivery',

@@ -27,7 +27,7 @@ const chatsworth = makeStore(2, 'Checkstar Chatsworth');
 
 beforeEach(() => {
   jest.clearAllMocks();
-  useDeliveryStore.setState({ store: null, resolution: 'none', stores: [] });
+  useDeliveryStore.setState({ fulfillmentStore: null, stores: [] });
 });
 
 describe('loadStores', () => {
@@ -38,7 +38,7 @@ describe('loadStores', () => {
     await useDeliveryStore.getState().loadStores();
 
     expect(useDeliveryStore.getState().stores).toEqual([umgeni, chatsworth]);
-    expect(useDeliveryStore.getState().store).toEqual(umgeni);
+    expect(useDeliveryStore.getState().fulfillmentStore).toEqual(umgeni);
     expect(storage.remove).not.toHaveBeenCalled();
   });
 
@@ -49,29 +49,29 @@ describe('loadStores', () => {
     await useDeliveryStore.getState().loadStores();
 
     expect(storage.remove).toHaveBeenCalledWith(STORAGE_KEYS.deliveryStore);
-    expect(useDeliveryStore.getState().store).toBeNull();
+    expect(useDeliveryStore.getState().fulfillmentStore).toBeNull();
   });
 
   it('never overrides a selection the user already made this session', async () => {
-    useDeliveryStore.setState({ store: chatsworth });
+    useDeliveryStore.setState({ fulfillmentStore: chatsworth });
     (fetchStores as jest.Mock).mockResolvedValue([umgeni, chatsworth]);
     (storage.get as jest.Mock).mockResolvedValue(umgeni);
 
     await useDeliveryStore.getState().loadStores();
 
-    expect(useDeliveryStore.getState().store).toEqual(chatsworth);
+    expect(useDeliveryStore.getState().fulfillmentStore).toEqual(chatsworth);
   });
 
   it('drops the active selection too when it vanished upstream', async () => {
     const ghost = makeStore(42, 'Ghost Store');
-    useDeliveryStore.setState({ store: ghost });
+    useDeliveryStore.setState({ fulfillmentStore: ghost });
     (fetchStores as jest.Mock).mockResolvedValue([umgeni]);
     (storage.get as jest.Mock).mockResolvedValue(ghost);
 
     await useDeliveryStore.getState().loadStores();
 
     expect(storage.remove).toHaveBeenCalledWith(STORAGE_KEYS.deliveryStore);
-    expect(useDeliveryStore.getState().store).toBeNull();
+    expect(useDeliveryStore.getState().fulfillmentStore).toBeNull();
   });
 
   it('propagates backend failures to the caller', async () => {
@@ -80,17 +80,19 @@ describe('loadStores', () => {
   });
 });
 
-describe('chooseStore', () => {
-  it('persists the pick and records how it was chosen', async () => {
-    await useDeliveryStore.getState().chooseStore(chatsworth, 'pick');
+describe('setFulfillmentStore', () => {
+  it('persists the pick', async () => {
+    await useDeliveryStore.getState().setFulfillmentStore(chatsworth);
 
     expect(storage.set).toHaveBeenCalledWith(STORAGE_KEYS.deliveryStore, chatsworth);
-    expect(useDeliveryStore.getState().store).toEqual(chatsworth);
-    expect(useDeliveryStore.getState().resolution).toBe('pick');
+    expect(useDeliveryStore.getState().fulfillmentStore).toEqual(chatsworth);
   });
 
-  it('records location-based resolution separately from manual picks', async () => {
-    await useDeliveryStore.getState().chooseStore(umgeni, 'location');
-    expect(useDeliveryStore.getState().resolution).toBe('location');
+  it('clears the store when null is passed', async () => {
+    useDeliveryStore.setState({ fulfillmentStore: umgeni });
+    await useDeliveryStore.getState().setFulfillmentStore(null);
+
+    expect(storage.remove).toHaveBeenCalledWith(STORAGE_KEYS.deliveryStore);
+    expect(useDeliveryStore.getState().fulfillmentStore).toBeNull();
   });
 });

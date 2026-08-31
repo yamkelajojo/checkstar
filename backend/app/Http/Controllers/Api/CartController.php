@@ -24,7 +24,6 @@ class CartController extends Controller
                 'product_id' => $ci->product_id,
                 'product' => $ci->product,
                 'quantity' => $ci->quantity,
-                'store_product_id' => $ci->store_product_id,
             ];
         });
 
@@ -92,7 +91,6 @@ class CartController extends Controller
                     'product_id' => $ci->product_id,
                     'product' => $ci->product,
                     'quantity' => $ci->quantity,
-                    'store_product_id' => $ci->store_product_id,
                 ];
             })->values();
         });

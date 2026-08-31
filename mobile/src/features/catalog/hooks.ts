@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
-import { fetchCategories, fetchProducts, fetchStores, fetchSpecials, fetchProductBySlug } from '../../lib/apiClient';
+import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
+import { fetchCategories, fetchProducts, fetchAllProducts, fetchStores, fetchSpecials, fetchProductBySlug } from '../../lib/apiClient';
 import { mapProduct, type ProductVO } from '../../lib/product';
 import { queryKeys } from '../../lib/queryKeys';
 import type { ApiCategory, ApiProduct, ApiStore } from '../../lib/types';
@@ -29,6 +29,46 @@ export function useProducts(params: CatalogParams & { enabled?: boolean }) {
         featured: params.featured ? true : undefined,
       });
       return result.data.map(mapProduct);
+    },
+    enabled: params.enabled ?? true,
+  });
+}
+
+/** Infinite query for paginated product lists (browse screen, search results) */
+export function useInfiniteProducts(params: CatalogParams & { enabled?: boolean }) {
+  return useInfiniteQuery({
+    queryKey: queryKeys.products({ ...params, infinite: true }),
+    queryFn: async ({ pageParam = 1 }): Promise<{ products: ProductVO[]; nextPage: number | undefined }> => {
+      const result = await fetchProducts({
+        category: params.category,
+        search: params.search,
+        store_id: params.storeId ?? undefined,
+        featured: params.featured ? true : undefined,
+        page: pageParam,
+        per_page: 20,
+      });
+      return {
+        products: result.data.map(mapProduct),
+        nextPage: pageParam < result.last_page ? pageParam + 1 : undefined,
+      };
+    },
+    getNextPageParam: (lastPage) => lastPage.nextPage,
+    initialPageParam: 1,
+    enabled: params.enabled ?? true,
+  });
+}
+
+/** Fetch ALL products across all pages (for cart, where we need to match all cart items) */
+export function useAllProducts(params: Omit<CatalogParams, 'featured'> & { enabled?: boolean }) {
+  return useQuery({
+    queryKey: queryKeys.products({ ...params, all: true }),
+    queryFn: async (): Promise<ProductVO[]> => {
+      const result = await fetchAllProducts({
+        category: params.category,
+        search: params.search,
+        store_id: params.storeId ?? undefined,
+      });
+      return result.map(mapProduct);
     },
     enabled: params.enabled ?? true,
   });

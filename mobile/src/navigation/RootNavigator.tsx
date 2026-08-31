@@ -14,6 +14,7 @@ import { ProductDetailScreen } from '../features/product/ProductDetailScreen';
 import { SearchScreen } from '../features/search/SearchScreen';
 import { RiderHomeScreen } from '../features/rider/RiderHomeScreen';
 import { RiderOrderDetailScreen } from '../features/rider/RiderOrderDetailScreen';
+import { RouteExplorerScreen } from '../features/route-explorer/RouteExplorerScreen';
 import { CustomerTabs } from './CustomerTabs';
 import type { RootStackParamList } from './types';
 
@@ -55,17 +56,19 @@ export function RootNavigator() {
         <>
           <Stack.Screen name="RiderHome" component={RiderHomeScreen} />
           <Stack.Screen name="RiderOrderDetail" component={RiderOrderDetailScreen} />
+          <Stack.Screen name="RouteExplorer" component={RouteExplorerScreen} />
         </>
       ) : (
         <>
           <Stack.Screen name="Tabs" component={CustomerTabs} />
           <Stack.Screen name="ProductDetail" component={ProductDetailScreen} />
-          <Stack.Screen name="Search" component={SearchScreen} options={{ presentation: 'modal' }} />
+          <Stack.Screen name="Search" component={SearchScreen} />
           <Stack.Screen name="Auth" component={AuthScreen} options={{ presentation: 'modal' }} />
           <Stack.Screen name="StorePicker" component={StorePickerScreen} options={{ presentation: 'modal' }} />
           <Stack.Screen name="Checkout" component={CheckoutScreen} options={{ presentation: 'modal' }} />
           <Stack.Screen name="OrderPlaced" component={OrderPlacedScreen} options={{ gestureEnabled: false }} />
           <Stack.Screen name="OrderDetail" component={OrderDetailScreen} />
+          <Stack.Screen name="RouteExplorer" component={RouteExplorerScreen} />
         </>
       )}
     </Stack.Navigator>

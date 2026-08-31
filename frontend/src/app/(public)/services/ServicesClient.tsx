@@ -2,16 +2,7 @@
 
 import { motion } from 'motion/react'
 import { Milk, CreditCard, Wifi, Zap, Bike, Store } from 'lucide-react'
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 30 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.5 } },
-}
-
-const stagger = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.1 } },
-}
+import { fadeUp, stagger } from '@/lib/motion/variants'
 
 const services = [
   {
@@ -43,7 +34,7 @@ export default function ServicesClient() {
         <section className="relative bg-gradient-to-br from-primary-light via-white to-white overflow-hidden">
           <div className="max-w-4xl mx-auto px-4 py-20 md:py-28 text-center">
             <motion.div initial="hidden" animate="show" variants={stagger}>
-              <motion.h1 variants={fadeUp} className="font-display text-4xl md:text-5xl font-bold text-gray-900">
+              <motion.h1 variants={fadeUp} className="font-display text-2xl sm:text-4xl md:text-5xl font-bold text-gray-900">
                 Our Services
               </motion.h1>
               <motion.p variants={fadeUp} className="mt-4 text-lg text-gray-500 max-w-2xl mx-auto leading-relaxed">
@@ -70,7 +61,7 @@ export default function ServicesClient() {
                 <div className="w-14 h-14 bg-primary-light rounded-2xl flex items-center justify-center mb-5">
                   <s.icon className="text-primary" size={28} />
                 </div>
-                <h3 className="font-display text-xl font-semibold mb-3">{s.title}</h3>
+                <h3 className="font-display text-base sm:text-xl font-semibold mb-3">{s.title}</h3>
                 <p className="text-gray-500 leading-relaxed">{s.desc}</p>
               </motion.div>
             ))}
@@ -85,7 +76,7 @@ export default function ServicesClient() {
               viewport={{ once: true }}
               className="text-center"
             >
-              <h2 className="font-display text-2xl font-bold mb-6">Also Available</h2>
+              <h2 className="font-display text-lg sm:text-2xl font-bold mb-6">Also Available</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-left">
                 <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
                   <div className="flex items-center gap-3 mb-3">

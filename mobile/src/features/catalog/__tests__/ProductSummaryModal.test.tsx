@@ -27,6 +27,8 @@ const product: ProductVO = {
   isFeatured: false,
   isActive: true,
   stockLabel: 'In stock',
+  storeCount: 0,
+  stores: [],
 };
 
 async function renderModal() {
@@ -53,7 +55,7 @@ describe('ProductSummaryModal', () => {
     await fireEvent.press(screen.getByLabelText('Increase quantity'));
     await fireEvent.press(screen.getByLabelText('Add Fresh Bread to cart'));
     await waitFor(() => {
-      expect(useCart.getState().items).toEqual([{ productId: '12', storeProductId: null, quantity: 2 }]);
+      expect(useCart.getState().items).toEqual([{ productId: '12', quantity: 2, storeProductId: null }]);
     });
     expect(onClose).toHaveBeenCalled();
   });

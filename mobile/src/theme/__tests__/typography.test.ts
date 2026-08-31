@@ -84,7 +84,7 @@ describe('Type Scale — textStyle', () => {
     expect(textStyle.h3.size).toBe(20);
     expect(textStyle.h1.weight).toBe(fontWeight.bold);
     expect(textStyle.h2.weight).toBe(fontWeight.bold);
-    expect(textStyle.h3.weight).toBe(fontWeight.semibold);
+    expect(textStyle.h3.weight).toBe(fontWeight.bold);
   });
 
   it('title is for card/list items', () => {

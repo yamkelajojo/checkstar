@@ -14,7 +14,7 @@ export default function OrderConfirmation({ order, dispatch }: OrderConfirmation
         <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <RotateCcw size={32} className="text-yellow-600 animate-spin" />
         </div>
-        <h1 className="font-display text-2xl font-bold mb-2">Finding a Rider</h1>
+        <h1 className="font-display text-lg sm:text-2xl font-bold mb-2">Finding a Rider</h1>
         <p className="text-gray-500 mb-1">Order #{order.order_number}</p>
         <p className="text-sm text-gray-500 mb-8">
           We&apos;re looking for an available rider at nearby stores. You&apos;ll be notified as soon as one is assigned.
@@ -36,7 +36,7 @@ export default function OrderConfirmation({ order, dispatch }: OrderConfirmation
         <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <XCircle size={32} className="text-red-600" />
         </div>
-        <h1 className="font-display text-2xl font-bold mb-2">Order Cancelled</h1>
+        <h1 className="font-display text-lg sm:text-2xl font-bold mb-2">Order Cancelled</h1>
         <p className="text-gray-500 mb-1">Order #{order.order_number}</p>
         <p className="text-sm text-gray-500 mb-8">
           {paid
@@ -59,7 +59,7 @@ export default function OrderConfirmation({ order, dispatch }: OrderConfirmation
         <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <CheckCircle size={32} className="text-green-600" />
         </div>
-        <h1 className="font-display text-2xl font-bold mb-2">Order Placed!</h1>
+        <h1 className="font-display text-lg sm:text-2xl font-bold mb-2">Order Placed!</h1>
         <p className="text-gray-500 mb-1">Your order number is</p>
         <p className="font-mono text-2xl font-bold text-primary mb-6">#{order.order_number}</p>
         {dispatch.rider_name && dispatch.store_name && (
@@ -98,7 +98,7 @@ export default function OrderConfirmation({ order, dispatch }: OrderConfirmation
       <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
         <Clock size={32} className="text-gray-600" />
       </div>
-      <h1 className="font-display text-2xl font-bold mb-2">Confirming your order</h1>
+      <h1 className="font-display text-lg sm:text-2xl font-bold mb-2">Confirming your order</h1>
       <p className="text-gray-500 mb-1">Order #{order.order_number}</p>
       <p className="text-sm text-gray-500 mb-8">
         Your order has been received. You can check its status in your account.

@@ -27,9 +27,9 @@ export default function StoresClient() {
 
   return (
     <>
-      <main className="max-w-7xl mx-auto px-4 py-8">
+      <main className="max-w-7xl mx-auto px-4 py-8 min-h-[70vh]">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <h1 className="font-display text-4xl font-bold mb-2">Our Stores</h1>
+          <h1 className="font-display text-2xl sm:text-4xl font-bold mb-2">Our Stores</h1>
           <p className="text-gray-500 mb-8">Find a Checkstar store near you in Durban.</p>
         </motion.div>
 

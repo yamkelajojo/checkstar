@@ -101,6 +101,7 @@ const CUSTOMER_STACK = [
   'Checkout',
   'OrderPlaced',
   'OrderDetail',
+  'RouteExplorer',
 ];
 
 beforeEach(() => {
@@ -142,7 +143,7 @@ test('riders are routed to the dedicated rider stack with no checkout screens', 
   useSession.setState({ status: 'authenticated', token: 't', user: rider });
   await render(<RootNavigator />);
   await waitFor(() =>
-    expect(stackModule().__registered).toEqual(['RiderHome', 'RiderOrderDetail']),
+    expect(stackModule().__registered).toEqual(['RiderHome', 'RiderOrderDetail', 'RouteExplorer']),
   );
   expect(stackModule().__registered).not.toContain('Checkout');
 });

@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "main": "index.ts",
   "dependencies": {
+    "@expo-google-fonts/handlee": "^0.4.1",
+    "@mapbox/polyline": "^1.2.1",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-navigation/bottom-tabs": "^7.18.14",
     "@react-navigation/native": "^7.3.14",
@@ -10,6 +12,7 @@
     "@tamagui/animations-react-native": "^2.7.7",
     "@tamagui/babel-plugin": "^2.7.7",
     "@tanstack/react-query": "^5.101.4",
+    "@types/mapbox__polyline": "^1.0.5",
     "expo": "~54.0.0",
     "expo-blur": "~15.0.8",
     "expo-font": "~14.0.12",
@@ -26,6 +29,7 @@
     "react-dom": "19.1.0",
     "react-native": "0.81.5",
     "react-native-gesture-handler": "~2.28.0",
+    "react-native-maps": "^1.20.1",
     "react-native-pager-view": "6.9.1",
     "react-native-reanimated": "~4.1.1",
     "react-native-safe-area-context": "~5.6.0",
@@ -68,7 +72,7 @@
       "**/__tests__/**/*.test.tsx"
     ],
     "transformIgnorePatterns": [
-      "node_modules/(?!(tamagui|@tamagui|react-native|expo|@expo|@react-native|@react-navigation|expo-modules-core|expo-haptics|expo-secure-store|expo-image|expo-blur|expo-location|expo-notifications|expo-font|expo-linear-gradient|expo-asset|expo-constants|expo-file-system|expo-keep-awake|expo-crypto|expo-random|expo-application|expo-device|expo-network|expo-system-ui|expo-web-browser|expo-linking|expo-sharing|expo-print|expo-document-picker|expo-media-library|expo-image-picker|expo-camera|expo-av|expo-video|expo-audio|expo-speech|expo-contacts|expo-calendar|expo-task-manager|expo-background-fetch|expo-sensors|expo-brightness|expo-battery|expo-screen-orientation|expo-updates|expo-splash-screen|expo-dev-client|expo-dev-launcher|expo-dev-menu|expo-build-properties|expo-application|expo-dev-server|expo-dev-client|expo-dev-menu|expo-dev-launcher|react-native-pager-view)/)"
+      "node_modules/(?!(tamagui|@tamagui|react-native|expo|@expo|@react-native|@react-navigation|expo-modules-core|expo-haptics|expo-secure-store|expo-image|expo-blur|expo-location|expo-notifications|expo-font|expo-linear-gradient|expo-asset|expo-constants|expo-file-system|expo-keep-awake|expo-crypto|expo-random|expo-application|expo-device|expo-network|expo-system-ui|expo-web-browser|expo-linking|expo-sharing|expo-print|expo-document-picker|expo-media-library|expo-image-picker|expo-camera|expo-av|expo-video|expo-audio|expo-speech|expo-contacts|expo-calendar|expo-task-manager|expo-background-fetch|expo-sensors|expo-brightness|expo-battery|expo-screen-orientation|expo-updates|expo-splash-screen|expo-dev-client|expo-dev-launcher|expo-dev-menu|expo-build-properties|expo-application|expo-dev-server|expo-dev-client|expo-dev-menu|expo-dev-launcher|react-native-pager-view|react-native-maps)/)"
     ]
   },
   "private": true

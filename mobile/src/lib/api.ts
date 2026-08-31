@@ -46,7 +46,7 @@ export function apiErrorReason(error: unknown): string | null {
 export interface ApiClientConfig {
   baseUrl: string;
   getToken: () => string | null;
-  onUnauthorized: () => void;
+  onUnauthorized: () => Promise<void> | void;
   fetchFn?: typeof fetch;
   retryOptions?: Partial<RetryOptions>;
   requestTimeoutMs?: number;
@@ -133,7 +133,15 @@ export function createApiClient(config: ApiClientConfig) {
       const payload = await response.json().catch(() => null);
 
       if (response.status === 401) {
-        if (auth && token) config.onUnauthorized();
+        if (auth && token) {
+          await config.onUnauthorized();
+          // If token was refreshed (onUnauthorized calls refreshAccessToken),
+          // retry the request with the new token exactly once.
+          const newToken = config.getToken();
+          if (newToken && newToken !== token && attempt === 0) {
+            return request(method, path, body, auth, params, attempt + 1);
+          }
+        }
         throw new ApiError('Unauthorized', response.status, payload);
       }
 

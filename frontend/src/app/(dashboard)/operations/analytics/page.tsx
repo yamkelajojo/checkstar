@@ -10,6 +10,7 @@ import RevenueChart from '@/components/operations/charts/RevenueChart'
 import OrdersByHourChart from '@/components/operations/charts/OrdersByHourChart'
 import TopProductsChart from '@/components/operations/charts/TopProductsChart'
 import RiderUtilizationChart from '@/components/operations/charts/RiderUtilizationChart'
+import { api } from '@/lib/api'
 
 interface SalesData {
   revenue_over_time: { date: string; revenue: number; orders: number }[]
@@ -42,14 +43,14 @@ export default function AnalyticsPage() {
     setLoading(true)
     try {
       const [salesRes, productsRes, ridersRes] = await Promise.all([
-        fetch(`/api/operations/analytics/sales?period=${period}`, { credentials: 'include' }),
-        fetch('/api/operations/analytics/products?limit=10', { credentials: 'include' }),
-        fetch(`/api/operations/analytics/riders?period=${period}`, { credentials: 'include' }),
+        api.getAnalyticsSales(period),
+        api.getAnalyticsProducts(10),
+        api.getAnalyticsRiders(period),
       ])
 
-      if (salesRes.ok) setSales(await salesRes.json())
-      if (productsRes.ok) setProducts(await productsRes.json())
-      if (ridersRes.ok) setRiders(await ridersRes.json())
+      setSales(salesRes as unknown as SalesData)
+      setProducts(productsRes as unknown as ProductsData)
+      setRiders(ridersRes as unknown as RidersData)
     } catch {
       // Silent fail
     } finally {

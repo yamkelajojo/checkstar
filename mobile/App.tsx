@@ -5,6 +5,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import * as Notifications from 'expo-notifications';
 import { QueryClientProvider } from '@tanstack/react-query';
+import { useFonts } from 'expo-font';
 import { queryClient } from './src/lib/queryKeys';
 import { ThemeContext, useThemeFromSystem } from './src/theme';
 import { ToastProvider } from './src/components/shared/GlassToast';
@@ -19,6 +20,7 @@ import type { RootStackParamList } from './src/navigation/types';
 import { TamaguiProvider } from 'tamagui';
 import config from './tamagui.config';
 import type { ServerMergeResult } from './src/features/cart/model';
+import { View, ActivityIndicator, StyleSheet } from 'react-native';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -30,6 +32,40 @@ Notifications.setNotificationHandler({
 });
 
 export const navigationRef = createNavigationContainerRef<RootStackParamList>();
+
+// Font loading wrapper - keeps hook order stable in main App
+function FontLoader({ children }: { children: React.ReactNode }) {
+  const [fontsLoaded, fontError] = useFonts({
+    'Handlee_400Regular': require('@expo-google-fonts/handlee/400Regular/Handlee_400Regular.ttf'),
+    // GOTHAM ROUNDED: Add your licensed font files here when available
+    // 'GothamRounded-Regular': require('./assets/fonts/GothamRounded-Regular.otf'),
+    // 'GothamRounded-Medium': require('./assets/fonts/GothamRounded-Medium.otf'),
+    // 'GothamRounded-Bold': require('./assets/fonts/GothamRounded-Bold.otf'),
+  });
+
+  if (!fontsLoaded && !fontError) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#EB6522" />
+      </View>
+    );
+  }
+
+  if (fontError) {
+    console.warn('[fonts] Failed to load custom fonts:', fontError);
+  }
+
+  return <>{children}</>;
+}
+
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#FFFCF9',
+  },
+});
 
 export default function App() {
   const theme = useThemeFromSystem();
@@ -95,21 +131,23 @@ export default function App() {
   }, []);
 
   return (
-    <TamaguiProvider config={config} defaultTheme="light">
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <SafeAreaProvider>
-          <ThemeContext.Provider value={theme}>
-            <ToastProvider>
-              <QueryClientProvider client={queryClient}>
-                <NavigationContainer ref={navigationRef}>
-                  <StatusBar style="auto" />
-                  <RootNavigator />
-                </NavigationContainer>
-              </QueryClientProvider>
-            </ToastProvider>
-          </ThemeContext.Provider>
-        </SafeAreaProvider>
-      </GestureHandlerRootView>
-    </TamaguiProvider>
+    <FontLoader>
+      <TamaguiProvider config={config} defaultTheme="light">
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <SafeAreaProvider>
+            <ThemeContext.Provider value={theme}>
+              <ToastProvider>
+                <QueryClientProvider client={queryClient}>
+                  <NavigationContainer ref={navigationRef}>
+                    <StatusBar style="auto" />
+                    <RootNavigator />
+                  </NavigationContainer>
+                </QueryClientProvider>
+              </ToastProvider>
+            </ThemeContext.Provider>
+          </SafeAreaProvider>
+        </GestureHandlerRootView>
+      </TamaguiProvider>
+    </FontLoader>
   );
 }

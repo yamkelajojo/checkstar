@@ -6,6 +6,7 @@ use App\Enums\EventType;
 use App\Enums\OrderStatus;
 use App\Models\Order;
 use App\Models\OrderActivityLog;
+use App\Models\StoreProduct;
 use App\Models\User;
 use InvalidArgumentException;
 
@@ -66,6 +67,20 @@ class OrderStateMachine
         }
 
         $eventType = self::toEventType($to);
+
+        // Release reserved inventory on cancellation (reclaim reserved quantities)
+        if ($to === OrderStatus::Cancelled) {
+            foreach ($order->items as $item) {
+                $storeProductId = $item->store_product_id;
+                if ($storeProductId) {
+                    $sp = StoreProduct::where('id', $storeProductId)->lockForUpdate()->first();
+                    if ($sp) {
+                        $sp->reserved_quantity = max(0, ($sp->reserved_quantity ?? 0) - $item->quantity);
+                        $sp->save();
+                    }
+                }
+            }
+        }
 
         $order->status = $to;
         $order->save();

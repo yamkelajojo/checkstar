@@ -94,7 +94,7 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <h1 className="font-display text-3xl md:text-4xl font-bold text-gray-900 mb-2">
+            <h1 className="font-display text-xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2">
               {product.name}
             </h1>
             <p className="text-sm text-gray-400 mb-4">{product.unit}</p>

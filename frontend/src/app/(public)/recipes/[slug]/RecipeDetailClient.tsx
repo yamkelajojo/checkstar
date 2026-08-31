@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { motion } from 'motion/react'
-import { Clock, Users, ChefHat, ChevronLeft, Check, ListOrdered } from 'lucide-react'
-import { useRecipe } from '@/lib/query'
+import { Clock, Users, ChefHat, ChevronLeft, Check, ListOrdered, Package } from 'lucide-react'
+import { useRecipe, useAllProducts } from '@/lib/query'
+import type { Product } from '@/types'
 
 export default function RecipeDetailClient({ slug }: { slug: string }) {
   const { data: recipe, isLoading: loading, error } = useRecipe(slug)
@@ -23,7 +24,14 @@ export default function RecipeDetailClient({ slug }: { slug: string }) {
     ? Array.isArray(recipe.ingredients)
       ? recipe.ingredients
       : typeof recipe.ingredients === 'string'
-        ? recipe.ingredients.split('\n').filter(Boolean)
+        ? (() => {
+            try {
+              const parsed = JSON.parse(recipe.ingredients)
+              return Array.isArray(parsed) ? parsed : [recipe.ingredients]
+            } catch {
+              return recipe.ingredients.split('\n').filter(Boolean)
+            }
+          })()
         : []
     : []
 
@@ -32,6 +40,24 @@ export default function RecipeDetailClient({ slug }: { slug: string }) {
     : Array.isArray(recipe?.method)
       ? recipe.method
       : []
+
+  const { data: allProducts = [] } = useAllProducts()
+
+  const productMap = useMemo(() => {
+    const map = new Map<string, Product>()
+    for (const p of allProducts) {
+      map.set(p.name.toLowerCase(), p)
+    }
+    return map
+  }, [allProducts])
+
+  const findProductMatch = (ingredient: string): Product | null => {
+    const lower = ingredient.toLowerCase()
+    for (const [name, product] of productMap) {
+      if (lower.includes(name)) return product
+    }
+    return null
+  }
 
   if (fetchError) {
     return (
@@ -101,7 +127,7 @@ export default function RecipeDetailClient({ slug }: { slug: string }) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          <h1 className="font-display text-3xl md:text-4xl font-bold mb-3">{recipe.title}</h1>
+          <h1 className="font-display text-xl sm:text-3xl md:text-4xl font-bold mb-3">{recipe.title}</h1>
 
           {recipe.description && (
             <p className="text-gray-500 leading-relaxed mb-6">{recipe.description}</p>
@@ -141,7 +167,7 @@ export default function RecipeDetailClient({ slug }: { slug: string }) {
             transition={{ delay: 0.2 }}
             className="lg:col-span-2"
           >
-            <h2 className="font-display text-xl font-bold mb-4 flex items-center gap-2">
+            <h2 className="font-display text-base sm:text-xl font-bold mb-4 flex items-center gap-2">
               <ListOrdered size={20} className="text-primary" />
               Ingredients
             </h2>
@@ -164,7 +190,29 @@ export default function RecipeDetailClient({ slug }: { slug: string }) {
                       }`}>
                         {checked.has(idx) && <Check size={12} />}
                       </span>
-                      {ing}
+                      {(() => {
+                        const match = findProductMatch(ing)
+                        if (!match) return <span>{ing}</span>
+                        const price = Number(match.effective_price ?? match.sale_price ?? match.price)
+                        return (
+                          <span className="flex items-center gap-2 flex-1 min-w-0">
+                            <span className="flex-1 min-w-0">{ing}</span>
+                            <Link
+                              href={`/products/${match.slug}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="inline-flex items-center gap-1.5 bg-primary/5 border border-primary/20 rounded-full pl-1 pr-2.5 py-0.5 text-xs font-medium text-primary hover:bg-primary/10 transition-colors flex-shrink-0"
+                            >
+                              {match.image ? (
+                                <img src={match.image} alt={match.name} className="w-5 h-5 rounded-full object-cover" />
+                              ) : (
+                                <Package size={12} className="flex-shrink-0" />
+                              )}
+                              <span className="truncate max-w-[80px]">{match.name}</span>
+                              <span className="font-semibold">R{price.toFixed(2)}</span>
+                            </Link>
+                          </span>
+                        )
+                      })()}
                     </button>
                   </li>
                 ))}
@@ -178,7 +226,7 @@ export default function RecipeDetailClient({ slug }: { slug: string }) {
             transition={{ delay: 0.3 }}
             className="lg:col-span-3"
           >
-            <h2 className="font-display text-xl font-bold mb-4 flex items-center gap-2">
+            <h2 className="font-display text-base sm:text-xl font-bold mb-4 flex items-center gap-2">
               <ChefHat size={20} className="text-primary" />
               Method
             </h2>

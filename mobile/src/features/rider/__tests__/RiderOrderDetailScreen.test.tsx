@@ -63,7 +63,7 @@ describe('RiderOrderDetailScreen', () => {
     await renderOrder('preparing');
     expect(await screen.findByText('Order #42')).toBeTruthy();
     expect(screen.getByText('Preparing')).toBeTruthy();
-    expect(screen.getByText('1 Main Road, Durban')).toBeTruthy();
+    expect(screen.getAllByText('1 Main Road, Durban').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('2 × Bread')).toBeTruthy();
     expect(screen.getByText('1 × Milk')).toBeTruthy();
     expect(screen.getByText('R 70,00')).toBeTruthy();

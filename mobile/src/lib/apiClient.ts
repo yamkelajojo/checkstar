@@ -3,7 +3,7 @@ import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 import { storage, STORAGE_KEYS } from './storage';
 import { isOnline } from './networkStatus';
-import type { ApiAuthResponse, ApiCartSyncResponse, ApiCategory, ApiOrder, ApiPagination, ApiPlaceOrderResponse, ApiProduct, ApiStore, ApiUser } from './types';
+import type { ApiAuthResponse, ApiCartSyncResponse, ApiCategory, ApiOrder, ApiPagination, ApiPlaceOrderResponse, ApiProduct, ApiStore, ApiUser, ApiFulfillmentValidateResponse, ApiNearestStoreResponse, ApiRouteResponse, ApiRouteGeometryResponse } from './types';
 import Constants from 'expo-constants';
 
 // Default fallback - user MUST configure this for their physical device
@@ -222,7 +222,7 @@ export async function getApi(): Promise<ApiClient> {
       baseUrl,
       getToken: () => currentToken,
       onUnauthorized: async () => {
-        // Try to refresh token on 401
+        // Try to refresh token on 401; if it fails, sign the user out.
         const newToken = await refreshAccessToken();
         if (!newToken) {
           onUnauthorized();
@@ -297,6 +297,27 @@ export async function fetchCategories(): Promise<ApiCategory[]> {
 export async function fetchProducts(params: QueryParams): Promise<ApiPagination<ApiProduct>> {
   const api = await getApi();
   return api.get<ApiPagination<ApiProduct>>('/products', params, false);
+}
+
+/** Fetch ALL products across all pages (for cart, search, etc.) */
+export async function fetchAllProducts(params: Omit<QueryParams, 'page'> = {}): Promise<ApiProduct[]> {
+  const api = await getApi();
+  let page = 1;
+  const allProducts: ApiProduct[] = [];
+  const perPage = 100;
+  const maxPages = 50; // Safety limit to prevent infinite loops on misconfigured API
+  
+  while (page <= maxPages) {
+    const result = await api.get<ApiPagination<ApiProduct>>('/products', { 
+      ...params, 
+      page, 
+      per_page: perPage 
+    }, false);
+    allProducts.push(...result.data);
+    if (page >= result.last_page) break;
+    page++;
+  }
+  return allProducts;
 }
 
 export async function fetchProductBySlug(slug: string): Promise<ApiProduct> {
@@ -417,4 +438,44 @@ export async function fetchRiderHistory(): Promise<ApiOrder[]> {
   const api = await getApi();
   const res = await api.get<{ data: ApiOrder[] }>('/rider/history', undefined, true);
   return res.data;
+}
+
+// ---- Fulfillment ----
+
+export interface FulfillmentValidateInput {
+  items: { product_id: number; quantity: number }[];
+  latitude: number;
+  longitude: number;
+}
+
+export async function validateFulfillment(input: FulfillmentValidateInput): Promise<ApiFulfillmentValidateResponse> {
+  const api = await getApi();
+  return api.post<ApiFulfillmentValidateResponse>('/fulfillment/validate', input, false);
+}
+
+export async function fetchNearestStore(latitude: number, longitude: number): Promise<ApiNearestStoreResponse> {
+  const api = await getApi();
+  return api.get<ApiNearestStoreResponse>('/fulfillment/nearest-store', { latitude, longitude }, false);
+}
+
+// ---- Routing ----
+
+export async function fetchRoute(
+  fromLat: number,
+  fromLng: number,
+  toLat: number,
+  toLng: number
+): Promise<ApiRouteResponse> {
+  const api = await getApi();
+  return api.get<ApiRouteResponse>('/routing/route', { from_lat: fromLat, from_lng: fromLng, to_lat: toLat, to_lng: toLng }, false);
+}
+
+export async function fetchRouteGeometry(
+  fromLat: number,
+  fromLng: number,
+  toLat: number,
+  toLng: number
+): Promise<ApiRouteGeometryResponse> {
+  const api = await getApi();
+  return api.get<ApiRouteGeometryResponse>('/routing/geometry', { from_lat: fromLat, from_lng: fromLng, to_lat: toLat, to_lng: toLng }, false);
 }

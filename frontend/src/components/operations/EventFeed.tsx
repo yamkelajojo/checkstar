@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from '@/lib/motion'
 import { staggerContainer, item as itemVariant } from '@/lib/motion/variants'
 import EventItem from './EventItem'
 import type { FeedEvent, EventFeedResponse } from '@/types'
+import { api } from '@/lib/api'
 
 const POLL_INTERVAL = 5000
 const MAX_EVENTS = 200
@@ -18,15 +19,12 @@ export default function EventFeed() {
 
   const fetchEvents = useCallback(async () => {
     try {
-      const params = new URLSearchParams({ limit: '50' })
+      const params: Record<string, string> = { limit: '50' }
       if (cursorRef.current) {
-        params.set('cursor', cursorRef.current)
+        params.cursor = cursorRef.current
       }
 
-      const res = await fetch(`/api/operations/events?${params}`, { credentials: 'include' })
-      if (!res.ok) throw new Error('Failed to fetch events')
-
-      const data: EventFeedResponse = await res.json()
+      const data = await api.getOperationsEvents(params) as unknown as EventFeedResponse
 
       setEvents(prev => {
         const existingIds = new Set(prev.map(e => e.id))

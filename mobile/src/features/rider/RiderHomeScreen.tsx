@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTheme } from '../../theme';
-import { brand } from '../../theme/colors';
 import { typeScale, weights, letterSpacing } from '../../theme/typography';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -35,6 +34,7 @@ export function RiderHomeScreen() {
   const user = useSession((s) => s.user);
   const isAvailable = user?.rider?.is_available ?? false;
   const [toggling, setToggling] = useState(false);
+  const [claimingId, setClaimingId] = useState<number | null>(null);
 
   const { data: stats } = useQuery({
     queryKey: queryKeys.riderStats,
@@ -95,6 +95,8 @@ export function RiderHomeScreen() {
   };
 
   const onClaim = async (orderId: number) => {
+    if (claimingId != null) return; // prevent double-tap
+    setClaimingId(orderId);
     try {
       await claimOrder(orderId);
       invalidate();
@@ -102,11 +104,13 @@ export function RiderHomeScreen() {
     } catch {
       toast.show(copy.auth.alreadyClaimed);
       invalidate();
+    } finally {
+      setClaimingId(null);
     }
   };
 
   const statusBadge = (status: string) => (
-    <Text style={{ fontSize: typeScale.caption, color: brand.primary, fontWeight: weights.semibold, textTransform: 'capitalize' }}>
+    <Text style={{ fontSize: typeScale.caption, color: theme.colors.text.brand, fontWeight: weights.semibold, textTransform: 'capitalize' }}>
       {status.replace(/_/g, ' ')}
     </Text>
   );
@@ -118,14 +122,14 @@ export function RiderHomeScreen() {
       haptic="selection"
       onPress={() => navigation.navigate('RiderOrderDetail', { orderId: order.id })}
       accessibilityRole="button"
-      style={{ backgroundColor: theme.colors.surface, borderRadius: 16 }}
+      style={{ backgroundColor: theme.colors.surface.primary, borderRadius: 16 }}
     >
       <View style={{ padding: 14, gap: 6 }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Text style={{ fontWeight: weights.bold, color: theme.colors.text }}>Order #{order.id}</Text>
+          <Text style={{ fontWeight: weights.bold, color: theme.colors.text.primary }}>Order #{order.id}</Text>
           {statusBadge(order.status)}
         </View>
-        <Text style={{ fontSize: typeScale.caption, color: theme.colors.textMuted }}>
+        <Text style={{ fontSize: typeScale.caption, color: theme.colors.text.secondary }}>
           {order.store?.name ?? 'Checkstar'} · {formatZar(order.total_cents ?? 0)}
         </Text>
       </View>
@@ -137,21 +141,21 @@ export function RiderHomeScreen() {
       style={{ flex: 1, backgroundColor: theme.colors.bg }}
       contentContainerStyle={{ paddingBottom: 32 }}
       showsVerticalScrollIndicator={false}
-      refreshControl={<RefreshControl refreshing={false} onRefresh={invalidate} tintColor={brand.primary} />}
+      refreshControl={<RefreshControl refreshing={false} onRefresh={invalidate} tintColor={theme.colors.action.primary.background} />}
     >
       <View style={{ paddingTop: 56, paddingHorizontal: 16, gap: 16 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: theme.colors.surface, alignItems: 'center', justifyContent: 'center' }}>
-              <Bike size={20} color={brand.primary} />
+            <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: theme.colors.surface.primary, alignItems: 'center', justifyContent: 'center' }}>
+              <Bike size={20} color={theme.colors.action.primary.background} />
             </View>
-            <Text style={{ fontSize: typeScale.title, fontWeight: weights.extrabold, color: theme.colors.text }}>
+            <Text style={{ fontSize: typeScale.title, fontWeight: weights.extrabold, color: theme.colors.text.primary }}>
               Rider
             </Text>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: isAvailable ? brand.success : theme.colors.textFaint }} />
-            <Text style={{ color: theme.colors.textMuted, fontWeight: weights.semibold }}>
+            <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: isAvailable ? theme.colors.status.success.primary : theme.colors.text.tertiary }} />
+            <Text style={{ color: theme.colors.text.secondary, fontWeight: weights.semibold }}>
               {isAvailable ? copy.rider.available : copy.rider.offline}
             </Text>
           </View>
@@ -163,9 +167,9 @@ export function RiderHomeScreen() {
           disabled={toggling}
           accessibilityRole="button"
           accessibilityState={{ checked: isAvailable }}
-          style={{ backgroundColor: isAvailable ? brand.accent : brand.primary, borderRadius: 999, opacity: toggling ? 0.6 : 1 }}
+          style={{ backgroundColor: isAvailable ? theme.colors.status.error.primary : theme.colors.action.primary.background, borderRadius: 999, opacity: toggling ? 0.6 : 1 }}
         >
-          <Text style={{ color: '#fff', textAlign: 'center', fontWeight: weights.bold, textTransform: 'uppercase', letterSpacing: letterSpacing.wide }}>
+          <Text style={{ color: theme.colors.action.primary.foreground, textAlign: 'center', fontWeight: weights.bold, textTransform: 'uppercase', letterSpacing: letterSpacing.wide }}>
             {isAvailable ? copy.rider.goOffline : copy.rider.goOnline}
           </Text>
         </TactilePressable>
@@ -181,7 +185,7 @@ export function RiderHomeScreen() {
       <View style={{ marginTop: 20 }}>
         <SectionTitle title={copy.rider.activeDeliveries} />
         {active.length === 0 ? (
-          <Text style={{ color: theme.colors.textMuted, paddingHorizontal: 16 }}>{copy.rider.emptyActive}</Text>
+          <Text style={{ color: theme.colors.text.secondary, paddingHorizontal: 16 }}>{copy.rider.emptyActive}</Text>
         ) : (
           <View style={{ paddingHorizontal: 16, gap: 12 }}>
             {active.map((o) => orderCard(o))}
@@ -192,26 +196,28 @@ export function RiderHomeScreen() {
       <View style={{ marginTop: 20 }}>
         <SectionTitle title={copy.rider.availableOrders} />
         {available.length === 0 ? (
-          <Text style={{ color: theme.colors.textMuted, paddingHorizontal: 16 }}>{copy.rider.emptyAvailable}</Text>
+          <Text style={{ color: theme.colors.text.secondary, paddingHorizontal: 16 }}>{copy.rider.emptyAvailable}</Text>
         ) : (
           <View style={{ paddingHorizontal: 16, gap: 12 }}>
             {available.map((o) => (
-              <View key={o.id} style={{ backgroundColor: theme.colors.surface, borderRadius: 16, padding: 14, gap: 6 }}>
+              <View key={o.id} style={{ backgroundColor: theme.colors.surface.primary, borderRadius: 16, padding: 14, gap: 6 }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Text style={{ fontWeight: weights.bold, color: theme.colors.text }}>Order #{o.id}</Text>
+                  <Text style={{ fontWeight: weights.bold, color: theme.colors.text.primary }}>Order #{o.id}</Text>
                   {statusBadge(o.status)}
                 </View>
-                <Text style={{ fontSize: typeScale.caption, color: theme.colors.textMuted }}>
+                <Text style={{ fontSize: typeScale.caption, color: theme.colors.text.secondary }}>
                   {o.store?.name ?? 'Checkstar'} · {formatZar(o.total_cents ?? 0)}
                 </Text>
                 <TactilePressable
                   onPress={() => onClaim(o.id)}
                   haptic="commit"
+                  disabled={claimingId != null}
                   accessibilityRole="button"
-                  style={{ backgroundColor: brand.primary, borderRadius: 999, marginTop: 4 }}
+                  accessibilityState={{ busy: claimingId === o.id }}
+                  style={{ backgroundColor: theme.colors.action.primary.background, borderRadius: 999, marginTop: 4, opacity: claimingId != null ? 0.6 : 1 }}
                 >
-                  <Text style={{ color: '#fff', textAlign: 'center', fontWeight: weights.bold, textTransform: 'uppercase', letterSpacing: letterSpacing.wide, fontSize: typeScale.caption }}>
-                    {copy.rider.claim}
+                  <Text style={{ color: theme.colors.action.primary.foreground, textAlign: 'center', fontWeight: weights.bold, textTransform: 'uppercase', letterSpacing: letterSpacing.wide, fontSize: typeScale.caption }}>
+                    {claimingId === o.id ? copy.rider.claiming : copy.rider.claim}
                   </Text>
                 </TactilePressable>
               </View>
@@ -226,10 +232,10 @@ export function RiderHomeScreen() {
 function StatCard({ icon: Icon, label, value }: { icon: React.ComponentType<{ size?: number; color?: string }>; label: string; value: string }) {
   const theme = useTheme();
   return (
-    <View style={{ flex: 1, backgroundColor: theme.colors.surface, borderRadius: 16, padding: 14, gap: 6 }}>
-      <Icon size={18} color={brand.primary} />
-      <Text style={{ fontSize: typeScale.title, fontWeight: weights.extrabold, color: theme.colors.text }}>{value}</Text>
-      <Text style={{ fontSize: typeScale.caption, color: theme.colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</Text>
+    <View style={{ flex: 1, backgroundColor: theme.colors.surface.primary, borderRadius: 16, padding: 14, gap: 6 }}>
+      <Icon size={18} color={theme.colors.action.primary.background} />
+      <Text style={{ fontSize: typeScale.title, fontWeight: weights.extrabold, color: theme.colors.text.primary }}>{value}</Text>
+      <Text style={{ fontSize: typeScale.caption, color: theme.colors.text.secondary, textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</Text>
     </View>
   );
 }
@@ -237,7 +243,7 @@ function StatCard({ icon: Icon, label, value }: { icon: React.ComponentType<{ si
 function SectionTitle({ title }: { title: string }) {
   const theme = useTheme();
   return (
-    <Text style={{ fontSize: typeScale.heading, fontWeight: weights.bold, color: theme.colors.text, paddingHorizontal: 16, marginBottom: 12 }}>
+    <Text style={{ fontSize: typeScale.heading, fontWeight: weights.bold, color: theme.colors.text.primary, paddingHorizontal: 16, marginBottom: 12 }}>
       {title}
     </Text>
   );

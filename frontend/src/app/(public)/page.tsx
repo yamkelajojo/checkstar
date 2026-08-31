@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { motion } from 'motion/react'
 import Link from 'next/link'
@@ -8,12 +8,14 @@ import { ProductCarousel } from '@/components/ProductCarousel'
 import { AirtimeTicker } from '@/components/AirtimeTicker'
 import { DownloadTheApp } from '@/components/DownloadTheApp'
 import { CommunityBanner } from '@/components/CommunityBanner'
-import { useTrendingProducts, usePopularProducts, useNewArrivals } from '@/lib/query'
+import { BannerCarousel } from '@/components/BannerCarousel'
+import { useTrendingProducts, usePopularProducts, useNewArrivals, useBanners } from '@/lib/query'
 
 export default function HomePage() {
   const { data: trending = [] } = useTrendingProducts()
   const { data: popular = [] } = usePopularProducts()
   const { data: newArrivals = [] } = useNewArrivals()
+  const { data: banners = [] } = useBanners()
 
   return (
     <>
@@ -26,7 +28,7 @@ export default function HomePage() {
                 <span className="text-primary">delivered fast</span>
               </motion.h1>
               <motion.p variants={fadeUp} className="mt-4 text-lg text-gray-500 leading-relaxed">
-                Durban&apos;s favourite supermarket chain — now online. Shop from 3 stores across the city and get your
+                Durban&apos;s favourite supermarket chain â€” now online. Shop from 3 stores across the city and get your
                 groceries delivered by our motorbike Riders, straight to your door.
               </motion.p>
               <motion.div variants={fadeUp} className="mt-8 flex flex-wrap gap-4">
@@ -46,6 +48,10 @@ export default function HomePage() {
             </motion.div>
           </div>
         </section>
+
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <BannerCarousel banners={banners} />
+        </div>
 
         <section className="max-w-7xl mx-auto px-4 py-16">
           <motion.h2
@@ -131,3 +137,4 @@ export default function HomePage() {
     </>
   )
 }
+

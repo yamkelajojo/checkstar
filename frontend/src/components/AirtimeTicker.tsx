@@ -18,15 +18,16 @@ export function AirtimeTicker() {
 
   return (
     <div className="hidden md:block border-y border-[#E6DFD6]/30">
+      <div className="text-center py-3">
+        <h3 className="text-sm font-semibold text-text-muted font-[family-name:var(--font-primary)] uppercase tracking-wider" style={{ textAlign: 'center' }}>
+          Available Instore
+        </h3>
+      </div>
       <Glass effect="frosted" options={{ blur: 16 }}>
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex items-center gap-4 py-3">
             <span className="text-xs font-semibold text-text-muted font-[family-name:var(--font-primary)] uppercase tracking-wider whitespace-nowrap">
               Services
-            </span>
-            <span className="text-[#E6DFD6]/40">|</span>
-            <span className="text-xs text-text-muted/70 font-[family-name:var(--font-primary)] whitespace-nowrap">
-              Available in-store
             </span>
             <span className="text-[#E6DFD6]/40">|</span>
             <div className="overflow-hidden flex-1">

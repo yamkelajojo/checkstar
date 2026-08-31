@@ -3,8 +3,6 @@
 import { useState, useCallback } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { motion } from 'motion/react'
-import OrderTimeline from '@/components/OrderTimeline'
-import StarRating from '@/components/StarRating'
 import { api } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth-store'
 import type { Order } from '@/types'
@@ -13,31 +11,20 @@ import {
   useRiderStats, useRiderHistory, useClaimOrder, useAdvanceOrder, useStores,
 } from '@/lib/query'
 import {
-  Clock, Truck, TrendingUp, History, MapPin, Store,
-  AlertCircle, ChevronRight, Loader2,
-  Award, Zap, ShoppingBag, Navigation,
-  Star, Shield, RefreshCw, CircleCheck, CircleX,
-  Bike, Package, Phone,
+  Clock, Truck, TrendingUp, History, Store,
+  Award, Zap, Navigation,
+  Star, Shield,
+  Bike, Package,
 } from 'lucide-react'
-
-function formatCurrency(amount: number): string {
-  return `R${Number(amount).toFixed(2)}`
-}
+import { fadeUpTight as fadeUp, staggerTight as stagger } from '@/lib/motion/variants'
+import { Skeleton, EmptyState, ErrorState } from '@/components/rider/RiderDashboardParts'
+import OrderCard from '@/components/rider/OrderCard'
+import StarRating from '@/components/StarRating'
 
 function xpProgress(xp: number, level: number): number {
   const base = (level - 1) * 1000
   const inLevel = xp - base
   return Math.min((inLevel / 1000) * 100, 100)
-}
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.4 } },
-}
-
-const stagger = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.08 } },
 }
 
 const tabs = [
@@ -48,39 +35,6 @@ const tabs = [
 ]
 
 type TabId = (typeof tabs)[number]['id']
-
-function Skeleton({ className = '' }: { className?: string }) {
-  return <div className={`animate-pulse bg-gray-100 rounded ${className}`} />
-}
-
-function EmptyState({ icon: Icon, title, description }: { icon: any; title: string; description: string }) {
-  return (
-    <motion.div variants={fadeUp} className="text-center py-16">
-      <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-        <Icon size={32} className="text-gray-300" />
-      </div>
-      <h3 className="text-lg font-semibold text-gray-600 mb-1">{title}</h3>
-      <p className="text-sm text-gray-400">{description}</p>
-    </motion.div>
-  )
-}
-
-function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
-  return (
-    <motion.div variants={fadeUp} className="text-center py-12">
-      <div className="w-14 h-14 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-4">
-        <AlertCircle size={28} className="text-accent" />
-      </div>
-      <p className="text-sm text-gray-600 mb-4">{message}</p>
-      <button
-        onClick={onRetry}
-        className="inline-flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors"
-      >
-        <RefreshCw size={16} /> Retry
-      </button>
-    </motion.div>
-  )
-}
 
 export default function RiderDashboardClient() {
   const { user } = useAuthStore()
@@ -134,94 +88,14 @@ export default function RiderDashboardClient() {
 
   const storeName = rider?.store_id ? storeNames[rider.store_id] : null
 
-  function renderNextAction(order: Order) {
+  function getNextAction(order: Order): { label: string; action: string } | null {
     if (order.status === 'cancelled' || order.status === 'delivered') return null
     const actions: Record<string, { label: string; action: string }> = {
       confirmed: { label: 'Items Bought', action: 'items_bought' },
       preparing: { label: 'Out for Delivery', action: 'out_for_delivery' },
       out_for_delivery: { label: 'Delivered', action: 'delivered' },
     }
-    const act = actions[order.status]
-    if (!act) return null
-    return (
-      <button
-        onClick={() => advanceOrder(order.id, act.action)}
-        className="inline-flex items-center gap-1.5 bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors"
-      >
-        <CircleCheck size={16} />
-        {act.label}
-      </button>
-    )
-  }
-
-  function renderOrderCard(order: Order, showAction = false) {
-    return (
-      <motion.div
-        key={order.id}
-        variants={fadeUp}
-        className="bg-white border border-gray-100 rounded-xl p-5 hover:shadow-md transition-shadow"
-      >
-        <div className="flex items-start justify-between gap-4 mb-3">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="font-semibold text-gray-900">{order.order_number}</span>
-              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
-                order.status === 'delivered' ? 'bg-success/10 text-success' :
-                order.status === 'cancelled' ? 'bg-accent/10 text-accent' :
-                order.status === 'pending' ? 'bg-warning/10 text-amber-700' :
-                'bg-primary/10 text-primary'
-              }`}>
-                {order.status.replace(/_/g, ' ')}
-              </span>
-            </div>
-            <p className="text-xs text-gray-400">{new Date(order.created_at).toLocaleString()}</p>
-          </div>
-          <span className="text-lg font-bold text-primary">{formatCurrency(order.total)}</span>
-        </div>
-
-        {order.items && order.items.length > 0 && (
-          <div className="mb-3 space-y-1">
-            {order.items.slice(0, 4).map(item => (
-              <div key={item.id} className="flex justify-between text-sm">
-                <span className="text-gray-600">
-                  {item.product_snapshot?.name || `Product #${item.product_id}`} x{item.quantity}
-                </span>
-                <span className="text-gray-500">{formatCurrency(item.total_price)}</span>
-              </div>
-            ))}
-            {order.items.length > 4 && (
-              <p className="text-xs text-gray-400">+{order.items.length - 4} more items</p>
-            )}
-          </div>
-        )}
-
-        {order.delivery_address && (
-          <div className="flex items-start gap-2 text-sm text-gray-500 mb-3">
-            <MapPin size={14} className="mt-0.5 shrink-0" />
-            <span>{order.delivery_address}</span>
-          </div>
-        )}
-
-        {order.store && (
-          <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
-            <Store size={14} />
-            <span>{order.store.name}</span>
-          </div>
-        )}
-
-        {order.activity_logs && order.activity_logs.length > 0 && (
-          <div className="mb-3">
-            <OrderTimeline currentStatus={order.status} logs={order.activity_logs as any} />
-          </div>
-        )}
-
-        {showAction && (
-          <div className="flex justify-end">
-            {renderNextAction(order)}
-          </div>
-        )}
-      </motion.div>
-    )
+    return actions[order.status] ?? null
   }
 
   return (
@@ -302,48 +176,11 @@ export default function RiderDashboardClient() {
               ) : (
                 <div className="space-y-4">
                   {availableOrders.map(order => (
-                    <motion.div
+                    <OrderCard
                       key={order.id}
-                      variants={fadeUp}
-                      className="bg-white border border-gray-100 rounded-xl p-5 hover:shadow-md transition-shadow"
-                    >
-                      <div className="flex items-start justify-between gap-4 mb-3">
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-semibold text-gray-900">{order.order_number}</span>
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
-                              Available
-                            </span>
-                          </div>
-                          <p className="text-xs text-gray-400">{new Date(order.created_at).toLocaleString()}</p>
-                        </div>
-                        <span className="text-lg font-bold text-primary">{formatCurrency(order.total)}</span>
-                      </div>
-
-                      {order.items && order.items.length > 0 && (
-                        <div className="mb-3 space-y-1">
-                          {order.items.slice(0, 5).map(item => (
-                            <div key={item.id} className="flex justify-between text-sm">
-                              <span className="text-gray-600">
-                                {item.product_snapshot?.name || `Product #${item.product_id}`} x{item.quantity}
-                              </span>
-                              <span className="text-gray-500">{formatCurrency(item.total_price)}</span>
-                            </div>
-                          ))}
-                          {order.items.length > 5 && (
-                            <p className="text-xs text-gray-400">+{order.items.length - 5} more items</p>
-                          )}
-                        </div>
-                      )}
-
-                      {order.delivery_address && (
-                        <div className="flex items-start gap-2 text-sm text-gray-500 mb-4">
-                          <MapPin size={14} className="mt-0.5 shrink-0" />
-                          <span>{order.delivery_address}</span>
-                        </div>
-                      )}
-
-                      <div className="flex justify-end">
+                      order={order}
+                      badge={{ label: 'Available', variant: 'available' }}
+                      action={
                         <button
                           onClick={() => handleClaimOrder(order.id)}
                           className="inline-flex items-center gap-1.5 bg-primary text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors"
@@ -351,8 +188,8 @@ export default function RiderDashboardClient() {
                           <Bike size={16} />
                           Claim Order
                         </button>
-                      </div>
-                    </motion.div>
+                      }
+                    />
                   ))}
                 </div>
               )}
@@ -379,7 +216,24 @@ export default function RiderDashboardClient() {
                 <EmptyState icon={Truck} title="No active deliveries" description="Claim an order to start delivering." />
               ) : (
                 <div className="space-y-4">
-                  {activeDeliveries.map(order => renderOrderCard(order, true))}
+                  {activeDeliveries.map(order => {
+                    const next = getNextAction(order)
+                    return (
+                      <OrderCard
+                        key={order.id}
+                        order={order}
+                        badge={{ label: order.status.replace(/_/g, ' ') }}
+                        action={next ? (
+                          <button
+                            onClick={() => advanceOrder(order.id, next.action)}
+                            className="inline-flex items-center gap-1.5 bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors"
+                          >
+                            {next.label}
+                          </button>
+                        ) : undefined}
+                      />
+                    )
+                  })}
                 </div>
               )}
             </motion.div>
@@ -510,7 +364,9 @@ export default function RiderDashboardClient() {
                 <EmptyState icon={History} title="No delivery history" description="Your completed deliveries will appear here." />
               ) : (
                 <div className="space-y-4">
-                  {history.map(order => renderOrderCard(order))}
+                  {history.map(order => (
+                    <OrderCard key={order.id} order={order} badge={{ label: order.status.replace(/_/g, ' ') }} />
+                  ))}
                 </div>
               )}
             </motion.div>

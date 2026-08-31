@@ -31,7 +31,7 @@ const chatsworth = makeStore(2, 'Checkstar Chatsworth');
 
 beforeEach(() => {
   jest.clearAllMocks();
-  useDeliveryStore.setState({ store: null, resolution: 'none', stores: [] });
+  useDeliveryStore.setState({ fulfillmentStore: null, stores: [] });
 });
 
 const renderPicker = async () => render(<StorePickerScreen />, { wrapper: TestWrapper });
@@ -48,7 +48,7 @@ describe('store listing', () => {
   });
 
   it('marks the currently selected store as selected', async () => {
-    useDeliveryStore.setState({ stores: [umgeni, chatsworth], store: chatsworth });
+    useDeliveryStore.setState({ stores: [umgeni, chatsworth], fulfillmentStore: chatsworth });
     await renderPicker();
 
     expect(screen.getByRole('button', { name: /Checkstar Chatsworth/ }).props.accessibilityState)
@@ -84,14 +84,13 @@ describe('choosing a store', () => {
     await Promise.resolve();
 
     const state = useDeliveryStore.getState();
-    expect(state.store).toEqual(chatsworth);
-    expect(state.resolution).toBe('pick');
+    expect(state.fulfillmentStore).toEqual(chatsworth);
     expect(storage.set).toHaveBeenCalledWith(STORAGE_KEYS.deliveryStore, chatsworth);
     expect(mockGoBack).toHaveBeenCalled();
   });
 
   it('lets the customer switch to a different store later', async () => {
-    useDeliveryStore.setState({ store: umgeni, resolution: 'pick' });
+    useDeliveryStore.setState({ fulfillmentStore: umgeni });
     await renderPicker();
 
     await fireEvent.press(screen.getByRole('button', { name: /Checkstar Umgeni/ }));
@@ -99,7 +98,7 @@ describe('choosing a store', () => {
     await Promise.resolve();
     await Promise.resolve();
 
-    expect(useDeliveryStore.getState().store).toEqual(chatsworth);
+    expect(useDeliveryStore.getState().fulfillmentStore).toEqual(chatsworth);
     expect(mockGoBack).toHaveBeenCalledTimes(2);
   });
 });

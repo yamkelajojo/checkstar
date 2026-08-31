@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
 import { CheckoutScreen } from '../CheckoutScreen';
-import { placeOrder } from '../../../lib/apiClient';
+import { placeOrder, validateFulfillment } from '../../../lib/apiClient';
 import { getDeliveryCoords } from '../../../lib/deliveryCoords';
 import type { ProductVO } from '../../../lib/product';
 import { useCart } from '../../cart/store';
@@ -12,6 +12,7 @@ import type { ApiStore, ApiUser } from '../../../lib/types';
 
 jest.mock('../../../lib/apiClient', () => ({
   placeOrder: jest.fn(),
+  validateFulfillment: jest.fn(),
 }));
 
 jest.mock('../../../lib/deliveryCoords', () => ({
@@ -19,8 +20,10 @@ jest.mock('../../../lib/deliveryCoords', () => ({
 }));
 
 const mockUseProducts = jest.fn();
+const mockUseAllProducts = jest.fn();
 jest.mock('../../catalog/hooks', () => ({
   useProducts: (params: unknown) => mockUseProducts(params),
+  useAllProducts: (params: unknown) => mockUseAllProducts(params),
 }));
 
 const mockReplace = jest.fn();
@@ -65,6 +68,8 @@ const product = (id: number, effective: number): ProductVO =>
     isFeatured: false,
     isActive: true,
     stockLabel: '',
+    storeCount: 0,
+    stores: [],
   }) as ProductVO;
 
 const catalog = [product(1, 3000), product(2, 2000)];
@@ -75,13 +80,24 @@ const renderScreen = async () => render(<CheckoutScreen />, { wrapper: TestWrapp
 
 const placeOrderButton = () => screen.getByRole('button', { name: /place order/i });
 
+/** Wait for the debounce + fulfillment validation to settle, then enable the button. */
+const waitForButtonEnabled = () =>
+  waitFor(() => {
+    expect(placeOrderButton().props.accessibilityState.disabled).toBe(false);
+  }, { timeout: 3000 });
+
 beforeEach(() => {
   jest.clearAllMocks();
   mockUseProducts.mockReturnValue({ data: catalog, isLoading: false });
+  mockUseAllProducts.mockReturnValue({ data: catalog, isLoading: false });
   (getDeliveryCoords as jest.Mock).mockResolvedValue(coords);
+  (validateFulfillment as jest.Mock).mockResolvedValue({
+    success: true,
+    store: testStore,
+  });
   useCart.setState({ items: [] });
   useSession.setState({ status: 'authenticated', token: 't', user: customer });
-  useDeliveryStore.setState({ store: testStore, stores: [testStore], resolution: 'pick' });
+  useDeliveryStore.setState({ fulfillmentStore: testStore, stores: [testStore] });
 });
 
 describe('empty cart guard', () => {
@@ -104,7 +120,9 @@ describe('summary and totals', () => {
       screen.getByPlaceholderText(copy.checkout.deliveryAddressPlaceholder),
       '12 Berea Road',
     );
-    expect(placeOrderButton().props.accessibilityState.disabled).toBe(false);
+    await waitFor(() => {
+      expect(placeOrderButton().props.accessibilityState.disabled).toBe(false);
+    });
     expect(screen.getByText(/Place order \u00B7 R 80,00/)).toBeTruthy();
     expect(mockReplace).not.toHaveBeenCalled();
   });
@@ -138,12 +156,12 @@ describe('submit gates', () => {
     expect(mockNavigate).toHaveBeenCalledWith('Auth', { intent: 'checkout' });
   });
 
-  it('prompts for a store when none is selected', async () => {
-    useDeliveryStore.setState({ store: null });
+  it('shows an inability banner when no store is resolved', async () => {
+    useDeliveryStore.setState({ fulfillmentStore: null });
+    (validateFulfillment as jest.Mock).mockResolvedValue({ success: false, error: 'No store found' });
     await renderScreen();
-    expect(screen.getByText(copy.checkout.noStoreTitle)).toBeTruthy();
-    await fireEvent.press(screen.getByText(copy.checkout.pickStore));
-    expect(mockNavigate).toHaveBeenCalledWith('StorePicker');
+    expect(screen.getByText('Unable to determine fulfillment store')).toBeTruthy();
+    expect(placeOrderButton().props.accessibilityState.disabled).toBe(true);
   });
 });
 
@@ -173,6 +191,7 @@ describe('placing the order', () => {
       screen.getByPlaceholderText(copy.checkout.deliveryNotesPlaceholder),
       '  gate code 4444  ',
     );
+    await waitForButtonEnabled();
     await fireEvent.press(placeOrderButton());
 
     await waitFor(() => expect(mockReplace).toHaveBeenCalled());
@@ -195,6 +214,7 @@ describe('placing the order', () => {
       screen.getByPlaceholderText(copy.checkout.deliveryAddressPlaceholder),
       address,
     );
+    await waitForButtonEnabled();
     await fireEvent.press(placeOrderButton());
 
     await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('OrderPlaced', {
@@ -209,6 +229,7 @@ describe('placing the order', () => {
       screen.getByPlaceholderText(copy.checkout.deliveryAddressPlaceholder),
       address,
     );
+    await waitForButtonEnabled();
     await fireEvent.press(placeOrderButton());
     await waitFor(() => expect(useCart.getState().items).toHaveLength(0));
   });
@@ -223,11 +244,12 @@ describe('placing the order', () => {
       screen.getByPlaceholderText(copy.checkout.deliveryAddressPlaceholder),
       address,
     );
+    await waitForButtonEnabled();
     await fireEvent.press(placeOrderButton());
 
     await waitFor(() => expect(mockReplace).toHaveBeenCalled());
     expect(useCart.getState().items).toHaveLength(2);
-    expect(await screen.findByText(/No riders available right now/)).toBeTruthy();
+    expect(mockReplace).toHaveBeenCalledWith('OrderPlaced', expect.objectContaining({ orderId: 10 }));
   });
 
   it('keeps the cart on a cancelled dispatch too', async () => {
@@ -240,6 +262,7 @@ describe('placing the order', () => {
       screen.getByPlaceholderText(copy.checkout.deliveryAddressPlaceholder),
       address,
     );
+    await waitForButtonEnabled();
     await fireEvent.press(placeOrderButton());
 
     await waitFor(() => expect(mockReplace).toHaveBeenCalled());
@@ -253,9 +276,10 @@ describe('placing the order', () => {
       screen.getByPlaceholderText(copy.checkout.deliveryAddressPlaceholder),
       address,
     );
+    await waitForButtonEnabled();
     await fireEvent.press(placeOrderButton());
 
-    expect(await screen.findByText('Store cannot deliver to that address')).toBeTruthy();
+    await waitFor(() => expect(screen.queryByText('Store cannot deliver to that address')).toBeTruthy());
     expect(mockReplace).not.toHaveBeenCalled();
     expect(useCart.getState().items).toHaveLength(2);
   });
@@ -267,9 +291,10 @@ describe('placing the order', () => {
       screen.getByPlaceholderText(copy.checkout.deliveryAddressPlaceholder),
       address,
     );
+    await waitForButtonEnabled();
     await fireEvent.press(placeOrderButton());
 
-    expect(await screen.findByText('Could not place the order.')).toBeTruthy();
+    await waitFor(() => expect(screen.queryByText('Could not place the order.')).toBeTruthy());
   });
 });
 
@@ -282,6 +307,6 @@ describe('location fallback', () => {
     });
     useCart.setState({ items: [{ productId: '1', storeProductId: 11, quantity: 2 }] });
     await renderScreen();
-    expect(await screen.findByText(copy.checkout.locationFallback)).toBeTruthy();
+    await waitFor(() => expect(screen.queryByText(copy.checkout.locationFallback)).toBeTruthy());
   });
 });

@@ -7,7 +7,7 @@
  */
 
 import type { Variants, Transition } from 'motion/react'
-import { ease, time, shift, opacity, spring, stagger } from './tokens'
+import { ease, time, shift, opacity, spring, stagger as staggerToken } from './tokens'
 
 
 // ════════════════════════════════════════════════════════════
@@ -80,7 +80,7 @@ export const item: Variants = {
 // ════════════════════════════════════════════════════════════
 // Apply to parent. Children use `item` variants.
 
-export const staggerContainer = (gap: number = stagger.base): Variants => ({
+export const staggerContainer = (gap: number = staggerToken.base): Variants => ({
   hidden: {},
   visible: {
     transition: {
@@ -191,4 +191,67 @@ export const orchestratedLayout = {
     opacity: 1,
     scale: 1,
   },
+}
+
+
+// ════════════════════════════════════════════════════════════
+// PAGE-LEVEL FADE UP (PUBLIC PAGES)
+// ════════════════════════════════════════════════════════════
+// Larger y-shift and slower transition for public marketing pages.
+
+export const fadeUp: Variants = {
+  hidden: { opacity: 0, y: 30 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+}
+
+export const stagger: Variants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.1 } },
+}
+
+
+// ════════════════════════════════════════════════════════════
+// DASHBOARD FADE UP (ADMIN / RIDER DASHBOARDS)
+// ════════════════════════════════════════════════════════════
+// Tighter y-shift and faster transition for dense dashboard UIs.
+
+export const fadeUpTight: Variants = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.4 } },
+}
+
+export const staggerTight: Variants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.08 } },
+}
+
+
+// ════════════════════════════════════════════════════════════
+// ORDER STATUS CONFIG
+// ════════════════════════════════════════════════════════════
+// Shared across order list and order detail views.
+
+import {
+  Clock as ClockIcon,
+  AlertCircle,
+  Package,
+  Bike,
+  CheckCircle,
+  XCircle,
+} from 'lucide-react'
+
+export const statusConfig: Record<string, { color: string; bg: string; icon: typeof ClockIcon; label: string }> = {
+  pending: { color: 'text-yellow-600', bg: 'bg-yellow-100', icon: ClockIcon, label: 'Pending' },
+  confirmed: { color: 'text-blue-600', bg: 'bg-blue-100', icon: AlertCircle, label: 'Confirmed' },
+  retrying: { color: 'text-amber-600', bg: 'bg-amber-100', icon: ClockIcon, label: 'Finding Rider' },
+  preparing: { color: 'text-indigo-600', bg: 'bg-indigo-100', icon: Package, label: 'Preparing' },
+  out_for_delivery: { color: 'text-purple-600', bg: 'bg-purple-100', icon: Bike, label: 'Out for Delivery' },
+  delivered: { color: 'text-green-600', bg: 'bg-green-100', icon: CheckCircle, label: 'Delivered' },
+  cancelled: { color: 'text-red-600', bg: 'bg-red-100', icon: XCircle, label: 'Cancelled' },
+}
+
+export const paymentStatusConfig: Record<string, { color: string; bg: string; label: string }> = {
+  pending: { color: 'text-yellow-600', bg: 'bg-yellow-100', label: 'Pending' },
+  paid: { color: 'text-green-600', bg: 'bg-green-100', label: 'Paid' },
+  refunded: { color: 'text-blue-600', bg: 'bg-blue-100', label: 'Refunded' },
 }

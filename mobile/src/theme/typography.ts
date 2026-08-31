@@ -14,10 +14,25 @@
 
 /**
  * Primary font family for the application.
- * Uses system font for performance and platform consistency.
- * Can be swapped for a custom font by changing this value.
+ * 
+ * GOTHAM ROUNDED (Primary UI Font):
+ * - Commercial font from Hoefler&Co (https://www.typography.com/fonts/gotham-rounded)
+ * - If you have a licensed copy, add the .otf/.ttf files to assets/fonts/
+ * - Then update this to: gothamRounded: 'GothamRounded-Regular' (or your font's PostScript name)
+ * - For now, falls back to system font (San Francisco on iOS, Roboto on Android)
+ * 
+ * HANDLEE (Accent/Display Font):
+ * - Available via Google Fonts (@expo-google-fonts/handlee)
+ * - Loaded via expo-font in App.tsx
+ * - Used for: page headers, logo tagline "cares enough", special brand moments
  */
 export const fontFamily = {
+  /** Primary UI font — Gotham Rounded (fallback to system if not installed) */
+  primary: 'System', // Replace with 'GothamRounded-Regular' when licensed font is added
+  
+  /** Accent/display font — Handlee Regular (loaded via @expo-google-fonts/handlee) */
+  accent: 'Handlee_400Regular',
+  
   /** Default system font stack (San Francisco on iOS, Roboto on Android) */
   system: 'System',
 
@@ -64,124 +79,139 @@ export const letterSpacing = {
  * Line heights use 4pt baseline grid.
  */
 export const textStyle = {
-  /** Hero / marketing headlines — largest text */
+  /** Hero / marketing headlines — largest text (bold primary for weight, mirroring the web app) */
   display: {
     size: 34,
     lineHeight: 42,
     weight: fontWeight.bold,
     letterSpacing: letterSpacing.tight,
+    fontFamily: fontFamily.primary,
   },
 
-  /** Screen titles / major section headers */
+  /** Screen titles / major section headers (bold primary for weight, mirroring the web app) */
   h1: {
     size: 28,
     lineHeight: 36,
     weight: fontWeight.bold,
     letterSpacing: letterSpacing.tight,
+    fontFamily: fontFamily.primary,
   },
 
-  /** Major section headers */
+  /** Major section headers (bold primary for weight, mirroring the web app) */
   h2: {
     size: 24,
     lineHeight: 32,
     weight: fontWeight.bold,
     letterSpacing: letterSpacing.tight,
+    fontFamily: fontFamily.primary,
   },
 
-  /** Subsection headers */
+  /** Subsection headers (bold primary for weight, mirroring the web app) */
   h3: {
     size: 20,
     lineHeight: 28,
-    weight: fontWeight.semibold,
+    weight: fontWeight.bold,
     letterSpacing: letterSpacing.tight,
+    fontFamily: fontFamily.primary,
   },
 
-  /** Card titles / list item primaries */
+  /** Card titles / list item primaries (Gotham Rounded) */
   title: {
     size: 17,
     lineHeight: 24,
     weight: fontWeight.semibold,
     letterSpacing: letterSpacing.tight,
+    fontFamily: fontFamily.primary,
   },
 
-  /** Comfortable reading size for body copy */
+  /** Comfortable reading size for body copy (Gotham Rounded) */
   bodyLarge: {
     size: 17,
     lineHeight: 26,
     weight: fontWeight.regular,
     letterSpacing: letterSpacing.normal,
+    fontFamily: fontFamily.primary,
   },
 
-  /** Standard body text */
+  /** Standard body text (Gotham Rounded) */
   body: {
     size: 16,
     lineHeight: 24,
     weight: fontWeight.regular,
     letterSpacing: letterSpacing.normal,
+    fontFamily: fontFamily.primary,
   },
 
-  /** Slightly smaller body for dense content */
+  /** Slightly smaller body for dense content (Gotham Rounded) */
   bodySmall: {
     size: 14,
     lineHeight: 22,
     weight: fontWeight.regular,
     letterSpacing: letterSpacing.normal,
+    fontFamily: fontFamily.primary,
   },
 
-  /** Buttons, labels, form controls */
+  /** Buttons, labels, form controls (Gotham Rounded) */
   label: {
     size: 14,
     lineHeight: 20,
     weight: fontWeight.medium,
     letterSpacing: letterSpacing.wide,
+    fontFamily: fontFamily.primary,
   },
 
-  /** Semibold variant for emphasized labels */
+  /** Semibold variant for emphasized labels (Gotham Rounded) */
   labelStrong: {
     size: 14,
     lineHeight: 20,
     weight: fontWeight.semibold,
     letterSpacing: letterSpacing.wide,
+    fontFamily: fontFamily.primary,
   },
 
-  /** Primary button text */
+  /** Primary button text (Gotham Rounded) */
   buttonPrimary: {
     size: 14,
     lineHeight: 20,
     weight: fontWeight.semibold,
     letterSpacing: letterSpacing.wide,
+    fontFamily: fontFamily.primary,
   },
 
-  /** Secondary metadata, timestamps, helper text */
+  /** Secondary metadata, timestamps, helper text (Gotham Rounded) */
   caption: {
     size: 12,
     lineHeight: 16,
     weight: fontWeight.medium,
     letterSpacing: letterSpacing.normal,
+    fontFamily: fontFamily.primary,
   },
 
-  /** Smallest readable text — legal, fine print */
+  /** Smallest readable text — legal, fine print (Gotham Rounded) */
   micro: {
     size: 11,
     lineHeight: 14,
     weight: fontWeight.medium,
     letterSpacing: letterSpacing.normal,
+    fontFamily: fontFamily.primary,
   },
 
-  /** Price display — prominent numerical values */
+  /** Price display — prominent numerical values (Gotham Rounded) */
   price: {
     size: 20,
     lineHeight: 28,
     weight: fontWeight.bold,
     letterSpacing: letterSpacing.tight,
+    fontFamily: fontFamily.primary,
   },
 
-  /** Large price for product detail */
+  /** Large price for product detail (Gotham Rounded) */
   priceLarge: {
     size: 28,
     lineHeight: 36,
     weight: fontWeight.bold,
     letterSpacing: letterSpacing.tight,
+    fontFamily: fontFamily.primary,
   },
 } as const;
 

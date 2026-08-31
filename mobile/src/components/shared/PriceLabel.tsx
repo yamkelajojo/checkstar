@@ -21,17 +21,17 @@ export function PriceLabel({ priceCents, salePriceCents, unit, size = 16 }: Pric
       {onSale && (
         <TamaguiText
           fontSize={size * 0.8}
-          color={theme.colors.textFaint}
+          color={theme.colors.text.tertiary}
           textDecorationLine="line-through"
         >
           {formatZar(priceCents)}
         </TamaguiText>
       )}
-      <TamaguiText fontSize={size} fontWeight={weights.black} color={onSale ? brand.primary : theme.colors.text}>
+      <TamaguiText fontSize={size} fontWeight={weights.black} color={onSale ? brand.primary : theme.colors.text.primary}>
         {formatZar(salePriceCents ?? priceCents)}
       </TamaguiText>
       {unit ? (
-        <TamaguiText fontSize={size * 0.7} color={theme.colors.textMuted}>
+        <TamaguiText fontSize={size * 0.7} color={theme.colors.text.secondary}>
           / {unit}
         </TamaguiText>
       ) : null}

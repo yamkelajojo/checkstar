@@ -15,6 +15,7 @@ class StoreProduct extends Model
     {
         return [
             'stock_quantity' => 'integer',
+            'reserved_quantity' => 'integer',
             'is_available' => 'boolean',
         ];
     }

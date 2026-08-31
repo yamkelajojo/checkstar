@@ -15,6 +15,7 @@ import { queryKeys } from '../../lib/queryKeys';
 import { formatZar } from '../../lib/currency';
 import { TactilePressable } from '../../components/shared/TactilePressable';
 import { SkeletonCard } from '../../components/shared/SkeletonCard';
+import { haptic } from '../../lib/haptics';
 import { useToast } from '../../components/shared/GlassToast';
 import { copy } from '../../lib/strings';
 import type { RootStackParamList } from '../../navigation/types';
@@ -30,15 +31,7 @@ import {
   orderUpdateBody,
 } from './model';
 import { useAdaptivePoll, createAdaptiveRefetchInterval } from '../../lib/adaptivePoll';
-
-const STATUS_LABEL: Record<string, string> = {
-  pending: 'Order received',
-  confirmed: 'Confirmed',
-  preparing: 'Being packed',
-  out_for_delivery: 'Out for delivery',
-  delivered: 'Delivered',
-  cancelled: 'Cancelled',
-};
+import { CUSTOMER_STATUS_LABEL as STATUS_LABEL } from '../../lib/status';
 
 const PAYMENT_LABEL: Record<string, string> = {
   pending: 'Pending',
@@ -125,6 +118,7 @@ export function OrderDetailScreen() {
   const onConfirmReceived = async () => {
     try {
       await confirmDelivery(orderId);
+      haptic.success();
       toast.show('Delivery confirmed — thanks!', { tone: 'success' });
       invalidate();
     } catch {

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { useRef } from 'react';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -17,6 +18,8 @@ interface FadeSlideInProps {
   delay?: number;
   distance?: number;
   style?: StyleProp<ViewStyle>;
+  /** If true, only animate on initial mount; skip re-animations when props change */
+  once?: boolean;
 }
 
 /**
@@ -47,18 +50,26 @@ export function FadeSlideIn({
   delay = 0,
   distance = 12,
   style,
+  /** If true, only animate on initial mount; skip re-animations when props change */
+  once = true,
 }: FadeSlideInProps) {
   const reduceMotion = useReducedMotion();
   const progress = useSharedValue(0);
+  const hasAnimated = useRef(false);
 
   useEffect(() => {
     if (reduceMotion) {
       progress.value = 1;
       return;
     }
+    if (once && hasAnimated.current) {
+      progress.value = 1;
+      return;
+    }
     cancelAnimation(progress);
     progress.value = withDelay(delay, withSpring(1, ENTRANCE_SPRING));
-  }, [reduceMotion, delay, progress]);
+    hasAnimated.current = true;
+  }, [reduceMotion, delay, once, progress]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: progress.value,

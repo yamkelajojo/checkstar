@@ -49,7 +49,7 @@ class DispatchPolicy
         return (int) Config::get('dispatch.retry_interval_seconds', 60);
     }
 
-    private function haversine(float $lat1, float $lng1, float $lat2, float $lng2): float
+    public function haversine(float $lat1, float $lng1, float $lat2, float $lng2): float
     {
         $earthRadius = 6371;
         $dLat = deg2rad($lat2 - $lat1);

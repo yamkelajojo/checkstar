@@ -4,34 +4,19 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'motion/react'
-import { ArrowLeft, Package, Clock, CheckCircle, XCircle, Bike, User, Star, Loader2, AlertCircle, MapPin, CreditCard } from 'lucide-react'
+import { ArrowLeft, Loader2, MapPin, CreditCard, Star, AlertCircle, XCircle, CheckCircle, User, Package, Bike, Clock } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth-store'
 import { api, apiErrorReason } from '@/lib/api'
 import { useOrder } from '@/lib/query'
 import { useQueryClient } from '@tanstack/react-query'
 import type { Order, OrderActivityLog } from '@/types'
+import { statusConfig, paymentStatusConfig } from '@/lib/motion/variants'
 
 function cancelReasonLabel(reason: string | null): string {
   if (reason === 'order_not_cancellable') return "Can't cancel — order already out for delivery"
   if (reason === 'order_not_claimable' || reason === 'rider_not_eligible') return 'Dispatch failed — check rider eligibility'
   if (reason) return reason.replace(/_/g, ' ')
   return "This order can't be cancelled right now."
-}
-
-const statusConfig: Record<string, { color: string; bg: string; icon: any; label: string }> = {
-  pending: { color: 'text-yellow-600', bg: 'bg-yellow-100', icon: Clock, label: 'Pending' },
-  confirmed: { color: 'text-blue-600', bg: 'bg-blue-100', icon: AlertCircle, label: 'Confirmed' },
-  retrying: { color: 'text-amber-600', bg: 'bg-amber-100', icon: Clock, label: 'Finding Rider' },
-  preparing: { color: 'text-indigo-600', bg: 'bg-indigo-100', icon: Package, label: 'Preparing' },
-  out_for_delivery: { color: 'text-purple-600', bg: 'bg-purple-100', icon: Bike, label: 'Out for Delivery' },
-  delivered: { color: 'text-green-600', bg: 'bg-green-100', icon: CheckCircle, label: 'Delivered' },
-  cancelled: { color: 'text-red-600', bg: 'bg-red-100', icon: XCircle, label: 'Cancelled' },
-}
-
-const paymentStatusConfig: Record<string, { color: string; bg: string; label: string }> = {
-  pending: { color: 'text-yellow-600', bg: 'bg-yellow-100', label: 'Pending' },
-  paid: { color: 'text-green-600', bg: 'bg-green-100', label: 'Paid' },
-  refunded: { color: 'text-blue-600', bg: 'bg-blue-100', label: 'Refunded' },
 }
 
 function OrderTimeline({ logs }: { logs?: OrderActivityLog[] }) {

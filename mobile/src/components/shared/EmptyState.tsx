@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { View } from 'react-native';
+import { View, Text } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -10,8 +10,7 @@ import Animated, {
 import type { LucideIcon } from 'lucide-react-native';
 import { useTheme } from '../../theme';
 import { useReducedMotion } from './useReducedMotion';
-import { Text as TamaguiText } from 'tamagui';
-import { textStyle } from '../../theme/typography';
+import { semanticText } from '../../theme/typography';
 import { semanticSpacing } from '../../theme/spacing';
 
 const EASE_SETTLE = Easing.out(Easing.cubic);
@@ -46,12 +45,12 @@ export function EmptyState({ icon: Icon, title, caption, action }: EmptyStatePro
     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: semanticSpacing.screenPadding }}>
       <Animated.View style={[{ alignItems: 'center', gap: semanticSpacing.tightGap }, style]}>
         <Icon size={44} color={theme.colors.text.tertiary} />
-        <TamaguiText {...textStyle.h3} color={theme.colors.text.primary} textAlign="center">
+        <Text style={{ ...semanticText.sectionTitle, color: theme.colors.text.primary, textAlign: 'center' }}>
           {title}
-        </TamaguiText>
-        <TamaguiText {...textStyle.bodySmall} color={theme.colors.text.secondary} textAlign="center">
+        </Text>
+        <Text style={{ ...semanticText.bodySecondary, color: theme.colors.text.secondary, textAlign: 'center' }}>
           {caption}
-        </TamaguiText>
+        </Text>
         {action}
       </Animated.View>
     </View>

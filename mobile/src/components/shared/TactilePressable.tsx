@@ -7,11 +7,9 @@ import Animated, {
   interpolate,
 } from 'react-native-reanimated';
 import type { PressableProps, StyleProp, ViewStyle } from 'react-native';
-import { Pressable, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { useReducedMotion } from './useReducedMotion';
 import { haptic } from '../../lib/haptics';
-import { haptic as hapticAlias } from '../../lib/haptics';
-import { YStack } from 'tamagui';
 import { PRESS_IN_SPRING, PRESS_OUT_SPRING, CARD_PRESS_IN_SPRING, CARD_PRESS_OUT_SPRING } from '../../theme/motion';
 
 type Variant = 'default' | 'compact' | 'card' | 'assertive';
@@ -115,11 +113,21 @@ export function TactilePressable({
     externalPressOut?.(e);
   };
 
+  const flatStyle = style ? StyleSheet.flatten(style) : undefined;
+
   return (
     <Animated.View
       style={[styles.base, variantStyle[variant], animatedStyle, style]}
     >
-      <YStack alignItems="center" justifyContent="center">
+      <View
+        style={{
+          flex: 1,
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexDirection: flatStyle?.flexDirection ?? 'column',
+          gap: flatStyle?.gap ?? 0,
+        }}
+      >
         <Pressable
           {...rest}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -130,7 +138,7 @@ export function TactilePressable({
         >
           {children}
         </Pressable>
-      </YStack>
+      </View>
     </Animated.View>
   );
 }

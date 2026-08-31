@@ -1,4 +1,4 @@
-import { createContext, useContext } from 'react';
+import { createContext, useContext, useMemo } from 'react';
 import { useColorScheme } from 'react-native';
 import {
   palettes,
@@ -187,6 +187,9 @@ interface ThemeProviderProps {
 
 export function ThemeProvider({ children, forcedTheme }: ThemeProviderProps) {
   const systemTheme = useThemeFromSystem();
-  const theme = forcedTheme ? { ...systemTheme, name: forcedTheme, colors: getPalette(forcedTheme) } : systemTheme;
+  const theme = useMemo(
+    () => forcedTheme ? { ...systemTheme, name: forcedTheme, colors: getPalette(forcedTheme) } : systemTheme,
+    [systemTheme, forcedTheme],
+  );
   return <ThemeContext.Provider value={theme}>{children}</ThemeContext.Provider>;
 }

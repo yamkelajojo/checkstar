@@ -23,7 +23,7 @@ export default function StoreCard({ store }: Props) {
         </div>
       )}
       <div className="p-5">
-        <h3 className="font-display text-lg font-semibold mb-2">{store.name}</h3>
+        <h3 className="font-display text-base sm:text-lg font-semibold mb-2">{store.name}</h3>
         <div className="flex flex-col gap-2 text-sm text-gray-500 mb-4">
           <div className="flex items-center gap-2">
             <MapPin size={14} />

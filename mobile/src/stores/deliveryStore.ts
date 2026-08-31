@@ -3,20 +3,15 @@ import type { ApiStore } from '../lib/types';
 import { storage, STORAGE_KEYS } from '../lib/storage';
 import { fetchStores } from '../lib/apiClient';
 
-type StoreResolution = 'none' | 'location' | 'pick' | 'declined';
-type LocationStore = StoreResolution;
-
 interface DeliveryStoreState {
-  store: ApiStore | null;
-  resolution: LocationStore;
+  fulfillmentStore: ApiStore | null;
   stores: ApiStore[];
   loadStores: () => Promise<void>;
-  chooseStore: (store: ApiStore, from: Exclude<LocationStore, 'none'>) => Promise<void>;
+  setFulfillmentStore: (store: ApiStore | null) => void;
 }
 
 export const useDeliveryStore = create<DeliveryStoreState>((set, get) => ({
-  store: null,
-  resolution: 'none',
+  fulfillmentStore: null,
   stores: [],
 
   async loadStores() {
@@ -24,20 +19,22 @@ export const useDeliveryStore = create<DeliveryStoreState>((set, get) => ({
     set({ stores });
     const cached = await storage.get<ApiStore>(STORAGE_KEYS.deliveryStore);
     if (cached) {
-      const current = get().store;
-      // Validate cached store still exists in backend; clear stale selection
       const exists = stores.some((s) => s.id === cached.id);
       if (!exists) {
         await storage.remove(STORAGE_KEYS.deliveryStore);
-        if (current?.id === cached.id) set({ store: null });
-        return;
+        set({ fulfillmentStore: null });
+      } else if (get().fulfillmentStore == null) {
+        set({ fulfillmentStore: cached });
       }
-      if (!current) set({ store: cached });
     }
   },
 
-  async chooseStore(store, from) {
-    await storage.set(STORAGE_KEYS.deliveryStore, store);
-    set({ store, resolution: from });
+  setFulfillmentStore(store) {
+    if (store) {
+      storage.set(STORAGE_KEYS.deliveryStore, store);
+    } else {
+      storage.remove(STORAGE_KEYS.deliveryStore);
+    }
+    set({ fulfillmentStore: store });
   },
 }));

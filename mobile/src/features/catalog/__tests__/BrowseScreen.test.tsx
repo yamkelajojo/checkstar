@@ -8,10 +8,10 @@ import type { ApiCategory, ApiStore } from '../../../lib/types';
 import type { ProductVO } from '../../../lib/product';
 
 const mockUseCategories = jest.fn();
-const mockUseProducts = jest.fn();
+const mockUseInfiniteProducts = jest.fn();
 jest.mock('../hooks', () => ({
   useCategories: () => mockUseCategories(),
-  useProducts: (params: unknown) => mockUseProducts(params),
+  useInfiniteProducts: (params: unknown) => mockUseInfiniteProducts(params),
 }));
 
 jest.mock('../ProductSummaryModal', () => ({
@@ -60,6 +60,8 @@ const vo = (id: number, name: string): ProductVO =>
     isFeatured: false,
     isActive: true,
     stockLabel: '',
+    storeCount: 0,
+    stores: [],
   }) as ProductVO;
 
 const products = [vo(101, 'Spinach'), vo(102, 'Milk')];
@@ -69,9 +71,9 @@ const store: ApiStore = { id: 5, name: 'Checkstar Umgeni', slug: 'u', delivery_r
 beforeEach(() => {
   jest.clearAllMocks();
   mockUseCategories.mockReturnValue({ data: categories });
-  mockUseProducts.mockReturnValue({ data: products, isLoading: false });
+  mockUseInfiniteProducts.mockReturnValue({ data: { pages: [{ products }], pageParams: [undefined] }, isLoading: false, hasNextPage: false, fetchNextPage: jest.fn() });
   useCart.setState({ items: [] });
-  useDeliveryStore.setState({ store, stores: [store] });
+  useDeliveryStore.setState({ fulfillmentStore: store, stores: [store] });
 });
 
 const renderBrowse = async () => render(<BrowseScreen />, { wrapper: TestWrapper });
@@ -85,7 +87,7 @@ describe('catalog browsing', () => {
 
   it('requests products scoped to the selected store by default', async () => {
     await renderBrowse();
-    expect(mockUseProducts).toHaveBeenCalledWith(
+    expect(mockUseInfiniteProducts).toHaveBeenCalledWith(
       expect.objectContaining({ category: undefined, storeId: 5 }),
     );
   });
@@ -93,7 +95,7 @@ describe('catalog browsing', () => {
   it('filters by a category rail selection', async () => {
     await renderBrowse();
     await fireEvent.press(screen.getByRole('button', { name: 'Fresh' }));
-    expect(mockUseProducts).toHaveBeenLastCalledWith(
+    expect(mockUseInfiniteProducts).toHaveBeenLastCalledWith(
       expect.objectContaining({ category: 'fresh' }),
     );
   });
@@ -102,17 +104,17 @@ describe('catalog browsing', () => {
     await renderBrowse();
     await fireEvent.press(screen.getByRole('button', { name: 'Fresh' }));
     await fireEvent.press(screen.getByRole('button', { name: 'All' }));
-    expect(mockUseProducts).toHaveBeenLastCalledWith(
+    expect(mockUseInfiniteProducts).toHaveBeenLastCalledWith(
       expect.objectContaining({ category: undefined }),
     );
   });
 
   it('shows an empty note once loading finishes with no products', async () => {
-    mockUseProducts.mockReturnValue({ data: [], isLoading: true });
+    mockUseInfiniteProducts.mockReturnValue({ data: { pages: [], pageParams: [] }, isLoading: true, hasNextPage: false, fetchNextPage: jest.fn() });
     await renderBrowse();
     expect(screen.queryByText('No products here yet.')).toBeNull();
 
-    mockUseProducts.mockReturnValue({ data: [], isLoading: false });
+    mockUseInfiniteProducts.mockReturnValue({ data: { pages: [], pageParams: [] }, isLoading: false, hasNextPage: false, fetchNextPage: jest.fn() });
     await renderBrowse();
     expect(screen.getByText('No products here yet.')).toBeTruthy();
   });

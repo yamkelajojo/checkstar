@@ -14,9 +14,9 @@ describe('add', () => {
   });
 
   it('increments the existing line for repeat adds', () => {
-    useCart.getState().add('101', 1, 55);
-    useCart.getState().add('101', 1, 55);
-    expect(lineOf('101')).toMatchObject({ quantity: 2, storeProductId: 55 });
+    useCart.getState().add('101', 1);
+    useCart.getState().add('101', 1);
+    expect(lineOf('101')).toMatchObject({ quantity: 2 });
   });
 
   it('caps quantity at 8 no matter how often it is added', () => {
@@ -63,15 +63,15 @@ describe('clear', () => {
 });
 
 describe('syncFromServer', () => {
-  it('adopts server quantities and store product ids on sign-in merge', () => {
+  it('adopts server quantities on sign-in merge', () => {
     useCart.getState().add('1', 5);
-    useCart.getState().syncFromServer([{ productId: '1', quantity: 2, storeProductId: 77 }]);
-    expect(lineOf('1')).toMatchObject({ quantity: 2, storeProductId: 77 });
+    useCart.getState().syncFromServer([{ productId: '1', quantity: 2 }]);
+    expect(lineOf('1')).toMatchObject({ quantity: 2 });
   });
 
   it('keeps local-only lines so nothing is lost', () => {
     useCart.getState().add('local-only', 1);
-    useCart.getState().syncFromServer([{ productId: '1', quantity: 1, storeProductId: null }]);
+    useCart.getState().syncFromServer([{ productId: '1', quantity: 1 }]);
     expect(useCart.getState().items.map((i) => i.productId).sort()).toEqual(['1', 'local-only']);
   });
 });
@@ -80,11 +80,11 @@ describe('mergeLocalOntoServer', () => {
   it('replaces items wholesale when the server accepts local lines', () => {
     useCart.getState().add('old', 3);
     useCart.getState().mergeLocalOntoServer(
-      [{ productId: 'old', quantity: 3, storeProductId: null }],
+      [{ productId: 'old', quantity: 3 }],
       { data: [{ product_id: 1, quantity: 1, store_product_id: null }], dropped: [] }
     );
     expect(useCart.getState().items).toEqual([
-      { productId: '1', storeProductId: null, quantity: 1 },
+      { productId: '1', quantity: 1 },
     ]);
   });
 });
