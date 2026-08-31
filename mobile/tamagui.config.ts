@@ -1,249 +1,159 @@
 import { createTamagui, createTokens, createFont } from 'tamagui';
+import { brand, neutral, light, dark } from './src/theme/colors';
+import { spacing as spacingScale, radius as radiusScale } from './src/theme/spacing';
 
 // ============================================================================
-// TAMAGUI TOKENS (inlined from theme tokens to avoid import-time issues)
+// TAMAGUI TOKENS — imported from src/theme/ (single source of truth)
 // ============================================================================
-
-// Brand palette
-const brandOrange = '#EB6522';
-const brandOrangeStrong = '#CC4400';
-const brandOrangeSoft = '#FFE0CC';
-const brandOrangeBright = '#F47A3A';
-const brandOrangeDeep = '#A93D0A';
-const brandStar = '#FBBF24';
-const brandStarDark = '#A66A00';
-const brandStarSoft = '#FFF4CC';
-const brandSuccess = '#2D6A4F';
-const brandSuccessSoft = '#E5F1EB';
-const brandSuccessStrong = '#1F513B';
-const brandWarning = '#9A6700';
-const brandWarningSoft = '#FFF4D6';
-const brandWarningStrong = '#744D00';
-const brandError = '#B42318';
-const brandErrorSoft = '#FDE8E7';
-const brandErrorStrong = '#8E1B12';
-
-// Neutral — Light
-const lightBg = '#FFFCF9';
-const lightBgAlt = '#FAF7F4';
-const lightSurface = '#F5F1ED';
-const lightSurfaceElevated = '#FFFFFF';
-const lightSurfaceSunken = '#EEE8E3';
-const lightBorderSubtle = '#EEE8E3';
-const lightBorderDefault = '#E8E1DB';
-const lightBorderStrong = '#DED5CE';
-const lightTextPrimary = '#1B1816';
-const lightTextSecondary = '#6B625C';
-const lightTextTertiary = '#7B716A';
-const lightTextDisabled = '#A0968E';
-const lightTextInverse = '#FFF9F5';
-const lightTextBrand = '#B8420D';
-const lightActionPrimaryBg = '#CC4400';
-const lightActionPrimaryFg = '#FFFFFF';
-const lightActionPrimaryPressed = '#A93D0A';
-const lightActionSecondaryBg = '#FFE0CC';
-const lightActionSecondaryFg = '#A93D0A';
-const lightActionSecondaryBorder = '#F2C7B0';
-const lightOverlay = 'rgba(27, 24, 22, 0.4)';
-
-// Neutral — Dark
-const darkBg = '#0F0D0C';
-const darkBgAlt = '#14110F';
-const darkSurface = '#1C1917';
-const darkSurfaceElevated = '#26221F';
-const darkSurfaceSunken = '#0B0908';
-const darkBorderSubtle = '#29241F';
-const darkBorderDefault = '#342F2A';
-const darkBorderStrong = '#48413B';
-const darkTextPrimary = '#FFF9F5';
-const darkTextSecondary = '#C9C0B8';
-const darkTextTertiary = '#9B9189';
-const darkTextDisabled = '#706861';
-const darkTextInverse = '#1B1816';
-const darkTextBrand = '#FF9A68';
-const darkActionPrimaryBg = '#EB6522';
-const darkActionPrimaryFg = '#FFFFFF';
-const darkActionPrimaryPressed = '#F47A3A';
-const darkActionSecondaryBg = '#2A211D';
-const darkActionSecondaryFg = '#FF9A68';
-const darkActionSecondaryBorder = '#4A3A32';
-const darkOverlay = 'rgba(15, 13, 12, 0.6)';
-
-// Spacing
-const spacing = {
-  xxs: 4,
-  xs: 8,
-  sm: 12,
-  md: 16,
-  lg: 20,
-  xl: 24,
-  xxl: 32,
-  xxxl: 40,
-  huge: 48,
-  massive: 64,
-  extreme: 80,
-};
-
-// Radius
-const radius = {
-  xs: 6,
-  sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 20,
-  xxl: 24,
-  pill: 999,
-  full: 9999,
-};
 
 const tamaguiColors = {
   // Brand
-  brandOrange,
-  brandOrangeStrong,
-  brandOrangeSoft,
-  brandOrangeBright,
-  brandOrangeDeep,
-  brandStar,
-  brandStarDark,
-  brandStarSoft,
-  brandSuccess,
-  brandSuccessSoft,
-  brandSuccessStrong,
-  brandWarning,
-  brandWarningSoft,
-  brandWarningStrong,
-  brandError,
-  brandErrorSoft,
-  brandErrorStrong,
+  brandOrange: brand.orange,
+  brandOrangeStrong: brand.orangeStrong,
+  brandOrangeSoft: brand.orangeSoft,
+  brandOrangeBright: brand.orangeBright,
+  brandOrangeDeep: brand.orangeDeep,
+  brandStar: brand.star,
+  brandStarDark: brand.starDark,
+  brandStarSoft: brand.starSoft,
+  brandSuccess: brand.success,
+  brandSuccessSoft: brand.successSoft,
+  brandSuccessStrong: brand.successStrong,
+  brandWarning: brand.warning,
+  brandWarningSoft: brand.warningSoft,
+  brandWarningStrong: brand.warningStrong,
+  brandError: brand.error,
+  brandErrorSoft: brand.errorSoft,
+  brandErrorStrong: brand.errorStrong,
 
-  // Light
-  lightBg,
-  lightBgAlt,
-  lightSurface,
-  lightSurfaceElevated,
-  lightSurfaceSunken,
-  lightBorderSubtle,
-  lightBorderDefault,
-  lightBorderStrong,
-  lightTextPrimary,
-  lightTextSecondary,
-  lightTextTertiary,
-  lightTextDisabled,
-  lightTextInverse,
-  lightTextBrand,
-  lightActionPrimaryBg,
-  lightActionPrimaryFg,
-  lightActionPrimaryPressed,
-  lightActionSecondaryBg,
-  lightActionSecondaryFg,
-  lightActionSecondaryBorder,
-  lightOverlay,
+  // Light semantic
+  lightBg: light.background.primary,
+  lightBgAlt: light.background.secondary,
+  lightSurface: light.surface.primary,
+  lightSurfaceElevated: light.surface.elevated,
+  lightSurfaceSunken: light.surface.sunken,
+  lightBorderSubtle: light.border.subtle,
+  lightBorderDefault: light.border.default,
+  lightBorderStrong: light.border.strong,
+  lightTextPrimary: light.text.primary,
+  lightTextSecondary: light.text.secondary,
+  lightTextTertiary: light.text.tertiary,
+  lightTextDisabled: light.text.disabled,
+  lightTextInverse: light.text.inverse,
+  lightTextBrand: light.text.brand,
+  lightActionPrimaryBg: light.action.primary.background,
+  lightActionPrimaryFg: light.action.primary.foreground,
+  lightActionPrimaryPressed: light.action.primary.pressed,
+  lightActionSecondaryBg: light.action.secondary.background,
+  lightActionSecondaryFg: light.action.secondary.foreground,
+  lightActionSecondaryBorder: light.action.secondary.border,
+  lightOverlay: light.overlay,
 
-  // Dark
-  darkBg,
-  darkBgAlt,
-  darkSurface,
-  darkSurfaceElevated,
-  darkSurfaceSunken,
-  darkBorderSubtle,
-  darkBorderDefault,
-  darkBorderStrong,
-  darkTextPrimary,
-  darkTextSecondary,
-  darkTextTertiary,
-  darkTextDisabled,
-  darkTextInverse,
-  darkTextBrand,
-  darkActionPrimaryBg,
-  darkActionPrimaryFg,
-  darkActionPrimaryPressed,
-  darkActionSecondaryBg,
-  darkActionSecondaryFg,
-  darkActionSecondaryBorder,
-  darkOverlay,
+  // Dark semantic
+  darkBg: dark.background.primary,
+  darkBgAlt: dark.background.secondary,
+  darkSurface: dark.surface.primary,
+  darkSurfaceElevated: dark.surface.elevated,
+  darkSurfaceSunken: dark.surface.sunken,
+  darkBorderSubtle: dark.border.subtle,
+  darkBorderDefault: dark.border.default,
+  darkBorderStrong: dark.border.strong,
+  darkTextPrimary: dark.text.primary,
+  darkTextSecondary: dark.text.secondary,
+  darkTextTertiary: dark.text.tertiary,
+  darkTextDisabled: dark.text.disabled,
+  darkTextInverse: dark.text.inverse,
+  darkTextBrand: dark.text.brand,
+  darkActionPrimaryBg: dark.action.primary.background,
+  darkActionPrimaryFg: dark.action.primary.foreground,
+  darkActionPrimaryPressed: dark.action.primary.pressed,
+  darkActionSecondaryBg: dark.action.secondary.background,
+  darkActionSecondaryFg: dark.action.secondary.foreground,
+  darkActionSecondaryBorder: dark.action.secondary.border,
+  darkOverlay: dark.overlay,
 
   // Status (shared)
-  statusSuccessPrimary: brandSuccess,
-  statusSuccessSoft: brandSuccessSoft,
-  statusWarningPrimary: brandWarning,
-  statusWarningSoft: brandWarningSoft,
-  statusErrorPrimary: brandError,
-  statusErrorSoft: brandErrorSoft,
-  statusStarPrimary: brandStar,
-  statusStarSoft: brandStarSoft,
+  statusSuccessPrimary: brand.success,
+  statusSuccessSoft: brand.successSoft,
+  statusWarningPrimary: brand.warning,
+  statusWarningSoft: brand.warningSoft,
+  statusErrorPrimary: brand.error,
+  statusErrorSoft: brand.errorSoft,
+  statusStarPrimary: brand.star,
+  statusStarSoft: brand.starSoft,
 
-  // Legacy aliases (for existing tamagui usage)
-  primary: brandOrange,
-  primaryDark: brandOrangeStrong,
-  primaryLight: brandOrangeSoft,
-  star: brandStar,
-  success: brandSuccess,
-  warning: brandWarning,
-  accent: '#CC0000',
+  // Legacy aliases
+  primary: brand.orange,
+  primaryDark: brand.orangeStrong,
+  primaryLight: brand.orangeSoft,
+  star: brand.star,
+  success: brand.success,
+  warning: brand.warning,
+  accent: brand.accent,
 
-  light_bg: lightBg,
-  light_bgAlt: lightBgAlt,
-  light_surface: lightSurface,
-  light_surfaceElevated: lightSurfaceElevated,
-  light_border: lightBorderDefault,
-  light_hairline: lightBorderSubtle,
-  light_text: lightTextPrimary,
-  light_textMuted: lightTextSecondary,
-  light_textFaint: lightTextTertiary,
-  light_onPrimary: lightTextInverse,
-  light_overlay: lightOverlay,
+  light_bg: light.background.primary,
+  light_bgAlt: light.background.secondary,
+  light_surface: light.surface.primary,
+  light_surfaceElevated: light.surface.elevated,
+  light_border: light.border.default,
+  light_hairline: light.border.subtle,
+  light_text: light.text.primary,
+  light_textMuted: light.text.secondary,
+  light_textFaint: light.text.tertiary,
+  light_onPrimary: light.text.inverse,
+  light_overlay: light.overlay,
 
-  dark_bg: darkBg,
-  dark_bgAlt: darkBgAlt,
-  dark_surface: darkSurface,
-  dark_surfaceElevated: darkSurfaceElevated,
-  dark_border: darkBorderDefault,
-  dark_hairline: darkBorderSubtle,
-  dark_text: darkTextPrimary,
-  dark_textMuted: darkTextSecondary,
-  dark_textFaint: darkTextTertiary,
-  dark_onPrimary: darkTextInverse,
-  dark_overlay: darkOverlay,
+  dark_bg: dark.background.primary,
+  dark_bgAlt: dark.background.secondary,
+  dark_surface: dark.surface.primary,
+  dark_surfaceElevated: dark.surface.elevated,
+  dark_border: dark.border.default,
+  dark_hairline: dark.border.subtle,
+  dark_text: dark.text.primary,
+  dark_textMuted: dark.text.secondary,
+  dark_textFaint: dark.text.tertiary,
+  dark_onPrimary: dark.text.inverse,
+  dark_overlay: dark.overlay,
 };
 
 const tokens = createTokens({
   size: {
-    xxs: spacing.xxs,
-    xs: spacing.xs,
-    sm: spacing.sm,
-    md: spacing.md,
-    true: spacing.md,
-    lg: spacing.lg,
-    xl: spacing.xl,
-    xxl: spacing.xxl,
-    xxxl: spacing.xxxl,
-    huge: spacing.huge,
-    massive: spacing.massive,
-    extreme: spacing.extreme,
+    xxs: spacingScale.xxs,
+    xs: spacingScale.xs,
+    sm: spacingScale.sm,
+    md: spacingScale.md,
+    true: spacingScale.md,
+    lg: spacingScale.lg,
+    xl: spacingScale.xl,
+    xxl: spacingScale.xxl,
+    xxxl: spacingScale.xxxl,
+    huge: spacingScale.huge,
+    massive: spacingScale.massive,
+    extreme: spacingScale.extreme,
   },
   space: {
-    xxs: spacing.xxs,
-    xs: spacing.xs,
-    sm: spacing.sm,
-    md: spacing.md,
-    true: spacing.md,
-    lg: spacing.lg,
-    xl: spacing.xl,
-    xxl: spacing.xxl,
-    xxxl: spacing.xxxl,
-    huge: spacing.huge,
-    massive: spacing.massive,
-    extreme: spacing.extreme,
+    xxs: spacingScale.xxs,
+    xs: spacingScale.xs,
+    sm: spacingScale.sm,
+    md: spacingScale.md,
+    true: spacingScale.md,
+    lg: spacingScale.lg,
+    xl: spacingScale.xl,
+    xxl: spacingScale.xxl,
+    xxxl: spacingScale.xxxl,
+    huge: spacingScale.huge,
+    massive: spacingScale.massive,
+    extreme: spacingScale.extreme,
   },
   radius: {
-    xs: radius.xs,
-    sm: radius.sm,
-    md: radius.md,
-    lg: radius.lg,
-    xl: radius.xl,
-    xxl: radius.xxl,
-    pill: radius.pill,
-    full: radius.full,
+    xs: radiusScale.xs,
+    sm: radiusScale.sm,
+    md: radiusScale.md,
+    lg: radiusScale.lg,
+    xl: radiusScale.xl,
+    xxl: radiusScale.xxl,
+    pill: radiusScale.pill,
+    full: radiusScale.full,
   },
   zIndex: {
     xxs: -1,
@@ -259,33 +169,26 @@ const tokens = createTokens({
 });
 
 // Font configuration
-const fontWeightRegular = '400';
-const fontWeightMedium = '500';
-const fontWeightSemibold = '600';
-const fontWeightBold = '700';
-const fontWeightExtrabold = '800';
-const fontWeightBlack = '900';
-
 const headingFont = createFont({
   family: 'System',
   size: {
-    1: 11,   // micro
-    2: 12,   // caption
-    3: 14,   // bodySmall
-    4: 16,   // body
-    5: 17,   // bodyLarge
-    6: 17,   // title
-    7: 20,   // h3
-    8: 24,   // h2
-    9: 28,   // h1
+    1: 11,
+    2: 12,
+    3: 14,
+    4: 16,
+    5: 17,
+    6: 17,
+    7: 20,
+    8: 24,
+    9: 28,
   },
   weight: {
-    1: fontWeightRegular,
-    2: fontWeightMedium,
-    3: fontWeightSemibold,
-    4: fontWeightBold,
-    5: fontWeightExtrabold,
-    6: fontWeightBlack,
+    1: '400',
+    2: '500',
+    3: '600',
+    4: '700',
+    5: '800',
+    6: '900',
   },
   lineHeight: {
     1: 14,
@@ -322,10 +225,10 @@ const bodyFont = createFont({
     9: 28,
   },
   weight: {
-    1: fontWeightRegular,
-    2: fontWeightMedium,
-    3: fontWeightSemibold,
-    4: fontWeightBold,
+    1: '400',
+    2: '500',
+    3: '600',
+    4: '700',
   },
   lineHeight: {
     1: 14,
@@ -347,8 +250,7 @@ const bodyFont = createFont({
 /**
  * Tamagui config — minimal, only for primitives (Text in EmptyState, etc.)
  * All app styling flows through the custom ThemeContext (src/theme/).
- * This config inlines values from src/theme/ to avoid import-time issues.
- * Do not mirror palette changes here — src/theme/ is the single source of truth.
+ * Colors and spacing imported from src/theme/ — single source of truth.
  */
 const config = createTamagui({
   defaultTheme: 'light',
@@ -359,14 +261,14 @@ const config = createTamagui({
   },
   themes: {
     light: {
-      background: lightBg,
-      color: lightTextPrimary,
-      placeholderColor: lightTextTertiary,
+      background: light.background.primary,
+      color: light.text.primary,
+      placeholderColor: light.text.tertiary,
     },
     dark: {
-      background: darkBg,
-      color: darkTextPrimary,
-      placeholderColor: darkTextTertiary,
+      background: dark.background.primary,
+      color: dark.text.primary,
+      placeholderColor: dark.text.tertiary,
     },
   },
   media: {

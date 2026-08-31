@@ -15,11 +15,13 @@
 /**
  * Primary font family for the application.
  * 
- * GOTHAM ROUNDED (Primary UI Font):
- * - Commercial font from Hoefler&Co (https://www.typography.com/fonts/gotham-rounded)
- * - If you have a licensed copy, add the .otf/.ttf files to assets/fonts/
- * - Then update this to: gothamRounded: 'GothamRounded-Regular' (or your font's PostScript name)
- * - For now, falls back to system font (San Francisco on iOS, Roboto on Android)
+ * SYSTEM FONT (Primary UI Font):
+ * - iOS: San Francisco (SF Pro) — Apple's system font, optimized for readability
+ * - Android: Roboto — Google's system font, Material Design standard
+ * - Native platform fonts are the correct choice for mobile apps — they're
+ *   high quality, always available, and support dynamic type/accessibility scaling.
+ * - Web uses Inter (via next/font), but mobile intentionally uses System for
+ *   platform-native feel and zero bundle cost.
  * 
  * HANDLEE (Accent/Display Font):
  * - Available via Google Fonts (@expo-google-fonts/handlee)
@@ -27,8 +29,8 @@
  * - Used for: page headers, logo tagline "cares enough", special brand moments
  */
 export const fontFamily = {
-  /** Primary UI font — Gotham Rounded (fallback to system if not installed) */
-  primary: 'System', // Replace with 'GothamRounded-Regular' when licensed font is added
+  /** Primary UI font — System (SF Pro on iOS, Roboto on Android) */
+  primary: 'System',
   
   /** Accent/display font — Handlee Regular (loaded via @expo-google-fonts/handlee) */
   accent: 'Handlee_400Regular',
@@ -115,7 +117,7 @@ export const textStyle = {
     fontFamily: fontFamily.primary,
   },
 
-  /** Card titles / list item primaries (Gotham Rounded) */
+  /** Card titles / list item primaries */
   title: {
     size: 17,
     lineHeight: 24,
@@ -124,7 +126,7 @@ export const textStyle = {
     fontFamily: fontFamily.primary,
   },
 
-  /** Comfortable reading size for body copy (Gotham Rounded) */
+  /** Comfortable reading size for body copy */
   bodyLarge: {
     size: 17,
     lineHeight: 26,
@@ -133,7 +135,7 @@ export const textStyle = {
     fontFamily: fontFamily.primary,
   },
 
-  /** Standard body text (Gotham Rounded) */
+  /** Standard body text */
   body: {
     size: 16,
     lineHeight: 24,
@@ -142,7 +144,7 @@ export const textStyle = {
     fontFamily: fontFamily.primary,
   },
 
-  /** Slightly smaller body for dense content (Gotham Rounded) */
+  /** Slightly smaller body for dense content */
   bodySmall: {
     size: 14,
     lineHeight: 22,
@@ -151,7 +153,7 @@ export const textStyle = {
     fontFamily: fontFamily.primary,
   },
 
-  /** Buttons, labels, form controls (Gotham Rounded) */
+  /** Buttons, labels, form controls */
   label: {
     size: 14,
     lineHeight: 20,
@@ -160,7 +162,7 @@ export const textStyle = {
     fontFamily: fontFamily.primary,
   },
 
-  /** Semibold variant for emphasized labels (Gotham Rounded) */
+  /** Semibold variant for emphasized labels */
   labelStrong: {
     size: 14,
     lineHeight: 20,
@@ -169,7 +171,7 @@ export const textStyle = {
     fontFamily: fontFamily.primary,
   },
 
-  /** Primary button text (Gotham Rounded) */
+  /** Primary button text */
   buttonPrimary: {
     size: 14,
     lineHeight: 20,
@@ -178,7 +180,7 @@ export const textStyle = {
     fontFamily: fontFamily.primary,
   },
 
-  /** Secondary metadata, timestamps, helper text (Gotham Rounded) */
+  /** Secondary metadata, timestamps, helper text */
   caption: {
     size: 12,
     lineHeight: 16,
@@ -187,7 +189,7 @@ export const textStyle = {
     fontFamily: fontFamily.primary,
   },
 
-  /** Smallest readable text — legal, fine print (Gotham Rounded) */
+  /** Smallest readable text — legal, fine print */
   micro: {
     size: 11,
     lineHeight: 14,
@@ -196,7 +198,7 @@ export const textStyle = {
     fontFamily: fontFamily.primary,
   },
 
-  /** Price display — prominent numerical values (Gotham Rounded) */
+  /** Price display — prominent numerical values */
   price: {
     size: 20,
     lineHeight: 28,
@@ -205,7 +207,7 @@ export const textStyle = {
     fontFamily: fontFamily.primary,
   },
 
-  /** Large price for product detail (Gotham Rounded) */
+  /** Large price for product detail */
   priceLarge: {
     size: 28,
     lineHeight: 36,

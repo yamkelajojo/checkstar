@@ -9,6 +9,7 @@ import {
 } from './colors';
 import { textStyle, semanticText, type TextStyle, type SemanticTextStyle } from './typography';
 import { spacing, semanticSpacing, radius, semanticRadius, borderWidth, elevation, hitTarget } from './spacing';
+import { useThemePreference, type ThemePreference } from '../stores/themePreference';
 
 // ============================================================================
 // THEME INTERFACE (Backward compatible + new semantic tokens)
@@ -185,11 +186,52 @@ interface ThemeProviderProps {
   forcedTheme?: ThemeName;
 }
 
+function buildTheme(name: ThemeName): Theme {
+  const colors = getPalette(name);
+  return {
+    name,
+    colors,
+    legacy: {
+      bg: colors.legacy.bg,
+      bgAlt: colors.legacy.bgAlt,
+      surface: colors.legacy.surface,
+      surfaceElevated: colors.legacy.surfaceElevated,
+      border: colors.legacy.border,
+      hairline: colors.hairline,
+      text: colors.legacy.text,
+      textMuted: colors.legacy.textMuted,
+      textFaint: colors.legacy.textFaint,
+      onPrimary: colors.legacy.onPrimary,
+      overlay: colors.overlay,
+    },
+    text: textStyle,
+    semanticText,
+    spacing,
+    semanticSpacing,
+    radius,
+    semanticRadius,
+    borderWidth,
+    elevation,
+    hitTarget,
+    componentTokens,
+  };
+}
+
 export function ThemeProvider({ children, forcedTheme }: ThemeProviderProps) {
-  const systemTheme = useThemeFromSystem();
-  const theme = useMemo(
-    () => forcedTheme ? { ...systemTheme, name: forcedTheme, colors: getPalette(forcedTheme) } : systemTheme,
-    [systemTheme, forcedTheme],
-  );
+  const systemScheme = useColorScheme();
+  const preference = useThemePreference((s) => s.preference);
+
+  const theme = useMemo(() => {
+    if (forcedTheme) return buildTheme(forcedTheme);
+
+    let name: ThemeName;
+    if (preference === 'system') {
+      name = systemScheme === 'dark' ? 'dark' : 'light';
+    } else {
+      name = preference;
+    }
+    return buildTheme(name);
+  }, [systemScheme, preference, forcedTheme]);
+
   return <ThemeContext.Provider value={theme}>{children}</ThemeContext.Provider>;
 }

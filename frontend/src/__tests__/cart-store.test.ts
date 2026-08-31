@@ -20,7 +20,13 @@ const mockProduct = (overrides: Partial<Product> = {}): Product => ({
 
 describe('cart-store', () => {
   beforeEach(() => {
-    useCartStore.setState({ items: [] })
+    useCartStore.setState({
+      items: [],
+      total: 0,
+      itemCount: 0,
+      distinctCount: 0,
+      totalQuantity: 0,
+    })
   })
 
   it('store initializes with empty cart', () => {
@@ -89,7 +95,7 @@ describe('cart-store', () => {
   it('total calculated correctly', () => {
     useCartStore.getState().addItem(mockProduct({ id: 1, price: 10 }), 2)
     useCartStore.getState().addItem(mockProduct({ id: 2, price: 5, sale_price: 3 }), 3)
-    const total = useCartStore.getState().total()
+    const total = useCartStore.getState().total
 
     // 2 × 10 + 3 × 3 = 20 + 9 = 29
     expect(total).toBe(29)

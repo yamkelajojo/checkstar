@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={`font-sans ${inter.variable} ${handlee.variable} bg-[#FFFCF9] text-[#1B1816]`}>
+      <body className={`font-sans ${inter.variable} ${handlee.variable} bg-surface text-foreground`}>
         <NavigationProgress />
         <Providers>
           {children}

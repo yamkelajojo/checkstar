@@ -7,7 +7,10 @@ const config: Config = {
         primary: { DEFAULT: '#EB6522', dark: '#CC4400', light: '#FFE0CC' },
         accent: '#CC0000',
         success: '#2D6A4F',
-        warning: '#E9C46A',
+        warning: '#FBBF24',
+        surface: '#FFFCF9',
+        foreground: '#1B1816',
+        border: '#E6DFD6',
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],

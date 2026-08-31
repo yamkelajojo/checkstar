@@ -6,8 +6,6 @@ use Illuminate\Support\Facades\DB;
 
 class DispatchSuggestionService
 {
-    private const EARTH_RADIUS_M = 6371000;
-
     public function getSuggestion(int $orderId): ?object
     {
         $order = DB::table('orders')
@@ -36,10 +34,10 @@ class DispatchSuggestionService
             ->whereNotNull('longitude')
             ->get()
             ->map(function ($rider) use ($customerLat, $customerLng) {
-                $distance = $this->haversineDistance(
+                $distance = GeoUtils::haversineDistance(
                     $rider->latitude, $rider->longitude,
                     $customerLat, $customerLng
-                );
+                ) * 1000;
                 $rider->distance_meters = $distance;
                 $rider->eta_seconds = max(60, (int) ($distance / 250)); // ~15 km/h avg speed
                 return $rider;
@@ -56,18 +54,6 @@ class DispatchSuggestionService
             'nearest_rider' => $nearest ? $this->mapRider($nearest) : null,
             'alternative_riders' => array_map(fn ($r) => $this->mapRider($r), $alternatives),
         ];
-    }
-
-    private function haversineDistance(float $lat1, float $lng1, float $lat2, float $lng2): float
-    {
-        $dLat = deg2rad($lat2 - $lat1);
-        $dLng = deg2rad($lng2 - $lng1);
-
-        $a = sin($dLat / 2) ** 2 +
-             cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
-             sin($dLng / 2) ** 2;
-
-        return self::EARTH_RADIUS_M * 2 * atan2(sqrt($a), sqrt(1 - $a));
     }
 
     private function mapOrder($order): object

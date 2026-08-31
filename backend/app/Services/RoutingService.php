@@ -35,7 +35,7 @@ class RoutingService
         }
 
         // Fallback: straight-line distance with estimated duration
-        $distanceKm = $this->haversine($fromLat, $fromLng, $toLat, $toLng);
+        $distanceKm = GeoUtils::haversineDistance($fromLat, $fromLng, $toLat, $toLng);
         $durationMinutes = $this->estimateDuration($distanceKm);
 
         return new RouteResult(
@@ -127,17 +127,7 @@ class RoutingService
         return (int) ceil($travelMinutes + 5);
     }
 
-    /**
-     * Haversine formula for straight-line distance.
-     */
-    private function haversine(float $lat1, float $lng1, float $lat2, float $lng2): float
-    {
-        $earthRadius = 6371; // km
-        $dLat = deg2rad($lat2 - $lat1);
-        $dLng = deg2rad($lng2 - $lng1);
-        $a = sin($dLat / 2) ** 2 + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLng / 2) ** 2;
-        return $earthRadius * 2 * atan2(sqrt($a), sqrt(1 - $a));
-    }
+
 }
 
 class RouteResult

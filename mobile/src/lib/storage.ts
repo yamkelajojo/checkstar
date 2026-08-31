@@ -27,4 +27,5 @@ export const STORAGE_KEYS = {
   recentSearches: 'checkstar.search.recent',
   session: 'checkstar.session',
   apiBaseUrl: 'checkstar.api.baseUrl',
+  themePreference: 'checkstar.themePreference',
 } as const;

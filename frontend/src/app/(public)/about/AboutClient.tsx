@@ -72,7 +72,7 @@ export default function AboutClient() {
             <motion.div initial="hidden" animate="show" variants={stagger}>
               <motion.h1
                 variants={fadeUp}
-                className="font-display text-2xl sm:text-4xl md:text-5xl font-bold text-[#1B1816] leading-tight"
+                className="font-display text-2xl sm:text-4xl md:text-5xl font-bold text-foreground leading-tight"
               >
                 Our Story
                 <CurvyUnderline

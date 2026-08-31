@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Enums\OrderStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\PlaceOrderRequest;
+use App\Http\Requests\ReviewRequest;
 use App\Models\Order;
 use App\Services\DeliveryConfirmation;
 use App\Services\OrderCancellationPolicy;
@@ -57,18 +59,9 @@ class OrderController extends Controller
         ]]);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(PlaceOrderRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:products,id',
-            'items.*.quantity' => 'required|integer|min:1|max:8',
-            'delivery_address' => 'required|string|max:500',
-            'delivery_latitude' => 'required|numeric|between:-90,90',
-            'delivery_longitude' => 'required|numeric|between:-180,180',
-            'delivery_notes' => 'nullable|string|max:1000',
-            'payment_method' => 'nullable|in:cash_on_delivery',
-        ]);
+        $validated = $request->validated();
 
         try {
             $result = $this->orderIntake->place($validated, $request->user());
@@ -155,12 +148,9 @@ class OrderController extends Controller
         return response()->json(['data' => $confirmed]);
     }
 
-    public function review(Request $request, int $id): JsonResponse
+    public function review(ReviewRequest $request, int $id): JsonResponse
     {
-        $validated = $request->validate([
-            'rating' => 'required|integer|min:1|max:5',
-            'comment' => 'nullable|string|max:500',
-        ]);
+        $validated = $request->validated();
 
         $order = Order::findOrFail($id);
 

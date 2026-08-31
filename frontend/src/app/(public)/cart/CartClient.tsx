@@ -58,7 +58,7 @@ export default function CartClient() {
     }
   }
 
-  const subtotal = total()
+  const subtotal = total
   const deliveryFee: number = 0
 
   if (placedOrder) {

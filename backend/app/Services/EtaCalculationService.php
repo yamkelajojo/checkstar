@@ -9,11 +9,9 @@ use Illuminate\Support\Facades\Log;
 
 class EtaCalculationService
 {
-    private const OSRM_BASE_URL = 'http://router.project-osrm.org';
     private const OSRM_TIMEOUT = 2;
     private const STALE_GPS_SECONDS = 60;
     private const RECALCULATE_THRESHOLD_METERS = 200;
-    private const EARTH_RADIUS_METERS = 6371000;
     private const MIN_ETA_SECONDS = 60;
     private const AVG_SPEED_MS = 8.33; // ~30 km/h average delivery speed
 
@@ -45,7 +43,7 @@ class EtaCalculationService
         $destLat = (float) $order->delivery_latitude;
         $destLng = (float) $order->delivery_longitude;
 
-        $distance = $this->haversineDistance($riderLat, $riderLng, $destLat, $destLng);
+        $distance = GeoUtils::haversineDistance($riderLat, $riderLng, $destLat, $destLng) * 1000;
 
         $etaFromOsrm = $this->getOsrmEta($riderLat, $riderLng, $destLat, $destLng);
 
@@ -64,20 +62,6 @@ class EtaCalculationService
         ];
     }
 
-    public function haversineDistance(float $lat1, float $lng1, float $lat2, float $lng2): float
-    {
-        $dLat = deg2rad($lat2 - $lat1);
-        $dLng = deg2rad($lng2 - $lng1);
-
-        $a = sin($dLat / 2) * sin($dLat / 2)
-            + cos(deg2rad($lat1)) * cos(deg2rad($lat2))
-            * sin($dLng / 2) * sin($dLng / 2);
-
-        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
-
-        return self::EARTH_RADIUS_METERS * $c;
-    }
-
     public function needsRecalculation(Order $order): bool
     {
         if (!$order->rider_id || !$order->eta_updated_at) {
@@ -92,12 +76,12 @@ class EtaCalculationService
             return false;
         }
 
-        $distance = $this->haversineDistance(
+        $distance = GeoUtils::haversineDistance(
             (float) $riderLocation->latitude,
             (float) $riderLocation->longitude,
             (float) $order->delivery_latitude,
             (float) $order->delivery_longitude
-        );
+        ) * 1000;
 
         return $distance > self::RECALCULATE_THRESHOLD_METERS;
     }
@@ -107,7 +91,7 @@ class EtaCalculationService
         try {
             $url = sprintf(
                 '%s/route/v1/driving/%s,%s;%s,%s?overview=false',
-                self::OSRM_BASE_URL,
+                config('routing.osrm_base_url'),
                 $fromLng,
                 $fromLat,
                 $toLng,

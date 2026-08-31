@@ -100,7 +100,7 @@ export default function OperationsPage() {
         >
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-[#F58220] flex items-center justify-center text-white font-bold text-sm">C</div>
-            <motion.span layout transition={sharedSpring} className="font-display text-lg font-bold tracking-tight text-[#1B1816]">
+            <motion.span layout transition={sharedSpring} className="font-display text-lg font-bold tracking-tight text-foreground">
               CHECKSTAR OPS
             </motion.span>
           </div>

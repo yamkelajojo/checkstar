@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, FlatList, TextInput, Alert, Platform, TouchableOpacity } from 'react-native';
-import { LogOut, Package, Settings, Wifi, WifiOff, ChevronDown, ChevronUp } from 'lucide-react-native';
+import { LogOut, Package, Settings, Wifi, WifiOff, ChevronDown, ChevronUp, Sun, Moon, Monitor } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTheme } from '../../theme';
@@ -8,6 +8,7 @@ import { brand } from '../../theme/colors';
 import { textStyle, fontWeight, typeScale } from '../../theme/typography';
 import { semanticSpacing, semanticRadius } from '../../theme/spacing';
 import { useSession } from '../../stores/session';
+import { useThemePreference, type ThemePreference } from '../../stores/themePreference';
 import { useQuery } from '@tanstack/react-query';
 import { fetchOrders } from '../../lib/apiClient';
 import { queryKeys } from '../../lib/queryKeys';
@@ -34,6 +35,8 @@ export function AccountScreen() {
   const status = useSession((s) => s.status);
   const signOut = useSession((s) => s.signOut);
   const toast = useToast();
+  const themePreference = useThemePreference((s) => s.preference);
+  const setThemePreference = useThemePreference((s) => s.setPreference);
 
   const { data: orders = [] } = useQuery({
     queryKey: queryKeys.orders,
@@ -98,6 +101,50 @@ export function AccountScreen() {
             <Text style={{ color: theme.colors.text.inverse, fontWeight: fontWeight.bold, ...textStyle.buttonPrimary }}>Sign in</Text>
           </TactilePressable>
         )}
+      </View>
+
+      {/* Appearance toggle */}
+      <View style={{ paddingHorizontal: semanticSpacing.screenPadding, paddingBottom: semanticSpacing.md }}>
+        <Text style={{ ...textStyle.caption, fontWeight: fontWeight.semibold, color: theme.colors.text.secondary, marginBottom: semanticSpacing.xs, textTransform: 'uppercase', letterSpacing: 1.1 }}>
+          Appearance
+        </Text>
+        <View style={{ flexDirection: 'row', gap: semanticSpacing.xs }}>
+          {([
+            { key: 'light' as ThemePreference, icon: Sun, label: 'Light' },
+            { key: 'system' as ThemePreference, icon: Monitor, label: 'System' },
+            { key: 'dark' as ThemePreference, icon: Moon, label: 'Dark' },
+          ]).map(({ key, icon: Icon, label }) => {
+            const active = themePreference === key;
+            return (
+              <TactilePressable
+                key={key}
+                onPress={() => setThemePreference(key)}
+                haptic="selection"
+                style={{
+                  flex: 1,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: semanticSpacing.xxs,
+                  paddingVertical: semanticSpacing.sm,
+                  borderRadius: semanticRadius.md,
+                  backgroundColor: active ? brand.orange : theme.colors.surface.primary,
+                  borderWidth: 1,
+                  borderColor: active ? brand.orange : theme.colors.border.subtle,
+                }}
+              >
+                <Icon size={16} color={active ? '#FFFFFF' : theme.colors.text.secondary} />
+                <Text style={{
+                  ...textStyle.caption,
+                  fontWeight: active ? fontWeight.semibold : fontWeight.regular,
+                  color: active ? '#FFFFFF' : theme.colors.text.secondary,
+                }}>
+                  {label}
+                </Text>
+              </TactilePressable>
+            );
+          })}
+        </View>
       </View>
 
       <Text style={{ marginTop: semanticSpacing.xl, paddingHorizontal: semanticSpacing.screenPadding, ...textStyle.h3, fontWeight: fontWeight.bold, color: theme.colors.text.primary }}>

@@ -7,7 +7,8 @@ import * as Notifications from 'expo-notifications';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { useFonts } from 'expo-font';
 import { queryClient } from './src/lib/queryKeys';
-import { ThemeContext, useThemeFromSystem } from './src/theme';
+import { ThemeProvider } from './src/theme';
+import { useThemePreference } from './src/stores/themePreference';
 import { ToastProvider } from './src/components/shared/GlassToast';
 import { useMotionPreferences } from './src/stores/motionPreferences';
 import { useSession } from './src/stores/session';
@@ -68,9 +69,12 @@ const styles = StyleSheet.create({
 });
 
 export default function App() {
-  const theme = useThemeFromSystem();
   const sessionStatus = useSession((s) => s.status);
   const cartSyncRef = useRef(false);
+
+  useEffect(() => {
+    void useThemePreference.getState().init();
+  }, []);
 
   useEffect(() => {
     if (sessionStatus === 'guest') {
@@ -135,7 +139,7 @@ export default function App() {
       <TamaguiProvider config={config} defaultTheme="light">
         <GestureHandlerRootView style={{ flex: 1 }}>
           <SafeAreaProvider>
-            <ThemeContext.Provider value={theme}>
+            <ThemeProvider>
               <ToastProvider>
                 <QueryClientProvider client={queryClient}>
                   <NavigationContainer ref={navigationRef}>
@@ -144,7 +148,7 @@ export default function App() {
                   </NavigationContainer>
                 </QueryClientProvider>
               </ToastProvider>
-            </ThemeContext.Provider>
+            </ThemeProvider>
           </SafeAreaProvider>
         </GestureHandlerRootView>
       </TamaguiProvider>
