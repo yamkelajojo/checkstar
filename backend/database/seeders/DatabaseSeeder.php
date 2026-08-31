@@ -39,6 +39,7 @@ class DatabaseSeeder extends Seeder
             CommunityPostSeeder::class,
             UserTrackingSeeder::class,
             RiderDeliverySeeder::class,
+            SpecialSeeder::class,
         ]);
     }
 }
