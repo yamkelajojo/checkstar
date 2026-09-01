@@ -16,7 +16,7 @@ export function CommunityBanner() {
     >
       <div className="max-w-7xl mx-auto px-4">
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary-light to-primary/10 p-8 md:p-12 text-center">
-          <div className="absolute top-4 right-4 text-primary/20">
+          <div className="absolute top-4 right-4 text-primary/20" aria-hidden="true">
             <Heart size={120} fill="currentColor" />
           </div>
           <div className="relative">

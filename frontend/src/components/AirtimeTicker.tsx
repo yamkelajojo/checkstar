@@ -1,51 +1,30 @@
 'use client';
 
-const PROVIDERS = [
-  'MTN',
-  'Vodacom',
-  'Cell C',
-  'YoCo',
-  'rain',
-  'Telkom',
-  'PayAsYouGo',
+const SERVICES = [
+  { name: 'MTN', label: 'Airtime & Data' },
+  { name: 'Vodacom', label: 'Airtime & Data' },
+  { name: 'Cell C', label: 'Airtime & Data' },
+  { name: 'Telkom', label: 'Airtime & Data' },
+  { name: 'rain', label: 'Data' },
 ];
 
 export function AirtimeTicker() {
-  const tickerContent = PROVIDERS.join(' • ');
+  const tickerContent = SERVICES.map(s => s.name).join(' \u2022 ');
 
   return (
-    <div className="hidden md:block border-y border-border/30">
-      <div className="text-center py-3">
-        <h3 className="text-sm font-semibold text-text-muted font-[family-name:var(--font-primary)] uppercase tracking-wider" style={{ textAlign: 'center' }}>
-          Available Instore
-        </h3>
-      </div>
-      <div className="backdrop-blur-md bg-white/60 border-t border-b border-white/30">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center gap-4 py-3">
-            <span className="text-xs font-semibold text-text-muted font-[family-name:var(--font-primary)] uppercase tracking-wider whitespace-nowrap">
-              Services
+    <section className="py-8">
+      <div className="max-w-7xl mx-auto px-4">
+        <div className="rounded-xl border border-border bg-surface px-6 py-4">
+          <div className="flex items-center gap-3 mb-3">
+            <span className="text-xs font-semibold uppercase tracking-wider text-text-muted">
+              Also In-Store
             </span>
-            <span className="text-border/40">|</span>
-            <div className="overflow-hidden flex-1">
-              <div className="marquee flex whitespace-nowrap">
-                <span className="mx-4 text-sm font-medium text-text-muted font-[family-name:var(--font-primary)]">
-                  {tickerContent}
-                </span>
-                <span className="mx-4 text-sm font-medium text-text-muted font-[family-name:var(--font-primary)]">
-                  {tickerContent}
-                </span>
-                <span className="mx-4 text-sm font-medium text-text-muted font-[family-name:var(--font-primary)]">
-                  {tickerContent}
-                </span>
-                <span className="mx-4 text-sm font-medium text-text-muted font-[family-name:var(--font-primary)]">
-                  {tickerContent}
-                </span>
-              </div>
-            </div>
           </div>
+          <p className="text-sm text-text-muted leading-relaxed">
+            Pick up airtime, data, and bill payments at any Checkstar store &mdash; MTN, Vodacom, Cell C, Telkom, and rain.
+          </p>
         </div>
       </div>
-    </div>
+    </section>
   );
 }

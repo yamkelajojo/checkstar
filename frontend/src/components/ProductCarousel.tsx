@@ -6,7 +6,10 @@ import Link from 'next/link';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination } from 'swiper/modules';
 import { fadeUp } from '@/lib/motion/variants';
+import { ProductCarouselSkeleton } from '@/components/Skeleton';
+import { ErrorFallback } from '@/components/ErrorFallback';
 import type { Product } from '@/types';
+import type { UseQueryResult } from '@tanstack/react-query';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
@@ -15,9 +18,23 @@ interface ProductCarouselProps {
   title: string;
   products: Product[];
   href?: string;
+  queryResult?: UseQueryResult;
 }
 
-export function ProductCarousel({ title, products, href }: ProductCarouselProps) {
+export function ProductCarousel({ title, products, href, queryResult }: ProductCarouselProps) {
+  if (queryResult?.isLoading) {
+    return <ProductCarouselSkeleton />;
+  }
+
+  if (queryResult?.isError) {
+    return (
+      <ErrorFallback
+        message={`Failed to load ${title.toLowerCase()}`}
+        onRetry={() => queryResult.refetch()}
+      />
+    );
+  }
+
   if (products.length === 0) return null;
 
   return (
@@ -59,7 +76,7 @@ export function ProductCarousel({ title, products, href }: ProductCarouselProps)
           <SwiperSlide key={product.id}>
             <Link href={`/products/${product.slug}`} className="group block">
               <div className="relative aspect-square overflow-hidden rounded-2xl border border-border-subtle bg-background-secondary">
-                {product.image && (
+                {product.image ? (
                   <Image
                     src={product.image}
                     alt={product.name}
@@ -67,6 +84,10 @@ export function ProductCarousel({ title, products, href }: ProductCarouselProps)
                     sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                     className="object-cover transition-transform duration-300 group-hover:scale-105"
                   />
+                ) : (
+                  <div className="flex items-center justify-center h-full text-text-muted text-xs">
+                    No image
+                  </div>
                 )}
                 {product.effective_price !== product.price && (
                   <div className="absolute top-2 left-2 rounded-full bg-accent px-2 py-0.5 text-xs font-semibold text-white">

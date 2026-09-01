@@ -2,6 +2,7 @@
 
 import { motion } from 'motion/react';
 import { fadeUp } from '@/lib/motion/variants';
+import { Smartphone } from 'lucide-react';
 
 export function DownloadTheApp() {
   return (
@@ -14,14 +15,14 @@ export function DownloadTheApp() {
     >
       <div className="max-w-7xl mx-auto px-4">
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-primary-dark to-primary-dark">
-          <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
+          <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" aria-hidden="true" />
           <div className="relative flex flex-col md:flex-row items-center gap-8 p-8 md:p-12">
             <div className="flex-1 text-center md:text-left">
               <h2 className="text-2xl sm:text-3xl font-bold text-white font-[family-name:var(--font-primary)]">
                 Get the Checkstar App
               </h2>
               <p className="mt-3 text-white/80 text-lg">
-                Shop, track, and save — all in one place.
+                Shop, track, and save &mdash; all in one place.
               </p>
               <div className="mt-6 flex flex-wrap gap-4 justify-center md:justify-start">
                 <a
@@ -54,11 +55,15 @@ export function DownloadTheApp() {
                 </a>
               </div>
             </div>
-            <div className="relative w-48 h-96 flex-shrink-0">
+            <div className="relative w-48 h-80 flex-shrink-0">
               <div className="absolute inset-0 rounded-[40px] border-[6px] border-white/20 bg-white/10 shadow-2xl backdrop-blur-sm">
-                <div className="absolute inset-4 rounded-[32px] bg-gradient-to-b from-white/20 to-white/5">
-                  <div className="flex items-center justify-center h-full">
-                    <span className="text-white/60 text-sm font-medium">Checkstar</span>
+                <div className="absolute inset-4 rounded-[32px] bg-gradient-to-b from-white/20 to-white/5 overflow-hidden">
+                  <div className="flex flex-col items-center justify-center h-full gap-3">
+                    <Smartphone className="text-white/50" size={40} />
+                    <div className="text-center">
+                      <p className="text-white/80 text-xs font-semibold">Checkstar</p>
+                      <p className="text-white/50 text-[10px]">Coming soon</p>
+                    </div>
                   </div>
                 </div>
               </div>
