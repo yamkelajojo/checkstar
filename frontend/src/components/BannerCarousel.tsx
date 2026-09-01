@@ -53,7 +53,9 @@ export function BannerCarousel({ banners }: BannerCarouselProps) {
   if (activeBanners.length === 0) return null;
 
   const banner = activeBanners[currentBanner];
+  if (!banner) return null;
   const slide = banner.slides[currentSlide];
+  if (!slide) return null;
 
   const goTo = (bannerIdx: number, slideIdx: number) => {
     setCurrentBanner(bannerIdx);
@@ -75,7 +77,8 @@ export function BannerCarousel({ banners }: BannerCarouselProps) {
     } else {
       const prevBanner = currentBanner === 0 ? activeBanners.length - 1 : currentBanner - 1;
       setCurrentBanner(prevBanner);
-      setCurrentSlide(activeBanners[prevBanner].slides.length - 1);
+      const prevSlides = activeBanners[prevBanner]?.slides;
+      setCurrentSlide(prevSlides ? prevSlides.length - 1 : 0);
     }
   };
 
