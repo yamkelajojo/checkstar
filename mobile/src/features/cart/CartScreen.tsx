@@ -1,4 +1,5 @@
-import { View, Text, FlatList, Pressable, Image } from 'react-native';
+import { View, Text, FlatList, Pressable } from 'react-native';
+import { Image } from 'expo-image';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { ShoppingCart, ArrowRight } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -16,9 +17,9 @@ import { EmptyState } from '../../components/shared/EmptyState';
 import { formatZar } from '../../lib/currency';
 import { TactilePressable } from '../../components/shared/TactilePressable';
 import { copy } from '../../lib/strings';
+import { MIN_ORDER_CENTS } from '../../lib/constants';
+import { trackAddToCart, trackRemoveFromCart } from '../../services/trackingService';
 import type { RootStackParamList } from '../../navigation/types';
-
-const MIN_ORDER_CENTS = 5000;
 
 export function CartScreen() {
   const theme = useTheme();
@@ -90,7 +91,7 @@ export function CartScreen() {
                 >
                   <View style={{ width: 56, height: 56, borderRadius: semanticRadius.imageFrame, backgroundColor: theme.colors.surface.elevated, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
                     {product?.images && product.images[0] ? (
-                      <Image source={{ uri: product.images[0] }} style={{ width: 48, height: 48 }} resizeMode="contain" />
+                      <Image source={{ uri: product.images[0] }} style={{ width: 48, height: 48 }} resizeMode="contain" cachePolicy="memory-disk" />
                     ) : (
                       <Text style={{ fontSize: 24 }}>🛒</Text>
                     )}
@@ -110,13 +111,13 @@ export function CartScreen() {
                       </Text>
                       <Stepper
                         quantity={item.quantity}
-                        onIncrement={() => useCart.getState().add(item.productId, 1)}
-                        onDecrement={() => useCart.getState().decrement(item.productId)}
+                        onIncrement={() => { useCart.getState().add(item.productId, 1); trackAddToCart(Number(item.productId), item.quantity + 1); }}
+                        onDecrement={() => { useCart.getState().decrement(item.productId); trackRemoveFromCart(Number(item.productId)); }}
                       />
                     </>
                   ) : (
                     <TactilePressable
-                      onPress={() => useCart.getState().remove(item.productId)}
+                      onPress={() => { useCart.getState().remove(item.productId); trackRemoveFromCart(Number(item.productId)); }}
                       haptic="selection"
                       accessibilityRole="button"
                       accessibilityLabel={`Remove unavailable item ${item.productId}`}

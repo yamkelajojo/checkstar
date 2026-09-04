@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import { motion } from 'motion/react'
 import Link from 'next/link'
-import { ArrowRight, ShoppingBag, Bike, Store, Clock, Shield, Star, Search } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { ArrowRight, ShoppingBag, Bike, Store, Shield, Star, Search } from 'lucide-react'
 import { fadeUp, stagger } from '@/lib/motion/variants'
 import { ProductCarousel } from '@/components/ProductCarousel'
 import { AirtimeTicker } from '@/components/AirtimeTicker'
@@ -14,37 +15,15 @@ import { ErrorFallback } from '@/components/ErrorFallback'
 import CategoryGrid from '@/components/CategoryGrid'
 import { useTrendingProducts, usePopularProducts, useNewArrivals, useBanners, useCategories } from '@/lib/query'
 
-const PRODUCT_TABS = [
-  { key: 'trending', label: 'Trending Now' },
-  { key: 'popular', label: 'Most Bought' },
-  { key: 'new', label: 'New Arrivals' },
-] as const
-
-type TabKey = (typeof PRODUCT_TABS)[number]['key']
-
 export default function HomePage() {
-  const [activeTab, setActiveTab] = useState<TabKey>('trending')
+  const router = useRouter()
+  const [searchValue, setSearchValue] = useState('')
 
   const trendingQuery = useTrendingProducts()
   const popularQuery = usePopularProducts()
   const newArrivalsQuery = useNewArrivals()
   const { data: banners = [], isLoading: bannersLoading, isError: bannersError, refetch: refetchBanners } = useBanners()
   const { data: categories = [], isLoading: categoriesLoading } = useCategories()
-
-  const queryMap = {
-    trending: trendingQuery,
-    popular: popularQuery,
-    new: newArrivalsQuery,
-  }
-
-  const productsMap = {
-    trending: trendingQuery.data ?? [],
-    popular: popularQuery.data ?? [],
-    new: newArrivalsQuery.data ?? [],
-  }
-
-  const activeQuery = queryMap[activeTab]
-  const activeProducts = productsMap[activeTab]
 
   return (
     <>
@@ -55,10 +34,7 @@ export default function HomePage() {
           <div className="max-w-7xl mx-auto px-4 py-16 md:py-24 lg:py-32">
             <div className="grid md:grid-cols-2 gap-12 items-center">
               <motion.div variants={stagger} initial="hidden" animate="show" className="max-w-xl">
-                <motion.div variants={fadeUp} className="inline-flex items-center gap-2 bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium mb-6">
-                  <Clock size={14} />
-                  Delivered in 45 minutes
-                </motion.div>
+
                 <motion.h1 variants={fadeUp} className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 leading-[1.1] tracking-tight">
                   Fresh groceries,{' '}
                   <span className="text-primary">straight to your door</span>
@@ -124,13 +100,23 @@ export default function HomePage() {
 
         {/* Search + Categories */}
         <section className="max-w-7xl mx-auto px-4 py-8">
-          <Link
-            href="/products"
-            className="flex items-center gap-3 w-full max-w-xl mx-auto px-5 py-3.5 rounded-xl border border-gray-200 bg-white text-gray-400 hover:border-gray-300 hover:shadow-sm transition-all"
+          <form
+            onSubmit={e => {
+              e.preventDefault()
+              const q = searchValue.trim()
+              router.push(q ? `/products?search=${encodeURIComponent(q)}` : '/products')
+            }}
+            className="flex items-center gap-3 w-full max-w-xl mx-auto px-5 py-3.5 rounded-xl border border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm transition-all"
           >
-            <Search size={18} />
-            <span className="text-sm">Search for groceries...</span>
-          </Link>
+            <Search size={18} className="text-gray-400 shrink-0" />
+            <input
+              type="text"
+              value={searchValue}
+              onChange={e => setSearchValue(e.target.value)}
+              placeholder="Search for groceries..."
+              className="w-full text-sm bg-transparent outline-none placeholder:text-gray-400 text-gray-900"
+            />
+          </form>
 
           <div className="mt-8">
             {categoriesLoading ? (
@@ -144,6 +130,36 @@ export default function HomePage() {
             )}
           </div>
         </section>
+
+        {/* Trending Now */}
+        <section className="max-w-7xl mx-auto px-4">
+          <ProductCarousel
+            title="Trending Now"
+            products={trendingQuery.data ?? []}
+            queryResult={trendingQuery}
+          />
+        </section>
+
+        {/* Most Bought */}
+        <section className="max-w-7xl mx-auto px-4">
+          <ProductCarousel
+            title="Most Bought"
+            products={popularQuery.data ?? []}
+            queryResult={popularQuery}
+          />
+        </section>
+
+        {/* New Arrivals */}
+        <section className="max-w-7xl mx-auto px-4">
+          <ProductCarousel
+            title="New Arrivals"
+            products={newArrivalsQuery.data ?? []}
+            queryResult={newArrivalsQuery}
+          />
+        </section>
+
+        {/* Download the app */}
+        <DownloadTheApp />
 
         {/* How it works */}
         <section className="max-w-7xl mx-auto px-4 py-12">
@@ -178,35 +194,8 @@ export default function HomePage() {
           </motion.div>
         </section>
 
-        {/* Products — single carousel with tabs */}
-        <section className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center gap-1 mb-2 border-b border-gray-100">
-            {PRODUCT_TABS.map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 -mb-px ${
-                  activeTab === tab.key
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-          <ProductCarousel
-            title=""
-            products={activeProducts}
-            queryResult={activeQuery}
-          />
-        </section>
-
         {/* In-store services */}
         <AirtimeTicker />
-
-        {/* Download the app */}
-        <DownloadTheApp />
 
         {/* Community */}
         <CommunityBanner />

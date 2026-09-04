@@ -17,6 +17,7 @@ class OrderCartPolicyTest extends TestCase
     use RefreshDatabase;
 
     private OrderCartPolicy $policy;
+
     private Order $order;
 
     protected function setUp(): void

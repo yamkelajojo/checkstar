@@ -12,7 +12,7 @@ class ProfileController extends Controller
     {
         $validated = $request->validate([
             'name' => 'nullable|string|max:255',
-            'email' => 'nullable|string|email|max:255|unique:users,email,' . $request->user()->id,
+            'email' => 'nullable|string|email|max:255|unique:users,email,'.$request->user()->id,
             'phone' => 'nullable|string|max:20',
             'avatar' => 'nullable|string|max:255',
         ]);
@@ -24,6 +24,6 @@ class ProfileController extends Controller
         }
         $user->update($filtered);
 
-        return response()->json(['data' => $user->fresh()]);
+        return response()->json($user->fresh());
     }
 }

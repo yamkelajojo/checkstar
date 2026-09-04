@@ -37,7 +37,7 @@ class OrderClaim
 
             $fresh = $query->first();
 
-            if (!$fresh) {
+            if (! $fresh) {
                 return false;
             }
 
@@ -50,12 +50,12 @@ class OrderClaim
             $fresh->store_id = $store->id;
             $fresh->save();
 
-        $this->syncStoreProductIds($fresh);
+            $this->syncStoreProductIds($fresh);
 
-        // Reserve inventory at claim time to prevent concurrent oversell
-        $this->reserveInventory($fresh);
+            // Reserve inventory at claim time to prevent concurrent oversell
+            $this->reserveInventory($fresh);
 
-        return true;
+            return true;
         });
 
         $elapsed = (int) round((microtime(true) - $start) * 1000);

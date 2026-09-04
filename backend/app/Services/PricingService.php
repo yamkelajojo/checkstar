@@ -18,7 +18,7 @@ class PricingService
             $specialPrices = $specials
                 ->filter(function ($s) use ($now) {
                     // Only consider active specials within date range if those attributes exist
-                    if (isset($s->is_active) && !$s->is_active) {
+                    if (isset($s->is_active) && ! $s->is_active) {
                         return false;
                     }
                     if (isset($s->start_date) && $s->start_date && $now->lt($s->start_date)) {
@@ -30,6 +30,7 @@ class PricingService
                     if ($s instanceof Product) {
                         return $s->sale_price !== null;
                     }
+
                     return isset($s->pivot, $s->pivot->special_price) && $s->pivot->special_price !== null;
                 })
                 ->map(fn ($s) => (float) ($s instanceof Product ? $s->sale_price : $s->pivot->special_price));

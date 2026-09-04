@@ -5,8 +5,6 @@ $app = require_once 'bootstrap/app.php';
 $app->make('Illuminate\Contracts\Console\Kernel')->bootstrap();
 
 use App\Models\StoreProduct;
-use App\Models\Store;
-use App\Models\Product;
 
 // Set specific products to be out of stock at Durban Central (store_id=1) but available at other stores
 // This is for testing the fallback fulfillment logic
@@ -17,12 +15,12 @@ foreach ($productIds as $productId) {
     StoreProduct::where('product_id', $productId)
         ->where('store_id', 1)
         ->update(['stock_quantity' => 0, 'is_available' => false]);
-    
+
     // Umhlanga (id=2) - keep good stock
     StoreProduct::where('product_id', $productId)
         ->where('store_id', 2)
         ->update(['stock_quantity' => 50, 'is_available' => true]);
-    
+
     // Pinetown (id=3) - keep good stock
     StoreProduct::where('product_id', $productId)
         ->where('store_id', 3)

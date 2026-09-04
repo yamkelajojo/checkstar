@@ -10,14 +10,18 @@ use Illuminate\Support\Facades\Log;
 class EtaCalculationService
 {
     private const OSRM_TIMEOUT = 2;
+
     private const STALE_GPS_SECONDS = 60;
+
     private const RECALCULATE_THRESHOLD_METERS = 200;
+
     private const MIN_ETA_SECONDS = 60;
+
     private const AVG_SPEED_MS = 8.33; // ~30 km/h average delivery speed
 
     public function calculateForOrder(Order $order): ?array
     {
-        if (!$order->rider_id || !$order->delivery_latitude || !$order->delivery_longitude) {
+        if (! $order->rider_id || ! $order->delivery_latitude || ! $order->delivery_longitude) {
             return null;
         }
 
@@ -25,7 +29,7 @@ class EtaCalculationService
             ->orderByDesc('recorded_at')
             ->first();
 
-        if (!$riderLocation) {
+        if (! $riderLocation) {
             return null;
         }
 
@@ -35,6 +39,7 @@ class EtaCalculationService
                 'rider_id' => $order->rider_id,
                 'seconds_old' => $recordedAt->diffInSeconds(now()),
             ]);
+
             return null;
         }
 
@@ -64,7 +69,7 @@ class EtaCalculationService
 
     public function needsRecalculation(Order $order): bool
     {
-        if (!$order->rider_id || !$order->eta_updated_at) {
+        if (! $order->rider_id || ! $order->eta_updated_at) {
             return true;
         }
 
@@ -72,7 +77,7 @@ class EtaCalculationService
             ->orderByDesc('recorded_at')
             ->first();
 
-        if (!$riderLocation || !$order->delivery_latitude || !$order->delivery_longitude) {
+        if (! $riderLocation || ! $order->delivery_latitude || ! $order->delivery_longitude) {
             return false;
         }
 

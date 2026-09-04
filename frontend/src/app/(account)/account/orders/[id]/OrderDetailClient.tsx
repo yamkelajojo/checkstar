@@ -282,7 +282,7 @@ export default function OrderDetailClient({ id }: { id: string }) {
             <div className="bg-white border border-gray-100 rounded-xl p-5 mt-6">
               <h2 className="font-display text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Items</h2>
               <div className="space-y-3">
-                {order.items.map(item => (
+                {order.items!.map(item => (
                   <div key={item.id} className="flex items-center justify-between text-sm">
                     <div className="flex items-center gap-2">
                       <span className="text-gray-400 w-6 text-right">{item.quantity}x</span>

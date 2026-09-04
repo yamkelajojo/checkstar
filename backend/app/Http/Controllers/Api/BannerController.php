@@ -12,8 +12,7 @@ class BannerController extends Controller
 {
     public function __construct(
         private StoreContext $storeContext,
-    ) {
-    }
+    ) {}
 
     /**
      * GET /api/banners

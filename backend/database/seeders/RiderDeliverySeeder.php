@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Carbon;
 
 class RiderDeliverySeeder extends Seeder
 {
@@ -30,6 +29,7 @@ class RiderDeliverySeeder extends Seeder
 
         if (empty($riderIds) || empty($orderIds)) {
             $this->command?->warn('Skipped RiderDeliverySeeder: no riders or delivered orders found.');
+
             return;
         }
 
@@ -53,6 +53,6 @@ class RiderDeliverySeeder extends Seeder
 
         DB::table('rider_deliveries')->insert($deliveries);
 
-        $this->command?->info('Created ' . count($deliveries) . ' rider delivery records.');
+        $this->command?->info('Created '.count($deliveries).' rider delivery records.');
     }
 }

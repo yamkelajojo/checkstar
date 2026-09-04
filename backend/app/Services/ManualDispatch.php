@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\EventType;
 use App\Enums\OrderStatus;
 use App\Models\Order;
 use App\Models\OrderActivityLog;
@@ -20,8 +21,7 @@ class ManualDispatch
     public function __construct(
         private OrderClaim $orderClaim,
         private DispatchPolicy $dispatchPolicy,
-    ) {
-    }
+    ) {}
 
     /**
      * Confirmed/Retrying orders awaiting a rider whose delivery address falls
@@ -47,11 +47,11 @@ class ManualDispatch
 
     public function dispatchToRider(Order $order, Rider $rider, Store $contextStore): ClaimResult|array
     {
-        if ($order->rider_id !== null || !in_array($order->status, [OrderStatus::Confirmed, OrderStatus::Retrying], true)) {
+        if ($order->rider_id !== null || ! in_array($order->status, [OrderStatus::Confirmed, OrderStatus::Retrying], true)) {
             return ['reason' => 'order_not_claimable'];
         }
 
-        if (!$this->riderEligible($rider) || $rider->store_id !== $contextStore->id) {
+        if (! $this->riderEligible($rider) || $rider->store_id !== $contextStore->id) {
             return ['reason' => 'rider_not_eligible'];
         }
 
@@ -76,7 +76,7 @@ class ManualDispatch
             return ['reason' => 'order_not_reassignable'];
         }
 
-        if (!$this->riderEligible($newRider) || $newRider->store_id !== $order->store_id) {
+        if (! $this->riderEligible($newRider) || $newRider->store_id !== $order->store_id) {
             return ['reason' => 'rider_not_eligible'];
         }
 
@@ -90,7 +90,7 @@ class ManualDispatch
             OrderActivityLog::create([
                 'order_id' => $fresh->id,
                 'user_id' => null,
-                'event_type' => 'rider_assigned',
+                'event_type' => EventType::RiderAssigned->value,
                 'old_status' => $fresh->status->value,
                 'new_status' => $fresh->status->value,
                 'metadata' => [

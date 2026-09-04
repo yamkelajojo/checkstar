@@ -3,3 +3,22 @@ graphify-out/cache/
 graphify-out/.graphify_cached.json
 graphify-out/.graphify_python
 graphify-out/cost.json
+
+# OSRM data (large binary files)
+osrm-durban/
+osrm-durban-server.py
+osrm-server-output.log
+osrm-setup.sh
+
+# Generated files
+__pycache__/
+*.pyc
+database.sqlite
+mobile/coverage/
+mobile/.tamagui/
+homepage-evidence.png
+
+# Process artifacts
+.unlazy/
+.impeccable/
+.scratch/

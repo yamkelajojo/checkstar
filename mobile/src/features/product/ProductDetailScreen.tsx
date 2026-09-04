@@ -1,5 +1,6 @@
-import { View, Text, Image, ScrollView, Pressable, Modal } from 'react-native';
-import { useEffect, useState } from 'react';
+import { View, Text, ScrollView, Pressable, Modal } from 'react-native';
+import { Image } from 'expo-image';
+import { useEffect, useRef, useState } from 'react';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../theme';
@@ -18,13 +19,15 @@ import { formatZar } from '../../lib/currency';
 import { ChevronLeft } from 'lucide-react-native';
 import { useDeliveryStore } from '../../stores/deliveryStore';
 import { useToast } from '../../components/shared/GlassToast';
+import { trackProductView } from '../../services/trackingService';
+import { SaveHeart } from '../../components/shared/SaveHeart';
 
 export function ProductDetailScreen() {
   const theme = useTheme();
   const navigation = useNavigation();
   const route = useRoute();
   const insets = useSafeAreaInsets();
-  const { slug } = route.params as { slug: string };
+  const { slug, source = 'direct' } = route.params as { slug: string; source?: string };
   const { data: product, isLoading } = useProduct(slug);
   const currentStore = useDeliveryStore((s) => s.fulfillmentStore);
   const [showStoreSelector, setShowStoreSelector] = useState(false);
@@ -33,6 +36,15 @@ export function ProductDetailScreen() {
   useEffect(() => {
     setImageError(false);
     setImageSource(product && product.images[0] ? { uri: product.images[0] } : null);
+  }, [product]);
+
+  const startTime = useRef(Date.now());
+  useEffect(() => {
+    return () => {
+      if (product) {
+        trackProductView(product.id, Date.now() - startTime.current, source as any);
+      }
+    };
   }, [product]);
 
   const quantity = useCart((s) => (product ? s.items.find((i) => i.productId === String(product.id))?.quantity ?? 0 : 0));
@@ -111,11 +123,13 @@ export function ProductDetailScreen() {
               justifyContent: 'center', 
               overflow: 'hidden' 
             }}>
+              {product && <SaveHeart productId={product.id} size={26} />}
               {imageSource && !imageError ? (
                 <Image
                   source={imageSource}
                   style={{ width: '100%', height: '100%' }}
                   resizeMode="cover"
+                  cachePolicy="memory-disk"
                   onError={() => setImageError(true)}
                 />
               ) : (
@@ -126,7 +140,7 @@ export function ProductDetailScreen() {
 
           {/* Category & Brand row */}
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: semanticSpacing.inlineGap }}>
-            {product.categoryId && (
+            {product.categoryName && (
               <View style={{ 
                 backgroundColor: brand.orangeSoft, 
                 paddingHorizontal: semanticSpacing.inlineGap, 
@@ -141,7 +155,7 @@ export function ProductDetailScreen() {
                   letterSpacing: letterSpacing.wide,
                   fontFamily: fontFamily.primary,
                 }}>
-                  Category {product.categoryId}
+                  {product.categoryName}
                 </Text>
               </View>
             )}

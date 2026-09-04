@@ -1,71 +1,42 @@
 'use client'
 
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { motion, AnimatePresence, LayoutGroup } from '@/lib/motion'
 import { orchestratedLayout } from '@/lib/motion/variants'
 import { spring } from '@/lib/motion/tokens'
 import { Maximize2, Minimize2 } from 'lucide-react'
-import MapContainer from '@/components/MapContainer'
+import dynamic from 'next/dynamic'
 import MetricsHud from '@/components/operations/MetricsHud'
+
+const MapContainer = dynamic(() => import('@/components/MapContainer'), { ssr: false, loading: () => <div className="h-64 bg-gray-100 rounded animate-pulse" /> })
 import EventFeed from '@/components/operations/EventFeed'
 import AlertBanner from '@/components/operations/AlertBanner'
 import MapLayerToggles, { MapLayerData } from '@/components/operations/MapLayerToggles'
 import { getDispatchChime } from '@/lib/audio/dispatch-chime'
 import { useHotkeys } from '@/lib/hooks/useHotkeys'
 import { api } from '@/lib/api'
-
-interface Metrics {
-  active_riders: number
-  total_riders: number
-  orders_this_hour: number
-  pending_orders: number
-  active_deliveries: number
-  delivered_today: number
-}
+import { useOperationsMetrics } from '@/lib/query'
 
 export default function OperationsPage() {
-  const [metrics, setMetrics] = useState<Metrics | null>(null)
-  const [metricsLoading, setMetricsLoading] = useState(true)
+  const { data: metrics, isLoading: metricsLoading } = useOperationsMetrics()
   const [expanded, setExpanded] = useState(false)
-  const [mapInstance, setMapInstance] = useState<any>(null)
+  const [mapInstance, setMapInstance] = useState<import('leaflet').Map | null>(null)
   const [mapLayerData, setMapLayerData] = useState<MapLayerData | null>(null)
   const chimeRef = useRef(getDispatchChime())
   const prevPendingRef = useRef(0)
 
-  const fetchMetrics = useCallback(async () => {
-    try {
-      const data = await api.getOperationsMetrics()
-      setMetrics(data)
-
-      if (prevPendingRef.current > 0 && data.pending_orders > prevPendingRef.current) {
-        chimeRef.current.play()
-      }
-      prevPendingRef.current = data.pending_orders
-    } catch {
-      // Silent fail
-    } finally {
-      setMetricsLoading(false)
-    }
-  }, [])
-
-  const fetchMapLayers = useCallback(async () => {
-    try {
-      const data = await api.getOperationsMapLayers()
-      setMapLayerData(data)
-    } catch {
-      // Silent fail
-    }
+  useEffect(() => {
+    api.getOperationsMapLayers().then(setMapLayerData).catch(() => {})
   }, [])
 
   useEffect(() => {
-    fetchMetrics()
-    fetchMapLayers()
-    const interval = setInterval(() => {
-      fetchMetrics()
-      fetchMapLayers()
-    }, 30000)
-    return () => clearInterval(interval)
-  }, [fetchMetrics, fetchMapLayers])
+    if (metrics) {
+      if (prevPendingRef.current > 0 && metrics.pending_orders > prevPendingRef.current) {
+        chimeRef.current.play()
+      }
+      prevPendingRef.current = metrics.pending_orders
+    }
+  }, [metrics])
 
   // Unlock chime on first interaction
   useEffect(() => {
@@ -127,7 +98,7 @@ export default function OperationsPage() {
                   exit={orchestratedLayout.panelExit}
                   transition={sharedSpring}
                 >
-                  <MetricsHud metrics={metrics} loading={metricsLoading} />
+                  <MetricsHud metrics={metrics ?? null} loading={metricsLoading} />
                 </motion.div>
               )}
             </AnimatePresence>

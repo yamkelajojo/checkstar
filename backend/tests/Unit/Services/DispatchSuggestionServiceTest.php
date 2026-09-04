@@ -16,16 +16,17 @@ class DispatchSuggestionServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new DispatchSuggestionService();
+        $this->service = new DispatchSuggestionService;
     }
 
     private function createStore(array $overrides = []): int
     {
         static $num = 0;
         $num++;
+
         return DB::table('stores')->insertGetId(array_merge([
-            'name' => 'Store ' . $num,
-            'slug' => 'store-' . $num,
+            'name' => 'Store '.$num,
+            'slug' => 'store-'.$num,
             'address' => '123 Main St',
             'city' => 'Durban',
             'province' => 'KZN',
@@ -33,7 +34,7 @@ class DispatchSuggestionServiceTest extends TestCase
             'latitude' => -29.85,
             'longitude' => 31.02,
             'delivery_radius_km' => 10,
-            'phone' => '+2731000000' . $num,
+            'phone' => '+2731000000'.$num,
             'is_active' => true,
             'created_at' => now(),
             'updated_at' => now(),
@@ -44,9 +45,10 @@ class DispatchSuggestionServiceTest extends TestCase
     {
         static $num = 0;
         $num++;
+
         return DB::table('users')->insertGetId([
-            'name' => 'Customer ' . $num,
-            'email' => 'cust' . $num . '@example.com',
+            'name' => 'Customer '.$num,
+            'email' => 'cust'.$num.'@example.com',
             'password' => bcrypt('password'),
             'role' => 'customer',
             'created_at' => now(),
@@ -59,8 +61,8 @@ class DispatchSuggestionServiceTest extends TestCase
         static $num = 0;
         $num++;
         $userId = DB::table('users')->insertGetId([
-            'name' => 'Rider ' . $num,
-            'email' => 'rider' . $num . '@example.com',
+            'name' => 'Rider '.$num,
+            'email' => 'rider'.$num.'@example.com',
             'password' => bcrypt('password'),
             'role' => 'rider',
             'created_at' => now(),
@@ -88,8 +90,9 @@ class DispatchSuggestionServiceTest extends TestCase
     {
         static $num = 0;
         $num++;
+
         return DB::table('orders')->insertGetId(array_merge([
-            'order_number' => 'ORD-' . str_pad($num, 4, '0', STR_PAD_LEFT),
+            'order_number' => 'ORD-'.str_pad($num, 4, '0', STR_PAD_LEFT),
             'customer_id' => $customerId,
             'store_id' => $storeId,
             'status' => 'pending',
@@ -219,6 +222,6 @@ class DispatchSuggestionServiceTest extends TestCase
 
         $this->assertNotNull($suggestion->nearest_rider);
         $this->assertGreaterThan(0, $suggestion->nearest_rider->distance_meters);
-        $this->assertLessThan  (5000, $suggestion->nearest_rider->distance_meters);
+        $this->assertLessThan(5000, $suggestion->nearest_rider->distance_meters);
     }
 }

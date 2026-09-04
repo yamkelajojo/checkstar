@@ -14,8 +14,7 @@ class ProductController extends Controller
 {
     public function __construct(
         private PricingService $pricingService,
-    ) {
-    }
+    ) {}
 
     private function imageUrl(?string $path): ?string
     {
@@ -23,7 +22,7 @@ class ProductController extends Controller
             return null;
         }
 
-        return rtrim(request()->getSchemeAndHttpHost(), '/') . '/' . ltrim($path, '/');
+        return rtrim(request()->getSchemeAndHttpHost(), '/').'/'.ltrim($path, '/');
     }
 
     private function absolutizeImages(Product $product): Product
@@ -58,7 +57,9 @@ class ProductController extends Controller
     private function appendTrackingMetrics(array $products): void
     {
         $productIds = array_map(fn (Product $p) => $p->id, $products);
-        if (empty($productIds)) return;
+        if (empty($productIds)) {
+            return;
+        }
 
         $tracking = DB::table('user_tracking_events')
             ->where('event_type', 'product_view')

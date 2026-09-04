@@ -13,8 +13,7 @@ class ProductCarouselController extends Controller
 {
     public function __construct(
         private PricingService $pricingService,
-    ) {
-    }
+    ) {}
 
     private function imageUrl(?string $path): ?string
     {
@@ -22,7 +21,7 @@ class ProductCarouselController extends Controller
             return null;
         }
 
-        return rtrim(request()->getSchemeAndHttpHost(), '/') . '/' . ltrim($path, '/');
+        return rtrim(request()->getSchemeAndHttpHost(), '/').'/'.ltrim($path, '/');
     }
 
     private function absolutizeImages(Product $product): Product

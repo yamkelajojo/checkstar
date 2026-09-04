@@ -7,7 +7,7 @@ interface DeliveryStoreState {
   fulfillmentStore: ApiStore | null;
   stores: ApiStore[];
   loadStores: () => Promise<void>;
-  setFulfillmentStore: (store: ApiStore | null) => void;
+  setFulfillmentStore: (store: ApiStore | null) => Promise<void>;
 }
 
 export const useDeliveryStore = create<DeliveryStoreState>((set, get) => ({
@@ -29,11 +29,11 @@ export const useDeliveryStore = create<DeliveryStoreState>((set, get) => ({
     }
   },
 
-  setFulfillmentStore(store) {
+  async setFulfillmentStore(store) {
     if (store) {
-      storage.set(STORAGE_KEYS.deliveryStore, store);
+      await storage.set(STORAGE_KEYS.deliveryStore, store);
     } else {
-      storage.remove(STORAGE_KEYS.deliveryStore);
+      await storage.remove(STORAGE_KEYS.deliveryStore);
     }
     set({ fulfillmentStore: store });
   },

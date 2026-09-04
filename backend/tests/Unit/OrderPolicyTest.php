@@ -17,8 +17,11 @@ class OrderPolicyTest extends TestCase
     use RefreshDatabase;
 
     private OrderPolicy $policy;
+
     private User $owner;
+
     private User $intruder;
+
     private Order $order;
 
     protected function setUp(): void

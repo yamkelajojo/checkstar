@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Models\Order;
 use App\Models\User;
@@ -10,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 class DeliveryConfirmation
 {
     private OrderStateMachine $orderStateMachine;
+
     private PaymentStateMachine $paymentStateMachine;
 
     public function __construct(OrderStateMachine $orderStateMachine, PaymentStateMachine $paymentStateMachine)
@@ -22,7 +24,7 @@ class DeliveryConfirmation
     {
         // Idempotent: if already delivered, paid and confirmed, short-circuit
         $freshCheck = $order->fresh();
-        if ($freshCheck->status === \App\Enums\OrderStatus::Delivered && $freshCheck->payment_status === PaymentStatus::Paid && $freshCheck->customer_confirmed_at !== null) {
+        if ($freshCheck->status === OrderStatus::Delivered && $freshCheck->payment_status === PaymentStatus::Paid && $freshCheck->customer_confirmed_at !== null) {
             return $freshCheck;
         }
 
@@ -30,11 +32,11 @@ class DeliveryConfirmation
             $fresh = Order::where('id', $order->id)->lockForUpdate()->firstOrFail();
 
             // Only transition order if not already delivered (rider may have delivered first)
-            if ($fresh->status !== \App\Enums\OrderStatus::Delivered) {
-                if (!$this->orderStateMachine->canTransition($fresh->status, \App\Enums\OrderStatus::Delivered)) {
+            if ($fresh->status !== OrderStatus::Delivered) {
+                if (! $this->orderStateMachine->canTransition($fresh->status, OrderStatus::Delivered)) {
                     throw new \InvalidArgumentException("Cannot confirm delivery from status {$fresh->status->value}");
                 }
-                $this->orderStateMachine->transition($fresh, \App\Enums\OrderStatus::Delivered, $actor);
+                $this->orderStateMachine->transition($fresh, OrderStatus::Delivered, $actor);
                 $fresh = $fresh->fresh();
                 // Re-lock after transition to keep atomicity for payment
                 $fresh = Order::where('id', $fresh->id)->lockForUpdate()->firstOrFail();

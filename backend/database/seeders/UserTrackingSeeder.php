@@ -3,8 +3,8 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class UserTrackingSeeder extends Seeder
 {
@@ -23,6 +23,7 @@ class UserTrackingSeeder extends Seeder
 
         if (empty($customerIds) || empty($productIds)) {
             $this->command?->warn('Skipped UserTrackingSeeder: no customers or products found.');
+
             return;
         }
 
@@ -77,6 +78,6 @@ class UserTrackingSeeder extends Seeder
             DB::table('user_tracking_events')->insert($chunk);
         }
 
-        $this->command?->info("Created " . count($events) . " tracking events.");
+        $this->command?->info('Created '.count($events).' tracking events.');
     }
 }

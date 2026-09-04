@@ -17,14 +17,13 @@ class DispatchController extends Controller
         private ManualDispatch $manualDispatch,
         private AuditService $auditService,
         private StoreContext $storeContext,
-    ) {
-    }
+    ) {}
 
     public function suggestion(int $orderId): JsonResponse
     {
         $suggestion = $this->dispatchSuggestionService->getSuggestion($orderId);
 
-        if (!$suggestion) {
+        if (! $suggestion) {
             return response()->json(['error' => 'Order not found'], 404);
         }
 
@@ -61,7 +60,7 @@ class DispatchController extends Controller
             return response()->json(['error' => $result['reason']], 422);
         }
 
-        if (!$result->claimed) {
+        if (! $result->claimed) {
             $this->auditService->log(
                 $request->user()->id,
                 'dispatch_failed',

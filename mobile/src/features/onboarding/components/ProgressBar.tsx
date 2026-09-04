@@ -6,6 +6,7 @@ import Animated, {
   interpolate,
   Extrapolate,
 } from 'react-native-reanimated';
+import type { SharedValue } from 'react-native-reanimated';
 import { useTheme } from '../../../theme';
 import { semanticRadius, semanticSpacing } from '../../../theme/spacing';
 import { PROGRESS_SPRING } from '../../../theme/motion';
@@ -25,7 +26,7 @@ function ProgressBarDot({
   trackColor,
 }: {
   index: number;
-  activeIndex?: Animated.SharedValue<number>;
+  activeIndex?: { value: number };
   current: number;
   accentColor: string;
   trackColor: string;

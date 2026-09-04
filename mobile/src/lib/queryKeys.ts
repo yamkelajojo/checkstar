@@ -21,5 +21,9 @@ export const queryKeys = {
   availableOrders: ['rider', 'available-orders'] as const,
   activeDeliveries: ['rider', 'active-deliveries'] as const,
   riderStats: ['rider', 'stats'] as const,
+  riderProfile: ['rider', 'profile'] as const,
   riderHistory: ['rider', 'history'] as const,
+  favorites: ['favorites'] as const,
+  recommendations: ['recommendations'] as const,
+  banners: ['banners'] as const,
 };

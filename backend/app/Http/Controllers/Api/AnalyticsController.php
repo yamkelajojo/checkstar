@@ -13,8 +13,7 @@ class AnalyticsController extends Controller
     public function __construct(
         private AnalyticsService $analyticsService,
         private StoreContext $storeContext,
-    ) {
-    }
+    ) {}
 
     public function sales(Request $request): JsonResponse
     {

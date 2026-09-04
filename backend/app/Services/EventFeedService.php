@@ -55,7 +55,7 @@ class EventFeedService
                 'id',
                 DB::raw("'order_state_change' as type"),
                 'status',
-                DB::raw("'Order #' || order_number || ' ' || status as message"),
+                DB::raw("('Order #' || order_number || ' ' || status) as message"),
                 DB::raw("'order' as entity_type"),
                 'id as entity_id',
                 'created_at'
@@ -74,7 +74,7 @@ class EventFeedService
                 'id',
                 DB::raw("'rider_availability' as type"),
                 'is_available as status',
-                DB::raw("'Rider #' || id || ' went ' || CASE WHEN is_available THEN 'available' ELSE 'unavailable' END as message"),
+                DB::raw("('Rider #' || id || ' went ' || CASE WHEN is_available THEN 'available' ELSE 'unavailable' END) as message"),
                 DB::raw("'rider' as entity_type"),
                 'id as entity_id',
                 'updated_at as created_at'
@@ -93,7 +93,7 @@ class EventFeedService
                 'id',
                 DB::raw("'dispatch_attempt' as type"),
                 'action as status',
-                DB::raw("UPPER(SUBSTRING(action, 1, 1)) || SUBSTRING(action, 2) || ' — Order #' || entity_id as message"),
+                DB::raw("(UPPER(SUBSTR(action, 1, 1)) || SUBSTR(action, 2) || ' — Order #' || entity_id) as message"),
                 'entity_type',
                 'entity_id',
                 'created_at'

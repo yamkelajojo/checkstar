@@ -17,6 +17,7 @@ class OrderCancellationPolicyTest extends TestCase
     use RefreshDatabase;
 
     private OrderCancellationPolicy $policy;
+
     private Order $order;
 
     protected function setUp(): void

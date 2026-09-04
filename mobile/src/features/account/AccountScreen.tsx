@@ -1,12 +1,12 @@
 import React from 'react';
 import { View, Text, FlatList, TextInput, Alert, Platform, TouchableOpacity } from 'react-native';
-import { LogOut, Package, Settings, Wifi, WifiOff, ChevronDown, ChevronUp, Sun, Moon, Monitor } from 'lucide-react-native';
+import { LogOut, Package, RefreshCw, Settings, Wifi, WifiOff, ChevronDown, ChevronUp, Sun, Moon, Monitor } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTheme } from '../../theme';
 import { brand } from '../../theme/colors';
 import { textStyle, fontWeight, typeScale } from '../../theme/typography';
-import { semanticSpacing, semanticRadius } from '../../theme/spacing';
+import { semanticSpacing, semanticRadius, spacing } from '../../theme/spacing';
 import { useSession } from '../../stores/session';
 import { useThemePreference, type ThemePreference } from '../../stores/themePreference';
 import { useQuery } from '@tanstack/react-query';
@@ -14,6 +14,8 @@ import { fetchOrders } from '../../lib/apiClient';
 import { queryKeys } from '../../lib/queryKeys';
 import { formatZar } from '../../lib/currency';
 import { TactilePressable } from '../../components/shared/TactilePressable';
+import { useCart } from '../cart/store';
+import { haptic } from '../../lib/haptics';
 import { EmptyState } from '../../components/shared/EmptyState';
 import { Logo } from '../../components/shared/Logo';
 import { copy } from '../../lib/strings';
@@ -44,6 +46,19 @@ export function AccountScreen() {
     enabled: status === 'authenticated',
   });
 
+  const handleReorder = (order: NonNullable<typeof orders>[number]) => {
+    if (!order.items) return;
+    let added = 0;
+    for (const item of order.items) {
+      try {
+        useCart.getState().add(String(item.product_id), item.quantity);
+        added++;
+      } catch {}
+    }
+    haptic.success();
+    toast.show(`${added} item(s) added to cart`, { tone: 'success' });
+  };
+
   const name = user?.name ?? 'Guest';
   const role = user?.role ?? 'customer';
   const initial = name?.[0]?.toUpperCase() ?? '?';
@@ -61,7 +76,7 @@ export function AccountScreen() {
         </View>
 
         {/* Profile image container shifted downward for overlap */}
-        <View style={{ width: 96, height: 96, borderRadius: 48, backgroundColor: theme.colors.surface.elevated, alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: theme.colors.surface, marginTop: semanticSpacing.xxs, zIndex: 1 }}>
+        <View style={{ width: 96, height: 96, borderRadius: 48, backgroundColor: theme.colors.surface.elevated, alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: theme.colors.border.subtle, marginTop: semanticSpacing.xxs, zIndex: 1 }}>
           <Text style={{ fontSize: 42, fontWeight: fontWeight.black, color: brand.orange }}>
             {initial}
           </Text>
@@ -127,7 +142,7 @@ export function AccountScreen() {
                   justifyContent: 'center',
                   gap: semanticSpacing.xxs,
                   paddingVertical: semanticSpacing.sm,
-                  borderRadius: semanticRadius.md,
+                  borderRadius: semanticRadius.smallControl,
                   backgroundColor: active ? brand.orange : theme.colors.surface.primary,
                   borderWidth: 1,
                   borderColor: active ? brand.orange : theme.colors.border.subtle,
@@ -164,28 +179,40 @@ export function AccountScreen() {
           keyExtractor={(o) => String(o.id)}
           contentContainerStyle={{ padding: semanticSpacing.screenPadding, gap: semanticSpacing.inlineGap }}
           renderItem={({ item }) => (
-            <TactilePressable
-              onPress={() => navigation.navigate('OrderDetail', { orderId: item.id })}
-              haptic="selection"
-              style={{ backgroundColor: theme.colors.surface.primary, borderRadius: semanticRadius.card, padding: semanticSpacing.md }}
-            >
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Text style={{ fontWeight: fontWeight.bold, color: theme.colors.text.primary, ...textStyle.body }}>
-                  Order #{item.id}
-                </Text>
-                <Text style={{ ...textStyle.caption, color: theme.colors.text.secondary }}>
-                  {new Date(item.created_at).toLocaleDateString()}
-                </Text>
-              </View>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: semanticSpacing.xxs }}>
-                <Text style={{ ...textStyle.caption, color: brand.orange, fontWeight: fontWeight.semibold }}>
-                  {STATUS_LABEL[item.status] ?? item.status}
-                </Text>
-                <Text style={{ fontWeight: fontWeight.bold, color: theme.colors.text.primary, ...textStyle.body }}>
-                  {formatZar(item.total_cents ?? 0)}
-                </Text>
-              </View>
-            </TactilePressable>
+            <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: semanticRadius.card, flexDirection: 'row', alignItems: 'center' }}>
+              <TactilePressable
+                onPress={() => navigation.navigate('OrderDetail', { orderId: item.id })}
+                haptic="selection"
+                style={{ flex: 1, padding: semanticSpacing.md }}
+              >
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text style={{ fontWeight: fontWeight.bold, color: theme.colors.text.primary, ...textStyle.body }}>
+                    Order #{item.id}
+                  </Text>
+                  <Text style={{ ...textStyle.caption, color: theme.colors.text.secondary }}>
+                    {new Date(item.created_at).toLocaleDateString()}
+                  </Text>
+                </View>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: semanticSpacing.xxs }}>
+                  <Text style={{ ...textStyle.caption, color: brand.orange, fontWeight: fontWeight.semibold }}>
+                    {STATUS_LABEL[item.status] ?? item.status}
+                  </Text>
+                  <Text style={{ fontWeight: fontWeight.bold, color: theme.colors.text.primary, ...textStyle.body }}>
+                    {formatZar(item.total_cents ?? 0)}
+                  </Text>
+                </View>
+              </TactilePressable>
+              {item.status !== 'pending' && item.status !== 'preparing' && (
+                <TactilePressable
+                  onPress={() => handleReorder(item)}
+                  haptic="commit"
+                  accessibilityLabel={`Reorder #${item.id}`}
+                  style={{ padding: semanticSpacing.md, borderLeftWidth: 1, borderLeftColor: theme.colors.border.subtle }}
+                >
+                  <RefreshCw size={18} color={brand.orange} />
+                </TactilePressable>
+              )}
+            </View>
           )}
         />
       )}
@@ -200,7 +227,7 @@ export function AccountScreen() {
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: semanticSpacing.inlineGap }}>
               <Settings size={18} color={theme.colors.text.secondary} />
-              <Text style={{ ...textStyle.h4, fontWeight: fontWeight.bold, color: theme.colors.text.primary }}>
+              <Text style={{ ...textStyle.h3, fontWeight: fontWeight.bold, color: theme.colors.text.primary }}>
                 Developer Settings
               </Text>
             </View>
@@ -256,7 +283,7 @@ function DebugSection({ theme, toast, getLocalIp }: { theme: ReturnType<typeof u
   const suggestedUrl = `http://${getLocalIp()}:8000/api`;
 
   return (
-    <View style={{ marginTop: semanticSpacing.xxxl, paddingHorizontal: semanticSpacing.screenPadding, borderTopWidth: 1, borderTopColor: theme.colors.border.subtle, paddingTop: semanticSpacing.xl }}>
+    <View style={{ marginTop: spacing.xxxl, paddingHorizontal: semanticSpacing.screenPadding, borderTopWidth: 1, borderTopColor: theme.colors.border.subtle, paddingTop: semanticSpacing.xl }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: semanticSpacing.inlineGap, marginBottom: semanticSpacing.lg }}>
         <Settings size={20} color={theme.colors.text.secondary} />
         <Text style={{ ...textStyle.h3, fontWeight: fontWeight.bold, color: theme.colors.text.primary }}>
@@ -273,7 +300,7 @@ function DebugSection({ theme, toast, getLocalIp }: { theme: ReturnType<typeof u
           <Text style={{ ...textStyle.caption, fontWeight: fontWeight.semibold, color: theme.colors.text.primary }}>
             Current API URL
           </Text>
-          <Text style={{ fontFamily: 'monospace', ...textStyle.caption, color: theme.colors.text.primary }}>
+          <Text style={{ ...textStyle.caption, fontFamily: 'monospace', color: theme.colors.text.primary }}>
             {apiUrl || 'loading...'}
           </Text>
         </View>

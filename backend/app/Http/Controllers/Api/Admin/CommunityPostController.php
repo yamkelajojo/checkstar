@@ -16,6 +16,7 @@ class CommunityPostController extends Controller
         if ($request->has('per_page') || $request->has('page')) {
             return response()->json($paginator);
         }
+
         return response()->json(['data' => $paginator->items(), 'meta' => [
             'current_page' => $paginator->currentPage(),
             'last_page' => $paginator->lastPage(),
@@ -45,7 +46,7 @@ class CommunityPostController extends Controller
 
         $validated = $request->validate([
             'title' => 'string|max:255',
-            'slug' => 'string|max:255|unique:community_posts,slug,' . $id,
+            'slug' => 'string|max:255|unique:community_posts,slug,'.$id,
             'content' => 'nullable|string',
             'image' => 'nullable|string|max:255',
             'category' => 'string|in:gallery,csr',

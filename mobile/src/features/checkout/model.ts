@@ -1,4 +1,5 @@
-export const MIN_ORDER_CENTS = 5000;
+export { MIN_ORDER_CENTS } from '../../lib/constants';
+import { MIN_ORDER_CENTS } from '../../lib/constants';
 export const MIN_ADDRESS_LENGTH = 8;
 
 export interface CanSubmitInput {

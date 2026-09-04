@@ -1,3 +1,5 @@
+export * from './curves';
+
 export const springs = {
   gentle: {
     damping: 20,
@@ -87,13 +89,3 @@ export const ENTRANCE_SPRING = {
 };
 
 export const PROGRESS_SPRING = springs.gentle;
-export const CAROUSEL_SPRING = {
-  damping: 26,
-  stiffness: 180,
-  mass: 0.8,
-  overshootClamping: true,
-  restDisplacementThreshold: 0.1,
-  restSpeedThreshold: 0.1,
-};
-
-export type SpringConfig = typeof springs[keyof typeof springs];

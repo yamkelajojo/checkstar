@@ -4,7 +4,8 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTheme } from '../../theme';
 import { brand } from '../../theme/colors';
-import { typeScale, weights, letterSpacing } from '../../theme/typography';
+import { textStyle, weights, letterSpacing } from '../../theme/typography';
+import { semanticSpacing, semanticRadius } from '../../theme/spacing';
 import { useQuery } from '@tanstack/react-query';
 import { fetchOrder } from '../../lib/apiClient';
 import { queryKeys } from '../../lib/queryKeys';
@@ -49,41 +50,41 @@ export function OrderPlacedScreen() {
   const latencyMs = dispatch?.claim_latency_ms ?? null;
 
   return (
-    <View style={{ flex: 1, backgroundColor: theme.colors.bg, alignItems: 'center', justifyContent: 'center', padding: 32, gap: 16 }}>
+    <View style={{ flex: 1, backgroundColor: theme.colors.background.primary, alignItems: 'center', justifyContent: 'center', padding: semanticSpacing.screenPadding, gap: semanticSpacing.md }}>
       <FadeSlideIn distance={20}>
-        <View style={{ alignItems: 'center', gap: 16 }}>
+        <View style={{ alignItems: 'center', gap: semanticSpacing.md }}>
           <Icon size={72} color={tone.color} strokeWidth={1.5} />
-          <Text style={{ fontSize: typeScale.title, fontWeight: weights.extrabold, color: theme.colors.text }}>
+          <Text style={{ ...textStyle.h1, fontWeight: weights.extrabold, color: theme.colors.text.primary }}>
             {headline}
           </Text>
-          <Text style={{ fontSize: typeScale.body, color: theme.colors.textMuted, textAlign: 'center', lineHeight: 22 }}>
+          <Text style={{ ...textStyle.body, color: theme.colors.text.secondary, textAlign: 'center', lineHeight: 22 }}>
             {body}
           </Text>
           {outcome === 'assigned' && (dispatchStoreName || dispatchRiderName || latencyMs != null) && (
-            <View style={{ backgroundColor: theme.colors.surface, borderRadius: 12, paddingVertical: 10, paddingHorizontal: 16, alignSelf: 'stretch', gap: 4 }}>
+            <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: semanticRadius.card, paddingVertical: semanticSpacing.sm, paddingHorizontal: semanticSpacing.md, alignSelf: 'stretch', gap: semanticSpacing.xxs }}>
               {dispatchStoreName && (
-                <Text style={{ fontSize: typeScale.caption, color: theme.colors.text, textAlign: 'center' }}>
+                <Text style={{ ...textStyle.caption, color: theme.colors.text.secondary, textAlign: 'center' }}>
                   Store: <Text style={{ fontWeight: weights.bold }}>{dispatchStoreName}</Text>
                 </Text>
               )}
               {dispatchRiderName && (
-                <Text style={{ fontSize: typeScale.caption, color: theme.colors.text, textAlign: 'center' }}>
+                <Text style={{ ...textStyle.caption, color: theme.colors.text.secondary, textAlign: 'center' }}>
                   Rider: <Text style={{ fontWeight: weights.bold }}>{dispatchRiderName}</Text>
                 </Text>
               )}
               {latencyMs != null && (
-                <Text style={{ fontSize: typeScale.caption, color: theme.colors.textMuted, textAlign: 'center' }}>
+                <Text style={{ ...textStyle.caption, color: theme.colors.text.tertiary, textAlign: 'center' }}>
                   Assigned in {latencyMs}ms
                 </Text>
               )}
             </View>
           )}
           {order != null && (
-            <View style={{ backgroundColor: theme.colors.surface, borderRadius: 16, paddingVertical: 12, paddingHorizontal: 24, alignItems: 'center', gap: 2 }}>
-              <Text style={{ fontSize: typeScale.caption, color: theme.colors.textMuted, textTransform: 'uppercase', letterSpacing: letterSpacing.wide }}>
+            <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: semanticRadius.cardLarge, paddingVertical: semanticSpacing.md, paddingHorizontal: semanticSpacing.xl, alignItems: 'center', gap: semanticSpacing.xxs }}>
+              <Text style={{ ...textStyle.caption, color: theme.colors.text.tertiary, textTransform: 'uppercase', letterSpacing: letterSpacing.wide }}>
                 Order #{order.id}
               </Text>
-              <Text style={{ fontSize: typeScale.price, fontWeight: weights.black, color: theme.colors.text }}>
+              <Text style={{ ...textStyle.priceLarge, fontWeight: weights.black, color: theme.colors.text.primary }}>
                 {formatZar(order.total_cents ?? 0)}
               </Text>
             </View>
@@ -91,13 +92,13 @@ export function OrderPlacedScreen() {
         </View>
       </FadeSlideIn>
 
-      <View style={{ alignSelf: 'stretch', gap: 12 }}>
+      <View style={{ alignSelf: 'stretch', gap: semanticSpacing.sm }}>
         {outcome !== 'cancelled' ? (
           <TactilePressable
             onPress={() => navigation.replace('OrderDetail', { orderId })}
             haptic="commit"
             accessibilityRole="button"
-            style={{ backgroundColor: brand.primary, borderRadius: 999 }}
+            style={{ backgroundColor: brand.primary, borderRadius: semanticRadius.buttonPill }}
           >
             <Text style={{ color: '#fff', textAlign: 'center', fontWeight: weights.bold, textTransform: 'uppercase', letterSpacing: letterSpacing.wide }}>
               {copy.orders.trackOrder}
@@ -109,7 +110,7 @@ export function OrderPlacedScreen() {
             haptic="commit"
             accessibilityRole="button"
             accessibilityLabel="Return to checkout"
-            style={{ backgroundColor: brand.primary, borderRadius: 999 }}
+            style={{ backgroundColor: brand.primary, borderRadius: semanticRadius.buttonPill }}
           >
             <Text style={{ color: '#fff', textAlign: 'center', fontWeight: weights.bold, textTransform: 'uppercase', letterSpacing: letterSpacing.wide }}>
               {copy.checkout.title}
@@ -124,17 +125,17 @@ export function OrderPlacedScreen() {
             deliveryAddress: order?.delivery_address ?? null,
             deliveryLat: order?.delivery_latitude ?? undefined,
             deliveryLng: order?.delivery_longitude ?? undefined,
-            distanceKm: 3.2,
-            durationMinutes: 15,
-            source: 'osrm',
+            distanceKm: order?.store?.latitude != null && order?.delivery_latitude != null ? undefined : undefined,
+            durationMinutes: undefined,
+            source: 'haversine_fallback',
             geometry: null,
           })}
           haptic="selection"
           accessibilityRole="button"
           accessibilityLabel="Open immersive route explorer"
-          style={{ backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 999, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', paddingVertical: 12, paddingHorizontal: 16 }}
+          style={{ backgroundColor: theme.colors.surface.primary, borderRadius: semanticRadius.buttonPill, borderWidth: 1, borderColor: theme.colors.border.subtle, paddingVertical: semanticSpacing.sm, paddingHorizontal: semanticSpacing.md }}
         >
-          <Text style={{ color: theme.colors.text.tertiary, textAlign: 'center', fontWeight: weights.medium, fontSize: typeScale.caption, letterSpacing: letterSpacing.wide }}>
+          <Text style={{ color: theme.colors.text.tertiary, textAlign: 'center', fontWeight: weights.medium, ...textStyle.caption, letterSpacing: letterSpacing.wide }}>
             Open Immersive Route Explorer →
           </Text>
         </TactilePressable>
@@ -144,7 +145,7 @@ export function OrderPlacedScreen() {
           haptic="selection"
           accessibilityRole="button"
         >
-          <Text style={{ textAlign: 'center', color: theme.colors.textMuted, fontWeight: weights.semibold }}>
+          <Text style={{ textAlign: 'center', color: theme.colors.text.tertiary, fontWeight: weights.semibold }}>
             {copy.orders.done}
           </Text>
         </TactilePressable>

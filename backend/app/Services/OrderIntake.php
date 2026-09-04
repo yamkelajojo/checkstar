@@ -8,17 +8,24 @@ use App\Enums\PaymentStatus;
 use App\Jobs\RetryDispatch;
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\StoreProduct;
 use App\Models\User;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class OrderIntake
 {
     private PricingService $pricingService;
+
     private OrderStateMachine $stateMachine;
+
     private DispatchService $dispatchService;
+
     private DispatchPolicy $dispatchPolicy;
+
     private OrderCartPolicy $cartPolicy;
+
     private StoreFulfillmentService $fulfillmentService;
 
     public function __construct(
@@ -52,7 +59,7 @@ class OrderIntake
 
             foreach ($consolidated as $productId => $quantity) {
                 $product = Product::with('specials')->findOrFail($productId);
-                if (!$product->is_active) {
+                if (! $product->is_active) {
                     throw new \InvalidArgumentException("Product {$product->name} is not available");
                 }
                 if ($quantity > 8) {
@@ -81,7 +88,7 @@ class OrderIntake
             $customerLng = (float) $validated['delivery_longitude'];
             $fulfillmentResult = $this->fulfillmentService->resolve($consolidated, $customerLat, $customerLng);
 
-            if (!$fulfillmentResult->success) {
+            if (! $fulfillmentResult->success) {
                 throw new \InvalidArgumentException($fulfillmentResult->reason ?? 'Cannot fulfill order from any store');
             }
 
@@ -93,7 +100,7 @@ class OrderIntake
             // Retry order number generation on collision (1.6M combos, but handle race)
             $attempts = 0;
             do {
-                $orderNumber = 'CS-' . now()->format('Ymd') . '-' . strtoupper(Str::random(4));
+                $orderNumber = 'CS-'.now()->format('Ymd').'-'.strtoupper(Str::random(4));
                 try {
                     $order = Order::create([
                         'order_number' => $orderNumber,
@@ -111,9 +118,10 @@ class OrderIntake
                         'total' => $total,
                     ]);
                     break;
-                } catch (\Illuminate\Database\QueryException $e) {
+                } catch (QueryException $e) {
                     if (str_contains($e->getMessage(), 'order_number') && $attempts < 5) {
                         $attempts++;
+
                         continue;
                     }
                     throw $e;
@@ -122,6 +130,21 @@ class OrderIntake
 
             foreach ($orderItems as $oi) {
                 $order->items()->create($oi);
+            }
+
+            $stockViolations = [];
+            foreach ($consolidated as $productId => $quantity) {
+                $sp = StoreProduct::where('store_id', $fulfillmentStore->id)
+                    ->where('product_id', $productId)
+                    ->lockForUpdate()
+                    ->first();
+                if (! $sp || $sp->stock_quantity < $quantity) {
+                    $product = Product::find($productId);
+                    $stockViolations[] = ($product?->name ?? "Product #{$productId}")." (requested {$quantity}, available ".($sp?->stock_quantity ?? 0).')';
+                }
+            }
+            if (! empty($stockViolations)) {
+                throw new \InvalidArgumentException('Insufficient stock: '.implode('; ', $stockViolations));
             }
 
             $this->stateMachine->transition($order, OrderStatus::Confirmed, null, [

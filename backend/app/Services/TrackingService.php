@@ -3,8 +3,8 @@
 namespace App\Services;
 
 use App\Models\UserTrackingEvent;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class TrackingService
 {
@@ -17,7 +17,9 @@ class TrackingService
     ];
 
     private const MAX_BATCH_SIZE = 50;
+
     private const MAX_SEARCH_LENGTH = 255;
+
     private const PII_PATTERNS = [
         '/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/',
         '/\b(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b/',
@@ -30,8 +32,9 @@ class TrackingService
         ?string $searchQuery = null,
         array $metadata = []
     ): ?UserTrackingEvent {
-        if (!in_array($eventType, self::VALID_EVENT_TYPES, true)) {
+        if (! in_array($eventType, self::VALID_EVENT_TYPES, true)) {
             Log::debug('[TrackingService] Invalid event_type', ['event_type' => $eventType]);
+
             return null;
         }
 
@@ -51,6 +54,7 @@ class TrackingService
                 'event_type' => $eventType,
                 'error' => $e->getMessage(),
             ]);
+
             return null;
         }
     }
@@ -89,6 +93,7 @@ class TrackingService
             }
             $sanitized[$key] = $value;
         }
+
         return $sanitized;
     }
 
@@ -98,6 +103,7 @@ class TrackingService
         foreach (self::PII_PATTERNS as $pattern) {
             $query = preg_replace($pattern, '[REDACTED]', $query);
         }
+
         return $query;
     }
 }

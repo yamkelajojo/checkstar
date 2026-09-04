@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Product;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -41,7 +42,7 @@ class CartController extends Controller
         $validated = $request->validate([
             'items' => 'present|array',
             'items.*.product_id' => 'required|exists:products,id',
-            'items.*.quantity' => 'required|integer|min:1|max:' . self::MAX_QUANTITY,
+            'items.*.quantity' => 'required|integer|min:1|max:'.self::MAX_QUANTITY,
         ]);
 
         $user = $request->user();
@@ -58,8 +59,9 @@ class CartController extends Controller
             foreach ($consolidated as $productId => $quantity) {
                 $product = Product::find($productId);
 
-                if ($product === null || !$product->is_active) {
+                if ($product === null || ! $product->is_active) {
                     $dropped[] = ['product_id' => $productId, 'reason' => 'product_unavailable'];
+
                     continue;
                 }
 
@@ -76,7 +78,7 @@ class CartController extends Controller
                             'product_id' => $product->id,
                             'quantity' => $capped,
                         ]);
-                    } catch (\Illuminate\Database\QueryException $e) {
+                    } catch (QueryException $e) {
                         // Race: another sync inserted same product, retry as update
                         $retry = $user->cartItems()->where('product_id', $product->id)->first();
                         if ($retry) {

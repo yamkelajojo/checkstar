@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\OrderStatus;
 use App\Enums\UserRole;
+use App\Jobs\RetryDispatch;
 use App\Models\Category;
 use App\Models\Order;
 use App\Models\Product;
@@ -12,8 +13,8 @@ use App\Models\Store;
 use App\Models\StoreProduct;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -22,6 +23,7 @@ class OrderPlacementTest extends TestCase
     use RefreshDatabase;
 
     private const LAT = '-29.8587';
+
     private const LNG = '31.0218';
 
     private function makeCustomer(): User
@@ -90,7 +92,7 @@ class OrderPlacementTest extends TestCase
     private function makeOrder(User $customer, string $status = 'pending'): Order
     {
         return Order::create([
-            'order_number' => 'CS-TEST-' . strtoupper(Str::random(8)),
+            'order_number' => 'CS-TEST-'.strtoupper(Str::random(8)),
             'customer_id' => $customer->id,
             'store_id' => $this->makeStore()->id,
             'status' => $status,
@@ -161,7 +163,7 @@ class OrderPlacementTest extends TestCase
             ->assertJsonPath('dispatch.status', 'retrying')
             ->assertJsonPath('data.status', 'retrying');
 
-        Queue::assertPushed(\App\Jobs\RetryDispatch::class);
+        Queue::assertPushed(RetryDispatch::class);
 
         // Keep-on-cancel decision (#04): the cart survives so the Customer can re-checkout.
         $this->actingAs($customer)

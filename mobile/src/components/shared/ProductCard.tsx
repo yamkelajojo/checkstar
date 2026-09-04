@@ -1,4 +1,5 @@
-import { View, Text, Image, Pressable, Modal } from 'react-native';
+import { View, Text, Pressable, Modal } from 'react-native';
+import { Image } from 'expo-image';
 import type { StyleProp, ViewStyle } from 'react-native';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
@@ -15,6 +16,7 @@ import { Stepper } from './Stepper';
 import { useCart } from '../../features/cart/store';
 import { useDeliveryStore } from '../../stores/deliveryStore';
 import type { RootStackParamList } from '../../navigation/types';
+import { SaveHeart } from './SaveHeart';
 
 export interface BadgeRect {
   x: number;
@@ -29,13 +31,15 @@ interface ProductCardProps {
   style?: StyleProp<ViewStyle>;
   /** Opens a quick summary popup; when absent the price row is not pressable. */
   onRequestSummary?: (product: ProductVO, rect: BadgeRect | null) => void;
+  /** Tracking source for product view attribution. */
+  source?: 'direct' | 'feed' | 'home' | 'search' | 'recommendation' | 'saved';
 }
 
 /**
  * 2-col grid product card: angled image on a backdrop circle, % off ribbon,
  * price, and an inline add/stepper. The single most valuable commerce pattern.
  */
-export function ProductCard({ product, storeProductId = null, style, onRequestSummary }: ProductCardProps) {
+export function ProductCard({ product, storeProductId = null, style, onRequestSummary, source = 'direct' }: ProductCardProps) {
   const theme = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const quantity = useCart((s) => {
@@ -69,7 +73,7 @@ export function ProductCard({ product, storeProductId = null, style, onRequestSu
     <TactilePressable
       variant="card"
       haptic="selection"
-      onPress={() => navigation.navigate('ProductDetail', { slug: product.slug })}
+      onPress={() => navigation.navigate('ProductDetail', { slug: product.slug, source })}
       accessibilityRole="button"
       accessibilityLabel={product.name}
       style={[{ borderRadius: semanticRadius.card }, style]}
@@ -85,6 +89,7 @@ export function ProductCard({ product, storeProductId = null, style, onRequestSu
             overflow: 'hidden',
           }}
         >
+          <SaveHeart productId={product.id} />
           <View
             style={{
               width: 92,
@@ -100,6 +105,7 @@ export function ProductCard({ product, storeProductId = null, style, onRequestSu
                 source={imageSource}
                 style={{ width: 84, height: 84, transform: [{ rotate: '-14deg' }] }}
                 resizeMode="contain"
+                cachePolicy="memory-disk"
                 onError={() => setImageSource(null)}
               />
             ) : (

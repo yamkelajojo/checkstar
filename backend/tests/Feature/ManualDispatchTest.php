@@ -6,12 +6,9 @@ use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\StaffRole;
 use App\Enums\UserRole;
-use App\Models\Category;
 use App\Models\Order;
-use App\Models\Product;
 use App\Models\Rider;
 use App\Models\Store;
-use App\Models\StoreProduct;
 use App\Models\StoreStaff;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -24,6 +21,7 @@ class ManualDispatchTest extends TestCase
     use RefreshDatabase;
 
     private Store $store;
+
     private User $manager;
 
     protected function setUp(): void
@@ -68,7 +66,7 @@ class ManualDispatchTest extends TestCase
     private function makeConfirmedOrder(User $customer): Order
     {
         return Order::create([
-            'order_number' => 'CS-TEST-' . strtoupper(Str::random(8)),
+            'order_number' => 'CS-TEST-'.strtoupper(Str::random(8)),
             'customer_id' => $customer->id,
             'store_id' => null,
             'status' => OrderStatus::Confirmed,
@@ -85,7 +83,7 @@ class ManualDispatchTest extends TestCase
     private function makeRider(string $email, ?int $storeId = null, bool $available = true): Rider
     {
         $user = User::create([
-            'name' => 'Rider ' . $email,
+            'name' => 'Rider '.$email,
             'email' => $email,
             'password' => Hash::make('password123'),
             'role' => UserRole::Rider,
@@ -147,8 +145,8 @@ class ManualDispatchTest extends TestCase
 
         $this->actingAs($this->manager)
             ->postJson("/api/store/orders/{$order->id}/dispatch", ['rider_id' => $outsider->id])
-            ->assertStatus(409)
-            ->assertJson(['reason' => 'rider_not_eligible']);
+            ->assertStatus(403)
+            ->assertJson(['reason' => 'rider_wrong_store']);
     }
 
     public function test_manager_can_reassign_already_claimed_order(): void
@@ -171,6 +169,39 @@ class ManualDispatchTest extends TestCase
             'order_id' => $order->id,
             'event_type' => 'rider_assigned',
         ]);
+    }
+
+    public function test_reassign_rejects_order_from_different_store(): void
+    {
+        $otherStore = Store::create([
+            'name' => 'Umhlanga',
+            'slug' => 'umhlanga',
+            'address' => '45 Beach Rd',
+            'city' => 'Umhlanga',
+            'province' => 'KwaZulu-Natal',
+            'postal_code' => '4319',
+            'phone' => '+27 31 555 0200',
+            'latitude' => -29.86,
+            'longitude' => 31.02,
+            'delivery_radius_km' => 5,
+            'is_active' => true,
+        ]);
+
+        $customer = User::factory()->create(['role' => UserRole::Customer]);
+        $order = $this->makeConfirmedOrder($customer);
+        $first = $this->makeRider('first@example.com');
+        $second = $this->makeRider('second@example.com');
+
+        // Dispatch to first rider (in manager's store)
+        $this->actingAs($this->manager)
+            ->postJson("/api/store/orders/{$order->id}/dispatch", ['rider_id' => $first->id])
+            ->assertStatus(200);
+
+        // Reassign from different store should 404 (order not found in that store)
+        $managerAtOtherStore = $this->makeStaffUser('other@example.com', UserRole::StoreManager, $otherStore->id);
+        $this->actingAs($managerAtOtherStore)
+            ->postJson("/api/store/orders/{$order->id}/reassign", ['rider_id' => $second->id])
+            ->assertStatus(404);
     }
 
     public function test_developer_requires_explicit_store_id(): void

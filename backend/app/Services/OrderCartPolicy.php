@@ -15,6 +15,6 @@ class OrderCartPolicy
 {
     public function shouldClearAfterPlacement(Order $order): bool
     {
-        return !in_array($order->status, [OrderStatus::Cancelled, OrderStatus::Retrying], true);
+        return ! in_array($order->status, [OrderStatus::Cancelled, OrderStatus::Retrying], true);
     }
 }

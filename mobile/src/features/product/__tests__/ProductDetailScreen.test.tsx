@@ -32,6 +32,7 @@ const vo = (): ProductVO =>
     description: 'Fresh baby spinach leaves.',
     unit: 'kg',
     categoryId: 4,
+    categoryName: 'Fresh',
     tags: [],
     images: ['https://cdn.example/spinach.jpg'],
     basePriceCents: 2500,
@@ -45,7 +46,7 @@ const vo = (): ProductVO =>
     isActive: true,
     stockLabel: '',
     storeCount: 1,
-    stores: [{ id: 1, name: 'Checkstar Umgeni', slug: 'umgeni', isAvailable: true, stockQuantity: 10 }],
+    stores: [{ storeProductId: 1, id: 1, name: 'Checkstar Umgeni', slug: 'umgeni', isAvailable: true, stockQuantity: 10 }],
   }) as ProductVO;
 
 beforeEach(() => {

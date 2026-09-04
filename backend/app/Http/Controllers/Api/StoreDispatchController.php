@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Order;
 use App\Models\Rider;
 use App\Services\ManualDispatch;
 use App\Services\StoreContext;
@@ -14,8 +15,7 @@ class StoreDispatchController extends Controller
     public function __construct(
         private ManualDispatch $manualDispatch,
         private StoreContext $storeContext,
-    ) {
-    }
+    ) {}
 
     public function pending(Request $request): JsonResponse
     {
@@ -32,15 +32,24 @@ class StoreDispatchController extends Controller
         ]);
 
         $store = $this->storeContext->resolve($request->user(), $validated['store_id'] ?? null);
-        $order = \App\Models\Order::findOrFail($id);
+        $order = Order::findOrFail($id);
 
-        $result = $this->manualDispatch->dispatchToRider($order, Rider::findOrFail($validated['rider_id']), $store);
+        if ($order->store_id !== null && $order->store_id !== $store->id) {
+            return response()->json(['message' => 'Order does not belong to this store', 'reason' => 'wrong_store'], 403);
+        }
+
+        $rider = Rider::findOrFail($validated['rider_id']);
+        if ((int) $rider->store_id !== (int) $store->id) {
+            return response()->json(['message' => 'Rider does not belong to this store', 'reason' => 'rider_wrong_store'], 403);
+        }
+
+        $result = $this->manualDispatch->dispatchToRider($order, $rider, $store);
 
         if (is_array($result)) {
             return response()->json(['message' => 'Cannot dispatch order', 'reason' => $result['reason']], 409);
         }
 
-        if (!$result->claimed) {
+        if (! $result->claimed) {
             return response()->json(['message' => 'Order already claimed', 'reason' => 'order_already_claimed'], 409);
         }
 
@@ -51,9 +60,11 @@ class StoreDispatchController extends Controller
     {
         $validated = $request->validate([
             'rider_id' => 'required|exists:riders,id',
+            'store_id' => 'nullable|integer|exists:stores,id',
         ]);
 
-        $order = \App\Models\Order::findOrFail($id);
+        $store = $this->storeContext->resolve($request->user(), $validated['store_id'] ?? null);
+        $order = Order::where('id', $id)->where('store_id', $store->id)->firstOrFail();
 
         $result = $this->manualDispatch->reassign($order, Rider::findOrFail($validated['rider_id']));
 

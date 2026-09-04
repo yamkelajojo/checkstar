@@ -19,11 +19,10 @@ import { haptic } from '../../lib/haptics';
 import { copy, formatString } from '../../lib/strings';
 import { queryClient, queryKeys } from '../../lib/queryKeys';
 import { useToast } from '../../components/shared/GlassToast';
+import { MIN_ORDER_CENTS, EST_DELIVERY_FEE_CENTS, VALIDATION_DEBOUNCE_MS } from '../../lib/constants';
 import type { RootStackParamList } from '../../navigation/types';
-import { canSubmit, MIN_ORDER_CENTS } from './model';
-
-const EST_DELIVERY_FEE_CENTS = 0;
-const VALIDATION_DEBOUNCE_MS = 500;
+import { canSubmit } from './model';
+import { trackCheckout } from '../../services/trackingService';
 
 type PaymentMethod = 'cash_on_delivery';
 
@@ -90,15 +89,16 @@ export function CheckoutScreen() {
 
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
-    debounceRef.current = setTimeout(() => {
-      let cancelled = false;
+    let cancelled = false;
 
+    debounceRef.current = setTimeout(() => {
       const validate = async () => {
         setValidatingFulfillment(true);
         setFulfillmentError(null);
 
         try {
           const coords = await getDeliveryCoords();
+          if (cancelled) return;
 
           const result = await validateFulfillment({
             items: items.map((i) => ({ product_id: Number(i.productId), quantity: i.quantity })),
@@ -132,11 +132,10 @@ export function CheckoutScreen() {
       };
 
       void validate();
-
-      return () => { cancelled = true; };
     }, VALIDATION_DEBOUNCE_MS);
 
     return () => {
+      cancelled = true;
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
   }, [items, address]); // Re-validate when cart or address changes
@@ -178,6 +177,7 @@ export function CheckoutScreen() {
       }
       void queryClient.invalidateQueries({ queryKey: queryKeys.orders });
       haptic.success();
+      trackCheckout(subtotal);
       navigation.replace('OrderPlaced', { orderId: res.data.id, dispatch: res.dispatch });
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not place the order.');

@@ -1,9 +1,12 @@
 'use client'
 
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import { X, Trash2, ShoppingBag } from 'lucide-react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useCartStore } from '@/stores/cart-store'
+import type { CartItem } from '@/types'
 
 interface Props {
   open: boolean
@@ -11,7 +14,36 @@ interface Props {
 }
 
 export default function CartDrawer({ open, onClose }: Props) {
-  const { items, removeItem, updateQuantity, total, clearCart } = useCartStore()
+  const { items, removeItem, restoreItem, updateQuantity, total, clearCart } = useCartStore()
+
+  const [toast, setToast] = useState<{ item: CartItem } | null>(null)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    return () => { if (timerRef.current) clearTimeout(timerRef.current) }
+  }, [])
+
+  const removeWithUndo = (item: CartItem) => {
+    removeItem(item.product.id)
+    setToast({ item })
+    if (timerRef.current) clearTimeout(timerRef.current)
+    timerRef.current = setTimeout(() => setToast(null), 5000)
+  }
+
+  const undo = () => {
+    if (!toast) return
+    if (timerRef.current) clearTimeout(timerRef.current)
+    restoreItem(toast.item.product, toast.item.quantity)
+    setToast(null)
+  }
+
+  const decrement = (item: CartItem) => {
+    if (item.quantity <= 1) {
+      removeWithUndo(item)
+    } else {
+      updateQuantity(item.product.id, item.quantity - 1)
+    }
+  }
 
   return (
     <AnimatePresence>
@@ -33,7 +65,7 @@ export default function CartDrawer({ open, onClose }: Props) {
           >
             <div className="flex items-center justify-between p-4 border-b border-gray-100">
               <h2 className="font-display text-base sm:text-lg font-semibold">Your Cart</h2>
-              <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600">
+              <button onClick={onClose} aria-label="Close cart" className="p-1 text-gray-400 hover:text-gray-600">
                 <X size={20} />
               </button>
             </div>
@@ -60,8 +92,8 @@ export default function CartDrawer({ open, onClose }: Props) {
                 <div className="flex flex-col gap-3">
                   {items.map(item => (
                     <div key={item.product.id} className="flex items-center gap-3 bg-gray-50 rounded-lg p-3">
-                      <div className="w-14 h-14 bg-white rounded-lg flex items-center justify-center overflow-hidden">
-                        {item.product.image && <img src={item.product.image} alt={item.product.name} className="w-full h-full object-contain" />}
+                      <div className="relative w-14 h-14 bg-white rounded-lg flex items-center justify-center overflow-hidden">
+                        {item.product.image && <Image src={item.product.image} alt={item.product.name} fill sizes="56px" className="object-contain" />}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">{item.product.name}</p>
@@ -71,13 +103,13 @@ export default function CartDrawer({ open, onClose }: Props) {
                         </p>
                       </div>
                       <div className="flex items-center gap-1">
-                        <button onClick={() => updateQuantity(item.product.id, item.quantity - 1)} className="w-7 h-7 rounded border border-gray-200 flex items-center justify-center text-sm hover:bg-gray-100">
+                        <button onClick={() => decrement(item)} aria-label="Decrease quantity" className="w-7 h-7 rounded border border-gray-200 flex items-center justify-center text-sm hover:bg-gray-100">
                           -</button>
                         <span className="w-7 text-center text-sm font-medium">{item.quantity}</span>
-                        <button onClick={() => updateQuantity(item.product.id, item.quantity + 1)} className="w-7 h-7 rounded border border-gray-200 flex items-center justify-center text-sm hover:bg-gray-100">
+                        <button onClick={() => updateQuantity(item.product.id, item.quantity + 1)} aria-label="Increase quantity" className="w-7 h-7 rounded border border-gray-200 flex items-center justify-center text-sm hover:bg-gray-100">
                           +</button>
                       </div>
-                      <button onClick={() => removeItem(item.product.id)} className="p-1 text-gray-300 hover:text-accent transition-colors">
+                      <button onClick={() => removeWithUndo(item)} aria-label="Remove item" className="p-1 text-gray-300 hover:text-accent transition-colors">
                         <Trash2 size={16} />
                       </button>
                     </div>
@@ -90,7 +122,7 @@ export default function CartDrawer({ open, onClose }: Props) {
               <div className="border-t border-gray-100 p-4">
                 <div className="flex items-center justify-between mb-4">
                   <span className="font-medium">Total</span>
-                  <span className="font-bold text-lg">R{total().toFixed(2)}</span>
+                  <span className="font-bold text-lg">R{total.toFixed(2)}</span>
                 </div>
                 <div className="flex gap-2">
                   <button onClick={clearCart} className="flex-1 px-4 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
@@ -105,6 +137,23 @@ export default function CartDrawer({ open, onClose }: Props) {
           </motion.div>
         </>
       )}
+
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ y: 40, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 40, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] flex items-center gap-3 bg-gray-900 text-white px-4 py-3 rounded-lg shadow-lg text-sm"
+          >
+            <span>Removed</span>
+            <button onClick={undo} className="font-semibold underline underline-offset-2 hover:opacity-80" style={{ color: '#EB6522' }}>
+              Undo
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </AnimatePresence>
   )
 }

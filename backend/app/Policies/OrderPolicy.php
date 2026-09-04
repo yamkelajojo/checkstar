@@ -9,7 +9,7 @@ class OrderPolicy
 {
     public function view(User $user, Order $order): bool
     {
-        return $this->owns($user, $order);
+        return $this->owns($user, $order) || $this->isAssignedRider($user, $order);
     }
 
     public function cancel(User $user, Order $order): bool
@@ -30,5 +30,14 @@ class OrderPolicy
     private function owns(User $user, Order $order): bool
     {
         return $user->id === $order->customer_id;
+    }
+
+    private function isAssignedRider(User $user, Order $order): bool
+    {
+        if ($user->role !== 'rider' || ! $user->rider) {
+            return false;
+        }
+
+        return $order->rider_id === $user->rider->id;
     }
 }

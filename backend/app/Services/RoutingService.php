@@ -22,7 +22,8 @@ class RoutingService
         $provider = Config::get('routing.provider', 'osrm');
 
         if ($provider === 'mock') {
-            $mock = new MockRoutingProvider();
+            $mock = new MockRoutingProvider;
+
             return $mock->calculateRoute($fromLat, $fromLng, $toLat, $toLng);
         }
 
@@ -54,11 +55,12 @@ class RoutingService
         $provider = Config::get('routing.provider', 'osrm');
 
         if ($provider === 'mock') {
-            $mock = new MockRoutingProvider();
+            $mock = new MockRoutingProvider;
+
             return $mock->getRouteGeometry($fromLat, $fromLng, $toLat, $toLng);
         }
 
-        if (!$this->osrmBaseUrl || $provider !== 'osrm') {
+        if (! $this->osrmBaseUrl || $provider !== 'osrm') {
             return null;
         }
 
@@ -93,13 +95,13 @@ class RoutingService
             'steps' => 'false',
         ]);
 
-        if (!$response->successful()) {
-            throw new \RuntimeException('OSRM request failed: ' . $response->status());
+        if (! $response->successful()) {
+            throw new \RuntimeException('OSRM request failed: '.$response->status());
         }
 
         $data = $response->json();
 
-        if (!isset($data['routes'][0]['distance'], $data['routes'][0]['duration'])) {
+        if (! isset($data['routes'][0]['distance'], $data['routes'][0]['duration'])) {
             throw new \RuntimeException('Invalid OSRM response');
         }
 
@@ -124,10 +126,9 @@ class RoutingService
         // Average motorbike speed in urban Durban: ~25 km/h
         // Add 5 minutes for pickup/dropoff
         $travelMinutes = ($distanceKm / 25) * 60;
+
         return (int) ceil($travelMinutes + 5);
     }
-
-
 }
 
 class RouteResult

@@ -11,7 +11,7 @@ import {
   BookOpen, Users, Briefcase, MessageSquare,
   HeartPulse, ChevronRight, Loader2, AlertCircle,
   RefreshCw, LayoutDashboard, ArrowUpRight,
-  ShoppingCart, Bike,
+  ShoppingCart, Bike, Image,
 } from 'lucide-react'
 import { fadeUpTight as fadeUp, staggerTight as stagger } from '@/lib/motion/variants'
 import { api } from '@/lib/api'
@@ -25,6 +25,7 @@ const managementLinks = [
   { href: '/admin/careers', label: 'Careers', icon: Briefcase, desc: 'Manage job listings' },
   { href: '/admin/stores', label: 'Stores', icon: Store, desc: 'Store locations and settings' },
   { href: '/admin/riders', label: 'Riders', icon: Bike, desc: 'Manage delivery riders' },
+  { href: '/admin/banners', label: 'Banners', icon: Image, desc: 'Create and manage promotional banners' },
 ]
 
 export default function AdminDashboardClient() {

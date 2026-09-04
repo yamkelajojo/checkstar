@@ -22,8 +22,7 @@ class OperationsController extends Controller
         private EventFeedService $eventFeedService,
         private MapLayersService $mapLayersService,
         private StoreContext $storeContext,
-    ) {
-    }
+    ) {}
 
     public function metrics(Request $request): JsonResponse
     {

@@ -12,11 +12,11 @@ import { useTheme } from '../../theme';
 import { brand } from '../../theme/colors';
 import { textStyle, weights } from '../../theme/typography';
 import { semanticSpacing, semanticRadius } from '../../theme/spacing';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { decodePolyline, computeBoundingRegion, type LatLng } from '../../lib/polyline';
 import { useReducedMotion } from '../../components/shared/useReducedMotion';
 
-interface RouteExplorerProps {
+interface RouteExplorerParams {
   storeName: string;
   storeLat?: number;
   storeLng?: number;
@@ -29,20 +29,23 @@ interface RouteExplorerProps {
   geometry?: string | null;
 }
 
-export function RouteExplorerScreen({
-  storeName,
-  storeLat,
-  storeLng,
-  deliveryAddress,
-  deliveryLat,
-  deliveryLng,
-  distanceKm,
-  durationMinutes,
-  source,
-  geometry,
-}: RouteExplorerProps) {
+export function RouteExplorerScreen() {
   const theme = useTheme();
   const navigation = useNavigation();
+  const route = useRoute();
+  const params = (route.params ?? {}) as RouteExplorerParams;
+  const {
+    storeName = 'Checkstar',
+    storeLat,
+    storeLng,
+    deliveryAddress,
+    deliveryLat,
+    deliveryLng,
+    distanceKm,
+    durationMinutes,
+    source,
+    geometry,
+  } = params;
   const reducedMotion = useReducedMotion();
   const [progress, setProgress] = useState(0);
   const progressRef = useRef(0);
@@ -191,7 +194,7 @@ export function RouteExplorerScreen({
                 ]}
                 strokeColor={brand.primary}
                 strokeWidth={2}
-                strokeDashlengths={[8, 4]}
+                lineDashPattern={[8, 4]}
               />
             )}
           </MapView>
@@ -329,7 +332,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(10, 14, 20, 0.85)',
     paddingHorizontal: semanticSpacing.sm,
     paddingVertical: semanticSpacing.xxs,
-    borderRadius: semanticRadius.pill,
+    borderRadius: semanticRadius.chip,
   },
   infoRow: {
     flexDirection: 'row',

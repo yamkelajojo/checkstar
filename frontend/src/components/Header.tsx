@@ -20,7 +20,7 @@ export default function Header() {
   const pathname = usePathname()
   const prevPathRef = useRef(pathname)
   const { user, isAuthenticated, logout } = useAuthStore()
-  const itemCount = useCartStore(s => s.itemCount())
+  const itemCount = useCartStore(s => s.itemCount)
 
   useEffect(() => {
     if (menuOpen) {
@@ -103,7 +103,7 @@ export default function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 bg-[#FFFCF9]/90 backdrop-blur-md border-b border-[#E6DFD6]/60">
+      <header className="sticky top-0 z-50 bg-surface/90 backdrop-blur-md border-b border-border/60">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-1.5 hover:opacity-90 transition-opacity">
             <Logo variant="lockup" size={26} tone="dark" />
@@ -119,7 +119,7 @@ export default function Header() {
             <Link href="/cart" className="relative p-2 text-gray-600 hover:text-primary transition-colors">
               <ShoppingCart size={20} />
               {itemCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-[#EB6522] text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-medium shadow-md shadow-[#EB6522]/20">
+                <span className="absolute -top-1 -right-1 bg-primary text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-medium shadow-md shadow-primary/20">
                   <AnimatedNumber value={itemCount} />
                 </span>
               )}

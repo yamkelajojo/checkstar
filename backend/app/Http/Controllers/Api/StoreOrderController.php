@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 class StoreOrderController extends Controller
 {
     private OrderStateMachine $stateMachine;
+
     private StoreContext $storeContext;
 
     public function __construct(OrderStateMachine $stateMachine, StoreContext $storeContext)
@@ -29,7 +30,7 @@ class StoreOrderController extends Controller
         $orders = Order::where('store_id', $storeId)
             ->with(['items', 'rider.user', 'customer'])
             ->orderByDesc('created_at')
-            ->get();
+            ->paginate($request->input('per_page', 25));
 
         return response()->json(['data' => $orders]);
     }

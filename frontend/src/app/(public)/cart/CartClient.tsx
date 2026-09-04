@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { motion, AnimatePresence } from 'motion/react'
 import { Minus, Plus, Trash2, ShoppingBag, ArrowRight, Loader2, MapPin } from 'lucide-react'
 import { useCartStore } from '@/stores/cart-store'
@@ -103,9 +104,9 @@ export default function CartClient() {
                         exit={{ opacity: 0, x: 20, height: 0, marginBottom: 0 }}
                         className="flex items-center gap-4 py-4 border-b border-gray-100"
                       >
-                        <div className="w-16 h-16 bg-gray-50 rounded-lg flex-shrink-0 flex items-center justify-center overflow-hidden">
+                        <div className="relative w-16 h-16 bg-gray-50 rounded-lg flex-shrink-0 flex items-center justify-center overflow-hidden">
                           {item.product.image ? (
-                            <img src={item.product.image} alt={item.product.name} className="w-full h-full object-cover" />
+                            <Image src={item.product.image} alt={item.product.name} fill sizes="64px" className="object-cover" />
                           ) : (
                             <ShoppingBag size={20} className="text-gray-300" />
                           )}

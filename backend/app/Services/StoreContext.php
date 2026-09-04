@@ -2,10 +2,10 @@
 
 namespace App\Services;
 
+use App\Enums\UserRole;
 use App\Models\Store;
 use App\Models\StoreStaff;
 use App\Models\User;
-use App\Enums\UserRole;
 
 class StoreContext
 {
@@ -17,6 +17,7 @@ class StoreContext
             if ($explicitStoreId === null) {
                 abort(403, 'Developer must provide a store_id');
             }
+
             return Store::findOrFail($explicitStoreId);
         }
 

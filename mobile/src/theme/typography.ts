@@ -301,6 +301,10 @@ export type SemanticTextKey = keyof typeof semanticText;
 export type TextStyle = typeof textStyle[TextStyleKey];
 export type SemanticTextStyle = typeof semanticText[SemanticTextKey];
 
+// Widened types for dynamically scaled text (accessibility)
+export type ScaledTextStyle = Omit<TextStyle, 'size' | 'lineHeight'> & { size: number; lineHeight: number };
+export type ScaledSemanticTextStyle = Omit<SemanticTextStyle, 'size' | 'lineHeight'> & { size: number; lineHeight: number };
+
 // ============================================================================
 // ACCESSIBILITY / DYNAMIC TYPE SUPPORT
 // ============================================================================
@@ -320,7 +324,7 @@ export function getDynamicScale(fontScale: number): number {
  * Apply dynamic scaling to a text style.
  * Preserves line height ratio.
  */
-export function scaleTextStyle(style: TextStyle, fontScale: number): TextStyle {
+export function scaleTextStyle(style: TextStyle, fontScale: number): ScaledTextStyle {
   const scale = getDynamicScale(fontScale);
   return {
     ...style,
@@ -332,7 +336,7 @@ export function scaleTextStyle(style: TextStyle, fontScale: number): TextStyle {
 /**
  * Apply dynamic scaling to a semantic text style.
  */
-export function scaleSemanticTextStyle(style: SemanticTextStyle, fontScale: number): SemanticTextStyle {
+export function scaleSemanticTextStyle(style: SemanticTextStyle, fontScale: number): ScaledSemanticTextStyle {
   const scale = getDynamicScale(fontScale);
   return {
     ...style,

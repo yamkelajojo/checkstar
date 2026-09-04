@@ -7,20 +7,26 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\PlaceOrderRequest;
 use App\Http\Requests\ReviewRequest;
 use App\Models\Order;
+use App\Models\RiderLocation;
 use App\Services\DeliveryConfirmation;
 use App\Services\OrderCancellationPolicy;
 use App\Services\OrderIntake;
 use App\Services\OrderStateMachine;
 use App\Services\ReviewService;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class OrderController extends Controller
 {
     private OrderStateMachine $stateMachine;
+
     private DeliveryConfirmation $deliveryConfirmation;
+
     private OrderIntake $orderIntake;
+
     private OrderCancellationPolicy $cancellationPolicy;
+
     private ReviewService $reviewService;
 
     public function __construct(OrderStateMachine $stateMachine, DeliveryConfirmation $deliveryConfirmation, OrderIntake $orderIntake, OrderCancellationPolicy $cancellationPolicy, ReviewService $reviewService)
@@ -67,7 +73,7 @@ class OrderController extends Controller
             $result = $this->orderIntake->place($validated, $request->user());
         } catch (\InvalidArgumentException $e) {
             return response()->json(['message' => $e->getMessage()], 422);
-        } catch (\Illuminate\Database\QueryException $e) {
+        } catch (QueryException $e) {
             return response()->json(['message' => 'Could not place order'], 500);
         }
 
@@ -113,7 +119,7 @@ class OrderController extends Controller
             return response()->json(['message' => 'Not your order'], 403);
         }
 
-        if (!$this->cancellationPolicy->customerCanCancel($order)) {
+        if (! $this->cancellationPolicy->customerCanCancel($order)) {
             return response()->json([
                 'message' => 'This order can no longer be cancelled',
                 'reason' => 'order_not_cancellable',
@@ -165,10 +171,40 @@ class OrderController extends Controller
             $validated['comment'] ?? null,
         );
 
-        if (!$result['success']) {
+        if (! $result['success']) {
             return response()->json(['message' => $result['message']], 422);
         }
 
         return response()->json(['data' => $result['order']], 201);
+    }
+
+    public function riderLocation(Request $request, int $id): JsonResponse
+    {
+        $order = Order::findOrFail($id);
+
+        if ($request->user()->cannot('view', $order)) {
+            return response()->json(['message' => 'Not your order'], 403);
+        }
+
+        if ($order->rider_id === null) {
+            return response()->json(['data' => null]);
+        }
+
+        $location = RiderLocation::where('rider_id', $order->rider_id)
+            ->select('latitude', 'longitude', 'recorded_at')
+            ->orderByDesc('recorded_at')
+            ->first();
+
+        if (! $location) {
+            return response()->json(['data' => null]);
+        }
+
+        return response()->json([
+            'data' => [
+                'latitude' => (float) $location->latitude,
+                'longitude' => (float) $location->longitude,
+                'recorded_at' => $location->recorded_at?->toISOString(),
+            ],
+        ]);
     }
 }

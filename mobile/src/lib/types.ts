@@ -86,6 +86,8 @@ export interface ApiOrder {
   can_cancel?: boolean;
   delivery_address?: string | null;
   delivery_notes?: string | null;
+  delivery_latitude?: number | null;
+  delivery_longitude?: number | null;
   subtotal_cents: number | null;
   delivery_fee_cents: number | null;
   total_cents: number | null;
@@ -97,6 +99,12 @@ export interface ApiOrder {
   rider?: { id: number; user?: { name: string } } | null;
   activity_logs?: ApiActivityLog[];
   review?: unknown | null;
+}
+
+export interface ApiRiderLocation {
+  latitude: number;
+  longitude: number;
+  recorded_at: string | null;
 }
 
 export interface ApiUser {
@@ -208,4 +216,29 @@ export interface ApiRouteResponse {
 
 export interface ApiRouteGeometryResponse {
   geometry: string | null;
+  distance_km?: number;
+  duration_minutes?: number;
+  source?: 'osrm' | 'haversine_fallback' | 'mock_fallback';
+}
+
+export interface ApiBannerSlide {
+  title: string;
+  subtitle?: string;
+  ctaLabel?: string;
+  event?: string;
+  url?: string;
+  bgType: 'solid' | 'gradient' | 'radial';
+  colors: string[];
+  pattern?: string;
+}
+
+export interface ApiBanner {
+  id: number;
+  name: string;
+  slides: ApiBannerSlide[];
+  status: 'draft' | 'published';
+  start_date?: string | null;
+  end_date?: string | null;
+  store?: { id: number; name: string; slug: string } | null;
+  created_at: string;
 }

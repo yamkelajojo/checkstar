@@ -9,11 +9,14 @@ use App\Models\Order;
 use App\Models\Rider;
 use App\Models\Store;
 use App\Models\StoreProduct;
+use Illuminate\Support\Facades\DB;
 
 class RiderOrderService
 {
     private OrderStateMachine $stateMachine;
+
     private GamificationService $gamification;
+
     private OrderClaim $orderClaim;
 
     public function __construct(OrderStateMachine $stateMachine, GamificationService $gamification, OrderClaim $orderClaim)
@@ -25,13 +28,13 @@ class RiderOrderService
 
     public function claim(Rider $rider, int $orderId): ?Order
     {
-        if (!$rider->is_available || $rider->suspended_at !== null) {
+        if (! $rider->is_available || $rider->suspended_at !== null) {
             return null;
         }
 
         $order = Order::findOrFail($orderId);
 
-        if ($order->rider_id !== null || !in_array($order->status, [OrderStatus::Confirmed, OrderStatus::Retrying], true)) {
+        if ($order->rider_id !== null || ! in_array($order->status, [OrderStatus::Confirmed, OrderStatus::Retrying], true)) {
             return null;
         }
 
@@ -43,26 +46,26 @@ class RiderOrderService
 
         // For null store_id (retrying/unassigned), validate rider's store is eligible for delivery location
         if ($order->store_id === null) {
-            $policy = app(\App\Services\DispatchPolicy::class);
+            $policy = app(DispatchPolicy::class);
             $eligible = $policy->eligibleStores((float) $order->delivery_latitude, (float) $order->delivery_longitude);
-            if (!$eligible->contains(fn ($sd) => $sd['store']->id === $rider->store_id)) {
+            if (! $eligible->contains(fn ($sd) => $sd['store']->id === $rider->store_id)) {
                 return null;
             }
             // Also ensure rider is eligible (available, radius, not suspended)
             $store = Store::find($rider->store_id);
-            if (!$store) {
+            if (! $store) {
                 return null;
             }
             $distanceEntry = $eligible->firstWhere(fn ($sd) => $sd['store']->id === $rider->store_id);
             $distance = $distanceEntry['distance_km'] ?? 0;
             $eligibleRider = $policy->eligibleRider($store, (float) $distance);
-            if (!$eligibleRider || $eligibleRider->id !== $rider->id) {
+            if (! $eligibleRider || $eligibleRider->id !== $rider->id) {
                 return null;
             }
         }
 
         $store = Store::find($rider->store_id);
-        if (!$store) {
+        if (! $store) {
             return null;
         }
 
@@ -71,7 +74,7 @@ class RiderOrderService
         return $claimResult->claimed ? $claimResult->order : null;
     }
 
-    public function markItemsBought(Rider $rider, int $orderId): Order
+    public function markItemsBought(Rider $rider, int $orderId, ?array $itemIds = null): Order
     {
         $order = Order::where('id', $orderId)
             ->where('rider_id', $rider->id)
@@ -83,11 +86,16 @@ class RiderOrderService
             return $order;
         }
 
-        \Illuminate\Support\Facades\DB::transaction(function () use ($order) {
-            foreach ($order->items as $item) {
+        // If itemIds provided, filter to only those items
+        $itemsToProcess = $itemIds
+            ? $order->items->whereIn('id', $itemIds)
+            : $order->items;
+
+        DB::transaction(function () use ($order, $itemsToProcess) {
+            foreach ($itemsToProcess as $item) {
                 // Resolve store_product_id if missing
                 $storeProductId = $item->store_product_id;
-                if (!$storeProductId) {
+                if (! $storeProductId) {
                     $spLookup = StoreProduct::where('store_id', $order->store_id)
                         ->where('product_id', $item->product_id)
                         ->first();
@@ -101,7 +109,7 @@ class RiderOrderService
                 if ($storeProductId) {
                     $sp = StoreProduct::where('id', $storeProductId)->lockForUpdate()->first();
                     if ($sp) {
-                        if (!$sp->is_available) {
+                        if (! $sp->is_available) {
                             throw new \InvalidArgumentException("Product {$sp->product_id} is not available at this store");
                         }
                         if ($sp->stock_quantity < $item->quantity) {

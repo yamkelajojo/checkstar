@@ -16,6 +16,7 @@ class StaffManagementTest extends TestCase
     use RefreshDatabase;
 
     private Store $store;
+
     private User $owner;
 
     protected function setUp(): void

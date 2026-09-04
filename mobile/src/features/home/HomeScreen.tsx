@@ -1,4 +1,5 @@
 import { View, Text, FlatList, ScrollView } from 'react-native';
+import { PhysicsCarousel } from '../../components/shared/PhysicsCarousel';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Search, MapPin, Store } from 'lucide-react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -24,8 +25,12 @@ import { Logo } from '../../components/shared/Logo';
 import { useStoreSelection } from '../catalog/storeSelection';
 import type { ProductVO, StoreAvailabilityVO } from '../../lib/product';
 import { findStoreAvailability } from '../../lib/product';
-
-const FREE_DELIVERY_THRESHOLD_CENTS = 35000;
+import { ErrorBoundary } from '../../components/shared/ErrorBoundary';
+import { FREE_DELIVERY_THRESHOLD_CENTS } from '../../lib/constants';
+import { RecommendationsSection } from './RecommendationsSection';
+import { BannerCarousel } from '../../components/shared/BannerCarousel';
+import { fetchBanners } from '../../lib/apiClient';
+import { queryKeys } from '../../lib/queryKeys';
 
 function getSelectedStoreProductId(product: ProductVO, selection: { storeProductId: number; storeId: number } | undefined): number | null {
   if (!selection) return null;
@@ -40,6 +45,10 @@ export function HomeScreen() {
   const { data: categories = [] } = useCategories();
   const { data: products = [], isLoading } = useProducts({ storeId: store?.id ?? null, featured: true });
   const { data: specials = [] } = useSpecials(store?.id ?? null);
+  const { data: banners = [] } = useQuery({
+    queryKey: queryKeys.banners,
+    queryFn: fetchBanners,
+  });
   const cartItems = useCart((s) => s.items);
   const needsAll = cartItems.length > 0 && cartItems.some((ci) => !products.some((p) => String(p.id) === ci.productId));
   const { data: allProducts = [] } = useQuery({
@@ -129,22 +138,34 @@ export function HomeScreen() {
         </View>
       </LinearGradient>
 
+      {/* Banner carousel */}
+      <BannerCarousel banners={banners} />
+
+      {/* Picked for You recommendations */}
+      <RecommendationsSection />
+
       {/* Specials carousel */}
-      <View style={{ marginTop: semanticSpacing.lg }}>
-        <SectionTitle title="Best Deals" icon={<Tag size={16} color={brand.orange} />} />
-        {specials.length > 0 ? (
-          <FlatList
-            horizontal
-            data={specials}
-            keyExtractor={(p) => String(p.id)}
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: semanticSpacing.screenPadding, gap: semanticSpacing.inlineGap }}
-            renderItem={({ item }) => <ProductCard product={item} storeProductId={getStoreProductId(item)} />}
-          />
-        ) : (
-          <Text style={{ color: theme.colors.text.secondary, paddingHorizontal: semanticSpacing.screenPadding }}>No Specials right now — new deals land every week.</Text>
-        )}
-      </View>
+      <ErrorBoundary fallback={<View style={{ marginTop: semanticSpacing.lg, paddingHorizontal: semanticSpacing.screenPadding }}>
+        <View style={{ backgroundColor: theme.colors.surface.elevated, borderRadius: 12, padding: 20, alignItems: 'center' }}>
+          <Text style={{ color: theme.colors.text.secondary, fontSize: 14 }}>Specials unavailable</Text>
+        </View>
+      </View>}>
+        <View style={{ marginTop: semanticSpacing.lg }}>
+          <SectionTitle title="Best Deals" icon={<Tag size={16} color={brand.orange} />} />
+          {specials.length > 0 ? (
+            <PhysicsCarousel
+              data={specials}
+              keyExtractor={(p) => String(p.id)}
+              snapInterval={200}
+              contentOffset={semanticSpacing.screenPadding}
+              showsHorizontalScrollIndicator={false}
+              renderItem={({ item }) => <ProductCard product={item} storeProductId={getStoreProductId(item)} source="home" />}
+            />
+          ) : (
+            <Text style={{ color: theme.colors.text.secondary, paddingHorizontal: semanticSpacing.screenPadding }}>No Specials right now — new deals land every week.</Text>
+          )}
+        </View>
+      </ErrorBoundary>
 
       {/* Categories — GreenBidder FadeEdgeScroll pattern: gradient fade hints scrollability, snap, no truncation */}
       <View style={{ marginTop: semanticSpacing.xl }}>
@@ -156,7 +177,7 @@ export function HomeScreen() {
           backgroundColor={theme.colors.background.primary}
         >
           {categories.map((c) => (
-            <CollectionPill key={c.id} label={c.name} onPress={() => navigation.navigate('Tabs')} />
+            <CollectionPill key={c.id} label={c.name} onPress={() => navigation.navigate('Tabs', { screen: 'Browse', params: { category: c.slug } })} />
           ))}
         </FadeEdgeScroll>
       </View>
@@ -187,7 +208,7 @@ export function HomeScreen() {
             showsVerticalScrollIndicator={false}
             renderItem={({ item, index }) => (
               <FadeSlideIn delay={index * 40} distance={16}>
-                <ProductCard product={item} storeProductId={getStoreProductId(item)} />
+                <ProductCard product={item} storeProductId={getStoreProductId(item)} source="home" />
               </FadeSlideIn>
             )}
           />

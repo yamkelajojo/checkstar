@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\AuditLog;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Log;
 
 class AuditService
@@ -14,8 +15,7 @@ class AuditService
         string $entityType,
         int $entityId,
         array $metadata = []
-    ): ?AuditLog
-    {
+    ): ?AuditLog {
         try {
             $userId = $user instanceof User ? $user->id : $user;
 
@@ -33,6 +33,7 @@ class AuditService
                 'entity_id' => $entityId,
                 'error' => $e->getMessage(),
             ]);
+
             return null;
         }
     }
@@ -81,7 +82,7 @@ class AuditService
         ));
     }
 
-    public function forEntity(string $entityType, int $entityId, int $limit = 50): \Illuminate\Database\Eloquent\Collection
+    public function forEntity(string $entityType, int $entityId, int $limit = 50): Collection
     {
         return AuditLog::where('entity_type', $entityType)
             ->where('entity_id', $entityId)
@@ -90,7 +91,7 @@ class AuditService
             ->get();
     }
 
-    public function forUser(int $userId, int $limit = 50): \Illuminate\Database\Eloquent\Collection
+    public function forUser(int $userId, int $limit = 50): Collection
     {
         return AuditLog::where('user_id', $userId)
             ->orderByDesc('created_at')
@@ -98,7 +99,7 @@ class AuditService
             ->get();
     }
 
-    public function inRange(string $from, string $to, int $limit = 200): \Illuminate\Database\Eloquent\Collection
+    public function inRange(string $from, string $to, int $limit = 200): Collection
     {
         return AuditLog::whereBetween('created_at', [$from, $to])
             ->orderByDesc('created_at')

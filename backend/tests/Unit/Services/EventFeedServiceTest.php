@@ -18,7 +18,7 @@ class EventFeedServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new EventFeedService();
+        $this->service = new EventFeedService;
     }
 
     private function createOrder(array $overrides = []): int
@@ -27,18 +27,18 @@ class EventFeedServiceTest extends TestCase
         $orderNum++;
 
         return DB::table('orders')->insertGetId(array_merge([
-            'order_number' => 'ORD-TEST-' . str_pad($orderNum, 4, '0', STR_PAD_LEFT),
+            'order_number' => 'ORD-TEST-'.str_pad($orderNum, 4, '0', STR_PAD_LEFT),
             'customer_id' => DB::table('users')->insertGetId([
                 'name' => 'Test Customer',
-                'email' => 'test' . $orderNum . '@example.com',
+                'email' => 'test'.$orderNum.'@example.com',
                 'password' => bcrypt('password'),
                 'role' => 'customer',
                 'created_at' => now(),
                 'updated_at' => now(),
             ]),
             'store_id' => DB::table('stores')->insertGetId([
-                'name' => 'Store ' . $orderNum,
-                'slug' => 'test-store-' . $orderNum,
+                'name' => 'Store '.$orderNum,
+                'slug' => 'test-store-'.$orderNum,
                 'address' => '123 Test St',
                 'city' => 'Durban',
                 'province' => 'KwaZulu-Natal',
@@ -70,8 +70,8 @@ class EventFeedServiceTest extends TestCase
         $riderNum++;
 
         $userId = DB::table('users')->insertGetId([
-            'name' => 'Test Rider ' . $riderNum,
-            'email' => 'rider' . $riderNum . '@example.com',
+            'name' => 'Test Rider '.$riderNum,
+            'email' => 'rider'.$riderNum.'@example.com',
             'password' => bcrypt('password'),
             'role' => 'rider',
             'created_at' => now(),
@@ -81,8 +81,8 @@ class EventFeedServiceTest extends TestCase
         return DB::table('riders')->insertGetId(array_merge([
             'user_id' => $userId,
             'store_id' => DB::table('stores')->insertGetId([
-                'name' => 'Rider Store ' . $riderNum,
-                'slug' => 'test-store-r' . $riderNum,
+                'name' => 'Rider Store '.$riderNum,
+                'slug' => 'test-store-r'.$riderNum,
                 'address' => '789 Store St',
                 'city' => 'Durban',
                 'province' => 'KwaZulu-Natal',

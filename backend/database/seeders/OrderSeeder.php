@@ -3,14 +3,17 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class OrderSeeder extends Seeder
 {
     private const STATUSES = ['pending', 'confirmed', 'preparing', 'out_for_delivery', 'delivered', 'cancelled'];
+
     private const STATUS_WEIGHTS = [5, 10, 10, 10, 60, 5];
+
     private const PAYMENT_STATUSES = ['pending', 'paid', 'refunded'];
+
     private const DELIVERY_ADDRESSES = [
         '12 Mandela Avenue, Durban',
         '45 Smith Street, Durban',
@@ -35,6 +38,7 @@ class OrderSeeder extends Seeder
 
         if (empty($storeIds) || empty($productIds)) {
             $this->command?->warn('Skipped OrderSeeder: no stores or products found. Run StoreSeeder and ProductSeeder first.');
+
             return;
         }
 
@@ -70,7 +74,7 @@ class OrderSeeder extends Seeder
                 $total = $subtotal + $deliveryFee;
                 $address = self::DELIVERY_ADDRESSES[array_rand(self::DELIVERY_ADDRESSES)];
 
-                $riderId = in_array($status, ['out_for_delivery', 'delivered']) && !empty($riderIds)
+                $riderId = in_array($status, ['out_for_delivery', 'delivered']) && ! empty($riderIds)
                     ? $riderIds[array_rand($riderIds)]
                     : null;
 
@@ -79,7 +83,7 @@ class OrderSeeder extends Seeder
                     : null;
 
                 $orders[] = [
-                    'order_number' => 'ORD-' . str_pad($orderNum, 6, '0', STR_PAD_LEFT),
+                    'order_number' => 'ORD-'.str_pad($orderNum, 6, '0', STR_PAD_LEFT),
                     'customer_id' => $customerId,
                     'rider_id' => $riderId,
                     'store_id' => $storeId,
@@ -126,7 +130,7 @@ class OrderSeeder extends Seeder
         DB::table('orders')->insert($orders);
         DB::table('order_items')->insert($orderItems);
 
-        $this->command?->info("Created {$orderNum} orders with " . count($orderItems) . " items.");
+        $this->command?->info("Created {$orderNum} orders with ".count($orderItems).' items.');
     }
 
     private function createCustomers(int $count): void
@@ -148,10 +152,11 @@ class OrderSeeder extends Seeder
     private function weightedHour(): int
     {
         $weights = [
-            0,0,0,0,0, 0,0,0,1,2,
-            3,6,8,7,4, 3,5,7,6,4,
-            3,2,1,0,
+            0, 0, 0, 0, 0, 0, 0, 0, 1, 2,
+            3, 6, 8, 7, 4, 3, 5, 7, 6, 4,
+            3, 2, 1, 0,
         ];
+
         return $this->weightedRandom(array_keys($weights), $weights);
     }
 
@@ -162,8 +167,11 @@ class OrderSeeder extends Seeder
         $cumulative = 0;
         foreach ($values as $i => $value) {
             $cumulative += $weights[$i];
-            if ($rand <= $cumulative) return $value;
+            if ($rand <= $cumulative) {
+                return $value;
+            }
         }
+
         return end($values);
     }
 
@@ -172,6 +180,7 @@ class OrderSeeder extends Seeder
         $u1 = mt_rand() / mt_getrandmax();
         $u2 = mt_rand() / mt_getrandmax();
         $z = sqrt(-2 * log($u1)) * cos(2 * M_PI * $u2);
+
         return max($min, min($max, $mean + $z * $stdDev));
     }
 }

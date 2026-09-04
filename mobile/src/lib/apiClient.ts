@@ -3,7 +3,7 @@ import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 import { storage, STORAGE_KEYS } from './storage';
 import { isOnline } from './networkStatus';
-import type { ApiAuthResponse, ApiCartSyncResponse, ApiCategory, ApiOrder, ApiPagination, ApiPlaceOrderResponse, ApiProduct, ApiStore, ApiUser, ApiFulfillmentValidateResponse, ApiNearestStoreResponse, ApiRouteResponse, ApiRouteGeometryResponse } from './types';
+import type { ApiAuthResponse, ApiCartSyncResponse, ApiCategory, ApiOrder, ApiPagination, ApiPlaceOrderResponse, ApiProduct, ApiRiderLocation, ApiStore, ApiUser, ApiFulfillmentValidateResponse, ApiNearestStoreResponse, ApiRouteResponse, ApiRouteGeometryResponse, ApiBanner } from './types';
 import Constants from 'expo-constants';
 
 // Default fallback - user MUST configure this for their physical device
@@ -386,6 +386,12 @@ export async function reviewOrder(id: number | string, rating: number, comment?:
   return res.data;
 }
 
+export async function fetchOrderRiderLocation(orderId: number | string): Promise<ApiRiderLocation | null> {
+  const api = await getApi();
+  const res = await api.get<{ data: ApiRiderLocation | null }>(`/orders/${orderId}/rider-location`, undefined, true);
+  return res.data;
+}
+
 // ---- Rider ----
 
 export async function toggleAvailability(): Promise<{ message: string }> {
@@ -434,10 +440,36 @@ export async function fetchRiderStats(): Promise<{ total_deliveries: number; ave
   return api.get('/rider/stats', undefined, true);
 }
 
+export async function fetchRiderProfile(): Promise<{
+  id: number;
+  user_id: number;
+  store_id: number;
+  vehicle_type: string | null;
+  license_plate: string | null;
+  is_available: boolean;
+  max_radius_km: number;
+  banking_details: unknown;
+  xp: number;
+  level: number;
+  total_deliveries: number;
+  average_rating: number | null;
+  store: { id: number; name: string; slug: string } | null;
+  created_at: string;
+}> {
+  const api = await getApi();
+  const res = await api.get<{ data: ReturnType<typeof fetchRiderProfile> }>('/rider/profile', undefined, true);
+  return res.data;
+}
+
 export async function fetchRiderHistory(): Promise<ApiOrder[]> {
   const api = await getApi();
   const res = await api.get<{ data: ApiOrder[] }>('/rider/history', undefined, true);
   return res.data;
+}
+
+export async function sendRiderLocation(latitude: number, longitude: number): Promise<{ message: string }> {
+  const api = await getApi();
+  return api.post<{ message: string }>('/rider/location', { latitude, longitude }, true);
 }
 
 // ---- Fulfillment ----
@@ -478,4 +510,41 @@ export async function fetchRouteGeometry(
 ): Promise<ApiRouteGeometryResponse> {
   const api = await getApi();
   return api.get<ApiRouteGeometryResponse>('/routing/geometry', { from_lat: fromLat, from_lng: fromLng, to_lat: toLat, to_lng: toLng }, false);
+}
+
+// ---- Favorites ----
+
+export async function fetchFavorites(page: number = 1): Promise<any> {
+  const api = await getApi();
+  return api.get('/favorites', { page }, true);
+}
+
+export async function addFavorite(productId: number): Promise<any> {
+  const api = await getApi();
+  return api.post('/favorites', { product_id: productId }, true);
+}
+
+export async function removeFavorite(productId: number): Promise<void> {
+  const api = await getApi();
+  return api.delete(`/favorites/${productId}`, true);
+}
+
+export async function checkFavorite(productId: number): Promise<{ isFavorited: boolean }> {
+  const api = await getApi();
+  return api.get(`/favorites/${productId}/check`, undefined, true);
+}
+
+// ---- Recommendations ----
+
+export async function fetchRecommendations(): Promise<any> {
+  const api = await getApi();
+  return api.get('/recommendations', undefined, true);
+}
+
+// ---- Banners ----
+
+export async function fetchBanners(): Promise<ApiBanner[]> {
+  const api = await getApi();
+  const res = await api.get<{ data: ApiBanner[] }>('/banners', undefined, false);
+  return res.data;
 }

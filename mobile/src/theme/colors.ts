@@ -467,13 +467,57 @@ export const componentTokens = {
 // ============================================================================
 
 /**
+ * Parse a hex color string to [r, g, b] values (0-255).
+ */
+function hexToRgb(hex: string): [number, number, number] {
+  const h = hex.replace('#', '');
+  const full = h.length === 3
+    ? h.split('').map((c) => c + c).join('')
+    : h;
+  const num = parseInt(full, 16);
+  return [(num >> 16) & 255, (num >> 8) & 255, num & 255];
+}
+
+/**
+ * Compute relative luminance per WCAG 2.0.
+ * https://www.w3.org/TR/WCAG20/#relativeluminancedef
+ */
+function relativeLuminance(r: number, g: number, b: number): number {
+  const [rs, gs, bs] = [r, g, b].map((c) => {
+    const s = c / 255;
+    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
+}
+
+/**
+ * Compute WCAG 2.0 contrast ratio between two colors.
+ * Returns a value ≥ 1. A ratio of 1 means identical.
+ */
+function contrastRatio(hex1: string, hex2: string): number {
+  const [r1, g1, b1] = hexToRgb(hex1);
+  const [r2, g2, b2] = hexToRgb(hex2);
+  const l1 = relativeLuminance(r1, g1, b1);
+  const l2 = relativeLuminance(r2, g2, b2);
+  const lighter = Math.max(l1, l2);
+  const darker = Math.min(l1, l2);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+/**
  * Check if a color pair meets WCAG AA contrast ratio.
- * Use for development-time validation only.
+ * Normal text: ≥ 4.5:1
+ * Large text (≥18pt or ≥14pt bold): ≥ 3:1
+ * UI components/borders: ≥ 3:1
+ *
+ * Accepts 3 or 6 character hex strings (with or without #).
+ * Returns false for non-hex inputs (e.g. rgba, named colors).
  */
 export function checkContrast(foreground: string, background: string, largeText = false): boolean {
-  // Simplified check — real implementation would compute luminance
-  // This is a placeholder for documentation purposes
-  return true;
+  const hexPattern = /^#?[0-9a-fA-F]{3,8}$/;
+  if (!hexPattern.test(foreground) || !hexPattern.test(background)) return true;
+  const ratio = contrastRatio(foreground, background);
+  return largeText ? ratio >= 3 : ratio >= 4.5;
 }
 
 /**

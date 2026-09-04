@@ -1,64 +1,27 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useState } from 'react'
 import { motion } from '@/lib/motion'
 import { staggerContainer, item as itemVariant } from '@/lib/motion/variants'
 import { ArrowLeft, TrendingUp, ShoppingBag, DollarSign, Users } from 'lucide-react'
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
 import ChartCard from '@/components/operations/charts/ChartCard'
-import RevenueChart from '@/components/operations/charts/RevenueChart'
-import OrdersByHourChart from '@/components/operations/charts/OrdersByHourChart'
-import TopProductsChart from '@/components/operations/charts/TopProductsChart'
-import RiderUtilizationChart from '@/components/operations/charts/RiderUtilizationChart'
-import { api } from '@/lib/api'
+import { useAnalyticsSales, useAnalyticsProducts, useAnalyticsRiders } from '@/lib/query'
 
-interface SalesData {
-  revenue_over_time: { date: string; revenue: number; orders: number }[]
-  orders_by_hour: { hour: number; count: number }[]
-  total_revenue: number
-  total_orders: number
-  avg_order_value: number
-}
-
-interface ProductsData {
-  top_products: { id: number; name: string; order_count: number; total_quantity: number; total_revenue: number }[]
-  search_queries: { query: string; count: number }[]
-}
-
-interface RidersData {
-  rider_utilization: { rider_id: number; name: string; delivery_count: number; avg_delivery_time: number | null }[]
-  fleet_summary: { active_riders: number; total_riders: number; avg_utilization_rate: number }
-}
+const RevenueChart = dynamic(() => import('@/components/operations/charts/RevenueChart'), { ssr: false, loading: () => <div className="h-64 bg-gray-100 rounded animate-pulse" /> })
+const OrdersByHourChart = dynamic(() => import('@/components/operations/charts/OrdersByHourChart'), { ssr: false, loading: () => <div className="h-64 bg-gray-100 rounded animate-pulse" /> })
+const TopProductsChart = dynamic(() => import('@/components/operations/charts/TopProductsChart'), { ssr: false, loading: () => <div className="h-64 bg-gray-100 rounded animate-pulse" /> })
+const RiderUtilizationChart = dynamic(() => import('@/components/operations/charts/RiderUtilizationChart'), { ssr: false, loading: () => <div className="h-64 bg-gray-100 rounded animate-pulse" /> })
 
 type Period = '7d' | '30d' | '90d'
 
 export default function AnalyticsPage() {
   const [period, setPeriod] = useState<Period>('30d')
-  const [sales, setSales] = useState<SalesData | null>(null)
-  const [products, setProducts] = useState<ProductsData | null>(null)
-  const [riders, setRiders] = useState<RidersData | null>(null)
-  const [loading, setLoading] = useState(true)
-
-  const fetchData = useCallback(async () => {
-    setLoading(true)
-    try {
-      const [salesRes, productsRes, ridersRes] = await Promise.all([
-        api.getAnalyticsSales(period),
-        api.getAnalyticsProducts(10),
-        api.getAnalyticsRiders(period),
-      ])
-
-      setSales(salesRes as unknown as SalesData)
-      setProducts(productsRes as unknown as ProductsData)
-      setRiders(ridersRes as unknown as RidersData)
-    } catch {
-      // Silent fail
-    } finally {
-      setLoading(false)
-    }
-  }, [period])
-
-  useEffect(() => { fetchData() }, [fetchData])
+  const { data: sales, isLoading: salesLoading } = useAnalyticsSales(period)
+  const { data: products, isLoading: productsLoading } = useAnalyticsProducts(10)
+  const { data: riders, isLoading: ridersLoading } = useAnalyticsRiders(period)
+  const loading = salesLoading || productsLoading || ridersLoading
 
   const kpis = [
     { label: 'Total Revenue', value: sales ? `R${sales.total_revenue.toLocaleString()}` : '—', icon: DollarSign },

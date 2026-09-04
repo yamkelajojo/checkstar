@@ -18,6 +18,9 @@ import { useNavigationSignal } from '../../stores/navigationSignal';
 import { ProgressBar } from './components/ProgressBar';
 import { useOnboardingSlideMotion } from './hooks/useOnboardingSlideMotion';
 import { haptic } from '../../lib/haptics';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../../navigation/types';
 
 const SLIDES = [
   {
@@ -48,6 +51,7 @@ const SLIDES = [
 
 export function OnboardingScreen() {
   const theme = useTheme();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { width: SCREEN_WIDTH } = useWindowDimensions();
   const pagerRef = useRef<PagerView>(null);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -73,7 +77,7 @@ export function OnboardingScreen() {
 
   const iAmARider = async () => {
     await finish();
-    signal();
+    navigation.navigate('Auth', { intent: 'rider' });
   };
 
   const handlePageSelected = (e: NativeSyntheticEvent<{ position: number }>) => {
@@ -95,8 +99,8 @@ export function OnboardingScreen() {
     startShopping();
   };
 
-  const handleSkip = () => {
-    finish();
+  const handleSkip = async () => {
+    await finish();
     signal();
   };
 

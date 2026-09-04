@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { motion } from 'motion/react'
 import { Search, SlidersHorizontal, ShoppingCart } from 'lucide-react'
 import ProductCard from '@/components/ProductCard'
@@ -18,9 +19,11 @@ export const FILTER_GROUPS = [
 ] as const
 
 export default function ProductsClient() {
+  const searchParams = useSearchParams()
+  const initialSearch = searchParams.get('search') ?? ''
   const [activeGroup, setActiveGroup] = useState<string>('All')
-  const [searchQuery, setSearchQuery] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [searchQuery, setSearchQuery] = useState(initialSearch)
+  const [debouncedSearch, setDebouncedSearch] = useState(initialSearch)
   const scrollRef = useRef<HTMLDivElement>(null)
   const [canScrollLeft, setCanScrollLeft] = useState(false)
   const [canScrollRight, setCanScrollRight] = useState(false)

@@ -36,6 +36,7 @@ jest.mock('../ProductSummaryModal', () => ({
 const mockNavigate = jest.fn();
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({ navigate: mockNavigate, goBack: jest.fn() }),
+  useRoute: () => ({ params: undefined }),
 }));
 
 const categories: ApiCategory[] = [{ id: 4, name: 'Fresh', slug: 'fresh', sort_order: 1 }];
@@ -48,6 +49,7 @@ const vo = (id: number, name: string): ProductVO =>
     description: null,
     unit: 'each',
     categoryId: 4,
+    categoryName: 'Fresh',
     tags: [],
     images: [],
     basePriceCents: 2500,

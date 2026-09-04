@@ -93,8 +93,8 @@ class MapLayersService
     {
         $grid = [];
         foreach ($points as [$lat, $lng]) {
-            $key = round($lat, $precision) . ',' . round($lng, $precision);
-            if (!isset($grid[$key])) {
+            $key = round($lat, $precision).','.round($lng, $precision);
+            if (! isset($grid[$key])) {
                 $grid[$key] = ['lat' => 0.0, 'lng' => 0.0, 'count' => 0];
             }
             $grid[$key]['lat'] += $lat;

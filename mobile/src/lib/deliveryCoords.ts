@@ -1,6 +1,6 @@
 import * as Location from 'expo-location';
-
-export const DURBAN_COORDS = { latitude: -29.8587, longitude: 31.0218 };
+export { DURBAN_COORDS } from './constants';
+import { DURBAN_COORDS } from './constants';
 
 export interface DeliveryCoordsResult {
   latitude: number;

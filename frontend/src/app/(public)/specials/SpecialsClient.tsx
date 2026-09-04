@@ -1,6 +1,7 @@
 'use client'
 
 import { motion } from 'motion/react'
+import Image from 'next/image'
 import { Calendar, Clock, Tag } from 'lucide-react'
 import ProductCard from '@/components/ProductCard'
 import { useSpecials } from '@/lib/query'
@@ -59,10 +60,12 @@ export default function SpecialsClient() {
                 <motion.div key={special.id} variants={fadeUp}>
                   {special.banner_image && (
                     <div className="relative aspect-[3/1] rounded-xl overflow-hidden mb-6">
-                      <img
+                      <Image
                         src={special.banner_image}
                         alt={special.title}
-                        className="w-full h-full object-cover"
+                        fill
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 80vw, 1200px"
+                        className="object-cover"
                       />
                       <div className="absolute inset-0 bg-gradient-to-r from-black/50 to-transparent flex items-center p-8">
                         <div>
@@ -92,7 +95,7 @@ export default function SpecialsClient() {
                       <span>{formatDate(special.start_date)} — {formatDate(special.end_date)}</span>
                     </div>
                     <span className={`px-2 py-0.5 rounded-full font-medium ${
-                      active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                      active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-green-700'
                     }`}>
                       {active ? 'Active' : 'Ended'}
                     </span>

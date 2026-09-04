@@ -3,8 +3,8 @@
 namespace Tests\Unit\Services;
 
 use App\Services\BehavioralTrackingService;
-use Tests\TestCase;
 use Illuminate\Support\Facades\Log;
+use Tests\TestCase;
 
 class BehavioralTrackingServiceTest extends TestCase
 {
@@ -15,7 +15,7 @@ class BehavioralTrackingServiceTest extends TestCase
         parent::setUp();
         Log::shouldReceive('debug')->byDefault();
         Log::shouldReceive('info')->byDefault();
-        $this->service = new BehavioralTrackingService();
+        $this->service = new BehavioralTrackingService;
     }
 
     public function test_signal_taxonomy_has_explicit_intent_tier(): void

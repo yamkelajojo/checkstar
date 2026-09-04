@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { View, Text, FlatList } from 'react-native';
+import { useRoute } from '@react-navigation/native';
 import { useTheme } from '../../theme';
 import { textStyle } from '../../theme/typography';
 import { semanticSpacing } from '../../theme/spacing';
@@ -10,17 +11,24 @@ import { FadeEdgeScroll } from '../../components/shared/FadeEdgeScroll';
 import { ProductSummaryModal, type SourceRect } from './ProductSummaryModal';
 import { SkeletonCard } from '../../components/shared/SkeletonCard';
 import { ProductCardSkeleton } from '../../components/shared/ProductCardSkeleton';
-import { FadeSlideIn } from '../../components/shared/FadeSlideIn';
+import { CrashCascadeIn } from '../../components/shared/CrashCascadeIn';
 import { useDeliveryStore } from '../../stores/deliveryStore';
 import type { ProductVO, StoreAvailabilityVO } from '../../lib/product';
 import { findStoreAvailability } from '../../lib/product';
+import { trackCategoryFilterTap } from '../../services/trackingService';
 
 export function BrowseScreen() {
   const theme = useTheme();
+  const route = useRoute();
   const store = useDeliveryStore((s) => s.fulfillmentStore);
   const { data: categories = [] } = useCategories();
-  const [activeCategory, setActiveCategory] = useState<string | undefined>(undefined);
+  const routeCategory = (route.params as { category?: string } | undefined)?.category;
+  const [activeCategory, setActiveCategory] = useState<string | undefined>(routeCategory);
   const [summaryState, setSummaryState] = useState<{ product: ProductVO; rect: SourceRect | null } | null>(null);
+
+  useEffect(() => {
+    if (routeCategory !== undefined) setActiveCategory(routeCategory);
+  }, [routeCategory]);
   const { 
     data, 
     isLoading, 
@@ -70,7 +78,13 @@ export function BrowseScreen() {
                 key={String(cat.id)}
                 label={cat.name}
                 active={active}
-                onPress={() => setActiveCategory(cat.id === 0 ? undefined : cat.slug)}
+                onPress={() => {
+                  const catSlug = cat.id === 0 ? undefined : cat.slug;
+                  setActiveCategory(catSlug);
+                  if (cat.id !== 0) {
+                    trackCategoryFilterTap(cat.id, cat.name, products.length);
+                  }
+                }}
               />
             );
           })}
@@ -106,9 +120,9 @@ export function BrowseScreen() {
           ) : null
         }
         renderItem={({ item, index }) => (
-            <FadeSlideIn delay={index * 40} distance={16}>
-              <ProductCard product={item} storeProductId={getStoreProductId(item)} onRequestSummary={handleRequestSummary} />
-            </FadeSlideIn>
+            <CrashCascadeIn index={index}>
+              <ProductCard product={item} storeProductId={getStoreProductId(item)} onRequestSummary={handleRequestSummary} source="feed" />
+            </CrashCascadeIn>
           )}
       />
 

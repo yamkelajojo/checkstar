@@ -17,6 +17,8 @@ import { setUnauthorizedHandler, syncCart } from './src/lib/apiClient';
 import { useCart } from './src/features/cart/store';
 import { performCartSync } from './src/lib/cartSync';
 import { RootNavigator } from './src/navigation/RootNavigator';
+import { linking } from './src/navigation/linking';
+import { ErrorBoundary } from './src/components/shared/ErrorBoundary';
 import type { RootStackParamList } from './src/navigation/types';
 import { TamaguiProvider } from 'tamagui';
 import config from './tamagui.config';
@@ -142,10 +144,12 @@ export default function App() {
             <ThemeProvider>
               <ToastProvider>
                 <QueryClientProvider client={queryClient}>
-                  <NavigationContainer ref={navigationRef}>
-                    <StatusBar style="auto" />
-                    <RootNavigator />
-                  </NavigationContainer>
+                    <NavigationContainer ref={navigationRef} linking={linking}>
+                      <StatusBar style="auto" />
+                      <ErrorBoundary>
+                        <RootNavigator />
+                      </ErrorBoundary>
+                    </NavigationContainer>
                 </QueryClientProvider>
               </ToastProvider>
             </ThemeProvider>

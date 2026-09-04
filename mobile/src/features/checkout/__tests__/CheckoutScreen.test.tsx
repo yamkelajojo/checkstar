@@ -56,6 +56,7 @@ const product = (id: number, effective: number): ProductVO =>
     description: null,
     unit: 'each',
     categoryId: 1,
+    categoryName: 'Test Category',
     tags: [],
     images: [],
     basePriceCents: effective,

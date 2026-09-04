@@ -12,7 +12,7 @@ return new class extends Migration
         foreach ($recipes as $recipe) {
             $ingredients = $recipe->ingredients;
 
-            if (!is_string($ingredients)) {
+            if (! is_string($ingredients)) {
                 continue;
             }
 

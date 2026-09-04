@@ -4,6 +4,8 @@ namespace Tests\Unit;
 
 use App\Enums\EventType;
 use App\Enums\OrderStatus;
+use App\Enums\PaymentStatus;
+use App\Enums\UserRole;
 use App\Models\Order;
 use App\Models\OrderActivityLog;
 use App\Models\Store;
@@ -18,6 +20,7 @@ class OrderStateMachineTest extends TestCase
     use RefreshDatabase;
 
     private OrderStateMachine $machine;
+
     private Order $order;
 
     protected function setUp(): void
@@ -44,7 +47,7 @@ class OrderStateMachineTest extends TestCase
             'name' => 'Customer',
             'email' => 'customer@test.com',
             'password' => bcrypt('password'),
-            'role' => \App\Enums\UserRole::Customer,
+            'role' => UserRole::Customer,
             'is_active' => true,
         ]);
 
@@ -53,7 +56,7 @@ class OrderStateMachineTest extends TestCase
             'customer_id' => $customer->id,
             'store_id' => $store->id,
             'status' => OrderStatus::Pending,
-            'payment_status' => \App\Enums\PaymentStatus::Pending,
+            'payment_status' => PaymentStatus::Pending,
             'subtotal' => 100.00,
             'delivery_fee' => 10.00,
             'total' => 110.00,
@@ -201,7 +204,7 @@ class OrderStateMachineTest extends TestCase
             'name' => 'Actor',
             'email' => 'actor@test.com',
             'password' => bcrypt('password'),
-            'role' => \App\Enums\UserRole::StoreManager,
+            'role' => UserRole::StoreManager,
             'is_active' => true,
         ]);
 

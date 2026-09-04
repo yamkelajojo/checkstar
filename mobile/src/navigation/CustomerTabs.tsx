@@ -1,7 +1,8 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { ShoppingCart, Home, LayoutGrid, User } from 'lucide-react-native';
+import { ShoppingCart, Home, LayoutGrid, Heart, User } from 'lucide-react-native';
 import { HomeScreen } from '../features/home/HomeScreen';
 import { BrowseScreen } from '../features/catalog/BrowseScreen';
+import { FavoritesScreen } from '../features/favorites/FavoritesScreen';
 import { CartScreen } from '../features/cart/CartScreen';
 import { AccountScreen } from '../features/account/AccountScreen';
 import { useTheme } from '../theme';
@@ -91,6 +92,11 @@ export function CustomerTabs() {
         name="Browse"
         component={BrowseScreen}
         options={{ tabBarIcon: ({ color, size }) => <LayoutGrid size={iconSize} color={color} /> }}
+      />
+      <Tab.Screen
+        name="Favorites"
+        component={FavoritesScreen}
+        options={{ tabBarIcon: ({ color, size }) => <Heart size={iconSize} color={color} /> }}
       />
       <Tab.Screen
         name="Cart"

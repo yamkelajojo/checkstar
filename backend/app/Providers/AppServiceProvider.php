@@ -13,7 +13,7 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(RoutingService::class, function ($app) {
-            return new RoutingService();
+            return new RoutingService;
         });
     }
 

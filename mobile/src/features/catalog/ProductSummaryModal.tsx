@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Modal, View, Text, Image, Pressable, StyleSheet, useWindowDimensions } from 'react-native';
+import { Modal, View, Text, Pressable, StyleSheet, useWindowDimensions } from 'react-native';
+import { Image } from 'expo-image';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import { ChevronRight } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -111,7 +112,7 @@ export function ProductSummaryModal({ product, storeProductId = null, sourceRect
                 }}
               >
                 {imageSource ? (
-                  <Image source={imageSource} style={{ width: 72, height: 72 }} resizeMode="contain" />
+                  <Image source={imageSource} style={{ width: 72, height: 72 }} resizeMode="contain" cachePolicy="memory-disk" />
                 ) : (
                   <Text style={{ color: theme.colors.textFaint, fontSize: 32 }}>🛒</Text>
                 )}

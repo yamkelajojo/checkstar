@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Services\DispatchPolicy;
 use App\Services\StoreFulfillmentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -58,7 +59,7 @@ class FulfillmentController extends Controller
         $customerLng = (float) $validated['longitude'];
 
         // Use dispatch policy to get eligible stores by distance
-        $eligibleStores = app(\App\Services\DispatchPolicy::class)
+        $eligibleStores = app(DispatchPolicy::class)
             ->eligibleStores($customerLat, $customerLng);
 
         if ($eligibleStores->isEmpty()) {

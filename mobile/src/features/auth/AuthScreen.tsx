@@ -49,11 +49,15 @@ export function AuthScreen() {
   const theme = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute();
-  const intent = (route.params as { intent?: 'checkout' } | undefined)?.intent;
+  const intent = (route.params as { intent?: 'checkout' | 'rider' } | undefined)?.intent;
   const signIn = useSession((s) => s.signIn);
   const toast = useToast();
 
-  const [mode, setMode] = useState<Mode>(intent === 'checkout' ? 'signin' : 'register');
+  const [mode, setMode] = useState<Mode>(() => {
+    if (intent === 'rider') return 'rider';
+    if (intent === 'checkout') return 'signin';
+    return 'register';
+  });
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -225,7 +229,7 @@ export function AuthScreen() {
                       backgroundColor: active ? brand.orange : theme.colors.surface.primary,
                     }}
                   >
-                    <Text style={{ color: active ? theme.colors.text.inverse : theme.colors.text.secondary, fontWeight: fontWeight.bold, textTransform: 'uppercase', letterSpacing: letterSpacing.wide, ...textStyle.caption }}>
+                    <Text style={{ color: active ? theme.colors.text.inverse : theme.colors.text.secondary, fontWeight: fontWeight.bold, textTransform: 'uppercase', ...textStyle.caption }}>
                       {v === 'bike' ? copy.auth.vehicleBike : copy.auth.vehicleCar}
                     </Text>
                   </TactilePressable>
@@ -244,7 +248,7 @@ export function AuthScreen() {
           accessibilityRole="button"
           style={{ backgroundColor: theme.colors.action.primary.background, borderRadius: semanticRadius.buttonPill, marginTop: semanticSpacing.xs, opacity: submitting ? 0.6 : 1 }}
         >
-          <Text style={{ color: theme.colors.action.primary.foreground, textAlign: 'center', fontWeight: fontWeight.bold, textTransform: 'uppercase', letterSpacing: letterSpacing.wide, ...textStyle.buttonPrimary }}>
+          <Text style={{ color: theme.colors.action.primary.foreground, textAlign: 'center', fontWeight: fontWeight.bold, textTransform: 'uppercase', ...textStyle.buttonPrimary }}>
             {submitting ? '…' : title}
           </Text>
         </TactilePressable>

@@ -54,6 +54,7 @@ describe('product', () => {
       expect(result.description).toBe('A test product');
       expect(result.unit).toBe('each');
       expect(result.categoryId).toBe(5);
+      expect(result.categoryName).toBeNull();
       expect(result.tags).toEqual(['tag1', 'tag2']);
       expect(result.images).toEqual(['img1.jpg', 'img2.jpg']);
       expect(result.basePriceCents).toBe(2500);
@@ -92,6 +93,15 @@ describe('product', () => {
       expect(result.salePriceCents).toBe(2000);
       expect(result.collectionPriceCents).toBe(1800);
       expect(result.effectivePriceCents).toBe(2000);
+    });
+
+    it('maps category name from nested category object', () => {
+      const withCategory = {
+        ...baseApiProduct,
+        category: { id: 5, name: 'Fresh Produce', slug: 'fresh-produce', description: null, icon: null, image: null, sort_order: 1 },
+      };
+      const result = mapProduct(withCategory);
+      expect(result.categoryName).toBe('Fresh Produce');
     });
 
     it('handles null optional fields', () => {
@@ -135,7 +145,7 @@ describe('product', () => {
     it('returns correct ProductVO type', () => {
       const result = mapProduct(baseApiProduct);
       const expectedKeys: (keyof ProductVO)[] = [
-        'id', 'slug', 'name', 'description', 'unit', 'categoryId',
+        'id', 'slug', 'name', 'description', 'unit', 'categoryId', 'categoryName',
         'tags', 'images', 'basePriceCents', 'salePriceCents',
         'collectionPriceCents', 'effectivePriceCents', 'brand',
         'storageTip', 'keyPoints', 'isFeatured', 'isActive', 'stockLabel',

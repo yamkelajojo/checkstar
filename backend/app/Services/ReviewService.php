@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\DB;
 class ReviewService
 {
     private RiderStatsRecorder $riderStats;
+
     private GamificationService $gamification;
 
     public function __construct(RiderStatsRecorder $riderStats, GamificationService $gamification)
@@ -48,6 +49,7 @@ class ReviewService
                 'rider_id' => $order->rider_id,
                 'rating' => $rating,
                 'comment' => $comment,
+                'created_at' => now(),
             ]);
 
             $order->rider_rating = $rating;

@@ -16,10 +16,11 @@ export function NavigationProgress() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -4 }}
           transition={{ duration: shouldReduceMotion ? 0.1 : 0.25, ease: [0.4, 0, 0.2, 1] }}
-          className="fixed top-0 left-0 right-0 z-[60] h-[2px] bg-gradient-to-r from-[#EB6522] via-[#F47A3A] to-[#EB6522] shadow-[0_0_12px_rgba(235,101,34,0.35)]"
+          className="fixed top-0 left-0 right-0 z-[60] h-[2px] bg-gradient-to-r from-primary via-[#F47A3A] to-primary shadow-[0_0_12px_rgba(235,101,34,0.35)]"
           style={{
-            width: `${progress * 100}%`,
-            transition: 'width 120ms ease-out',
+            transform: `scaleX(${progress})`,
+            transformOrigin: 'left',
+            transition: 'transform 120ms ease-out',
           }}
         />
       )}

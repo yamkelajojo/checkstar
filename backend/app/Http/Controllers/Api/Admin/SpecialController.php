@@ -16,6 +16,7 @@ class SpecialController extends Controller
         if ($request->has('per_page') || $request->has('page')) {
             return response()->json($paginator);
         }
+
         return response()->json(['data' => $paginator->items(), 'meta' => [
             'current_page' => $paginator->currentPage(),
             'last_page' => $paginator->lastPage(),
@@ -45,7 +46,7 @@ class SpecialController extends Controller
 
         $validated = $request->validate([
             'title' => 'string|max:255',
-            'slug' => 'string|max:255|unique:specials,slug,' . $id,
+            'slug' => 'string|max:255|unique:specials,slug,'.$id,
             'description' => 'nullable|string',
             'banner_image' => 'nullable|string|max:255',
             'start_date' => 'date',

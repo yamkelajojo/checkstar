@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
-import RegisterClient from './RegisterClient'
+import dynamic from 'next/dynamic'
+
+const RegisterClient = dynamic(() => import('./RegisterClient'), { ssr: false })
 
 export const metadata: Metadata = {
   title: 'Register — Checkstar',

@@ -9,7 +9,7 @@ import Animated, {
 import type { PressableProps, StyleProp, ViewStyle } from 'react-native';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useReducedMotion } from './useReducedMotion';
-import { haptic } from '../../lib/haptics';
+import { haptic } from '../../utils/haptics';
 import { PRESS_IN_SPRING, PRESS_OUT_SPRING, CARD_PRESS_IN_SPRING, CARD_PRESS_OUT_SPRING } from '../../theme/motion';
 
 type Variant = 'default' | 'compact' | 'card' | 'assertive';

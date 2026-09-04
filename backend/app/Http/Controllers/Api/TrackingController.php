@@ -5,12 +5,13 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Services\BehavioralTrackingService;
 use App\Services\TrackingService;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class TrackingController extends Controller
 {
     protected BehavioralTrackingService $tracking;
+
     protected TrackingService $userTracking;
 
     public function __construct(BehavioralTrackingService $tracking, TrackingService $userTracking)
@@ -25,6 +26,7 @@ class TrackingController extends Controller
             'product_id' => $request->input('product_id'),
             'duration_ms' => $request->input('duration_ms'),
         ]);
+
         return response()->json(['status' => 'captured']);
     }
 
@@ -33,6 +35,7 @@ class TrackingController extends Controller
         $this->tracking->capture('search', [
             'query' => $request->input('query'),
         ]);
+
         return response()->json(['status' => 'captured']);
     }
 
@@ -41,6 +44,7 @@ class TrackingController extends Controller
         $this->tracking->capture('contact', [
             'product_id' => $request->input('product_id'),
         ]);
+
         return response()->json(['status' => 'captured']);
     }
 
@@ -63,7 +67,7 @@ class TrackingController extends Controller
             $validated['metadata'] ?? []
         );
 
-        if (!$event) {
+        if (! $event) {
             return response()->json(['error' => 'Failed to store event'], 500);
         }
 

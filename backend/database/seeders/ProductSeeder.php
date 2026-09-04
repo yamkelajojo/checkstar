@@ -20,7 +20,7 @@ class ProductSeeder extends Seeder
         $dataset = json_decode(File::get($path), true);
 
         foreach ($dataset['products'] as $product) {
-            $image = 'products/' . ltrim(str_replace('images/', '', $product['image']), '/');
+            $image = 'products/'.ltrim(str_replace('images/', '', $product['image']), '/');
 
             Product::create([
                 'category_id' => $product['category_id'],

@@ -8,13 +8,14 @@ interface CartState {
   addItem: (product: Product, quantity?: number) => void
   decrementItem: (productId: number) => void
   removeItem: (productId: number) => void
+  restoreItem: (product: Product, quantity: number) => void
   updateQuantity: (productId: number, quantity: number) => void
   clearCart: () => void
   total: number
   itemCount: number
   distinctCount: number
   totalQuantity: number
-  syncToServer: () => Promise<{ data: any; dropped: any } | undefined>
+  syncToServer: () => Promise<{ data: CartItem[]; dropped: { product_id: number; reason: string }[] } | undefined>
 }
 
 function computeDerived(items: CartItem[]) {
@@ -59,6 +60,17 @@ export const useCartStore = create<CartState>()(
         const next = get().items.filter(i => i.product.id !== productId)
         set({ ...computeDerived(next), items: next })
       },
+      restoreItem: (product, quantity) => {
+        const items = get().items
+        const existing = items.find(i => i.product.id === product.id)
+        if (existing) {
+          const next = items.map(i => i.product.id === product.id ? { ...i, quantity: i.quantity + quantity } : i)
+          set({ ...computeDerived(next), items: next })
+        } else {
+          const next = [...items, { product, quantity }]
+          set({ ...computeDerived(next), items: next })
+        }
+      },
       updateQuantity: (productId, quantity) => {
         if (quantity <= 0) {
           const next = get().items.filter(i => i.product.id !== productId)
@@ -73,7 +85,7 @@ export const useCartStore = create<CartState>()(
         const items = get().items
         const res = await api.syncCart(items.map(i => ({ product_id: i.product.id, quantity: i.quantity })))
         if (res?.data) {
-          const serverItems: typeof items = res.data.map((ci: any) => ({
+          const serverItems: typeof items = res.data.map((ci: CartItem) => ({
             product: ci.product,
             quantity: ci.quantity,
           }))

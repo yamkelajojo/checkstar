@@ -104,20 +104,29 @@ class AnalyticsService
                 ->where('created_at', '>=', $startDate)
                 ->count();
 
-            $totalTime = DB::table('orders')
+            $deliveryTimes = DB::table('orders')
                 ->where('rider_id', $rider->id)
                 ->where('store_id', $storeId)
                 ->where('status', 'delivered')
                 ->where('created_at', '>=', $startDate)
                 ->whereNotNull('customer_confirmed_at')
-                ->selectRaw('(julianday(customer_confirmed_at) - julianday(created_at)) * 24 * 60 as avg_delivery_minutes')
-                ->value('avg_delivery_minutes');
+                ->select('created_at', 'customer_confirmed_at')
+                ->get();
+
+            $avgMinutes = $deliveryTimes->isEmpty()
+                ? null
+                : $deliveryTimes->map(function ($row) {
+                    $start = strtotime((string) $row->created_at);
+                    $end = strtotime((string) $row->customer_confirmed_at);
+
+                    return ($end - $start) / 60;
+                })->average();
 
             return (object) [
                 'rider_id' => $rider->id,
-                'name' => 'Rider #' . $rider->id,
+                'name' => 'Rider #'.$rider->id,
                 'delivery_count' => $deliveries,
-                'avg_delivery_time' => $totalTime ? round($totalTime, 1) : null,
+                'avg_delivery_time' => $avgMinutes !== null ? round($avgMinutes, 1) : null,
                 'total_distance' => $deliveries * 5.2, // Placeholder: ~5.2km avg
                 'is_available' => $rider->is_available,
             ];

@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import { motion } from 'motion/react'
-import { Image, Heart, Calendar } from 'lucide-react'
+import Image from 'next/image'
+import { Heart, Calendar } from 'lucide-react'
 import { useCommunityPosts } from '@/lib/query'
 import { fadeUp } from '@/lib/motion/variants'
 
@@ -83,7 +84,9 @@ className={`px-4 py-2 rounded-lg text-sm font-light transition-colors ${
                     className="break-inside-avoid bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm"
                   >
                     {post.image && (
-                      <img src={post.image} alt={post.title} className="w-full object-cover" />
+                      <div className="relative w-full aspect-[4/3]">
+                        <Image src={post.image} alt={post.title} fill sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw" className="object-cover" />
+                      </div>
                     )}
                     <div className="p-4">
                       <div className="flex items-center gap-2 mb-2">
@@ -109,8 +112,8 @@ className={`px-4 py-2 rounded-lg text-sm font-light transition-colors ${
                 {posts.filter(p => p.category === 'csr').map(post => (
                   <motion.div key={post.id} variants={fadeUp} className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm">
                     {post.image && (
-                      <div className="aspect-video overflow-hidden">
-                        <img src={post.image} alt={post.title} className="w-full h-full object-cover" />
+                      <div className="relative aspect-video overflow-hidden">
+                        <Image src={post.image} alt={post.title} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" className="object-cover" />
                       </div>
                     )}
                     <div className="p-5">

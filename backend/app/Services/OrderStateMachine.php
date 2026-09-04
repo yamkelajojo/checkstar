@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\EventType;
 use App\Enums\OrderStatus;
+use App\Events\OrderStatusChanged;
 use App\Models\Order;
 use App\Models\OrderActivityLog;
 use App\Models\StoreProduct;
@@ -16,7 +17,7 @@ class OrderStateMachine
 
     private static function map(): array
     {
-        if (!empty(self::$transitions)) {
+        if (! empty(self::$transitions)) {
             return self::$transitions;
         }
 
@@ -49,6 +50,7 @@ class OrderStateMachine
     public function canTransition(OrderStatus $from, OrderStatus $to): bool
     {
         $allowed = self::map()[$from->value] ?? [];
+
         return in_array($to->value, $allowed, true);
     }
 
@@ -60,7 +62,7 @@ class OrderStateMachine
             throw new InvalidArgumentException("Order is already in status: {$to->value}");
         }
 
-        if (!$this->canTransition($from, $to)) {
+        if (! $this->canTransition($from, $to)) {
             throw new InvalidArgumentException(
                 "Cannot transition from {$from->value} to {$to->value}"
             );
@@ -85,13 +87,15 @@ class OrderStateMachine
         $order->status = $to;
         $order->save();
 
+        OrderStatusChanged::dispatch($order, $from->value, $to->value);
+
         $log = OrderActivityLog::create([
             'order_id' => $order->id,
             'user_id' => $actor?->id,
             'event_type' => $eventType->value,
             'old_status' => $from->value,
             'new_status' => $to->value,
-            'metadata' => !empty($metadata) ? $metadata : null,
+            'metadata' => ! empty($metadata) ? $metadata : null,
             'created_at' => now(),
         ]);
 

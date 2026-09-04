@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Store;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class StoreController extends Controller
 {
@@ -16,6 +17,7 @@ class StoreController extends Controller
         if ($request->has('per_page') || $request->has('page')) {
             return response()->json($paginator);
         }
+
         return response()->json(['data' => $paginator->items(), 'meta' => [
             'current_page' => $paginator->currentPage(),
             'last_page' => $paginator->lastPage(),
@@ -52,7 +54,7 @@ class StoreController extends Controller
 
         $validated = $request->validate([
             'name' => 'string|max:255',
-            'slug' => 'string|max:255|unique:stores,slug,' . $id,
+            'slug' => 'string|max:255|unique:stores,slug,'.$id,
             'description' => 'nullable|string',
             'address' => 'string|max:255',
             'city' => 'string|max:100',
@@ -74,7 +76,22 @@ class StoreController extends Controller
 
     public function destroy(int $id): JsonResponse
     {
-        Store::findOrFail($id)->delete();
+        $store = Store::findOrFail($id);
+
+        $activeOrders = DB::table('orders')
+            ->where('store_id', $id)
+            ->whereNotIn('status', ['delivered', 'cancelled'])
+            ->count();
+        if ($activeOrders > 0) {
+            return response()->json(['message' => 'Cannot delete store with active orders', 'reason' => 'has_active_orders'], 409);
+        }
+
+        $staffCount = DB::table('store_staff')->where('store_id', $id)->count();
+        if ($staffCount > 0) {
+            return response()->json(['message' => 'Cannot delete store with assigned staff', 'reason' => 'has_staff'], 409);
+        }
+
+        $store->delete();
 
         return response()->json(['message' => 'Deleted']);
     }

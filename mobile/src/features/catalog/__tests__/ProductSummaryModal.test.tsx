@@ -15,6 +15,7 @@ const product: ProductVO = {
   description: null,
   unit: 'each',
   categoryId: 2,
+  categoryName: 'Bakery',
   tags: [],
   images: [],
   basePriceCents: 1500,

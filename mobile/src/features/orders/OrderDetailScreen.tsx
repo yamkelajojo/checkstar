@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { View, Text, ScrollView, Pressable, Alert, TextInput } from 'react-native';
-import { Check, Star } from 'lucide-react-native';
+import { Check, RefreshCw, Star } from 'lucide-react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as Notifications from 'expo-notifications';
@@ -18,6 +18,9 @@ import { SkeletonCard } from '../../components/shared/SkeletonCard';
 import { haptic } from '../../lib/haptics';
 import { useToast } from '../../components/shared/GlassToast';
 import { copy } from '../../lib/strings';
+import { useCart } from '../cart/store';
+import { POLL_BASE_MS, POLL_MAX_MS } from '../../lib/constants';
+import { LiveDeliveryMap } from '../../components/shared/LiveDeliveryMap';
 import type { RootStackParamList } from '../../navigation/types';
 import {
   STATUS_STEPS,
@@ -71,8 +74,8 @@ export function OrderDetailScreen() {
   const toast = useToast();
 
   const adaptivePoll = useAdaptivePoll(queryClient, queryKeys.order(orderId) as unknown as unknown[], {
-    baseIntervalMs: 10_000,
-    maxIntervalMs: 60_000,
+    baseIntervalMs: POLL_BASE_MS,
+    maxIntervalMs: POLL_MAX_MS,
     backoffMultiplier: 2,
     shouldPoll: () => isPollingStatus(order?.status),
     onError: (error) => {
@@ -139,6 +142,27 @@ export function OrderDetailScreen() {
   const cancellableNow = cancellable(order);
   const awaitingConfirm = isAwaitingDeliveryConfirmation(order.status);
   const reviewable = canReview(order.status, order.rider_rating);
+  const canReorder = order.status !== 'pending' && order.status !== 'preparing';
+
+  const handleReorder = () => {
+    if (!order?.items) return;
+    let added = 0;
+    let skipped = 0;
+    for (const item of order.items) {
+      try {
+        useCart.getState().add(String(item.product_id), item.quantity);
+        added++;
+      } catch {
+        skipped++;
+      }
+    }
+    haptic.success();
+    if (skipped === 0) {
+      toast.show(`${added} item(s) added to cart`, { tone: 'success' });
+    } else {
+      toast.show(`${added} added, ${skipped} skipped`, { tone: 'success' });
+    }
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background.primary }}>
@@ -189,6 +213,24 @@ export function OrderDetailScreen() {
             )}
           </View>
 
+          {/* Live delivery map — shown during confirmed, preparing, and out_for_delivery */}
+          {['confirmed', 'preparing', 'out_for_delivery'].includes(order.status) && order.store && (
+            <LiveDeliveryMap
+              orderId={orderId}
+              orderStatus={order.status}
+              storeName={order.store.name}
+              storeLat={order.store.latitude ?? undefined}
+              storeLng={order.store.longitude ?? undefined}
+              deliveryAddress={order.delivery_address}
+              deliveryLat={order.delivery_latitude ?? undefined}
+              deliveryLng={order.delivery_longitude ?? undefined}
+              distanceKm={undefined}
+              durationMinutes={undefined}
+              riderName={order.rider?.user?.name}
+              mapHeight={300}
+            />
+          )}
+
           {/* Address + rider */}
           <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: semanticRadius.card, padding: semanticSpacing.md, gap: semanticSpacing.xxs }}>
             <Text style={{ fontWeight: fontWeight.bold, color: theme.colors.text.primary, ...textStyle.body }}>{copy.orders.delivery}</Text>
@@ -226,6 +268,21 @@ export function OrderDetailScreen() {
               <Text style={{ fontWeight: fontWeight.bold, color: theme.colors.text.primary, ...textStyle.body }}>{formatZar(order.total_cents ?? 0)}</Text>
             </View>
           </View>
+
+          {/* Reorder */}
+          {canReorder && (
+            <TactilePressable
+              onPress={handleReorder}
+              haptic="commit"
+              accessibilityRole="button"
+              style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: semanticSpacing.xxs, backgroundColor: theme.colors.surface.primary, borderRadius: semanticRadius.buttonPill, paddingVertical: semanticSpacing.sm, borderWidth: 1, borderColor: brand.orange }}
+            >
+              <RefreshCw size={16} color={brand.orange} />
+              <Text style={{ color: brand.orange, fontWeight: fontWeight.semibold, ...textStyle.bodySmall }}>
+                Reorder
+              </Text>
+            </TactilePressable>
+          )}
 
           {/* Payment */}
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
@@ -284,7 +341,7 @@ export function OrderDetailScreen() {
             accessibilityRole="button"
             style={{ backgroundColor: brand.success, borderRadius: semanticRadius.buttonPill }}
           >
-            <Text style={{ color: theme.colors.text.inverse, textAlign: 'center', fontWeight: fontWeight.bold, textTransform: 'uppercase', letterSpacing: letterSpacing.wide, ...textStyle.buttonPrimary }}>
+            <Text style={{ color: theme.colors.text.inverse, textAlign: 'center', fontWeight: fontWeight.bold, textTransform: 'uppercase', ...textStyle.buttonPrimary }}>
               {copy.orders.confirmReceived}
             </Text>
           </TactilePressable>
@@ -358,7 +415,7 @@ function ReviewCard({ orderId, onDone }: { orderId: number; onDone: () => void }
         accessibilityRole="button"
         style={{ backgroundColor: rating > 0 ? brand.orange : theme.colors.border.subtle, borderRadius: semanticRadius.buttonPill, opacity: rating > 0 ? 1 : 0.6 }}
       >
-        <Text style={{ color: rating > 0 ? theme.colors.text.inverse : theme.colors.text.secondary, textAlign: 'center', fontWeight: fontWeight.bold, textTransform: 'uppercase', letterSpacing: letterSpacing.wide, ...textStyle.buttonPrimary }}>
+        <Text style={{ color: rating > 0 ? theme.colors.text.inverse : theme.colors.text.secondary, textAlign: 'center', fontWeight: fontWeight.bold, textTransform: 'uppercase', ...textStyle.buttonPrimary }}>
           {submitting ? '\u2026' : copy.review.cta}
         </Text>
       </TactilePressable>

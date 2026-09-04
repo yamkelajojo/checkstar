@@ -24,6 +24,7 @@ export interface ProductVO {
   description: string | null;
   unit: string;
   categoryId: number;
+  categoryName: string | null;
   tags: string[];
   images: string[];
   basePriceCents: number;
@@ -64,6 +65,7 @@ export function mapProduct(api: ApiProduct): ProductVO {
     description: api.description ?? null,
     unit: api.unit,
     categoryId: api.category_id,
+    categoryName: api.category?.name ?? null,
     tags: api.tags ?? [],
     images: api.images ?? [],
     basePriceCents,

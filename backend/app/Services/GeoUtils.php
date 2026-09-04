@@ -6,6 +6,7 @@ class GeoUtils
 {
     /**
      * Calculate distance between two points using the Haversine formula.
+     *
      * @return float Distance in kilometers
      */
     public static function haversineDistance(float $lat1, float $lng1, float $lat2, float $lng2): float

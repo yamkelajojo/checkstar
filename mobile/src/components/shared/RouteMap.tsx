@@ -150,7 +150,7 @@ export function RouteMap({
             ]}
             strokeColor={brand.primary}
             strokeWidth={2}
-            strokeDashlengths={[8, 4]}
+            lineDashPattern={[8, 4]}
           />
         )}
       </MapView>

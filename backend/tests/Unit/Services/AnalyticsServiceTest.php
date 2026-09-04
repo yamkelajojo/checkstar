@@ -17,7 +17,7 @@ class AnalyticsServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new AnalyticsService();
+        $this->service = new AnalyticsService;
     }
 
     private function createStore(): int
@@ -55,8 +55,9 @@ class AnalyticsServiceTest extends TestCase
     {
         static $num = 0;
         $num++;
+
         return DB::table('orders')->insertGetId(array_merge([
-            'order_number' => 'ANALYTICS-' . str_pad($num, 4, '0', STR_PAD_LEFT),
+            'order_number' => 'ANALYTICS-'.str_pad($num, 4, '0', STR_PAD_LEFT),
             'customer_id' => $customerId,
             'store_id' => $storeId,
             'status' => 'delivered',

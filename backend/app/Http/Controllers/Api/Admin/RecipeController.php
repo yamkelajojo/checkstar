@@ -16,6 +16,7 @@ class RecipeController extends Controller
         if ($request->has('per_page') || $request->has('page')) {
             return response()->json($paginator);
         }
+
         return response()->json(['data' => $paginator->items(), 'meta' => [
             'current_page' => $paginator->currentPage(),
             'last_page' => $paginator->lastPage(),
@@ -50,7 +51,7 @@ class RecipeController extends Controller
 
         $validated = $request->validate([
             'title' => 'string|max:255',
-            'slug' => 'string|max:255|unique:recipes,slug,' . $id,
+            'slug' => 'string|max:255|unique:recipes,slug,'.$id,
             'description' => 'nullable|string',
             'ingredients' => 'array',
             'method' => 'string',

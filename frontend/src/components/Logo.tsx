@@ -58,7 +58,7 @@ export function Logo({ variant = 'lockup', size = 28, tone = 'dark', className }
 function Wordmark({ tone, size, showTagline }: { tone: 'light' | 'dark'; size: number; showTagline: boolean }) {
   const color = tone === 'dark' ? '#1B1816' : '#FFFCF9';
   return (
-    <div className="flex flex-col leading-none overflow-hidden">
+    <div className="flex flex-col leading-none">
       <span
         className="font-extrabold tracking-tight"
         style={{

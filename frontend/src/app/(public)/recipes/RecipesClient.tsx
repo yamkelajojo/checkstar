@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { motion } from 'motion/react'
 import { Clock, Users, ChefHat, ArrowRight } from 'lucide-react'
 import { useRecipes } from '@/lib/query'
@@ -89,12 +90,14 @@ className={`px-3 py-1.5 rounded-full text-sm font-light transition-colors ${
               <motion.div key={recipe.id} variants={fadeUp}>
                 <Link href={`/recipes/${recipe.slug}`} className="block group">
                   <div className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                    <div className="aspect-[4/3] bg-gray-50 overflow-hidden">
+                    <div className="relative aspect-[4/3] bg-gray-50 overflow-hidden">
                       {recipe.image ? (
-                        <img
+                        <Image
                           src={recipe.image}
                           alt={recipe.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          fill
+                          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                          className="object-cover group-hover:scale-105 transition-transform duration-500"
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-gray-200">

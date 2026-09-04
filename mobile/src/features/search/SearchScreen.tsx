@@ -17,10 +17,10 @@ import { FadeEdgeScroll } from '../../components/shared/FadeEdgeScroll';
 import { useCategories } from '../catalog/hooks';
 import { storage, STORAGE_KEYS } from '../../lib/storage';
 import { semanticSpacing } from '../../theme/spacing';
+import { SEARCH_DEBOUNCE_MS } from '../../lib/constants';
 import type { ProductVO, StoreAvailabilityVO } from '../../lib/product';
 import { findStoreAvailability } from '../../lib/product';
-
-const DEBOUNCE_MS = 400;
+import { trackSearch, trackCategoryFilterTap } from '../../services/trackingService';
 
 export function SearchScreen() {
   const theme = useTheme();
@@ -32,7 +32,7 @@ export function SearchScreen() {
   const { data: categories = [] } = useCategories();
 
   useEffect(() => {
-    const timer = setTimeout(() => setDebounced(term), DEBOUNCE_MS);
+    const timer = setTimeout(() => setDebounced(term), SEARCH_DEBOUNCE_MS);
     return () => clearTimeout(timer);
   }, [term]);
 
@@ -55,6 +55,13 @@ export function SearchScreen() {
 
   // Flatten all pages into a single array
   const results = data?.pages.flatMap((page) => page.products) ?? [];
+
+  // Fire-and-forget: track search intent
+  useEffect(() => {
+    if (searching && !isLoading) {
+      trackSearch(debounced, undefined, results.length);
+    }
+  }, [debounced, searching, isLoading, results.length]);
 
   const recordSearch = () => {
     if (debounced.length < 2) return;
@@ -148,9 +155,9 @@ export function SearchScreen() {
               contentPaddingRight={16}
               backgroundColor={theme.colors.background.primary}
             >
-              {categories.map((c) => (
-                <CollectionPill key={c.id} label={c.name} onPress={() => setTerm(c.name)} />
-              ))}
+                {categories.map((c) => (
+                  <CollectionPill key={c.id} label={c.name} onPress={() => { trackCategoryFilterTap(c.id, c.name, 0); setTerm(c.name); }} />
+                ))}
             </FadeEdgeScroll>
           </View>
         </View>

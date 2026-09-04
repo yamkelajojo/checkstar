@@ -6,20 +6,19 @@ use App\Enums\StaffRole;
 use App\Http\Controllers\Controller;
 use App\Models\StoreStaff;
 use App\Services\StoreContext;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class StaffController extends Controller
 {
-    public function __construct(private StoreContext $storeContext)
-    {
-    }
+    public function __construct(private StoreContext $storeContext) {}
 
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'user_id' => 'required|exists:users,id',
-            'role' => 'required|in:' . implode(',', array_column(StaffRole::cases(), 'value')),
+            'role' => 'required|in:'.implode(',', array_column(StaffRole::cases(), 'value')),
             'store_id' => 'nullable|integer|exists:stores,id',
         ]);
 
@@ -43,7 +42,7 @@ class StaffController extends Controller
                 'store_id' => $store->id,
                 'role' => $validated['role'],
             ]);
-        } catch (\Illuminate\Database\QueryException $e) {
+        } catch (QueryException $e) {
             return response()->json(['message' => 'Assignment conflict', 'reason' => 'duplicate_assignment'], 409);
         }
 

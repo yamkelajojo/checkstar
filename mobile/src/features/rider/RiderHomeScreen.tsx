@@ -1,5 +1,5 @@
-import { View, Text, FlatList, ScrollView, RefreshControl } from 'react-native';
-import { Bike, Star, PackageCheck, ShoppingBag } from 'lucide-react-native';
+import { View, Text, ScrollView, RefreshControl } from 'react-native';
+import { Bike, Star, PackageCheck, ShoppingBag, User, Package, Inbox, Clock } from 'lucide-react-native';
 import { useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -22,9 +22,10 @@ import { useToast } from '../../components/shared/GlassToast';
 import { copy } from '../../lib/strings';
 import type { RootStackParamList } from '../../navigation/types';
 import { useAdaptivePoll, createAdaptiveRefetchInterval } from '../../lib/adaptivePoll';
+import { useRiderLocationUpdates } from './useRiderLocationUpdates';
 
-const BASE_POLL_MS = 15_000;
-const MAX_POLL_MS = 60_000;
+import { getOrderTotal } from '../../lib/orderTotal';
+import { POLL_BASE_MS, POLL_MAX_MS } from '../../lib/constants';
 
 export function RiderHomeScreen() {
   const theme = useTheme();
@@ -35,6 +36,10 @@ export function RiderHomeScreen() {
   const isAvailable = user?.rider?.is_available ?? false;
   const [toggling, setToggling] = useState(false);
   const [claimingId, setClaimingId] = useState<number | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Send location updates while rider has active deliveries
+  useRiderLocationUpdates();
 
   const { data: stats } = useQuery({
     queryKey: queryKeys.riderStats,
@@ -42,28 +47,28 @@ export function RiderHomeScreen() {
   });
 
   const activePoll = useAdaptivePoll(queryClient, queryKeys.activeDeliveries as unknown as unknown[], {
-    baseIntervalMs: BASE_POLL_MS,
-    maxIntervalMs: MAX_POLL_MS,
+    baseIntervalMs: POLL_BASE_MS,
+    maxIntervalMs: POLL_MAX_MS,
     backoffMultiplier: 2,
-    shouldPoll: () => true, // Always poll active deliveries
+    shouldPoll: () => true,
     onError: (error) => console.warn('[RiderHome] Active deliveries polling error:', error),
   });
 
   const availablePoll = useAdaptivePoll(queryClient, queryKeys.availableOrders as unknown as unknown[], {
-    baseIntervalMs: BASE_POLL_MS,
-    maxIntervalMs: MAX_POLL_MS,
+    baseIntervalMs: POLL_BASE_MS,
+    maxIntervalMs: POLL_MAX_MS,
     backoffMultiplier: 2,
-    shouldPoll: () => isAvailable, // Only poll when available
+    shouldPoll: () => isAvailable,
     onError: (error) => console.warn('[RiderHome] Available orders polling error:', error),
   });
 
-  const { data: active = [] } = useQuery({
+  const { data: active = [], error: activeError } = useQuery({
     queryKey: queryKeys.activeDeliveries,
     queryFn: fetchActiveDeliveries,
     refetchInterval: createAdaptiveRefetchInterval(activePoll),
   });
 
-  const { data: available = [] } = useQuery({
+  const { data: available = [], error: availableError } = useQuery({
     queryKey: queryKeys.availableOrders,
     queryFn: fetchAvailableOrders,
     refetchInterval: createAdaptiveRefetchInterval(availablePoll),
@@ -75,11 +80,18 @@ export function RiderHomeScreen() {
     void queryClient.invalidateQueries({ queryKey: queryKeys.riderStats });
   };
 
+  const onRefresh = async () => {
+    setRefreshing(true);
+    invalidate();
+    // Brief delay so spinner is visible
+    await new Promise((r) => setTimeout(r, 600));
+    setRefreshing(false);
+  };
+
   const onToggle = async () => {
     setToggling(true);
     try {
       await toggleAvailability();
-      // Refresh session user to reflect new availability (RiderHomeScreen derives isAvailable from session)
       try {
         const { fetchCurrentUser } = await import('../../lib/apiClient');
         const fresh = await fetchCurrentUser();
@@ -95,14 +107,21 @@ export function RiderHomeScreen() {
   };
 
   const onClaim = async (orderId: number) => {
-    if (claimingId != null) return; // prevent double-tap
+    if (claimingId != null) return;
     setClaimingId(orderId);
     try {
       await claimOrder(orderId);
       invalidate();
       navigation.navigate('RiderOrderDetail', { orderId });
-    } catch {
-      toast.show(copy.auth.alreadyClaimed);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : '';
+      if (msg.includes('already claimed') || msg.includes('unavailable')) {
+        toast.show(copy.auth.alreadyClaimed);
+      } else if (msg.includes('network') || msg.includes('Network')) {
+        toast.show('Network error — check your connection.');
+      } else {
+        toast.show('Could not claim order. Try again.');
+      }
       invalidate();
     } finally {
       setClaimingId(null);
@@ -115,7 +134,7 @@ export function RiderHomeScreen() {
     </Text>
   );
 
-  const orderCard = (order: { id: number; status: string; total_cents: number | null; store?: { name?: string } | null; created_at: string }) => (
+  const orderCard = (order: { id: number; status: string; total?: number | string | null; total_cents?: number | null; store?: { name?: string } | null; created_at: string }) => (
     <TactilePressable
       key={order.id}
       variant="card"
@@ -130,18 +149,20 @@ export function RiderHomeScreen() {
           {statusBadge(order.status)}
         </View>
         <Text style={{ fontSize: typeScale.caption, color: theme.colors.text.secondary }}>
-          {order.store?.name ?? 'Checkstar'} · {formatZar(order.total_cents ?? 0)}
+          {order.store?.name ?? 'Checkstar'} · {formatZar(getOrderTotal(order))}
         </Text>
       </View>
     </TactilePressable>
   );
+
+  const hasError = !!activeError || !!availableError;
 
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: theme.colors.bg }}
       contentContainerStyle={{ paddingBottom: 32 }}
       showsVerticalScrollIndicator={false}
-      refreshControl={<RefreshControl refreshing={false} onRefresh={invalidate} tintColor={theme.colors.action.primary.background} />}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.action.primary.background} />}
     >
       <View style={{ paddingTop: 56, paddingHorizontal: 16, gap: 16 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -154,6 +175,23 @@ export function RiderHomeScreen() {
             </Text>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <TactilePressable
+              onPress={() => navigation.navigate('RiderHistory')}
+              haptic="selection"
+              accessibilityRole="button"
+              accessibilityLabel="Delivery history"
+              style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: theme.colors.surface.primary, alignItems: 'center', justifyContent: 'center' }}
+            >
+              <Clock size={18} color={theme.colors.text.secondary} />
+            </TactilePressable>
+            <TactilePressable
+              onPress={() => navigation.navigate('RiderProfile')}
+              haptic="selection"
+              accessibilityRole="button"
+              style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: theme.colors.surface.primary, alignItems: 'center', justifyContent: 'center' }}
+            >
+              <User size={18} color={theme.colors.text.secondary} />
+            </TactilePressable>
             <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: isAvailable ? theme.colors.status.success.primary : theme.colors.text.tertiary }} />
             <Text style={{ color: theme.colors.text.secondary, fontWeight: weights.semibold }}>
               {isAvailable ? copy.rider.available : copy.rider.offline}
@@ -182,10 +220,18 @@ export function RiderHomeScreen() {
         </View>
       </View>
 
+      {hasError && (
+        <View style={{ marginHorizontal: 16, marginTop: 12, backgroundColor: theme.colors.status.error.primary + '15', borderRadius: 12, padding: 12 }}>
+          <Text style={{ color: theme.colors.status.error.primary, fontSize: typeScale.caption, fontWeight: weights.semibold }}>
+            Connection issue — showing cached data
+          </Text>
+        </View>
+      )}
+
       <View style={{ marginTop: 20 }}>
         <SectionTitle title={copy.rider.activeDeliveries} />
         {active.length === 0 ? (
-          <Text style={{ color: theme.colors.text.secondary, paddingHorizontal: 16 }}>{copy.rider.emptyActive}</Text>
+          <EmptyState icon={Package} title={copy.rider.emptyActive} caption="Orders you've claimed will appear here" />
         ) : (
           <View style={{ paddingHorizontal: 16, gap: 12 }}>
             {active.map((o) => orderCard(o))}
@@ -196,7 +242,7 @@ export function RiderHomeScreen() {
       <View style={{ marginTop: 20 }}>
         <SectionTitle title={copy.rider.availableOrders} />
         {available.length === 0 ? (
-          <Text style={{ color: theme.colors.text.secondary, paddingHorizontal: 16 }}>{copy.rider.emptyAvailable}</Text>
+          <EmptyState icon={Inbox} title={copy.rider.emptyAvailable} caption="New orders to claim will appear here" />
         ) : (
           <View style={{ paddingHorizontal: 16, gap: 12 }}>
             {available.map((o) => (
@@ -206,7 +252,7 @@ export function RiderHomeScreen() {
                   {statusBadge(o.status)}
                 </View>
                 <Text style={{ fontSize: typeScale.caption, color: theme.colors.text.secondary }}>
-                  {o.store?.name ?? 'Checkstar'} · {formatZar(o.total_cents ?? 0)}
+                  {o.store?.name ?? 'Checkstar'} · {formatZar(getOrderTotal(o))}
                 </Text>
                 <TactilePressable
                   onPress={() => onClaim(o.id)}
@@ -214,7 +260,7 @@ export function RiderHomeScreen() {
                   disabled={claimingId != null}
                   accessibilityRole="button"
                   accessibilityState={{ busy: claimingId === o.id }}
-                  style={{ backgroundColor: theme.colors.action.primary.background, borderRadius: 999, marginTop: 4, opacity: claimingId != null ? 0.6 : 1 }}
+                  style={{ backgroundColor: theme.colors.action.primary.background, borderRadius: 999, marginTop: 4, opacity: claimingId === o.id ? 0.6 : 1 }}
                 >
                   <Text style={{ color: theme.colors.action.primary.foreground, textAlign: 'center', fontWeight: weights.bold, textTransform: 'uppercase', letterSpacing: letterSpacing.wide, fontSize: typeScale.caption }}>
                     {claimingId === o.id ? copy.rider.claiming : copy.rider.claim}

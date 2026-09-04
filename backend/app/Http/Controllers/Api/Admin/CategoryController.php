@@ -16,6 +16,7 @@ class CategoryController extends Controller
         if ($request->has('per_page') || $request->has('page')) {
             return response()->json($paginator);
         }
+
         return response()->json(['data' => $paginator->items(), 'meta' => [
             'current_page' => $paginator->currentPage(),
             'last_page' => $paginator->lastPage(),
@@ -52,7 +53,7 @@ class CategoryController extends Controller
 
         $validated = $request->validate([
             'name' => 'string|max:255',
-            'slug' => 'string|max:255|unique:categories,slug,' . $id,
+            'slug' => 'string|max:255|unique:categories,slug,'.$id,
             'description' => 'nullable|string',
             'image' => 'nullable|string|max:255',
             'icon' => 'nullable|string|max:255',

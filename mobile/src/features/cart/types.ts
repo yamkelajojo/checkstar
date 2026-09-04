@@ -10,4 +10,4 @@ export interface CartAddTarget {
   storeProductId?: number | null;
 }
 
-export const MAX_QUANTITY = 8;
+export { MAX_QUANTITY_PER_ITEM as MAX_QUANTITY } from '../../lib/constants';

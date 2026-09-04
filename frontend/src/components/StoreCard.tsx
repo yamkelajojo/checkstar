@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { motion } from 'motion/react'
 import { MapPin, Phone, Clock } from 'lucide-react'
 import type { Store } from '@/types'
@@ -18,8 +19,8 @@ export default function StoreCard({ store }: Props) {
       className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow"
     >
       {store.image && (
-        <div className="aspect-[2/1] bg-gray-50">
-          <img src={store.image} alt={store.name} className="w-full h-full object-cover" />
+        <div className="relative aspect-[2/1] bg-gray-50">
+          <Image src={store.image} alt={store.name} fill sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw" className="object-cover" />
         </div>
       )}
       <div className="p-5">

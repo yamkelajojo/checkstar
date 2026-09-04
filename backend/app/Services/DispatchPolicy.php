@@ -49,5 +49,8 @@ class DispatchPolicy
         return (int) Config::get('dispatch.retry_interval_seconds', 60);
     }
 
-
+    public function haversine(float $lat1, float $lng1, float $lat2, float $lng2): float
+    {
+        return GeoUtils::haversineDistance($lat1, $lng1, $lat2, $lng2);
+    }
 }

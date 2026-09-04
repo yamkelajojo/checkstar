@@ -14,6 +14,8 @@ import { ProductDetailScreen } from '../features/product/ProductDetailScreen';
 import { SearchScreen } from '../features/search/SearchScreen';
 import { RiderHomeScreen } from '../features/rider/RiderHomeScreen';
 import { RiderOrderDetailScreen } from '../features/rider/RiderOrderDetailScreen';
+import { RiderProfileScreen } from '../features/rider/RiderProfileScreen';
+import { RiderHistoryScreen } from '../features/rider/RiderHistoryScreen';
 import { RouteExplorerScreen } from '../features/route-explorer/RouteExplorerScreen';
 import { CustomerTabs } from './CustomerTabs';
 import type { RootStackParamList } from './types';
@@ -37,8 +39,13 @@ export function RootNavigator() {
     return <SplashScreen />;
   }
 
+  // Show splash while resolving onboarding state for guests
+  if (status === 'guest' && onboardingSeen === undefined) {
+    return <SplashScreen />;
+  }
+
   const isRider = user?.role === 'rider';
-  const showOnboarding = status === 'guest' && onboardingSeen === false;
+  const showOnboarding = status === 'guest' && onboardingSeen !== true;
   const branch = showOnboarding ? 'onboarding' : isRider ? 'rider' : 'customer';
   const navigatorKey = `${branch}-${signal}`;
 
@@ -56,6 +63,8 @@ export function RootNavigator() {
         <>
           <Stack.Screen name="RiderHome" component={RiderHomeScreen} />
           <Stack.Screen name="RiderOrderDetail" component={RiderOrderDetailScreen} />
+          <Stack.Screen name="RiderProfile" component={RiderProfileScreen} />
+          <Stack.Screen name="RiderHistory" component={RiderHistoryScreen} />
           <Stack.Screen name="RouteExplorer" component={RouteExplorerScreen} />
         </>
       ) : (

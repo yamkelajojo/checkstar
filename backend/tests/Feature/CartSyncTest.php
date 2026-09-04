@@ -14,6 +14,7 @@ class CartSyncTest extends TestCase
     use RefreshDatabase;
 
     private User $customer;
+
     private Product $product;
 
     protected function setUp(): void

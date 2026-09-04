@@ -4,9 +4,9 @@ require 'vendor/autoload.php';
 $app = require_once 'bootstrap/app.php';
 $app->make('Illuminate\Contracts\Console\Kernel')->bootstrap();
 
-use App\Models\StoreProduct;
-use App\Models\Store;
 use App\Models\Product;
+use App\Models\Store;
+use App\Models\StoreProduct;
 
 StoreProduct::query()->delete();
 
@@ -57,7 +57,7 @@ foreach ($products as $product) {
     }
 
     foreach ($stores as $store) {
-        $isAvailable = !in_array($store->id, $unavailableStoreIds);
+        $isAvailable = ! in_array($store->id, $unavailableStoreIds);
 
         if ($isAvailable) {
             // Good stock for available products (20-80)
@@ -81,7 +81,7 @@ foreach ($products as $product) {
 
 echo "Store products created for {$totalProducts} products\n";
 echo "Summary:\n";
-echo "  - Available at all stores: " . ($totalProducts - $unavailableAtOneStoreCount - $unavailableAtTwoStoresCount - $unavailableEverywhereCount) . "\n";
+echo '  - Available at all stores: '.($totalProducts - $unavailableAtOneStoreCount - $unavailableAtTwoStoresCount - $unavailableEverywhereCount)."\n";
 echo "  - Unavailable at 1 store: {$unavailableAtOneStoreCount}\n";
 echo "  - Unavailable at 2 stores: {$unavailableAtTwoStoresCount}\n";
 echo "  - Unavailable everywhere: {$unavailableEverywhereCount}\n";

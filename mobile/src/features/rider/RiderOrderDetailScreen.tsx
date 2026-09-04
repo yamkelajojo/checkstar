@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
-import { Check } from 'lucide-react-native';
+import { Check, AlertTriangle } from 'lucide-react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useTheme } from '../../theme';
 import { typeScale, weights, letterSpacing } from '../../theme/typography';
@@ -10,6 +10,7 @@ import { queryKeys } from '../../lib/queryKeys';
 import { formatZar } from '../../lib/currency';
 import { TactilePressable } from '../../components/shared/TactilePressable';
 import { SkeletonCard } from '../../components/shared/SkeletonCard';
+import { EmptyState } from '../../components/shared/EmptyState';
 import { useToast } from '../../components/shared/GlassToast';
 import { copy } from '../../lib/strings';
 import { toggleBoughtId, allItemsSelected, allItemIds } from './model';
@@ -17,6 +18,7 @@ import { RouteMap } from '../../components/shared/RouteMap';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../navigation/types';
 import { ORDER_STATUS_LABEL as STATUS_LABEL } from '../../lib/status';
+import { getOrderTotal } from '../../lib/orderTotal';
 
 export function RiderOrderDetailScreen() {
   const theme = useTheme();
@@ -28,12 +30,11 @@ export function RiderOrderDetailScreen() {
   const [boughtIds, setBoughtIds] = useState<number[]>([]);
   const [busy, setBusy] = useState(false);
 
-  // Reset boughtIds when navigating to a different order
   useEffect(() => {
     setBoughtIds([]);
   }, [orderId]);
 
-  const { data: order, isLoading } = useQuery({
+  const { data: order, isLoading, error } = useQuery({
     queryKey: queryKeys.order(orderId),
     queryFn: () => fetchOrder(orderId),
   });
@@ -72,14 +73,30 @@ export function RiderOrderDetailScreen() {
     }
   };
 
-  if (isLoading || !order) {
+  if (isLoading) {
     return (
-        <View style={{ flex: 1, backgroundColor: theme.colors.legacy.bg, padding: 16, paddingTop: 72 }}>
+      <View style={{ flex: 1, backgroundColor: theme.colors.bg, padding: 16, paddingTop: 72 }}>
         <SkeletonCard height={360} width={undefined} />
       </View>
     );
   }
 
+  if (error || !order) {
+    return (
+      <View style={{ flex: 1, backgroundColor: theme.colors.bg, padding: 16, paddingTop: 72 }}>
+        <EmptyState
+          icon={AlertTriangle}
+          title="Could not load order"
+          caption={error instanceof Error ? error.message : 'Order may have been removed'}
+        />
+        <TactilePressable onPress={() => navigation.goBack()} haptic="selection" style={{ marginTop: 16 }}>
+          <Text style={{ textAlign: 'center', color: theme.colors.text.secondary, fontWeight: weights.medium }}>{copy.orders.done}</Text>
+        </TactilePressable>
+      </View>
+    );
+  }
+
+  const isConfirmed = order.status === 'confirmed';
   const isPreparing = order.status === 'preparing';
   const isOutForDelivery = order.status === 'out_for_delivery';
   const isDelivered = order.status === 'delivered';
@@ -90,7 +107,7 @@ export function RiderOrderDetailScreen() {
   };
 
   const onBought = async () => {
-    const ids = allItemIds(order.items);
+    const ids = boughtIds.length > 0 ? boughtIds : allItemIds(order.items);
     setBusy(true);
     try {
       await markItemsBought(orderId, ids);
@@ -113,7 +130,7 @@ export function RiderOrderDetailScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: theme.colors.legacy.bg }}>
+    <View style={{ flex: 1, backgroundColor: theme.colors.bg }}>
       <ScrollView contentContainerStyle={{ paddingBottom: 140 }} showsVerticalScrollIndicator={false}>
         <View style={{ paddingTop: 56, paddingHorizontal: 16, gap: 16 }}>
           <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' }}>
@@ -184,14 +201,15 @@ export function RiderOrderDetailScreen() {
             {order.items.map((item) => {
               const name = (item.product_snapshot as { name?: string } | null)?.name ?? `Item ${item.product_id}`;
               const bought = boughtIds.includes(item.id);
+              const canToggle = isPreparing || isConfirmed;
               return (
                 <TactilePressable
                   key={item.id}
-                  onPress={() => isPreparing && toggleItem(item.id)}
-                  haptic={isPreparing ? 'selection' : undefined}
-                  disabled={!isPreparing}
+                  onPress={() => canToggle && toggleItem(item.id)}
+                  haptic={canToggle ? 'selection' : undefined}
+                  disabled={!canToggle}
                   accessibilityRole="button"
-                  accessibilityState={{ checked: isPreparing ? bought : undefined }}
+                  accessibilityState={{ checked: canToggle ? bought : undefined }}
                   style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}
                 >
                   <View
@@ -220,27 +238,32 @@ export function RiderOrderDetailScreen() {
             <View style={{ height: 1, backgroundColor: theme.colors.hairline }} />
             <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
               <Text style={{ color: theme.colors.text.secondary }}>{copy.checkout.total}</Text>
-              <Text style={{ fontWeight: weights.bold, color: theme.colors.text.primary }}>{formatZar(order.total_cents ?? 0)}</Text>
+              <Text style={{ fontWeight: weights.bold, color: theme.colors.text.primary }}>{formatZar(getOrderTotal(order))}</Text>
             </View>
           </View>
         </View>
       </ScrollView>
 
-      <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: 16, borderTopWidth: 1, borderTopColor: theme.colors.hairline, backgroundColor: theme.colors.legacy.bg, gap: 8 }}>
-        {isPreparing && (
+      <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: 16, borderTopWidth: 1, borderTopColor: theme.colors.hairline, backgroundColor: theme.colors.bg, gap: 8 }}>
+        {isConfirmed && (
+          <Text style={{ textAlign: 'center', color: theme.colors.text.tertiary, fontSize: typeScale.caption, marginBottom: 4 }}>
+            Waiting for store to start preparing...
+          </Text>
+        )}
+        {(isPreparing || isConfirmed) && (
           <>
             <TactilePressable
               onPress={onBought}
               haptic="commit"
-              disabled={busy}
+              disabled={busy || isConfirmed}
               accessibilityRole="button"
-              style={{ backgroundColor: theme.colors.action.primary.background, borderRadius: 999, opacity: busy ? 0.6 : 1 }}
+              style={{ backgroundColor: theme.colors.action.primary.background, borderRadius: 999, opacity: busy || isConfirmed ? 0.6 : 1 }}
             >
               <Text style={{ color: theme.colors.action.primary.foreground, textAlign: 'center', fontWeight: weights.bold, textTransform: 'uppercase', letterSpacing: letterSpacing.wide }}>
                 {copy.rider.markItemsBought}
               </Text>
             </TactilePressable>
-            {allSelected && (
+            {allSelected && !isConfirmed && (
               <TactilePressable
                 onPress={onOutForDelivery}
                 haptic="commit"

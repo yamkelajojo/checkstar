@@ -2,11 +2,10 @@
 
 namespace App\Services;
 
+use App\Models\Product;
 use App\Models\Store;
 use App\Models\StoreProduct;
-use App\Models\Product;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Config;
 
 class StoreFulfillmentService
 {
@@ -17,7 +16,6 @@ class StoreFulfillmentService
     /**
      * Normalize cart items to handle both formats: [product_id => qty] and [{product_id, quantity}].
      *
-     * @param array $cartItems
      * @return array<int, array{product_id: int, quantity: int}>
      */
     private function normalizeCartItems(array $cartItems): array
@@ -32,16 +30,14 @@ class StoreFulfillmentService
                 $normalized[] = $item;
             }
         }
+
         return $normalized;
     }
 
     /**
      * Resolve the best fulfillment store for a complete cart.
      *
-     * @param array<int, array{product_id: int, quantity: int}> $cartItems
-     * @param float $customerLat
-     * @param float $customerLng
-     * @return FulfillmentResult
+     * @param  array<int, array{product_id: int, quantity: int}>  $cartItems
      */
     public function resolve(array $cartItems, float $customerLat, float $customerLng): FulfillmentResult
     {
@@ -76,6 +72,7 @@ class StoreFulfillmentService
         if ($fulfillableStores->isEmpty()) {
             // No store can fulfill the complete cart - identify which items prevent fulfillment
             $unfulfillableItems = $this->getUnfulfillableItems($cartItems, $eligibleStores);
+
             return new FulfillmentResult(
                 success: false,
                 store: null,
@@ -118,7 +115,7 @@ class StoreFulfillmentService
             $quantity = $item['quantity'];
 
             $sp = $storeProducts->get($productId);
-            if (!$sp) {
+            if (! $sp) {
                 return false; // Product not available at this store
             }
             if ($sp->stock_quantity < $quantity) {
@@ -157,7 +154,7 @@ class StoreFulfillmentService
                 }
             }
 
-            if (!$canFulfillAnywhere) {
+            if (! $canFulfillAnywhere) {
                 $product = Product::find($productId);
                 $unfulfillable[] = [
                     'product_id' => $productId,

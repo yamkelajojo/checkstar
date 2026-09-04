@@ -24,8 +24,11 @@ class DispatchServiceTest extends TestCase
     use RefreshDatabase;
 
     private DispatchService $service;
+
     private User $customer;
+
     private Store $store1;
+
     private Store $store2;
 
     protected function setUp(): void
@@ -76,7 +79,7 @@ class DispatchServiceTest extends TestCase
     private function createConfirmedOrder(?float $lat = null, ?float $lng = null, ?Store $store = null): Order
     {
         return Order::create([
-            'order_number' => 'ORD-' . strtoupper(uniqid()),
+            'order_number' => 'ORD-'.strtoupper(uniqid()),
             'customer_id' => $this->customer->id,
             'store_id' => $store->id ?? $this->store1->id,
             'status' => OrderStatus::Confirmed,
@@ -92,8 +95,8 @@ class DispatchServiceTest extends TestCase
     private function createRider(Store $store, bool $available = true, float $maxRadius = 10): Rider
     {
         $user = User::create([
-            'name' => 'Rider ' . uniqid(),
-            'email' => 'rider_' . uniqid() . '@test.com',
+            'name' => 'Rider '.uniqid(),
+            'email' => 'rider_'.uniqid().'@test.com',
             'password' => bcrypt('password'),
             'role' => UserRole::Rider,
             'is_active' => true,

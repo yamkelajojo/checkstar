@@ -59,6 +59,46 @@ export function useBanners() {
   })
 }
 
+export function useAdminBanners() {
+  return useQuery({
+    queryKey: ['admin-banners'],
+    queryFn: () => api.getAdminBanners().then(r => r.data),
+  })
+}
+
+export function useCreateBanner() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: Parameters<typeof api.createBanner>[0]) => api.createBanner(data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-banners'] })
+      qc.invalidateQueries({ queryKey: ['banners'] })
+    },
+  })
+}
+
+export function useUpdateBanner() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, ...data }: { id: number } & Parameters<typeof api.updateBanner>[1]) => api.updateBanner(id, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-banners'] })
+      qc.invalidateQueries({ queryKey: ['banners'] })
+    },
+  })
+}
+
+export function useDeleteBanner() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => api.deleteBanner(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-banners'] })
+      qc.invalidateQueries({ queryKey: ['banners'] })
+    },
+  })
+}
+
 export function useStores() {
   return useQuery({
     queryKey: ['stores'],
@@ -193,6 +233,76 @@ export function useAdvanceOrder() {
       qc.invalidateQueries({ queryKey: ['active-deliveries'] })
       qc.invalidateQueries({ queryKey: ['rider-stats'] })
       qc.invalidateQueries({ queryKey: ['rider-history'] })
+    },
+  })
+}
+
+export function useOperationsMetrics() {
+  return useQuery({
+    queryKey: ['operations-metrics'],
+    queryFn: () => api.getOperationsMetrics(),
+    refetchInterval: 30000,
+  })
+}
+
+export function useOperationsAlerts() {
+  return useQuery({
+    queryKey: ['operations-alerts'],
+    queryFn: () => api.getOperationsAlerts(),
+    refetchInterval: 60000,
+  })
+}
+
+export function useOperationsEvents(params?: Record<string, string>) {
+  return useQuery({
+    queryKey: ['operations-events', params],
+    queryFn: () => api.getOperationsEvents(params),
+  })
+}
+
+export function useOperationsAuditLogs(params?: Record<string, string>) {
+  return useQuery({
+    queryKey: ['operations-audit-logs', params],
+    queryFn: () => api.getOperationsAuditLogs(params),
+  })
+}
+
+export function useAnalyticsSales(period?: string) {
+  return useQuery({
+    queryKey: ['analytics-sales', period],
+    queryFn: () => api.getAnalyticsSales(period),
+  })
+}
+
+export function useAnalyticsProducts(limit?: number) {
+  return useQuery({
+    queryKey: ['analytics-products', limit],
+    queryFn: () => api.getAnalyticsProducts(limit),
+  })
+}
+
+export function useAnalyticsRiders(period?: string) {
+  return useQuery({
+    queryKey: ['analytics-riders', period],
+    queryFn: () => api.getAnalyticsRiders(period),
+  })
+}
+
+export function useDispatchSuggestion(orderId: number) {
+  return useQuery({
+    queryKey: ['dispatch-suggestion', orderId],
+    queryFn: () => api.getDispatchSuggestion(orderId),
+    enabled: !!orderId,
+  })
+}
+
+export function useAssignRider() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ orderId, riderId, storeId }: { orderId: number; riderId: number; storeId?: number }) =>
+      api.assignRider(orderId, riderId, storeId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['operations-metrics'] })
     },
   })
 }

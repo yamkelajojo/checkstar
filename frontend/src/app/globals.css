@@ -101,6 +101,14 @@
   }
 }
 
+.product-carousel .swiper-wrapper {
+  flex-wrap: nowrap !important;
+}
+
+.product-carousel .swiper-slide {
+  flex-shrink: 0 !important;
+}
+
 .product-carousel .swiper-button-next,
 .product-carousel .swiper-button-prev {
   color: var(--color-primary);
@@ -123,19 +131,3 @@
   opacity: 1;
 }
 
-@keyframes marquee {
-  0% {
-    transform: translateX(0);
-  }
-  100% {
-    transform: translateX(-50%);
-  }
-}
-
-.marquee {
-  animation: marquee 30s linear infinite;
-}
-
-.marquee:hover {
-  animation-play-state: paused;
-}

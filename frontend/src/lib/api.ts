@@ -59,17 +59,18 @@ export const api = {
   getTrendingProducts: () => request<{ data: Product[] }>('/products/trending').then(r => r.data),
   getPopularProducts: () => request<{ data: Product[] }>('/products/popular').then(r => r.data),
   getNewArrivals: () => request<{ data: Product[] }>('/products/new-arrivals').then(r => r.data),
-  getAllProducts: async (params?: Record<string, string>): Promise<Product[]> => {
+  getAllProducts: async (params?: Record<string, string>, signal?: AbortSignal): Promise<Product[]> => {
     const query: Record<string, string> = { per_page: '100', ...params }
     const all: Product[] = []
     let page = 1
+    const maxPages = 20
 
-    while (true) {
-      const res = await request<Paginated<Product>>(`/products?${new URLSearchParams({ ...query, page: String(page) })}`)
+    while (page <= maxPages) {
+      const res = await request<Paginated<Product>>(`/products?${new URLSearchParams({ ...query, page: String(page) })}`, { signal })
       all.push(...res.data)
-      if (res.data.length === 0 || page >= res.last_page) break
+      if (res.data.length === 0) break
+      if (res.last_page && page >= res.last_page) break
       page++
-      if (page > 100) break
     }
 
     return all
@@ -77,6 +78,12 @@ export const api = {
   getProduct: (slug: string) => request<{ data: Product }>(`/products/${slug}`).then(r => r.data),
   getSpecials: () => request<{ data: Special[] }>('/specials'),
   getBanners: () => request<{ data: Banner[] }>('/banners'),
+  getAdminBanners: () => request<{ data: Banner[] }>('/admin/banners'),
+  createBanner: (data: { name: string; slides: Banner['slides']; status?: string; store_id?: number; start_date?: string; end_date?: string }) =>
+    request<{ data: Banner }>('/admin/banners', { method: 'POST', body: JSON.stringify(data) }),
+  updateBanner: (id: number, data: Partial<{ name: string; slides: Banner['slides']; status: string; store_id: number | null; start_date: string | null; end_date: string | null }>) =>
+    request<{ data: Banner }>(`/admin/banners/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteBanner: (id: number) => request<{ message: string }>(`/admin/banners/${id}`, { method: 'DELETE' }),
   getStores: () => request<{ data: Store[] }>('/stores'),
   getStore: (slug: string) => request<{ data: Store }>(`/stores/${slug}`),
   getRecipes: () => request<{ data: Recipe[] }>('/recipes'),
@@ -90,13 +97,17 @@ export const api = {
   login: (data: { email: string; password: string; remember?: boolean }) => request<{ user: User }>('/auth/login', { method: 'POST', body: JSON.stringify(data) }),
   logout: () => request<{ message: string }>('/auth/logout', { method: 'POST' }),
   getUser: () => request<{ user: User }>('/auth/user'),
+  forgotPassword: (email: string) => request<{ message: string }>('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) }),
+  resetPassword: (data: { token: string; email: string; password: string; password_confirmation: string }) => request<{ message: string }>('/auth/reset-password', { method: 'POST', body: JSON.stringify(data) }),
+  requestEmailVerification: () => request<{ message: string }>('/auth/email/verification-notification', { method: 'POST' }),
+  verifyEmail: (id: string, hash: string) => request<{ message: string }>(`/auth/verify-email/${id}/${hash}`),
   // Customer
   getOrders: (params?: Record<string, string>) => request<{ data: Order[] }>(`/orders${params ? `?${new URLSearchParams(params)}` : ''}`),
   getOrder: (id: number) => request<{ data: Order }>(`/orders/${id}`).then(r => r.data),
   placeOrder: (data: { items: { product_id: number; quantity: number }[]; delivery_address?: string; delivery_latitude: number; delivery_longitude: number; delivery_notes?: string; payment_method?: string }) => request<OrderPlacementResult>('/orders', { method: 'POST', body: JSON.stringify(data) }),
   cancelOrder: (id: number) => request<{ data: Order }>(`/orders/${id}/cancel`, { method: 'POST' }).then(r => r.data),
   confirmDelivery: (id: number) => request<{ data: Order }>(`/orders/${id}/confirm`, { method: 'POST' }).then(r => r.data),
-  reviewRider: (id: number, data: { rating: number; comment?: string }) => request<any>(`/orders/${id}/review`, { method: 'POST', body: JSON.stringify(data) }),
+  reviewRider: (id: number, data: { rating: number; comment?: string }) => request<{ success: boolean; message: string; order?: Order }>(`/orders/${id}/review`, { method: 'POST', body: JSON.stringify(data) }),
   getCart: () => request<{ data: CartItem[] }>('/cart').then(r => r.data),
   syncCart: (items: { product_id: number; quantity: number }[]) => request<{ data: CartItem[]; dropped: { product_id: number; reason: string }[] }>('/cart/sync', { method: 'POST', body: JSON.stringify({ items }) }),
   updateProfile: (data: Partial<User>) => request<User>('/profile', { method: 'PUT', body: JSON.stringify(data) }),
@@ -118,7 +129,7 @@ export const api = {
   markOutForDelivery: (id: number) => request<Order>(`/rider/out-for-delivery/${id}`, { method: 'POST' }),
   markDelivered: (id: number) => request<Order>(`/rider/delivered/${id}`, { method: 'POST' }),
   toggleAvailability: () => request<Rider>('/rider/toggle-availability', { method: 'POST' }),
-  getRiderStats: () => request<{ data: { xp: number; level: number; total_deliveries: number; average_rating: number; badges: any[] } }>('/rider/stats'),
+  getRiderStats: () => request<{ data: { xp: number; level: number; total_deliveries: number; average_rating: number; badges: Array<{ id: number; badge_type: string; metadata: Record<string, unknown> | null; awarded_at: string }> } }>('/rider/stats'),
   getRiderHistory: () => request<{ data: Order[] }>('/rider/history'),
   getActiveDeliveries: () => request<{ data: Order[] }>('/rider/active-deliveries'),
   getRiderProfile: () => request<Rider>('/rider/profile'),
@@ -131,9 +142,21 @@ export const api = {
   getDispatchSuggestion: (orderId: number) => request<unknown>(`/operations/dispatch-suggestion/${orderId}`),
   assignRider: (orderId: number, riderId: number, storeId?: number) => request<{ success: boolean; order: Order }>('/operations/assign-rider', { method: 'POST', body: JSON.stringify({ order_id: orderId, rider_id: riderId, ...(storeId ? { store_id: storeId } : {}) }) }),
   // Operations analytics
-  getAnalyticsSales: (period?: string) => request<unknown>(`/operations/analytics/sales${period ? `?period=${period}` : ''}`),
-  getAnalyticsProducts: (limit?: number) => request<unknown>(`/operations/analytics/products${limit ? `?limit=${limit}` : ''}`),
-  getAnalyticsRiders: (period?: string) => request<unknown>(`/operations/analytics/riders${period ? `?period=${period}` : ''}`),
+  getAnalyticsSales: (period?: string) => request<{
+    total_revenue: number
+    total_orders: number
+    avg_order_value: number
+    revenue_over_time: Array<{ date: string; revenue: number }>
+    orders_by_hour: Array<{ hour: number; count: number }>
+  }>(`/operations/analytics/sales${period ? `?period=${period}` : ''}`),
+  getAnalyticsProducts: (limit?: number) => request<{
+    top_products: Array<{ id: number; name: string; order_count: number; total_quantity: number; total_revenue: number }>
+    search_queries: Array<{ query: string; count: number }>
+  }>(`/operations/analytics/products${limit ? `?limit=${limit}` : ''}`),
+  getAnalyticsRiders: (period?: string) => request<{
+    rider_utilization: Array<{ rider_id: number; name: string; delivery_count: number; avg_delivery_time: number | null; total_distance: number; is_available: boolean }>
+    fleet_summary: { active_riders: number; total_riders: number; avg_utilization_rate: number }
+  }>(`/operations/analytics/riders${period ? `?period=${period}` : ''}`),
   // Contact
   submitContact: (data: { name: string; email: string; subject?: string; message: string }) => request<unknown>('/contact', { method: 'POST', body: JSON.stringify(data) }),
   // Admin health

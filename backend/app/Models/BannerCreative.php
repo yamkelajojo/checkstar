@@ -36,6 +36,7 @@ class BannerCreative extends Model
     public function scopePublished($query)
     {
         $now = now();
+
         return $query->where('status', 'published')
             ->where(function ($q) use ($now) {
                 $q->whereNull('start_date')->orWhere('start_date', '<=', $now);

@@ -10,7 +10,9 @@ use App\Models\Store;
 class DispatchService
 {
     private OrderStateMachine $stateMachine;
+
     private DispatchPolicy $policy;
+
     private OrderClaim $orderClaim;
 
     public function __construct(OrderStateMachine $stateMachine, DispatchPolicy $policy, OrderClaim $orderClaim)
@@ -28,18 +30,21 @@ class DispatchService
 
         if ($order->delivery_latitude === null || $order->delivery_longitude === null) {
             $this->cancelOrder($order, 'Delivery coordinates missing');
+
             return $this->result(null, null, 'cancelled', null, 'Delivery coordinates missing');
         }
 
         // Order should already have a store_id from fulfillment resolution
         if ($order->store_id === null) {
             $this->cancelOrder($order, 'No fulfillment store assigned');
+
             return $this->result(null, null, 'cancelled', null, 'No fulfillment store assigned');
         }
 
         $store = Store::find($order->store_id);
-        if (!$store) {
+        if (! $store) {
             $this->cancelOrder($order, 'Assigned fulfillment store not found');
+
             return $this->result(null, null, 'cancelled', null, 'Assigned fulfillment store not found');
         }
 
@@ -50,12 +55,13 @@ class DispatchService
 
         if ($distance > (float) $store->delivery_radius_km) {
             $this->cancelOrder($order, 'Assigned store is outside delivery radius');
+
             return $this->result(null, null, 'cancelled', null, 'Assigned store is outside delivery radius');
         }
 
         $rider = $this->policy->eligibleRider($store, $distance);
 
-        if (!$rider instanceof Rider) {
+        if (! $rider instanceof Rider) {
             // No rider available at the assigned store - enter retrying state
             $this->stateMachine->transition($order, OrderStatus::Retrying, null, [
                 'reason' => 'No available riders at assigned store',
@@ -90,18 +96,21 @@ class DispatchService
         // If coordinates are missing, cancel immediately instead of retrying indefinitely
         if ($order->delivery_latitude === null || $order->delivery_longitude === null) {
             $this->cancelOrder($order, 'Delivery coordinates missing');
+
             return $this->result(null, null, 'cancelled', null, 'Delivery coordinates missing');
         }
 
         // Retry should only try the pre-assigned store
         if ($order->store_id === null) {
             $this->cancelOrder($order, 'No fulfillment store assigned');
+
             return $this->result(null, null, 'cancelled', null, 'No fulfillment store assigned');
         }
 
         $store = Store::find($order->store_id);
-        if (!$store) {
+        if (! $store) {
             $this->cancelOrder($order, 'Assigned fulfillment store not found');
+
             return $this->result(null, null, 'cancelled', null, 'Assigned fulfillment store not found');
         }
 
@@ -111,17 +120,19 @@ class DispatchService
 
         if ($distance > (float) $store->delivery_radius_km) {
             $this->cancelOrder($order, 'Assigned store is outside delivery radius');
+
             return $this->result(null, null, 'cancelled', null, 'Assigned store is outside delivery radius');
         }
 
         $rider = $this->policy->eligibleRider($store, $distance);
 
-        if (!$rider instanceof Rider) {
+        if (! $rider instanceof Rider) {
             $order->dispatch_attempts += 1;
             $order->save();
 
             if ($order->dispatch_attempts >= $this->policy->maxAttempts()) {
-                $this->cancelOrder($order, 'No available riders after ' . $this->policy->maxAttempts() . ' dispatch attempts');
+                $this->cancelOrder($order, 'No available riders after '.$this->policy->maxAttempts().' dispatch attempts');
+
                 return $this->result(null, null, 'cancelled');
             }
 
@@ -137,7 +148,8 @@ class DispatchService
         $order->save();
 
         if ($order->dispatch_attempts >= $this->policy->maxAttempts()) {
-            $this->cancelOrder($order, 'No available riders after ' . $this->policy->maxAttempts() . ' dispatch attempts');
+            $this->cancelOrder($order, 'No available riders after '.$this->policy->maxAttempts().' dispatch attempts');
+
             return $this->result(null, null, 'cancelled');
         }
 
@@ -163,6 +175,7 @@ class DispatchService
         if ($reason !== null) {
             $result['reason'] = $reason;
         }
+
         return $result;
     }
 }

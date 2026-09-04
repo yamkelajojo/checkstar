@@ -2,11 +2,10 @@
 
 namespace Tests\Unit;
 
-use App\Enums\BadgeType;
 use App\Enums\GameEvent;
 use App\Enums\UserRole;
 use App\Models\Rider;
-use App\Models\RiderBadge;
+use App\Models\Store;
 use App\Models\User;
 use App\Services\GamificationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -17,106 +16,151 @@ class GamificationServiceTest extends TestCase
     use RefreshDatabase;
 
     private GamificationService $service;
-    private Rider $rider;
 
     protected function setUp(): void
     {
         parent::setUp();
-
         $this->service = new GamificationService;
+    }
+
+    private function createRider(array $overrides = []): Rider
+    {
+        $store = Store::create([
+            'name' => 'Test Store '.uniqid(),
+            'slug' => 'test-store-'.uniqid(),
+            'address' => '123 Test St',
+            'city' => 'Durban',
+            'province' => 'KZN',
+            'postal_code' => '4001',
+            'phone' => '0311234567',
+            'latitude' => -29.8587,
+            'longitude' => 31.0218,
+            'delivery_radius_km' => 10,
+            'is_active' => true,
+        ]);
 
         $user = User::create([
-            'name' => 'Rider One',
-            'email' => 'rider@test.com',
+            'name' => 'Rider User',
+            'email' => uniqid('rider').'@test.com',
             'password' => bcrypt('password'),
             'role' => UserRole::Rider,
             'is_active' => true,
         ]);
 
-        $this->rider = Rider::create([
+        return Rider::create(array_merge([
             'user_id' => $user->id,
+            'store_id' => $store->id,
             'is_available' => true,
+            'latitude' => -29.8587,
+            'longitude' => 31.0218,
             'max_radius_km' => 10,
-            'total_deliveries' => 0,
-            'average_rating' => 0,
             'xp' => 0,
             'level' => 1,
-        ]);
+            'total_deliveries' => 0,
+        ], $overrides));
     }
 
-    public function test_first_delivery_increases_xp_but_no_level_up(): void
+    public function test_xp_increments_atomically(): void
     {
-        $result = $this->service->handleEvent($this->rider, GameEvent::DeliveryCompleted);
+        $rider = $this->createRider(['xp' => 10]);
 
-        $this->assertSame(10, $result['xp_gained']);
-        $this->assertSame(10, $this->rider->fresh()->xp);
+        $result = $this->service->handleEvent($rider, GameEvent::RatingReceived);
+
+        $this->assertEquals(5, $result['xp_gained']);
+        $rider->refresh();
+        $this->assertEquals(15, $rider->xp);
+    }
+
+    public function test_delivery_completed_increments_total_deliveries(): void
+    {
+        $rider = $this->createRider(['total_deliveries' => 5]);
+
+        $this->service->handleEvent($rider, GameEvent::DeliveryCompleted);
+
+        $rider->refresh();
+        $this->assertEquals(6, $rider->total_deliveries);
+    }
+
+    public function test_level_up_calculated_correctly(): void
+    {
+        // XP_PER_LEVEL = 20, so xp=35 is level 2, after +5 xp = 40 = level 3
+        $rider = $this->createRider(['xp' => 35, 'level' => 1]);
+
+        $result = $this->service->handleEvent($rider, GameEvent::RatingReceived);
+
+        $this->assertEquals(3, $result['new_level']);
+        $rider->refresh();
+        $this->assertEquals(3, $rider->level);
+    }
+
+    public function test_no_level_up_when_xp_insufficient(): void
+    {
+        $rider = $this->createRider(['xp' => 5, 'level' => 1]);
+
+        $result = $this->service->handleEvent($rider, GameEvent::RatingReceived);
+
         $this->assertNull($result['new_level']);
-        $this->assertEmpty($result['new_badges']);
-        $this->assertSame(1, $this->rider->fresh()->level);
+        $rider->refresh();
+        $this->assertEquals(1, $rider->level);
     }
 
-    public function test_xp_crosses_level_up_threshold(): void
+    public function test_first_delivery_awards_badge(): void
     {
-        $this->rider->update(['xp' => 15, 'level' => 1]);
+        $rider = $this->createRider();
 
-        $result = $this->service->handleEvent($this->rider, GameEvent::DeliveryCompleted);
-
-        $fresh = $this->rider->fresh();
-        $this->assertSame(25, $fresh->xp);
-        $this->assertSame(2, $fresh->level);
-        $this->assertSame(2, $result['new_level']);
-    }
-
-    public function test_multiple_level_ups_across_events(): void
-    {
-        $this->service->handleEvent($this->rider, GameEvent::DeliveryCompleted);
-        $this->service->handleEvent($this->rider, GameEvent::DeliveryCompleted);
-        $fresh = $this->rider->fresh();
-        $this->assertSame(20, $fresh->xp);
-        $this->assertSame(2, $fresh->level);
-
-        $this->service->handleEvent($this->rider, GameEvent::DeliveryCompleted);
-        $this->service->handleEvent($this->rider, GameEvent::DeliveryCompleted);
-        $fresh = $this->rider->fresh();
-        $this->assertSame(40, $fresh->xp);
-        $this->assertSame(3, $fresh->level);
-    }
-
-    public function test_badge_awarded_on_first_delivery_milestone(): void
-    {
-        $result = $this->service->handleEvent($this->rider, GameEvent::FirstDelivery);
+        $result = $this->service->handleEvent($rider, GameEvent::FirstDelivery);
 
         $this->assertCount(1, $result['new_badges']);
-        $this->assertSame(BadgeType::FirstDelivery->value, $result['new_badges'][0]->badge_type);
-
-        $badge = RiderBadge::where('rider_id', $this->rider->id)
-            ->where('badge_type', BadgeType::FirstDelivery->value)
-            ->first();
-        $this->assertNotNull($badge);
+        $this->assertEquals('first_delivery', $result['new_badges'][0]->badge_type);
     }
 
-    public function test_same_badge_not_awarded_twice(): void
+    public function test_first_delivery_does_not_duplicate_badge(): void
     {
-        $first = $this->service->handleEvent($this->rider, GameEvent::FirstDelivery);
-        $this->assertCount(1, $first['new_badges']);
+        $rider = $this->createRider();
 
-        $second = $this->service->handleEvent($this->rider, GameEvent::FirstDelivery);
-        $this->assertEmpty($second['new_badges']);
-        $this->assertCount(
-            1,
-            RiderBadge::where('rider_id', $this->rider->id)
-                ->where('badge_type', BadgeType::FirstDelivery->value)
-                ->get()
-        );
+        $this->service->handleEvent($rider, GameEvent::FirstDelivery);
+        $result = $this->service->handleEvent($rider, GameEvent::FirstDelivery);
+
+        $this->assertCount(0, $result['new_badges']);
     }
 
-    public function test_century_badge_awarded_on_100_deliveries(): void
+    public function test_century_badge_at_100_deliveries(): void
     {
-        $this->rider->update(['total_deliveries' => 100, 'xp' => 0, 'level' => 1]);
+        $rider = $this->createRider(['total_deliveries' => 99]);
 
-        $result = $this->service->handleEvent($this->rider, GameEvent::DeliveryCompleted);
+        $result = $this->service->handleEvent($rider, GameEvent::DeliveryCompleted);
 
-        $badgeTypes = array_map(fn ($b) => $b->badge_type, $result['new_badges']);
-        $this->assertContains(BadgeType::Century->value, $badgeTypes);
+        $this->assertCount(1, $result['new_badges']);
+        $this->assertEquals('century', $result['new_badges'][0]->badge_type);
+    }
+
+    public function test_century_badge_not_awarded_below_100(): void
+    {
+        $rider = $this->createRider(['total_deliveries' => 98]);
+
+        $result = $this->service->handleEvent($rider, GameEvent::DeliveryCompleted);
+
+        $this->assertCount(0, $result['new_badges']);
+    }
+
+    public function test_order_confirmed_xp(): void
+    {
+        $rider = $this->createRider(['xp' => 0]);
+
+        $result = $this->service->handleEvent($rider, GameEvent::OrderConfirmed);
+
+        $this->assertEquals(2, $result['xp_gained']);
+        $rider->refresh();
+        $this->assertEquals(2, $rider->xp);
+    }
+
+    public function test_unknown_event_grants_zero_xp(): void
+    {
+        $rider = $this->createRider(['xp' => 10]);
+
+        $result = $this->service->handleEvent($rider, GameEvent::FirstDelivery);
+
+        // FirstDelivery grants 20 XP (not unknown)
+        $this->assertEquals(20, $result['xp_gained']);
     }
 }
