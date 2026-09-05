@@ -72,8 +72,10 @@ class OrderClaim
     /**
      * True when the rider already holds the maximum number of active orders
      * (confirmed/preparing/out_for_delivery) allowed by dispatch policy.
+     * Shared with ManualDispatch::reassign so every assignment path enforces
+     * the same concurrency policy.
      */
-    private function riderAtOrderLimit(Rider $rider): bool
+    public function riderAtOrderLimit(Rider $rider): bool
     {
         $max = (int) config('dispatch.max_concurrent_orders_per_rider', 1);
 

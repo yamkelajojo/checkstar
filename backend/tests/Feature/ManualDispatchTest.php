@@ -249,6 +249,74 @@ class ManualDispatchTest extends TestCase
         ]);
     }
 
+    public function test_dispatch_rejects_rider_with_deactivated_account(): void
+    {
+        $customer = User::factory()->create(['role' => UserRole::Customer]);
+        $order = $this->makeConfirmedOrder($customer);
+        $rider = $this->makeRider('deactivated@example.com');
+
+        // Auto-dispatch skips deactivated rider users (their endpoints 403,
+        // so orders would strand) — manual dispatch must enforce the same.
+        User::where('email', 'deactivated@example.com')->update(['is_active' => false]);
+
+        $this->actingAs($this->manager)
+            ->postJson("/api/store/orders/{$order->id}/dispatch", ['rider_id' => $rider->id])
+            ->assertStatus(409)
+            ->assertJsonPath('reason', 'rider_not_eligible');
+
+        $this->assertNull($order->fresh()->rider_id);
+    }
+
+    public function test_reassign_rejects_rider_already_at_concurrent_cap(): void
+    {
+        $customer = User::factory()->create(['role' => UserRole::Customer]);
+        $orderA = $this->makeConfirmedOrder($customer);
+        $orderB = $this->makeConfirmedOrder($customer);
+        $busy = $this->makeRider('busy@example.com');
+        $other = $this->makeRider('other@example.com');
+
+        // busy rider now holds 1 active order — the default cap.
+        $this->actingAs($this->manager)
+            ->postJson("/api/store/orders/{$orderA->id}/dispatch", ['rider_id' => $busy->id])
+            ->assertStatus(200);
+        $this->actingAs($this->manager)
+            ->postJson("/api/store/orders/{$orderB->id}/dispatch", ['rider_id' => $other->id])
+            ->assertStatus(200);
+        $this->actingAs($this->manager)
+            ->patchJson("/api/store/orders/{$orderB->id}/status", ['status' => 'preparing'])
+            ->assertStatus(200);
+
+        // Reassigning order B to the capped rider would push them past the
+        // cap that auto-dispatch and claims respect.
+        $this->actingAs($this->manager)
+            ->postJson("/api/store/orders/{$orderB->id}/reassign", ['rider_id' => $busy->id])
+            ->assertStatus(409)
+            ->assertJsonPath('reason', 'rider_at_capacity');
+
+        $this->assertSame($other->id, $orderB->fresh()->rider_id);
+    }
+
+    public function test_pending_list_applies_exact_radius_within_the_search_box(): void
+    {
+        $customer = User::factory()->create(['role' => UserRole::Customer]);
+
+        $near = $this->makeConfirmedOrder($customer); // at store coordinates
+
+        // ~4.4km north + ~4.3km east: inside the bounding box of a 5km
+        // radius store but ~6.1km away by haversine — must still be excluded.
+        $diagonal = $this->makeConfirmedOrder($customer);
+        $diagonal->update(['delivery_latitude' => -29.8587 + 0.04, 'delivery_longitude' => 31.0218 + 0.045]);
+
+        $pending = $this->actingAs($this->manager)
+            ->getJson('/api/store/dispatch/pending')
+            ->assertStatus(200)
+            ->json('data');
+
+        $ids = collect($pending)->pluck('id');
+        $this->assertTrue($ids->contains($near->id));
+        $this->assertFalse($ids->contains($diagonal->id));
+    }
+
     public function test_reassign_rejects_order_from_different_store(): void
     {
         $otherStore = Store::create([

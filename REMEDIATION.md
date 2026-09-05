@@ -141,3 +141,16 @@ nothing in CI ever executed the seeders:
 `DatabaseSeedingTest` now pins every demo login (customer, developer, store
 manager, rider) — including that the password actually verifies — plus
 re-seed idempotency, on all four backend legs.
+
+## Round 6 — principal-engineer pass (state machines, dispatch seam, DB truth, UX audit)
+
+| # | Finding | Fix |
+|---|---|---|
+| R12 | **Manual dispatch ignored deactivated rider accounts** — `ManualDispatch::riderEligible` checked availability/suspension but not `users.is_active` (the exact gap D11 fixed for auto-dispatch). A deactivated rider could be hand-assigned; their endpoints 403 and the order strands. | Availability/suspension/active enforced; 409 `rider_not_eligible`. |
+| R13 | **Reassignment bypassed the concurrent-order cap** that claims and auto-dispatch enforce — a capped rider could be handed another active order via reassign. | `OrderClaim::riderAtOrderLimit` made public and enforced on both `dispatchToRider` (fast-fail) and `reassign`; 409 `rider_at_capacity`. |
+| R14 | **Ops console pending list loaded every store's pending orders (+items) system-wide**, then radius-filtered in PHP — unbounded query on a polled endpoint. | Bounding-box SQL prefilter (a superset of the haversine radius) + exact filter retained; correctness pinned by a diagonal-corner test (~6.1 km order inside the box, outside the radius). |
+
+Phase-3 DB truth audit: all uniqueness invariants verified (emails, order_number, slugs, promo
+codes, favourites, pivots, badges); history-FK RESTRICT from D7 remains the anchor integrity rule.
+Phase-4 UX audit: every audited surface (specials, orders, order detail, cart, dispatch console)
+implements the error → skeleton → empty → content pattern consistently; no structural gaps.

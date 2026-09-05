@@ -29,10 +29,22 @@ class ManualDispatch
      */
     public function pendingForStore(Store $store): Collection
     {
+        // Bounding-box prefilter: everything outside the box is guaranteed
+        // to be outside the haversine radius, so the exact filter below only
+        // ever sees the store's own neighbourhood instead of every pending
+        // order in the system (this endpoint is polled by the ops console).
+        $radiusKm = (float) $store->delivery_radius_km;
+        $latDelta = $radiusKm / 111.0;
+        $lngDelta = $radiusKm / (111.0 * max(cos(deg2rad((float) $store->latitude)), 0.01));
+
         return Order::whereIn('status', [OrderStatus::Confirmed, OrderStatus::Retrying])
             ->whereNull('rider_id')
             ->whereNotNull('delivery_latitude')
             ->whereNotNull('delivery_longitude')
+            ->where('delivery_latitude', '>=', (float) $store->latitude - $latDelta)
+            ->where('delivery_latitude', '<=', (float) $store->latitude + $latDelta)
+            ->where('delivery_longitude', '>=', (float) $store->longitude - $lngDelta)
+            ->where('delivery_longitude', '<=', (float) $store->longitude + $lngDelta)
             ->with('items')
             ->orderBy('created_at')
             ->get()
@@ -61,6 +73,10 @@ class ManualDispatch
 
         if (! $this->riderEligible($rider) || $rider->store_id !== $contextStore->id) {
             return ['reason' => 'rider_not_eligible'];
+        }
+
+        if ($this->orderClaim->riderAtOrderLimit($rider)) {
+            return ['reason' => 'rider_at_capacity'];
         }
 
         // Manual dispatch must respect the same geographic rules as auto-dispatch
@@ -104,6 +120,12 @@ class ManualDispatch
             return ['reason' => 'rider_not_eligible'];
         }
 
+        // Reassignment must respect the same concurrency cap as claims and
+        // auto-dispatch — the new rider is taking on another active order.
+        if ($this->orderClaim->riderAtOrderLimit($newRider)) {
+            return ['reason' => 'rider_at_capacity'];
+        }
+
         return DB::transaction(function () use ($order, $newRider) {
             $fresh = Order::whereKey($order->id)->lockForUpdate()->firstOrFail();
             $previousRiderId = $fresh->rider_id;
@@ -130,6 +152,13 @@ class ManualDispatch
 
     private function riderEligible(Rider $rider): bool
     {
-        return $rider->is_available && $rider->suspended_at === null;
+        // A deactivated rider account cannot call any rider endpoint
+        // (EnsureUserIsActive 403s) — never hand orders to one. Mirrors the
+        // auto-dispatch policy.
+        if (! $rider->is_available || $rider->suspended_at !== null) {
+            return false;
+        }
+
+        return (bool) ($rider->user()->first()->is_active ?? false);
     }
 }

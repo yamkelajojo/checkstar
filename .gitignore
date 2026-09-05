@@ -22,3 +22,7 @@ homepage-evidence.png
 .unlazy/
 .impeccable/
 .scratch/
+
+# Dependencies & build caches (never commit)
+node_modules/
+*.tsbuildinfo
