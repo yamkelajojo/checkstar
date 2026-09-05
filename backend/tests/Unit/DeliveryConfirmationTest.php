@@ -191,22 +191,37 @@ class DeliveryConfirmationTest extends TestCase
         $this->assertNotNull($result->fresh()->customer_confirmed_at);
     }
 
-    public function test_order_transition_rollback_on_payment_failure(): void
+    public function test_refunded_payment_is_not_resurrected_on_delivery_confirmation(): void
     {
+        // A prematurely refunded order still needs delivering: the
+        // confirmation must proceed, leave the payment Refunded (never
+        // resurrect it to Paid) and not book a second payment transaction.
         $order = $this->createOrder(
             OrderStatus::OutForDelivery->value,
             PaymentStatus::Refunded->value,
         );
 
-        $this->expectException(\InvalidArgumentException::class);
+        $result = $this->service->confirm($order, $this->customer);
 
-        $this->service->confirm($order, $this->customer);
-
-        // Order must remain OutForDelivery — payment transition to Paid
-        // from Refunded is invalid and rolls back the whole transaction
-        $fresh = $order->fresh();
-        $this->assertEquals(OrderStatus::OutForDelivery, $fresh->status);
+        $fresh = $result->fresh();
+        $this->assertEquals(OrderStatus::Delivered, $fresh->status);
         $this->assertEquals(PaymentStatus::Refunded, $fresh->payment_status);
+        $this->assertNotNull($fresh->customer_confirmed_at);
+        $this->assertSame(0, Transaction::where('order_id', $order->id)->count());
+    }
+
+    public function test_reconfirming_delivered_refunded_order_is_idempotent(): void
+    {
+        $order = $this->createOrder(
+            OrderStatus::Delivered->value,
+            PaymentStatus::Refunded->value,
+        );
+        $order->forceFill(['customer_confirmed_at' => now()])->save();
+
+        $result = $this->service->confirm($order, $this->customer);
+
+        $this->assertEquals(PaymentStatus::Refunded, $result->fresh()->payment_status);
+        $this->assertEquals(OrderStatus::Delivered, $result->fresh()->status);
     }
 
     public function test_activity_log_created_for_order_transition(): void

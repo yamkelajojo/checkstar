@@ -100,7 +100,8 @@ class HistoryCascadeGuardsTest extends TestCase
             ->deleteJson("/api/admin/stores/{$this->store->id}")
             ->assertStatus(200);
 
-        $this->assertDatabaseMissing('stores', ['id' => $this->store->id]);
+        // Store uses SoftDeletes — deletion trashes the row.
+        $this->assertSoftDeleted('stores', ['id' => $this->store->id]);
     }
 
     public function test_rider_with_reviews_cannot_be_deleted(): void

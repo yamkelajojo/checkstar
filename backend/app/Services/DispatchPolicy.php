@@ -33,6 +33,9 @@ class DispatchPolicy
             ->where('is_available', true)
             ->where('max_radius_km', '>=', $distance)
             ->whereNull('suspended_at')
+            // A deactivated rider account cannot call any rider endpoint
+            // (EnsureUserIsActive 403s) — never hand orders to one.
+            ->whereHas('user', fn ($q) => $q->where('is_active', true))
             // Skip riders already holding their cap of active orders —
             // prevents auto-dispatch from repeatedly selecting one busy rider
             // and having every claim bounce. The authoritative cap is still

@@ -42,8 +42,10 @@ class DeliveryConfirmation
                 $fresh = Order::where('id', $fresh->id)->lockForUpdate()->firstOrFail();
             }
 
-            // Only transition payment if not already paid (pass actor for transaction audit)
-            if ($fresh->payment_status !== PaymentStatus::Paid) {
+            // Only transition payment if still pending (idempotent on
+            // re-confirm; a refunded payment must never be resurrected to
+            // Paid — treat the payment phase as resolved).
+            if ($fresh->payment_status === PaymentStatus::Pending) {
                 $this->paymentStateMachine->transition($fresh, PaymentStatus::Paid, $actor);
                 $fresh = $fresh->fresh();
                 $fresh = Order::where('id', $fresh->id)->lockForUpdate()->firstOrFail();

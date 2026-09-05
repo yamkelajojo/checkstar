@@ -52,7 +52,7 @@ class AuditLogScopingTest extends TestCase
     {
         $user = User::create([
             'name' => 'Mgr', 'email' => $email, 'password' => Hash::make('password'),
-            'role' => UserRole::Customer, 'is_active' => true,
+            'role' => UserRole::StoreManager, 'is_active' => true,
         ]);
         StoreStaff::create(['user_id' => $user->id, 'store_id' => $store->id, 'role' => 'store_manager']);
 

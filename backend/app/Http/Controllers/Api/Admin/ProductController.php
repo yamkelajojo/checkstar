@@ -28,7 +28,10 @@ class ProductController extends Controller
             'image' => 'nullable|string|max:255',
             'unit' => 'required|string|max:50',
             'price' => 'required|numeric|min:0',
-            'sale_price' => 'nullable|numeric|min:0',
+            // A sale price above the regular price would raise what
+            // customers pay — reject at the boundary (PricingService also
+            // clamps defensively).
+            'sale_price' => 'nullable|numeric|min:0|lte:price',
             'tags' => 'nullable|array',
             'is_featured' => 'boolean',
             'is_active' => 'boolean',
@@ -58,7 +61,21 @@ class ProductController extends Controller
             'image' => 'nullable|string|max:255',
             'unit' => 'string|max:50',
             'price' => 'numeric|min:0',
-            'sale_price' => 'nullable|numeric|min:0',
+            // Cross-field guard: sale_price may not exceed the resulting
+            // regular price (request value or the stored one on partial
+            // updates).
+            'sale_price' => [
+                'nullable', 'numeric', 'min:0',
+                function (string $attribute, mixed $value, \Closure $fail) use ($request, $product): void {
+                    if ($value === null) {
+                        return;
+                    }
+                    $price = $request->input('price') ?? $product->price;
+                    if ($price !== null && (float) $value > (float) $price) {
+                        $fail('The sale price may not be higher than the regular price.');
+                    }
+                },
+            ],
             'tags' => 'nullable|array',
             'is_featured' => 'boolean',
             'is_active' => 'boolean',

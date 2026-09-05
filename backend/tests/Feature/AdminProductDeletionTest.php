@@ -83,6 +83,8 @@ class AdminProductDeletionTest extends TestCase
             ->deleteJson("/api/admin/products/{$product->id}")
             ->assertStatus(200);
 
-        $this->assertDatabaseMissing('products', ['id' => $product->id]);
+        // Product uses SoftDeletes — deletion trashes the row.
+        $this->assertDatabaseHas('products', ['id' => $product->id, 'deleted_at' => null]);
+        $this->assertSoftDeleted('products', ['id' => $product->id]);
     }
 }
