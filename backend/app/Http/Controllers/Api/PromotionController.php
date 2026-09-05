@@ -62,7 +62,6 @@ class PromotionController extends Controller
 
         $promo = Promotion::where('code', strtoupper(trim($validated['code'])))
             ->where('is_active', true)
-            ->lockForUpdate()
             ->first();
 
         if (! $promo) {
@@ -73,11 +72,18 @@ class PromotionController extends Controller
             return response()->json(['error' => 'Code expired'], 422);
         }
 
-        if ($promo->max_uses !== null && $promo->used_count >= $promo->max_uses) {
+        // Atomic bounded redemption: a single conditional UPDATE can never
+        // push used_count past max_uses, no matter how many requests race
+        // here. (A lockForUpdate without a surrounding transaction releases
+        // at implicit autocommit — it protects nothing — and an unchecked
+        // increment() overshoots the cap under concurrency.)
+        $redeemed = Promotion::where('id', $promo->id)
+            ->when($promo->max_uses !== null, fn ($query) => $query->where('used_count', '<', $promo->max_uses))
+            ->increment('used_count');
+
+        if ($redeemed === 0) {
             return response()->json(['error' => 'Code fully redeemed'], 422);
         }
-
-        $promo->increment('used_count');
 
         return response()->json(['success' => true, 'code' => $promo->code]);
     }

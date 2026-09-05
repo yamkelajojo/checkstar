@@ -19,9 +19,13 @@ class DispatchController extends Controller
         private StoreContext $storeContext,
     ) {}
 
-    public function suggestion(int $orderId): JsonResponse
+    public function suggestion(Request $request, int $orderId): JsonResponse
     {
-        $suggestion = $this->dispatchSuggestionService->getSuggestion($orderId);
+        // Scope to the caller's store so operators cannot inspect other
+        // stores' orders (developer must pass an explicit store_id).
+        $store = $this->storeContext->resolve($request->user(), $request->input('store_id'));
+
+        $suggestion = $this->dispatchSuggestionService->getSuggestion($orderId, $store);
 
         if (! $suggestion) {
             return response()->json(['error' => 'Order not found'], 404);

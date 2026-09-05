@@ -6,6 +6,7 @@ use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\UserRole;
 use App\Models\Order;
+use App\Models\Rider;
 use App\Models\Store;
 use App\Models\User;
 use App\Policies\OrderPolicy;
@@ -110,5 +111,72 @@ class OrderPolicyTest extends TestCase
     public function test_customer_cannot_cancel_others_order(): void
     {
         $this->assertFalse($this->policy->cancel($this->intruder, $this->order));
+    }
+
+    public function test_assigned_rider_can_view_the_order(): void
+    {
+        $riderUser = User::create([
+            'name' => 'Rider User',
+            'email' => 'rider@test.com',
+            'password' => bcrypt('password'),
+            'role' => UserRole::Rider,
+            'is_active' => true,
+        ]);
+
+        $rider = Rider::create([
+            'user_id' => $riderUser->id,
+            'store_id' => $this->order->store_id,
+            'is_available' => true,
+            'max_radius_km' => 10,
+        ]);
+
+        $this->order->rider_id = $rider->id;
+        $this->order->save();
+
+        $this->assertTrue($this->policy->view($riderUser, $this->order));
+    }
+
+    public function test_unassigned_rider_cannot_view_the_order(): void
+    {
+        $riderUser = User::create([
+            'name' => 'Other Rider',
+            'email' => 'other-rider@test.com',
+            'password' => bcrypt('password'),
+            'role' => UserRole::Rider,
+            'is_active' => true,
+        ]);
+
+        Rider::create([
+            'user_id' => $riderUser->id,
+            'store_id' => $this->order->store_id,
+            'is_available' => true,
+            'max_radius_km' => 10,
+        ]);
+
+        $this->assertFalse($this->policy->view($riderUser, $this->order));
+    }
+
+    public function test_rider_cannot_confirm_delivery(): void
+    {
+        $riderUser = User::create([
+            'name' => 'Rider Confirm',
+            'email' => 'rider-confirm@test.com',
+            'password' => bcrypt('password'),
+            'role' => UserRole::Rider,
+            'is_active' => true,
+        ]);
+
+        Rider::create([
+            'user_id' => $riderUser->id,
+            'store_id' => $this->order->store_id,
+            'is_available' => true,
+            'max_radius_km' => 10,
+        ]);
+
+        $this->order->rider_id = Rider::where('user_id', $riderUser->id)->first()->id;
+        $this->order->save();
+
+        // Only the customer confirms delivery — riders advance status via rider endpoints
+        $this->assertFalse($this->policy->confirmDelivery($riderUser, $this->order));
     }
 }

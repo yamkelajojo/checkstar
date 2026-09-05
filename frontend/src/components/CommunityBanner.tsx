@@ -23,7 +23,7 @@ export function CommunityBanner() {
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-6">
               <Heart className="text-primary" size={32} />
             </div>
-            <h2 className="text-2xl sm:text-3xl font-bold text-text-primary font-[family-name:var(--font-primary)]">
+            <h2 className="text-2xl sm:text-3xl font-bold text-foreground font-sans">
               Our Community
             </h2>
             <p className="mt-4 text-text-muted text-lg max-w-2xl mx-auto">

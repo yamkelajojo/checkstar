@@ -54,6 +54,9 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
+    // SPA base URL — used to build links inside emails (password reset etc.)
+    'frontend_url' => env('FRONTEND_URL', 'http://localhost:3000'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone

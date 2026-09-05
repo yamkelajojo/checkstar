@@ -13,6 +13,28 @@ class Order extends Model
 {
     protected $guarded = ['id'];
 
+    /**
+     * Integer-cents mirrors of the decimal money columns. Clients (the mobile
+     * app) price in cents; emitting derived ints keeps the DB decimal-canonical
+     * while the JSON contract carries exact, float-free money.
+     */
+    protected $appends = ['subtotal_cents', 'delivery_fee_cents', 'total_cents'];
+
+    public function getSubtotalCentsAttribute(): int
+    {
+        return (int) round(((float) $this->subtotal) * 100);
+    }
+
+    public function getDeliveryFeeCentsAttribute(): int
+    {
+        return (int) round(((float) $this->delivery_fee) * 100);
+    }
+
+    public function getTotalCentsAttribute(): int
+    {
+        return (int) round(((float) $this->total) * 100);
+    }
+
     protected function casts(): array
     {
         return [

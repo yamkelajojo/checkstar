@@ -97,26 +97,31 @@ class OrderIntake
             $deliveryFee = (float) config('dispatch.delivery_fee', 0);
             $total = $subtotal + $deliveryFee;
 
-            // Retry order number generation on collision (1.6M combos, but handle race)
+            // Retry order number generation on collision. The insert runs in a
+            // nested transaction (savepoint) so a duplicate-key rollback doesn't
+            // poison the outer transaction on databases like PostgreSQL where
+            // any failed statement aborts the whole transaction.
             $attempts = 0;
             do {
                 $orderNumber = 'CS-'.now()->format('Ymd').'-'.strtoupper(Str::random(4));
                 try {
-                    $order = Order::create([
-                        'order_number' => $orderNumber,
-                        'customer_id' => $customer->id,
-                        'store_id' => $fulfillmentStore->id,
-                        'status' => OrderStatus::Pending,
-                        'payment_status' => PaymentStatus::Pending,
-                        'payment_method' => $validated['payment_method'] ?? 'cash_on_delivery',
-                        'delivery_address' => $validated['delivery_address'],
-                        'delivery_latitude' => $validated['delivery_latitude'],
-                        'delivery_longitude' => $validated['delivery_longitude'],
-                        'delivery_notes' => $validated['delivery_notes'] ?? null,
-                        'subtotal' => $subtotal,
-                        'delivery_fee' => $deliveryFee,
-                        'total' => $total,
-                    ]);
+                    $order = DB::transaction(function () use ($orderNumber, $customer, $fulfillmentStore, $validated, $subtotal, $deliveryFee, $total) {
+                        return Order::create([
+                            'order_number' => $orderNumber,
+                            'customer_id' => $customer->id,
+                            'store_id' => $fulfillmentStore->id,
+                            'status' => OrderStatus::Pending,
+                            'payment_status' => PaymentStatus::Pending,
+                            'payment_method' => $validated['payment_method'] ?? 'cash_on_delivery',
+                            'delivery_address' => $validated['delivery_address'],
+                            'delivery_latitude' => $validated['delivery_latitude'],
+                            'delivery_longitude' => $validated['delivery_longitude'],
+                            'delivery_notes' => $validated['delivery_notes'] ?? null,
+                            'subtotal' => $subtotal,
+                            'delivery_fee' => $deliveryFee,
+                            'total' => $total,
+                        ]);
+                    });
                     break;
                 } catch (QueryException $e) {
                     if (str_contains($e->getMessage(), 'order_number') && $attempts < 5) {
@@ -132,15 +137,18 @@ class OrderIntake
                 $order->items()->create($oi);
             }
 
+            // Validate real availability (stock minus reservations held by
+            // other in-flight orders) under a row lock.
             $stockViolations = [];
             foreach ($consolidated as $productId => $quantity) {
                 $sp = StoreProduct::where('store_id', $fulfillmentStore->id)
                     ->where('product_id', $productId)
                     ->lockForUpdate()
                     ->first();
-                if (! $sp || $sp->stock_quantity < $quantity) {
+                $available = $sp ? ($sp->stock_quantity - ($sp->reserved_quantity ?? 0)) : 0;
+                if (! $sp || $available < $quantity) {
                     $product = Product::find($productId);
-                    $stockViolations[] = ($product?->name ?? "Product #{$productId}")." (requested {$quantity}, available ".($sp?->stock_quantity ?? 0).')';
+                    $stockViolations[] = ($product?->name ?? "Product #{$productId}")." (requested {$quantity}, available ".max(0, $available).')';
                 }
             }
             if (! empty($stockViolations)) {

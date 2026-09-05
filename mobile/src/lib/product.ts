@@ -1,4 +1,4 @@
-import type { ApiProduct, ApiStoreAvailability } from './types';
+import type { ApiProduct, ApiSpecial, ApiStoreAvailability } from './types';
 import { effectivePriceCents } from './pricing';
 
 /** Converts a Rand decimal string ("12.50") from the API into whole cents. */
@@ -44,10 +44,16 @@ export interface ProductVO {
 export function mapProduct(api: ApiProduct): ProductVO {
   const basePriceCents = toCents(api.price);
   const salePriceCents = api.sale_price != null ? toCents(api.sale_price) : null;
-  const collectionPriceCents =
-    api.specials && api.specials.length > 0
-      ? toCents(api.specials[0].sale_price ?? 0) || null
-      : null;
+  // The discount lives on product_special.pivot.special_price (the API merges
+  // pivot columns onto the special object); sale_price on specials is legacy.
+  const firstSpecial = api.specials?.[0];
+  const specialRaw: string | number | null | undefined =
+    firstSpecial == null
+      ? null
+      : ((firstSpecial as ApiSpecial).special_price ??
+         (firstSpecial as unknown as { pivot?: { special_price?: string | number | null } }).pivot?.special_price ??
+         firstSpecial.sale_price);
+  const collectionPriceCents = specialRaw != null && toCents(specialRaw) > 0 ? toCents(specialRaw) : null;
 
   const stores = (api.stores ?? []).map((s: ApiStoreAvailability) => ({
     storeProductId: s.store_product_id,
@@ -71,7 +77,10 @@ export function mapProduct(api: ApiProduct): ProductVO {
     basePriceCents,
     salePriceCents,
     collectionPriceCents,
-    effectivePriceCents: effectivePriceCents({ basePriceCents, salePriceCents, collectionSalePriceCents: collectionPriceCents }),
+    effectivePriceCents:
+      api.effective_price != null && toCents(api.effective_price) > 0
+        ? toCents(api.effective_price) // backend already applied the cascade
+        : effectivePriceCents({ basePriceCents, salePriceCents, collectionSalePriceCents: collectionPriceCents }),
     brand: api.brand ?? null,
     storageTip: api.storage_tip ?? null,
     keyPoints: api.key_points ?? [],

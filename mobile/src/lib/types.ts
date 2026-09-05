@@ -15,6 +15,8 @@ export interface ApiProduct {
   description?: string | null;
   price: string;
   sale_price: string | null;
+  /** Backend-computed deal price (min of sale_price / active special pivot price / price). */
+  effective_price?: string | number | null;
   unit: string;
   category_id: number;
   tags: string[] | null;
@@ -43,6 +45,8 @@ export interface ApiSpecial {
   id: number;
   title: string;
   sale_price?: string | null;
+  /** Pivot column from product_special (the actual discount field). */
+  special_price?: string | number | null;
   starts_at?: string;
   ends_at?: string;
   is_active?: boolean;

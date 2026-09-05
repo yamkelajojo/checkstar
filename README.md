@@ -13,8 +13,7 @@ Durban supermarket chain — web (Next.js) + delivery (Laravel) + mobile (Expo).
 ## Docs
 
 - `CONTEXT.md` — ubiquitous language (Customer, Rider, Store, Dispatch, etc.)
-- `MOBILE_APP_UX.md` — mobile UX map (SDK 54 pinned)
-- `mobile/README.md` — run instructions + SDK pin changelog
+- `mobile/README.md` — run instructions, UX map + SDK pin changelog
 - `mobile/AGENTS.md` — versioned Expo docs link
 
 ## Quick start

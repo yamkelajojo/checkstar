@@ -80,6 +80,6 @@ describe('Customer Purchase Flow (Browse → Cart → Checkout)', () => {
   test('tapping a product card navigates to ProductDetail', async () => {
     await render(<BrowseScreen />, { wrapper: TestWrapper });
     await fireEvent.press(screen.getByLabelText('Bread'));
-    expect(mockNavigate).toHaveBeenCalledWith('ProductDetail', { slug: 'slug-101' });
+    expect(mockNavigate).toHaveBeenCalledWith('ProductDetail', { slug: 'slug-101', source: 'feed' });
   });
 });

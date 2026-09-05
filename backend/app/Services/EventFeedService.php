@@ -3,8 +3,10 @@
 namespace App\Services;
 
 use App\Models\AuditLog;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use App\Models\Order;
+use App\Models\Store;
+use Illuminate\Support\Collection;
 
 class EventFeedService
 {
@@ -15,6 +17,7 @@ class EventFeedService
         'out_for_delivery' => 'success',
         'delivered' => 'success',
         'cancelled' => 'error',
+        'retrying' => 'warning',
     ];
 
     private const AUDIT_SEVERITY = [
@@ -26,13 +29,17 @@ class EventFeedService
         'picked_up' => 'success',
     ];
 
-    public function getEvents(?string $cursor = null, int $limit = 50): object
+    /**
+     * @param  Store|null  $contextStore  When provided, events are scoped to this
+     *                                    store's orders/riders (multi-store ops).
+     */
+    public function getEvents(?string $cursor = null, int $limit = 50, ?Store $contextStore = null): object
     {
         $fetchLimit = $limit + 1;
 
-        $orderEvents = $this->getOrderEvents($cursor, $fetchLimit);
-        $riderEvents = $this->getRiderEvents($cursor, $fetchLimit);
-        $auditEvents = $this->getAuditEvents($cursor, $fetchLimit);
+        $orderEvents = $this->getOrderEvents($cursor, $fetchLimit, $contextStore);
+        $riderEvents = $this->getRiderEvents($cursor, $fetchLimit, $contextStore);
+        $auditEvents = $this->getAuditEvents($cursor, $fetchLimit, $contextStore);
 
         $all = $orderEvents->concat($riderEvents)->concat($auditEvents)
             ->sortByDesc('created_at')
@@ -48,68 +55,89 @@ class EventFeedService
         ];
     }
 
-    private function getOrderEvents(?string $cursor, int $limit): Collection
+    private function getOrderEvents(?string $cursor, int $limit, ?Store $contextStore): Collection
     {
-        return DB::table('orders')
-            ->select(
-                'id',
-                DB::raw("'order_state_change' as type"),
-                'status',
-                DB::raw("('Order #' || order_number || ' ' || status) as message"),
-                DB::raw("'order' as entity_type"),
-                'id as entity_id',
-                'created_at'
-            )
+        $query = DB::table('orders')
+            ->select('id', 'order_number', 'status', 'created_at')
+            ->when($contextStore, fn ($q) => $q->where('store_id', $contextStore->id))
             ->when($cursor, fn ($q) => $q->where('created_at', '<', $cursor))
             ->orderByDesc('created_at')
-            ->limit($limit)
-            ->get()
-            ->map(fn ($row) => $this->mapEvent($row, self::STATUS_SEVERITY[$row->status] ?? 'info'));
+            ->limit($limit);
+
+        return $query->get()
+            ->map(fn ($row) => $this->mapEvent(
+                (object) [
+                    'id' => $row->id,
+                    'type' => 'order_state_change',
+                    'status' => $row->status,
+                    'message' => "Order #{$row->order_number} {$row->status}",
+                    'entity_type' => 'order',
+                    'entity_id' => $row->id,
+                    'created_at' => $row->created_at,
+                ],
+                self::STATUS_SEVERITY[$row->status] ?? 'info'
+            ));
     }
 
-    private function getRiderEvents(?string $cursor, int $limit): Collection
+    private function getRiderEvents(?string $cursor, int $limit, ?Store $contextStore): Collection
     {
-        return DB::table('riders')
-            ->select(
-                'id',
-                DB::raw("'rider_availability' as type"),
-                'is_available as status',
-                DB::raw("('Rider #' || id || ' went ' || CASE WHEN is_available THEN 'available' ELSE 'unavailable' END) as message"),
-                DB::raw("'rider' as entity_type"),
-                'id as entity_id',
-                'updated_at as created_at'
-            )
+        $query = DB::table('riders')
+            ->select('id', 'is_available', 'updated_at')
+            ->when($contextStore, fn ($q) => $q->where('store_id', $contextStore->id))
             ->when($cursor, fn ($q) => $q->where('updated_at', '<', $cursor))
             ->orderByDesc('updated_at')
-            ->limit($limit)
-            ->get()
-            ->map(fn ($row) => $this->mapEvent($row, 'info'));
+            ->limit($limit);
+
+        return $query->get()
+            ->map(fn ($row) => $this->mapEvent(
+                (object) [
+                    'id' => $row->id,
+                    'type' => 'rider_availability',
+                    'status' => $row->is_available,
+                    'message' => 'Rider #'.$row->id.' went '.($row->is_available ? 'available' : 'unavailable'),
+                    'entity_type' => 'rider',
+                    'entity_id' => $row->id,
+                    'created_at' => $row->updated_at,
+                ],
+                'info'
+            ));
     }
 
-    private function getAuditEvents(?string $cursor, int $limit): Collection
+    private function getAuditEvents(?string $cursor, int $limit, ?Store $contextStore): Collection
     {
-        return AuditLog::query()
-            ->select(
-                'id',
-                DB::raw("'dispatch_attempt' as type"),
-                'action as status',
-                DB::raw("(UPPER(SUBSTR(action, 1, 1)) || SUBSTR(action, 2) || ' — Order #' || entity_id) as message"),
-                'entity_type',
-                'entity_id',
-                'created_at'
-            )
+        $query = AuditLog::query()
+            ->select('id', 'action', 'entity_type', 'entity_id', 'created_at')
             ->whereIn('action', ['dispatched', 'dispatch_failed'])
+            ->when($contextStore, fn ($q) => $q->whereIn(
+                'entity_id',
+                Order::query()->select('id')->where('store_id', $contextStore->id)
+            ))
             ->when($cursor, fn ($q) => $q->where('created_at', '<', $cursor))
             ->orderByDesc('created_at')
-            ->limit($limit)
-            ->get()
-            ->map(fn ($row) => $this->mapEvent($row, self::AUDIT_SEVERITY[$row->status] ?? 'info'));
+            ->limit($limit);
+
+        return $query->get()
+            ->map(fn ($row) => $this->mapEvent(
+                (object) [
+                    'id' => $row->id,
+                    'type' => 'dispatch_attempt',
+                    'status' => $row->action,
+                    'message' => ucfirst($row->action).' — Order #'.$row->entity_id,
+                    'entity_type' => $row->entity_type,
+                    'entity_id' => $row->entity_id,
+                    'created_at' => $row->created_at,
+                ],
+                self::AUDIT_SEVERITY[$row->action] ?? 'info'
+            ));
     }
 
     private function mapEvent($row, string $severity): object
     {
         return (object) [
-            'id' => $row->id,
+            // Composite id: the three source tables have independent id
+            // sequences, so bare numeric ids collide across event types and
+            // break client-side dedupe.
+            'id' => $row->type.'-'.$row->id,
             'type' => $row->type,
             'severity' => $severity,
             'message' => $row->message,

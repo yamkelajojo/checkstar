@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
-import dynamic from 'next/dynamic'
 
-const RegisterClient = dynamic(() => import('./RegisterClient'), { ssr: false })
+import RegisterClientGate from './RegisterClientGate'
 
 export const metadata: Metadata = {
   title: 'Register — Checkstar',
@@ -9,5 +8,5 @@ export const metadata: Metadata = {
 }
 
 export default function RegisterPage() {
-  return <RegisterClient />
+  return <RegisterClientGate />
 }

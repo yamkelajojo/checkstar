@@ -437,7 +437,10 @@ export async function markDelivered(id: number | string): Promise<ApiOrder> {
 
 export async function fetchRiderStats(): Promise<{ total_deliveries: number; average_rating: number | null; xp: number; level: number }> {
   const api = await getApi();
-  return api.get('/rider/stats', undefined, true);
+  const res = await api.get<{
+    data: { total_deliveries: number; average_rating: number | null; xp: number; level: number };
+  }>('/rider/stats', undefined, true);
+  return res.data;
 }
 
 export async function fetchRiderProfile(): Promise<{

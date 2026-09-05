@@ -51,8 +51,32 @@ class ManualDispatch
             return ['reason' => 'order_not_claimable'];
         }
 
+        // Guard against cross-store hijack: an operator may only dispatch
+        // orders that belong to their own store (or are unassigned). Without
+        // this, a Store A operator could assign a Store A rider to Store B's
+        // pending order, effectively stealing it.
+        if ($order->store_id !== null && (int) $order->store_id !== (int) $contextStore->id) {
+            return ['reason' => 'order_wrong_store'];
+        }
+
         if (! $this->riderEligible($rider) || $rider->store_id !== $contextStore->id) {
             return ['reason' => 'rider_not_eligible'];
+        }
+
+        // Manual dispatch must respect the same geographic rules as auto-dispatch
+        if ($order->delivery_latitude !== null && $order->delivery_longitude !== null) {
+            $distance = GeoUtils::haversineDistance(
+                (float) $order->delivery_latitude,
+                (float) $order->delivery_longitude,
+                (float) $contextStore->latitude,
+                (float) $contextStore->longitude,
+            );
+            if ($distance > (float) $contextStore->delivery_radius_km) {
+                return ['reason' => 'order_outside_store_radius'];
+            }
+            if ((float) $rider->max_radius_km < $distance) {
+                return ['reason' => 'rider_radius_exceeded'];
+            }
         }
 
         return $this->orderClaim->claim($order, $rider, $contextStore);

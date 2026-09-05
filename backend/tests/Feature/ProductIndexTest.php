@@ -46,6 +46,32 @@ class ProductIndexTest extends TestCase
             ->assertJsonCount(25, 'data');
     }
 
+    public function test_index_filters_by_multiple_category_slugs(): void
+    {
+        $beverages = $this->category;
+        $bakery = Category::create(['name' => 'Bakery', 'slug' => 'bakery']);
+        $household = Category::create(['name' => 'Household', 'slug' => 'household']);
+
+        Product::create(['category_id' => $beverages->id, 'name' => 'Cola', 'slug' => 'cola', 'unit' => 'each', 'price' => 10.00, 'is_active' => true]);
+        Product::create(['category_id' => $bakery->id, 'name' => 'Bread', 'slug' => 'bread', 'unit' => 'each', 'price' => 10.00, 'is_active' => true]);
+        Product::create(['category_id' => $household->id, 'name' => 'Soap', 'slug' => 'soap', 'unit' => 'each', 'price' => 10.00, 'is_active' => true]);
+
+        // Group filtering happens server-side (comma-separated slugs) so the
+        // web client never downloads the whole catalogue.
+        $this->getJson('/api/products?categories=bakery,household')
+            ->assertStatus(200)
+            ->assertJsonPath('total', 2)
+            ->assertJsonCount(2, 'data');
+
+        $this->getJson('/api/products?categories=bakery')
+            ->assertStatus(200)
+            ->assertJsonPath('total', 1);
+
+        $this->getJson('/api/products?categories=')
+            ->assertStatus(200)
+            ->assertJsonPath('total', 3);
+    }
+
     public function test_index_defaults_to_twenty_per_page(): void
     {
         $this->createProducts(25);

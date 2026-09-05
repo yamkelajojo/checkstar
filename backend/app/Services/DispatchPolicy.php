@@ -27,10 +27,25 @@ class DispatchPolicy
 
     public function eligibleRider(Store $store, float $distance): ?Rider
     {
+        $maxConcurrent = (int) Config::get('dispatch.max_concurrent_orders_per_rider', 1);
+
         return Rider::where('store_id', $store->id)
             ->where('is_available', true)
             ->where('max_radius_km', '>=', $distance)
             ->whereNull('suspended_at')
+            // Skip riders already holding their cap of active orders —
+            // prevents auto-dispatch from repeatedly selecting one busy rider
+            // and having every claim bounce. The authoritative cap is still
+            // enforced inside the claim transaction.
+            ->when($maxConcurrent >= 1, function ($query) use ($maxConcurrent) {
+                $query->whereDoesntHave('orders', function ($q) use ($maxConcurrent) {
+                    $q->whereIn('status', ['confirmed', 'preparing', 'out_for_delivery'])
+                        ->when($maxConcurrent > 1, function ($qq) use ($maxConcurrent) {
+                            $qq->groupBy('rider_id')
+                                ->havingRaw('COUNT(*) >= ?', [$maxConcurrent]);
+                        });
+                });
+            })
             ->first();
     }
 

@@ -39,12 +39,17 @@ export default function MapContainer({
   const markersRef = useRef<any[]>([])
   const leafletRef = useRef<any>(null)
   const initializedRef = useRef(false)
+  // The map is initialised once on mount with the mount-time center/zoom;
+  // later prop changes are handled by the separate view-sync effects below.
+  const initialPropsRef = useRef({ center, zoom, onMapReady })
+  initialPropsRef.current = { center, zoom, onMapReady }
 
   useEffect(() => {
     const el = mapRef.current
     if (!el || initializedRef.current) return
     initializedRef.current = true
     const mapEl = el
+    const { center: initialCenter, zoom: initialZoom, onMapReady: initialOnMapReady } = initialPropsRef.current
 
     let map: any = null
 
@@ -63,8 +68,8 @@ export default function MapContainer({
       }
 
       map = L.map(mapEl, {
-        center,
-        zoom,
+        center: initialCenter,
+        zoom: initialZoom,
         zoomControl: true,
         attributionControl: true,
       })
@@ -86,7 +91,7 @@ export default function MapContainer({
         }, 100)
       })
 
-      if (onMapReady) onMapReady(map)
+      if (initialOnMapReady) initialOnMapReady(map)
     }
 
     initMap()

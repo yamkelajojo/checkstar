@@ -33,9 +33,13 @@ export default function ProductsClient() {
     return () => clearTimeout(timer)
   }, [searchQuery])
 
+  // Category groups filter server-side (single request per group) instead of
+  // downloading the entire catalogue and filtering in memory.
   const queryParams: Record<string, string> = {}
   if (debouncedSearch) queryParams.search = debouncedSearch
-  const { data: products = [], isLoading: productsLoading, error: productsError } = useAllProducts(Object.keys(queryParams).length ? queryParams : undefined)
+  const activeSlugs = FILTER_GROUPS.find(g => g.label === activeGroup)?.slugs
+  if (activeSlugs) queryParams.categories = (activeSlugs as readonly string[]).join(',')
+  const { data: products = [], isLoading: productsLoading, error: productsError } = useAllProducts(queryParams)
 
   const loading = productsLoading
   const fetchError = productsError ? 'Failed to load products' : null
@@ -60,18 +64,6 @@ export default function ProductsClient() {
       window.removeEventListener('resize', update)
     }
   }, [products.length])
-
-  const filtered = products.filter(p => {
-    const activeSlugs = FILTER_GROUPS.find(g => g.label === activeGroup)?.slugs
-    if (!activeSlugs) return true
-    const slug = p.category?.slug
-    if (slug) return (activeSlugs as string[]).includes(slug)
-    // Fallback to legacy ID mapping for resilience if category not eager-loaded
-    const legacyMap: Record<string, number[]> = {
-      Fresh: [1,2,3,4], Pantry: [7,8,14], Drinks: [5,12], Home: [9,13], Care: [10,11], Other: [6,15]
-    }
-    return legacyMap[activeGroup]?.includes((p as any).category_id) ?? true
-  })
 
   return (
     <>
@@ -137,7 +129,7 @@ export default function ProductsClient() {
                 <div key={i} className="bg-gray-50 rounded-xl aspect-square animate-pulse" />
               ))}
             </div>
-          ) : filtered.length === 0 ? (
+          ) : products.length === 0 ? (
             <motion.div
               initial={{ opacity: 0, scale: 0.8, filter: 'blur(8px)' }}
               animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
@@ -150,7 +142,7 @@ export default function ProductsClient() {
             </motion.div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
-              {filtered.map(product => (
+              {products.map(product => (
                 <ProductCard key={product.id} product={product} />
               ))}
             </div>

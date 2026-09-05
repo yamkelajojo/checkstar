@@ -38,8 +38,12 @@ class OperationsController extends Controller
             ->where('created_at', '>=', Carbon::now()->subHour())
             ->count();
 
+        // "Pending" = awaiting rider assignment. Orders never linger in the
+        // `pending` status (intake auto-confirms); the operationally meaningful
+        // backlog is confirmed/retrying orders with no rider yet.
         $pendingOrders = Order::where('store_id', $store->id)
-            ->where('status', 'pending')
+            ->whereIn('status', ['confirmed', 'retrying'])
+            ->whereNull('rider_id')
             ->count();
 
         $activeDeliveries = Order::where('store_id', $store->id)
@@ -66,9 +70,12 @@ class OperationsController extends Controller
         $store = $this->storeContext->resolve($request->user(), $request->input('store_id'));
         $alerts = [];
 
-        // Spec: pending orders older than 5 minutes
+        // Orders awaiting a rider for over 5 minutes (auto-dispatch should
+        // assign within seconds when riders exist — anything older means
+        // dispatch is stuck)
         $stalePending = Order::where('store_id', $store->id)
-            ->where('status', 'pending')
+            ->whereIn('status', ['confirmed', 'retrying'])
+            ->whereNull('rider_id')
             ->where('created_at', '<=', Carbon::now()->subMinutes(5))
             ->count();
 
@@ -77,13 +84,14 @@ class OperationsController extends Controller
                 'id' => 'stale-pending',
                 'type' => 'order_pending',
                 'severity' => 'warning',
-                'message' => "{$stalePending} order(s) pending for over 5 minutes",
+                'message' => "{$stalePending} order(s) awaiting dispatch for over 5 minutes",
             ];
         }
 
-        // Spec: no riders available for over 10 minutes with pending orders
+        // No riders available for over 10 minutes with orders awaiting dispatch
         $hasPendingOrders = Order::where('store_id', $store->id)
-            ->where('status', 'pending')
+            ->whereIn('status', ['confirmed', 'retrying'])
+            ->whereNull('rider_id')
             ->exists();
 
         if ($hasPendingOrders) {
@@ -95,9 +103,11 @@ class OperationsController extends Controller
                 // Check if this condition has persisted for >10 minutes
                 // by seeing if any rider's last location update was >10min ago
                 $riderIds = Rider::where('store_id', $store->id)->pluck('id');
-                $lastRiderActivity = RiderLocation::whereIn('rider_id', $riderIds)
-                    ->latest('recorded_at')
-                    ->value('recorded_at');
+                $lastRiderActivity = $riderIds->isNotEmpty()
+                    ? RiderLocation::whereIn('rider_id', $riderIds)
+                        ->latest('recorded_at')
+                        ->value('recorded_at')
+                    : null;
 
                 $idleDuration = $lastRiderActivity
                     ? $lastRiderActivity->diffInMinutes(Carbon::now())
@@ -126,10 +136,12 @@ class OperationsController extends Controller
 
     public function events(Request $request): JsonResponse
     {
+        $store = $this->storeContext->resolve($request->user(), $request->input('store_id'));
+
         $cursor = $request->input('cursor');
         $limit = min((int) $request->input('limit', 50), 50);
 
-        $result = $this->eventFeedService->getEvents($cursor, $limit);
+        $result = $this->eventFeedService->getEvents($cursor, $limit, $store);
 
         return response()->json([
             'events' => $result->events,

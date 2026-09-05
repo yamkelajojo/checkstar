@@ -37,11 +37,19 @@ class ProductController extends Controller
 
     private function appendStoreAvailability(Product $product): void
     {
-        $storeProducts = StoreProduct::where('product_id', $product->id)
+        // Uses the already-eager-loaded relation when available (one query
+        // per page instead of one per product).
+        if (! $product->relationLoaded('storeProducts')) {
+            $product->load(['storeProducts' => fn ($q) => $q
+                ->where('is_available', true)
+                ->where('stock_quantity', '>', 0)
+                ->with('store:id,name,slug')]);
+        }
+
+        $storeProducts = $product->storeProducts
             ->where('is_available', true)
             ->where('stock_quantity', '>', 0)
-            ->with('store:id,name,slug')
-            ->get();
+            ->values();
 
         $product->store_count = $storeProducts->count();
         $product->stores = $storeProducts->map(fn (StoreProduct $sp) => [
@@ -50,6 +58,7 @@ class ProductController extends Controller
             'name' => $sp->store->name,
             'slug' => $sp->store->slug,
             'stock_quantity' => $sp->stock_quantity,
+            'available_quantity' => max(0, $sp->stock_quantity - ($sp->reserved_quantity ?? 0)),
             'is_available' => $sp->is_available,
         ])->values();
     }
@@ -89,10 +98,25 @@ class ProductController extends Controller
     public function index(Request $request): JsonResponse
     {
         $query = Product::where('is_active', true)
-            ->with(['category', 'specials']);
+            ->with(['category', 'specials', 'storeProducts.store:id,name,slug']);
 
         if ($request->filled('category')) {
             $query->whereHas('category', fn ($q) => $q->where('slug', $request->category));
+        }
+
+        // Multi-category filtering (comma-separated slugs) so clients can
+        // filter catalogue groups server-side instead of downloading the
+        // whole catalogue and filtering in memory.
+        if ($request->filled('categories')) {
+            $slugs = collect(is_array($request->categories) ? $request->categories : explode(',', (string) $request->categories))
+                ->map(fn ($slug) => trim((string) $slug))
+                ->filter()
+                ->unique()
+                ->values();
+
+            if ($slugs->isNotEmpty()) {
+                $query->whereHas('category', fn ($q) => $q->whereIn('slug', $slugs->all()));
+            }
         }
 
         if ($request->filled('featured')) {
@@ -148,7 +172,9 @@ class ProductController extends Controller
     {
         $product = Product::where('slug', $slug)
             ->where('is_active', true)
-            ->with('category', 'specials')
+            ->with(['category', 'specials', 'storeProducts' => fn ($q) => $q
+                ->where('is_available', true)
+                ->where('stock_quantity', '>', 0)])
             ->firstOrFail();
 
         $this->absolutizeImages($product);

@@ -224,8 +224,8 @@ export function useClaimOrder() {
 export function useAdvanceOrder() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ orderId, action }: { orderId: number; action: string }) => {
-      if (action === 'items_bought') return api.markItemsBought(orderId)
+    mutationFn: ({ orderId, action, itemIds }: { orderId: number; action: string; itemIds?: number[] }) => {
+      if (action === 'items_bought') return api.markItemsBought(orderId, itemIds)
       if (action === 'out_for_delivery') return api.markOutForDelivery(orderId)
       return api.markDelivered(orderId)
     },

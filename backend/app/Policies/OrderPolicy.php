@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\UserRole;
 use App\Models\Order;
 use App\Models\User;
 
@@ -34,7 +35,7 @@ class OrderPolicy
 
     private function isAssignedRider(User $user, Order $order): bool
     {
-        if ($user->role !== 'rider' || ! $user->rider) {
+        if ($user->role !== UserRole::Rider || ! $user->rider) {
             return false;
         }
 

@@ -124,11 +124,11 @@ export function BannerCarousel({ banners }: BannerCarouselProps) {
             transition={{ duration: 0.4 }}
           >
             {slide.subtitle && (
-              <p className="text-white/80 text-sm md:text-base mb-2 font-[family-name:var(--font-primary)]">
+              <p className="text-white/80 text-sm md:text-base mb-2 font-sans">
                 {slide.subtitle}
               </p>
             )}
-            <h2 className="text-2xl md:text-4xl font-bold text-white mb-6 font-[family-name:var(--font-primary)]">
+            <h2 className="text-2xl md:text-4xl font-bold text-white mb-6 font-sans">
               {slide.title}
             </h2>
             {slide.ctaLabel && slide.url && (

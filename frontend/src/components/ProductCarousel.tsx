@@ -46,7 +46,7 @@ export function ProductCarousel({ title, products, href, queryResult }: ProductC
       className="py-6"
     >
       <div className="mb-4 flex items-baseline justify-between">
-        <h2 className="text-xl font-bold tracking-tight text-text-primary font-[family-name:var(--font-primary)]">
+        <h2 className="text-xl font-bold tracking-tight text-foreground font-sans">
           {title}
         </h2>
         {href && (

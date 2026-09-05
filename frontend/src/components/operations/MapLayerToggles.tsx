@@ -62,11 +62,12 @@ export default function MapLayerToggles({ map, data, onToggle }: MapLayerToggles
   }, [map, data, onToggle])
 
   useEffect(() => {
+    const layers = layersRef.current
     return () => {
-      layersRef.current.forEach(layer => {
+      layers.forEach(layer => {
         try { map?.removeLayer(layer) } catch {}
       })
-      layersRef.current.clear()
+      layers.clear()
     }
   }, [map])
 

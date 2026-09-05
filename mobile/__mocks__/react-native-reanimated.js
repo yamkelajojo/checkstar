@@ -23,21 +23,31 @@ function AnimatedView(props) {
   return props.children;
 }
 
+function passthrough(props) {
+  return props.children ?? null;
+}
+
 const Animated = Object.assign(
   function AnimatedComponent(props) {
-    return props.children;
+    return passthrough(props);
   },
   {
-    View: function AnimatedView(props) { return props.children; },
-    Text: function AnimatedText(props) { return props.children; },
-    Image: function AnimatedImage(props) { return props.children; },
-    ScrollView: function AnimatedScrollView(props) { return props.children; },
-    FlatList: function AnimatedFlatList(props) { return props.children; },
+    View: function AnimatedView(props) { return passthrough(props); },
+    Text: function AnimatedText(props) { return passthrough(props); },
+    Image: function AnimatedImage(props) { return passthrough(props); },
+    ScrollView: function AnimatedScrollView(props) { return passthrough(props); },
+    FlatList: function AnimatedFlatList(props) { return passthrough(props); },
+    Pressable: function AnimatedPressable(props) { return passthrough(props); },
     createAnimatedComponent: (C) => C,
   }
 );
 
-const Reanimated = {
+// babel-preset-expo transpiles ESM to CJS WITHOUT interop helpers, so a
+// default import (`import Animated from 'react-native-reanimated'`) receives
+// this whole namespace object, not `.default`. Mirror the Animated members at
+// the top level so both `Animated.createAnimatedComponent(...)` (module
+// default) and `Reanimated.Animated.View` resolve under jest.
+const Reanimated = Object.assign({}, Animated, {
   default: Animated,
   Animated,
   Easing,
@@ -54,8 +64,13 @@ const Reanimated = {
   cancelAnimation: () => {},
   runOnJS: (fn) => fn,
   runOnUI: (fn) => fn,
+  withDelay: (_delay, animation) => animation,
+  withSequence: (...animations) => animations[animations.length - 1],
+  withRepeat: (animation) => animation,
   interpolate: (v) => v,
+  interpolateColor: (v) => v,
   Extrapolate: { CLAMP: 'clamp', EXTEND: 'extend', IDENTITY: 'identity' },
+  Extrapolation: { CLAMP: 'clamp', EXTEND: 'extend', IDENTITY: 'identity' },
   Layout: { duration: () => ({}) },
   FadeIn: { duration: () => ({}) },
   FadeOut: { duration: () => ({}) },
@@ -74,6 +89,13 @@ const Reanimated = {
   SlideOutUp: { duration: () => ({}) },
   EnterTransition: {},
   ExitTransition: {},
-};
+  useReducedMotion: () => false,
+  useAnimatedProps: (fn) => fn(),
+  useEvent: () => () => {},
+  useAnimatedReaction: () => {},
+  useAnimatedGestureHandler: (h) => h,
+  measure: () => ({}),
+  scrollTo: () => {},
+});
 
 module.exports = Reanimated;

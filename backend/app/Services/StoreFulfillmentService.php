@@ -118,8 +118,10 @@ class StoreFulfillmentService
             if (! $sp) {
                 return false; // Product not available at this store
             }
-            if ($sp->stock_quantity < $quantity) {
-                return false; // Insufficient stock
+            // Availability counts reservations held by other in-flight orders
+            $available = $sp->stock_quantity - ($sp->reserved_quantity ?? 0);
+            if ($available < $quantity) {
+                return false; // Insufficient unreserved stock
             }
         }
 
@@ -148,7 +150,8 @@ class StoreFulfillmentService
                     ->where('is_available', true)
                     ->first();
 
-                if ($sp && $sp->stock_quantity >= $quantity) {
+                $available = $sp ? ($sp->stock_quantity - ($sp->reserved_quantity ?? 0)) : 0;
+                if ($available >= $quantity) {
                     $canFulfillAnywhere = true;
                     break;
                 }

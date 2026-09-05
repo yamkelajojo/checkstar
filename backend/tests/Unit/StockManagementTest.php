@@ -246,7 +246,7 @@ class StockManagementTest extends TestCase
 
     // ─── markItemsBought: reserved_quantity behavior ──────────────────
 
-    public function test_mark_items_bought_does_not_persist_reserved_quantity_change(): void
+    public function test_mark_items_bought_releases_reservation_and_decrements_stock(): void
     {
         $this->storeProduct->update(['reserved_quantity' => 5]);
 
@@ -257,7 +257,38 @@ class StockManagementTest extends TestCase
 
         $this->storeProduct->refresh();
         $this->assertSame(47, $this->storeProduct->stock_quantity);
-        $this->assertSame(5, $this->storeProduct->reserved_quantity);
+        // The bought item's reservation (3) is released; unrelated reservations (2) remain
+        $this->assertSame(2, $this->storeProduct->reserved_quantity);
+    }
+
+    // ─── markItemsBought: partial batches ────────────────────────────
+
+    public function test_partial_batch_can_be_continued_in_a_later_call(): void
+    {
+        $order = $this->createOrderWithItems(2, 50);
+        $rider = $order->rider;
+        $item = $order->items->first();
+
+        // First call: mark only this item
+        $this->riderOrderService->markItemsBought($rider, $order->id, [$item->id]);
+        $this->storeProduct->refresh();
+        $this->assertSame(48, $this->storeProduct->stock_quantity);
+
+        // Second call for the SAME item must not decrement again
+        $this->riderOrderService->markItemsBought($rider, $order->id, [$item->id]);
+        $this->storeProduct->refresh();
+        $this->assertSame(48, $this->storeProduct->stock_quantity);
+    }
+
+    public function test_mark_items_bought_ignores_unknown_item_ids(): void
+    {
+        $order = $this->createOrderWithItems(2, 50);
+        $rider = $order->rider;
+
+        $this->riderOrderService->markItemsBought($rider, $order->id, [999999]);
+
+        $this->storeProduct->refresh();
+        $this->assertSame(50, $this->storeProduct->stock_quantity);
     }
 
     // ─── markItemsBought: oversell guard ─────────────────────────────
@@ -369,6 +400,110 @@ class StockManagementTest extends TestCase
 
         $this->storeProduct->refresh();
         $this->assertSame(0, $this->storeProduct->reserved_quantity);
+    }
+
+    public function test_order_cancellation_does_not_release_reservations_for_bought_items(): void
+    {
+        // Reservation held for this order's item (3 units) + an unrelated 4 units
+        $this->storeProduct->update(['reserved_quantity' => 7]);
+
+        $order = $this->createOrderWithItems(3, 50);
+        $rider = $order->rider;
+
+        $this->riderOrderService->markItemsBought($rider, $order->id);
+
+        // bought: reserved 7-3=4; cancelling must not release the item again
+        (new OrderStateMachine)->transition($order, OrderStatus::Cancelled);
+
+        $this->storeProduct->refresh();
+        $this->assertSame(4, $this->storeProduct->reserved_quantity);
+        $this->assertSame(47, $this->storeProduct->stock_quantity);
+    }
+
+    public function test_delivery_releases_reservations_for_unbought_items(): void
+    {
+        $this->storeProduct->update(['reserved_quantity' => 3]);
+
+        $order = $this->createOrderWithItems(3, 50);
+
+        // Simulate the order reaching Delivered without the item being marked
+        // bought (e.g. customer-confirmed path) — the reservation must be
+        // released by the state machine, not leaked forever.
+        $order->status = OrderStatus::OutForDelivery;
+        $order->save();
+        (new OrderStateMachine)->transition($order, OrderStatus::Delivered);
+
+        $this->storeProduct->refresh();
+        $this->assertSame(0, $this->storeProduct->reserved_quantity);
+        $this->assertSame(50, $this->storeProduct->stock_quantity);
+    }
+
+    public function test_reservation_counts_against_availability_during_placement(): void
+    {
+        // Another in-flight order holds a reservation for 48 of the 50 units
+        $this->storeProduct->update(['reserved_quantity' => 48]);
+
+        $intake = new OrderIntake(
+            new PricingService,
+            new OrderStateMachine,
+            new DispatchService(new OrderStateMachine, new DispatchPolicy, new OrderClaim(new OrderStateMachine)),
+            new DispatchPolicy,
+            new OrderCartPolicy,
+            new StoreFulfillmentService(new DispatchPolicy),
+        );
+
+        $validated = [
+            'items' => [['product_id' => $this->product->id, 'quantity' => 3]],
+            'delivery_address' => '123 Test St',
+            'delivery_latitude' => -29.85,
+            'delivery_longitude' => 31.02,
+            'payment_method' => 'cash_on_delivery',
+        ];
+
+        $this->expectException(\InvalidArgumentException::class);
+        // Reserved stock counts against availability, so the store is
+        // ineligible in the fulfillment layer — that layer's reason is thrown.
+        $this->expectExceptionMessage('No single store can fulfill');
+
+        $intake->place($validated, $this->customer);
+    }
+
+    public function test_reservation_prevents_fulfillment_when_stock_is_reserved(): void
+    {
+        // Second store that also stocks the product
+        $store2 = Store::create([
+            'name' => 'Overport',
+            'slug' => 'overport',
+            'address' => '99 Cannon Ave',
+            'city' => 'Durban',
+            'province' => 'KwaZulu-Natal',
+            'postal_code' => '4092',
+            'latitude' => -29.85,
+            'longitude' => 31.02,
+            'delivery_radius_km' => 5,
+            'phone' => '+27 31 555 0102',
+            'is_active' => true,
+        ]);
+        StoreProduct::create([
+            'store_id' => $store2->id,
+            'product_id' => $this->product->id,
+            'stock_quantity' => 50,
+            'reserved_quantity' => 0,
+            'is_available' => true,
+        ]);
+
+        // Unreserved stock exists -> fulfillable
+        $fulfillmentService = new StoreFulfillmentService(new DispatchPolicy);
+        $this->assertTrue($fulfillmentService->resolve([$this->product->id => 2], -29.85, 31.02)->success);
+
+        // Now every unit at every eligible store is reserved by in-flight orders
+        $this->storeProduct->update(['reserved_quantity' => 50]);
+        StoreProduct::where('store_id', $store2->id)->update(['reserved_quantity' => 50]);
+
+        $result = $fulfillmentService->resolve([$this->product->id => 2], -29.85, 31.02);
+
+        $this->assertFalse($result->success);
+        $this->assertStringContainsString('No single store can fulfill', $result->reason);
     }
 
     // ─── Stock availability validation during placement ─────────────

@@ -18,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
             'role' => RoleMiddleware::class,
+            'active.user' => \App\Http\Middleware\EnsureUserIsActive::class,
         ]);
         $middleware->statefulApi();
     })

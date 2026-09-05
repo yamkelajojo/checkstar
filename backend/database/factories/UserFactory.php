@@ -30,6 +30,10 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
+            // Explicit so models carry the attribute in memory — omitting it
+            // leaves $user->is_active === null even though the DB column
+            // defaults to true, which breaks truthiness checks.
+            'is_active' => true,
         ];
     }
 

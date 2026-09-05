@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'motion/react'
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react'
@@ -16,6 +16,10 @@ export default function LoginClient() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const searchParams = useSearchParams()
+  // Only allow same-app relative redirects (no open-redirect via //evil.com or absolute URLs).
+  const rawRedirect = searchParams.get('redirect')
+  const redirectTo = rawRedirect && rawRedirect.startsWith('/') && !rawRedirect.startsWith('//') ? rawRedirect : null
 
   useEffect(() => {
     checkAuth()
@@ -23,12 +27,16 @@ export default function LoginClient() {
 
   useEffect(() => {
     if (isAuthenticated && user) {
+      if (redirectTo) {
+        router.push(redirectTo)
+        return
+      }
       const role = user.role
       if (role === 'rider') router.push('/rider/dashboard')
       else if (role === 'store_owner' || role === 'store_manager' || role === 'logistics_officer' || role === 'developer') router.push('/admin/dashboard')
       else router.push('/')
     }
-  }, [isAuthenticated, user, router])
+  }, [isAuthenticated, user, router, redirectTo])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -82,6 +90,12 @@ export default function LoginClient() {
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
+            </div>
+
+            <div className="flex justify-end">
+              <Link href="/auth/forgot-password" className="text-sm text-primary hover:underline">
+                Forgot password?
+              </Link>
             </div>
 
             <motion.button

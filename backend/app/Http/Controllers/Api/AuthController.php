@@ -10,6 +10,7 @@ use App\Http\Requests\RegisterRiderRequest;
 use App\Models\User;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Auth\Events\Verified;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -38,6 +39,10 @@ class AuthController extends Controller
             $request->session()->regenerate();
         }
 
+        // Fires the verification email via the framework-registered
+        // SendEmailVerificationNotification listener (User is MustVerifyEmail).
+        event(new Registered($user));
+
         return response()->json(['user' => $user, 'token' => $user->createToken('mobile')->plainTextToken], 201);
     }
 
@@ -63,6 +68,8 @@ class AuthController extends Controller
             Auth::guard('web')->login($user);
             $request->session()->regenerate();
         }
+
+        event(new Registered($user));
 
         return response()->json(['user' => $user->load('rider'), 'token' => $user->createToken('mobile')->plainTextToken], 201);
     }
@@ -124,6 +131,14 @@ class AuthController extends Controller
     public function refresh(Request $request): JsonResponse
     {
         $user = $request->user();
+
+        // Rotate: the presented token is retired so a leaked refresh response
+        // can't extend an old token's life indefinitely.
+        $current = $user->currentAccessToken();
+        if ($current) {
+            $current->delete();
+        }
+
         $token = $user->createToken('mobile')->plainTextToken;
 
         return response()->json(['token' => $token]);
@@ -131,15 +146,15 @@ class AuthController extends Controller
 
     public function forgotPassword(Request $request): JsonResponse
     {
-        $request->validate(['email' => 'required|email|exists:users,email']);
+        // Deliberately no `exists` rule — the response never reveals whether
+        // an account exists (user enumeration defence).
+        $request->validate(['email' => 'required|email']);
 
-        $status = Password::sendResetLink(
+        Password::sendResetLink(
             $request->only('email')
         );
 
-        return $status === Password::RESET_LINK_SENT
-            ? response()->json(['message' => 'Password reset link sent to your email.'])
-            : response()->json(['message' => 'Unable to send reset link.'], 500);
+        return response()->json(['message' => "If that email address is registered, a password reset link has been sent."]);
     }
 
     public function resetPassword(Request $request): JsonResponse
@@ -157,6 +172,10 @@ class AuthController extends Controller
                     'password' => Hash::make($password),
                     'remember_token' => Str::random(60),
                 ])->save();
+
+                // A password reset must end every existing session — a stolen
+                // token cannot outlive the credential change.
+                $user->tokens()->delete();
 
                 event(new PasswordReset($user));
             }

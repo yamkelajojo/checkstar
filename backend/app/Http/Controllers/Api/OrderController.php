@@ -16,6 +16,7 @@ use App\Services\ReviewService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller
 {
@@ -113,26 +114,32 @@ class OrderController extends Controller
 
     public function cancel(Request $request, int $id): JsonResponse
     {
-        $order = Order::findOrFail($id);
+        // Lock the row so a concurrent rider claim/dispatch cannot transition
+        // the order between the policy check and our transition (TOCTOU).
+        $order = DB::transaction(function () use ($request, $id) {
+            $order = Order::where('id', $id)->lockForUpdate()->firstOrFail();
 
-        if ($request->user()->cannot('cancel', $order)) {
-            return response()->json(['message' => 'Not your order'], 403);
-        }
+            if ($request->user()->cannot('cancel', $order)) {
+                abort(response()->json(['message' => 'Not your order'], 403));
+            }
 
-        if (! $this->cancellationPolicy->customerCanCancel($order)) {
-            return response()->json([
-                'message' => 'This order can no longer be cancelled',
-                'reason' => 'order_not_cancellable',
-                'status' => $order->status->value,
-            ], 409);
-        }
+            if (! $this->cancellationPolicy->customerCanCancel($order)) {
+                abort(response()->json([
+                    'message' => 'This order can no longer be cancelled',
+                    'reason' => 'order_not_cancellable',
+                    'status' => $order->status->value,
+                ], 409));
+            }
 
-        $this->stateMachine->transition(
-            $order,
-            OrderStatus::Cancelled,
-            $request->user(),
-            ['reason' => $request->input('reason', 'Customer requested cancellation')]
-        );
+            $this->stateMachine->transition(
+                $order,
+                OrderStatus::Cancelled,
+                $request->user(),
+                ['reason' => $request->input('reason', 'Customer requested cancellation')]
+            );
+
+            return $order;
+        });
 
         return response()->json(['data' => $order->fresh()]);
     }

@@ -18,7 +18,7 @@ Checkstar needs a customer-facing mobile app for grocery delivery in Durban (3 s
 - **Animations:** `react-native-reanimated` v4
 - **Forms/Validation:** Native + custom hooks (no heavy form lib)
 - **Device fleet:** iPhone 17 running **Expo Go 54.0.2** — **SDK pinned to 54** (see AGENTS.md). Upgrading Expo SDK requires updating Expo Go on all test devices simultaneously.
-- **Backend:** Django REST API at `http://192.168.1.100:8000/api` (local LAN during dev)
+- **Backend:** Laravel 11 API at `http://192.168.1.100:8000/api` (local LAN during dev)
 
 ## Alternatives Considered
 

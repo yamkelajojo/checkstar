@@ -60,13 +60,13 @@ class RecommendationService
         $products = Product::query()
             ->where('is_active', true)
             ->with(['category', 'storeProducts'])
+            ->withCount('orderItems')
             ->get()
             ->map(function ($product) use ($categoryAffinity, $viewedProductIds) {
                 $catId = $product->category_id;
                 $categoryMatch = $categoryAffinity[$catId] ?? 0;
 
-                $orderCount = $product->orderItems()->count();
-                $popularity = min(1.0, $orderCount / 50);
+                $popularity = min(1.0, $product->order_items_count / 50);
 
                 $ageDays = max(1, now()->diffInDays($product->created_at));
                 $freshness = pow(0.5, $ageDays / 7);

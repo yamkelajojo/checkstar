@@ -9,6 +9,21 @@ class OrderItem extends Model
 {
     protected $guarded = ['id'];
 
+    /**
+     * Integer-cents mirrors of the decimal price columns (mobile contract).
+     */
+    protected $appends = ['unit_price_cents', 'total_price_cents'];
+
+    public function getUnitPriceCentsAttribute(): int
+    {
+        return (int) round(((float) $this->unit_price) * 100);
+    }
+
+    public function getTotalPriceCentsAttribute(): int
+    {
+        return (int) round(((float) $this->total_price) * 100);
+    }
+
     protected function casts(): array
     {
         return [
@@ -16,6 +31,7 @@ class OrderItem extends Model
             'unit_price' => 'decimal:2',
             'total_price' => 'decimal:2',
             'product_snapshot' => 'array',
+            'bought_at' => 'datetime',
         ];
     }
 

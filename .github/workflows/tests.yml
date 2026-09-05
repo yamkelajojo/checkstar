@@ -1,0 +1,232 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    name: Backend (PHP ${{ matrix.php }})
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        php: [8.2, 8.3, 8.4]
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite
+          coverage: none
+
+      - name: Copy environment file
+        run: cp .env.example .env
+
+      # Decomposed so the real error surfaces: vendor install first without
+      # scripts, then the artisan bootstrapping step on its own — a bootstrap
+      # failure prints the full PHP exception instead of an opaque script exit.
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress --no-scripts
+
+      - name: Generate app key
+        run: |
+          set -o pipefail
+          php artisan key:generate 2>&1 | tee artisan-keygen.log
+
+      - name: Bootstrap packages (post-autoload-dump)
+        run: |
+          set -o pipefail
+          php artisan package:discover --ansi 2>&1 | tee package-discover.log
+
+      - name: Execute tests
+        run: |
+          set -o pipefail
+          php artisan test 2>&1 | tee phpunit.log
+
+      # GitHub's step-log blob storage has been flaky; commit the captured
+      # output back to the branch ([skip ci] prevents a loop) so the real
+      # error stays readable via plain git.
+      - name: Diagnostics on failure
+        if: failure()
+        run: |
+          {
+            echo "## Backend CI diagnostics (PHP ${{ matrix.php }})"
+            echo
+            echo '### php -v'
+            echo '```'
+            php -v 2>&1
+            echo '```'
+            echo '### captured step output'
+            echo '### middleware stack for cart/sync'
+            echo '```'
+            php artisan route:list --path=cart 2>&1
+            echo '```'
+            echo '### middleware stack for rider available-orders'
+            echo '```'
+            php artisan route:list --path=rider/available 2>&1
+            echo '```'
+            for f in artisan-keygen.log package-discover.log phpunit.log; do
+              if [ -f "$f" ]; then
+                echo "#### $f"
+                echo '```'
+                tail -400 "$f"
+                echo '```'
+              fi
+            done
+            echo '### bootstrap/cache'
+            echo '```'
+            ls -la bootstrap/cache 2>&1
+            echo '```'
+          } > "ci-diagnostics-php${{ matrix.php }}.md"
+          cat "ci-diagnostics-php${{ matrix.php }}.md"
+          git config user.name "ci-diagnostics"
+          git config user.email "ci-diagnostics@users.noreply.github.com"
+          git add "ci-diagnostics-php${{ matrix.php }}.md"
+          git commit -m "ci: backend diagnostics [skip ci]"
+          git pull --rebase origin "${GITHUB_REF_NAME#refs/heads/}" || true
+          git push "${GITHUB_SERVER_URL%/}/$GITHUB_REPOSITORY" "HEAD:${GITHUB_REF_NAME#refs/heads/}"
+
+  # Exercises the real production engine: the CHECK-constraint migration is
+  # skipped under sqlite, so this job is its only verification.
+  backend-mysql:
+    runs-on: ubuntu-latest
+    name: Backend (MySQL 8)
+    permissions:
+      contents: write
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: checkstar_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -ppassword"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      DB_CONNECTION: mysql
+      DB_HOST: 127.0.0.1
+      DB_PORT: "3306"
+      DB_DATABASE: checkstar_test
+      DB_USERNAME: root
+      DB_PASSWORD: password
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, mysql, mysqli, pdo_mysql
+          coverage: none
+
+      - name: Copy environment file
+        run: cp .env.example .env
+
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress --no-scripts
+
+      - name: Generate app key
+        run: |
+          set -o pipefail
+          php artisan key:generate 2>&1 | tee artisan-keygen.log
+
+      - name: Bootstrap packages (post-autoload-dump)
+        run: |
+          set -o pipefail
+          php artisan package:discover --ansi 2>&1 | tee package-discover.log
+
+      # RefreshDatabase runs the real migration chain (incl. the CHECK
+      # constraints) against MySQL before the suite.
+      - name: Execute tests
+        run: |
+          set -o pipefail
+          php artisan test 2>&1 | tee phpunit.log
+
+      - name: Diagnostics on failure
+        if: failure()
+        run: |
+          {
+            echo "## Backend CI diagnostics (MySQL 8)"
+            echo
+            echo '### captured step output'
+            for f in artisan-keygen.log package-discover.log phpunit.log; do
+              if [ -f "$f" ]; then
+                echo "#### $f"
+                echo '```'
+                tail -400 "$f"
+                echo '```'
+              fi
+            done
+          } > "ci-diagnostics-mysql.md"
+          cat "ci-diagnostics-mysql.md"
+          git config user.name "ci-diagnostics"
+          git config user.email "ci-diagnostics@users.noreply.github.com"
+          git add "ci-diagnostics-mysql.md"
+          git commit -m "ci: backend diagnostics [skip ci]"
+          git pull --rebase origin "${GITHUB_REF_NAME#refs/heads/}" || true
+          git push "${GITHUB_SERVER_URL%/}/$GITHUB_REPOSITORY" "HEAD:${GITHUB_REF_NAME#refs/heads/}"
+
+  frontend:
+    runs-on: ubuntu-latest
+    name: Frontend (typecheck, lint, unit, build)
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: 1
+
+  mobile:
+    runs-on: ubuntu-latest
+    name: Mobile (typecheck, SDK pin, unit)
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run check:sdk-pin
+      - run: npm test

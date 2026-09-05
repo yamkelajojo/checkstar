@@ -164,7 +164,7 @@ describe('product detail hand-off', () => {
   it('navigates to ProductDetail with the product slug when the card is tapped', async () => {
     await renderBrowse();
     await fireEvent.press(screen.getByLabelText('Spinach'));
-    expect(mockNavigate).toHaveBeenCalledWith('ProductDetail', { slug: 'slug-101' });
+    expect(mockNavigate).toHaveBeenCalledWith('ProductDetail', { slug: 'slug-101', source: 'feed' });
   });
 });
 

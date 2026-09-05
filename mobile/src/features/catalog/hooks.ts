@@ -79,7 +79,22 @@ export function useSpecials(storeId?: number | null) {
     queryKey: queryKeys.specials({ storeId }),
     queryFn: async () => {
       const result = await fetchSpecials({ store_id: storeId ?? undefined });
-      return result.data.map(mapProduct);
+      // A special is a bundle (title + banner + products). The "Best Deals"
+      // carousel renders product cards, so flatten the attached products
+      // (deduped) — mapping the special objects themselves produced blank,
+      // unpriceable cards.
+      type SpecialWithProducts = { products?: ApiProduct[] };
+      const seen = new Set<number>();
+      const products: ApiProduct[] = [];
+      for (const special of result.data as unknown as SpecialWithProducts[]) {
+        for (const product of special.products ?? []) {
+          if (!seen.has(product.id)) {
+            seen.add(product.id);
+            products.push(product);
+          }
+        }
+      }
+      return products.map(mapProduct);
     },
   });
 }

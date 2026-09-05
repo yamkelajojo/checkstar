@@ -36,7 +36,6 @@ class RiderController extends Controller
     {
         $rider = $this->getRider($request);
 
-        $perPage = min((int) $request->query('per_page', 20), 50);
         $orders = Order::whereIn('status', [OrderStatus::Confirmed, OrderStatus::Retrying])
             ->whereNull('rider_id')
             ->with('items', 'store')

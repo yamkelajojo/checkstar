@@ -31,7 +31,7 @@ export interface Dispatch {
 export interface OrderPlacementResult { data: Order; dispatch: Dispatch }
 
 export interface FeedEvent {
-  id: number
+  id: string
   type: string
   severity: string
   message: string

@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'motion/react'
 import { Minus, Plus, Trash2, ShoppingBag, ArrowRight, Loader2, MapPin } from 'lucide-react'
 import { useCartStore } from '@/stores/cart-store'
 import { usePlaceOrder } from '@/lib/query'
+import { ApiError } from '@/lib/api'
 import { getDeliveryCoords, type DeliveryCoords } from '@/lib/delivery-coords'
 import LocationFallbackNotice from '@/components/LocationFallbackNotice'
 import type { Dispatch } from '@/types'
@@ -55,6 +56,10 @@ export default function CartClient() {
       setPlacedOrder({ order_number: result.data.order_number, id: result.data.id, payment_status: result.data.payment_status })
       setDispatch(result.dispatch)
     } catch (err: any) {
+      if (err instanceof ApiError && err.status === 401) {
+        setPlaceError('Your session has expired. Please log in to place your order.')
+        return
+      }
       setPlaceError(err.message || 'Failed to place order.')
     }
   }
@@ -70,6 +75,17 @@ export default function CartClient() {
     <>
       <main className="max-w-4xl mx-auto px-4 py-8">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+          {placeError === 'Your session has expired. Please log in to place your order.' && (
+            <div className="mb-6 flex items-center justify-between gap-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              <span>{placeError}</span>
+              <Link
+                href="/auth/login?redirect=/cart"
+                className="flex-shrink-0 font-medium text-primary hover:underline"
+              >
+                Log in
+              </Link>
+            </div>
+          )}
           <div className="flex items-center justify-between mb-8">
             <h1 className="font-display text-xl sm:text-3xl font-bold">Your Cart</h1>
             {items.length > 0 && (

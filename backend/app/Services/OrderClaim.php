@@ -28,11 +28,11 @@ class OrderClaim
                 ->whereIn('status', [OrderStatus::Confirmed, OrderStatus::Retrying])
                 ->lockForUpdate();
 
-            // Use SKIP LOCKED to avoid blocking concurrent claimants (first-to-claim wins)
-            try {
-                $query = $query->skipLocked();
-            } catch (\Throwable $e) {
-                // Fallback for databases that don't support SKIP LOCKED (e.g. SQLite in tests)
+            // SKIP LOCKED lets concurrent claimants race without blocking —
+            // first to claim wins. Not supported by SQLite (tests), so only
+            // request it on databases that implement it.
+            if (in_array(DB::connection()->getDriverName(), ['mysql', 'mariadb', 'pgsql'], true)) {
+                $query = $query->lock('FOR UPDATE SKIP LOCKED');
             }
 
             $fresh = $query->first();
@@ -41,18 +41,28 @@ class OrderClaim
                 return false;
             }
 
-            $this->stateMachine->transition($fresh, OrderStatus::Preparing, $rider->user, [
-                'rider_id' => $rider->id,
+            // Lock the rider row and enforce the per-rider concurrency cap.
+            // Without this, dispatch selects the same "available" rider for
+            // every pending order and the rider accumulates an unbounded
+            // number of simultaneous orders.
+            $lockedRider = Rider::where('id', $rider->id)->lockForUpdate()->first();
+            if (! $lockedRider || $this->riderAtOrderLimit($lockedRider)) {
+                return false;
+            }
+
+            $this->stateMachine->transition($fresh, OrderStatus::Preparing, $lockedRider->user, [
+                'rider_id' => $lockedRider->id,
                 'store_id' => $store->id,
             ]);
 
-            $fresh->rider_id = $rider->id;
+            $fresh->rider_id = $lockedRider->id;
             $fresh->store_id = $store->id;
             $fresh->save();
 
             $this->syncStoreProductIds($fresh);
 
-            // Reserve inventory at claim time to prevent concurrent oversell
+            // Reserve inventory at claim time so concurrent orders see the
+            // reserved quantity during placement/fulfillment checks.
             $this->reserveInventory($fresh);
 
             return true;
@@ -61,6 +71,25 @@ class OrderClaim
         $elapsed = (int) round((microtime(true) - $start) * 1000);
 
         return new ClaimResult($order->fresh(), $elapsed, $claimed);
+    }
+
+    /**
+     * True when the rider already holds the maximum number of active orders
+     * (confirmed/preparing/out_for_delivery) allowed by dispatch policy.
+     */
+    private function riderAtOrderLimit(Rider $rider): bool
+    {
+        $max = (int) config('dispatch.max_concurrent_orders_per_rider', 1);
+
+        if ($max < 1) {
+            return false; // Unlimited batching explicitly configured
+        }
+
+        $active = Order::where('rider_id', $rider->id)
+            ->whereIn('status', [OrderStatus::Confirmed, OrderStatus::Preparing, OrderStatus::OutForDelivery])
+            ->count();
+
+        return $active >= $max;
     }
 
     private function reserveInventory(Order $order): void

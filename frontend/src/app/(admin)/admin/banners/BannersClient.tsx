@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import {
-  Image, Plus, Trash2, Edit3, Eye, EyeOff,
+  Image as ImageIcon, Plus, Trash2, Edit3, Eye, EyeOff,
   ChevronDown, ChevronUp, Save, X, Loader2, AlertCircle,
 } from 'lucide-react'
 import { useAdminBanners, useCreateBanner, useUpdateBanner, useDeleteBanner } from '@/lib/query'
@@ -304,7 +304,7 @@ export default function BannersClient() {
               <div className="flex items-center gap-3 mb-2">
                 <h1 className="font-display text-3xl font-bold text-gray-900">Banners</h1>
                 <span className="inline-flex items-center gap-1 px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium">
-                  <Image size={12} />
+                  <ImageIcon size={12} />
                   {banners.length} banner{banners.length !== 1 ? 's' : ''}
                 </span>
               </div>
@@ -343,7 +343,7 @@ export default function BannersClient() {
           </div>
         ) : banners.length === 0 ? (
           <motion.div variants={fadeUp} className="bg-white border border-gray-100 rounded-xl p-12 text-center">
-            <Image size={40} className="text-gray-200 mx-auto mb-3" />
+            <ImageIcon size={40} className="text-gray-200 mx-auto mb-3" />
             <p className="text-gray-500 font-medium mb-1">No banners yet</p>
             <p className="text-sm text-gray-400 mb-4">Create your first promotional banner to display on the home page.</p>
             <button

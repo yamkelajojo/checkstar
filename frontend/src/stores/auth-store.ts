@@ -16,7 +16,7 @@ interface AuthState {
   forgotPassword: (email: string) => Promise<{ message: string }>
   resetPassword: (data: { token: string; email: string; password: string; password_confirmation: string }) => Promise<{ message: string }>
   requestEmailVerification: () => Promise<{ message: string }>
-  verifyEmail: (id: string, hash: string) => Promise<{ message: string }>
+  verifyEmail: (id: string, hash: string, sig?: { expires: string; signature: string }) => Promise<{ message: string }>
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -65,8 +65,8 @@ export const useAuthStore = create<AuthState>()(
         const res = await api.requestEmailVerification()
         return res
       },
-      verifyEmail: async (id, hash) => {
-        const res = await api.verifyEmail(id, hash)
+      verifyEmail: async (id, hash, sig) => {
+        const res = await api.verifyEmail(id, hash, sig)
         return res
       },
     }),

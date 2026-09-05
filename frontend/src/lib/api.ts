@@ -100,7 +100,10 @@ export const api = {
   forgotPassword: (email: string) => request<{ message: string }>('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) }),
   resetPassword: (data: { token: string; email: string; password: string; password_confirmation: string }) => request<{ message: string }>('/auth/reset-password', { method: 'POST', body: JSON.stringify(data) }),
   requestEmailVerification: () => request<{ message: string }>('/auth/email/verification-notification', { method: 'POST' }),
-  verifyEmail: (id: string, hash: string) => request<{ message: string }>(`/auth/verify-email/${id}/${hash}`),
+  verifyEmail: (id: string, hash: string, sig?: { expires: string; signature: string }) =>
+    request<{ message: string }>(
+      `/auth/verify-email/${id}/${hash}${sig ? `?expires=${encodeURIComponent(sig.expires)}&signature=${encodeURIComponent(sig.signature)}` : ''}`,
+    ),
   // Customer
   getOrders: (params?: Record<string, string>) => request<{ data: Order[] }>(`/orders${params ? `?${new URLSearchParams(params)}` : ''}`),
   getOrder: (id: number) => request<{ data: Order }>(`/orders/${id}`).then(r => r.data),
@@ -125,7 +128,7 @@ export const api = {
   // Rider
   getAvailableOrders: () => request<{ data: Order[] }>('/rider/available-orders'),
   claimOrder: (id: number) => request<Order>(`/rider/claim/${id}`, { method: 'POST' }),
-  markItemsBought: (id: number) => request<Order>(`/rider/items-bought/${id}`, { method: 'POST' }),
+  markItemsBought: (id: number, itemIds?: number[]) => request<Order>(`/rider/items-bought/${id}`, { method: 'POST', body: JSON.stringify({ item_ids: itemIds ?? [] }) }),
   markOutForDelivery: (id: number) => request<Order>(`/rider/out-for-delivery/${id}`, { method: 'POST' }),
   markDelivered: (id: number) => request<Order>(`/rider/delivered/${id}`, { method: 'POST' }),
   toggleAvailability: () => request<Rider>('/rider/toggle-availability', { method: 'POST' }),

@@ -61,13 +61,12 @@ class ProductCarouselController extends Controller
             ->with(['category', 'specials'])
             ->get()
             ->sortBy(fn ($p) => array_search($p->id, $productIds))
-            ->values()
-            ->toArray();
+            ->values();
 
-        return $this->enrichProducts($products);
+        return $this->enrichProducts($products)->values()->toArray();
     }
 
-    private function enrichProducts(array $products): array
+    private function enrichProducts($products)
     {
         foreach ($products as $product) {
             $this->absolutizeImages($product);
@@ -106,10 +105,9 @@ class ProductCarouselController extends Controller
             ->with(['category', 'specials'])
             ->orderBy('created_at', 'desc')
             ->limit(10)
-            ->get()
-            ->toArray();
+            ->get();
 
-        $products = $this->enrichProducts($products);
+        $products = $this->enrichProducts($products)->values()->toArray();
 
         return response()->json(['data' => $products]);
     }

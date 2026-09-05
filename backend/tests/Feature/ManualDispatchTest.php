@@ -123,6 +123,84 @@ class ManualDispatchTest extends TestCase
             ->assertJsonPath('data.rider_id', $rider->id);
     }
 
+    public function test_operations_assign_rejects_order_from_another_store(): void
+    {
+        // Store B's confirmed order; our manager belongs to Store A
+        $storeB = Store::create([
+            'name' => 'Overport',
+            'slug' => 'overport',
+            'address' => '99 Cannon Avenue',
+            'city' => 'Durban',
+            'province' => 'KwaZulu-Natal',
+            'postal_code' => '4092',
+            'phone' => '+27 31 000 0002',
+            'latitude' => -29.9,
+            'longitude' => 31.0,
+            'delivery_radius_km' => 50,
+            'is_active' => true,
+        ]);
+
+        $customer = User::create([
+            'name' => 'Customer',
+            'email' => 'cust@example.com',
+            'password' => Hash::make('password123'),
+            'role' => UserRole::Customer,
+            'is_active' => true,
+        ]);
+
+        $orderB = $this->makeConfirmedOrder($customer);
+        $orderB->store_id = $storeB->id;
+        $orderB->save();
+
+        $riderA = $this->makeRider('rider-a@example.com');
+
+        // A Store A operator must not be able to grab Store B's pending order
+        $response = $this->actingAs($this->manager)
+            ->postJson('/api/operations/assign-rider', [
+                'order_id' => $orderB->id,
+                'rider_id' => $riderA->id,
+                'store_id' => $this->store->id,
+            ]);
+
+        $response->assertStatus(422);
+        $this->assertNull($orderB->fresh()->rider_id);
+        $this->assertNotSame($this->store->id, $orderB->fresh()->store_id);
+    }
+
+    public function test_operations_suggestion_hides_other_stores_orders(): void
+    {
+        $storeB = Store::create([
+            'name' => 'Phoenix',
+            'slug' => 'phoenix',
+            'address' => '1 Phoenix Hwy',
+            'city' => 'Durban',
+            'province' => 'KwaZulu-Natal',
+            'postal_code' => '4068',
+            'phone' => '+27 31 000 0003',
+            'latitude' => -29.7,
+            'longitude' => 31.0,
+            'delivery_radius_km' => 50,
+            'is_active' => true,
+        ]);
+
+        $customer = User::create([
+            'name' => 'Customer 2',
+            'email' => 'cust2@example.com',
+            'password' => Hash::make('password123'),
+            'role' => UserRole::Customer,
+            'is_active' => true,
+        ]);
+
+        $orderB = $this->makeConfirmedOrder($customer);
+        $orderB->store_id = $storeB->id;
+        $orderB->save();
+
+        $response = $this->actingAs($this->manager)
+            ->getJson("/api/operations/dispatch-suggestion/{$orderB->id}");
+
+        $response->assertStatus(404);
+    }
+
     public function test_dispatch_rejects_rider_from_another_store(): void
     {
         $otherStore = Store::create([

@@ -161,7 +161,9 @@ class PaymentStateMachineTest extends TestCase
         $this->assertSame('110.00', $transaction->amount);
         $this->assertSame($this->order->customer_id, $transaction->user_id);
         $this->assertNull($transaction->payout_status);
-        $this->assertSame(['from' => 'pending', 'to' => 'paid'], $transaction->metadata);
+        // JSON objects are unordered — MySQL 8 stores object keys sorted —
+        // so assert map equality, not key order.
+        $this->assertEquals(['from' => 'pending', 'to' => 'paid'], $transaction->metadata);
     }
 
     public function test_transaction_created_on_paid_to_refunded(): void
@@ -176,7 +178,7 @@ class PaymentStateMachineTest extends TestCase
         $this->assertSame(TransactionType::Refund, $transaction->type);
         $this->assertSame(TransactionDirection::Credit, $transaction->direction);
         $this->assertSame('110.00', $transaction->amount);
-        $this->assertSame(['from' => 'paid', 'to' => 'refunded'], $transaction->metadata);
+        $this->assertEquals(['from' => 'paid', 'to' => 'refunded'], $transaction->metadata);
     }
 
     public function test_actor_user_id_used_when_provided(): void

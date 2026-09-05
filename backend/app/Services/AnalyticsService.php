@@ -70,7 +70,7 @@ class AnalyticsService
 
         $searchQueries = DB::table('user_tracking_events')
             ->where('event_type', 'search')
-            ->where('search_query', '!=', null)
+            ->whereNotNull('search_query')
             ->where('created_at', '>=', Carbon::now()->subDays(30))
             ->select(
                 'search_query as query',

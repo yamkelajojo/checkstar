@@ -17,6 +17,7 @@ use App\Services\ClaimResult;
 use App\Services\OrderClaim;
 use App\Services\OrderStateMachine;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Config;
 use Tests\TestCase;
 
 class OrderClaimTest extends TestCase
@@ -505,6 +506,52 @@ class OrderClaimTest extends TestCase
             $this->assertTrue($result->claimed, "Claim should succeed from status: {$status->value}");
             $this->assertEquals(OrderStatus::Preparing, $order->fresh()->status);
         }
+    }
+
+    public function test_claim_rejects_rider_already_at_concurrent_order_cap(): void
+    {
+        Config::set('dispatch.max_concurrent_orders_per_rider', 1);
+
+        $order1 = $this->createConfirmedOrder();
+        $order2 = $this->createConfirmedOrder();
+        $rider = $this->createRider();
+
+        $this->assertTrue($this->orderClaim->claim($order1, $rider, $this->store)->claimed);
+
+        // Same rider is now holding one active order — the second claim must bounce
+        $result = $this->orderClaim->claim($order2, $rider, $this->store);
+
+        $this->assertFalse($result->claimed);
+        $this->assertNull($order2->fresh()->rider_id);
+    }
+
+    public function test_claim_allows_rider_to_take_order_after_delivery(): void
+    {
+        Config::set('dispatch.max_concurrent_orders_per_rider', 1);
+
+        $order1 = $this->createConfirmedOrder();
+        $order2 = $this->createConfirmedOrder();
+        $rider = $this->createRider();
+
+        $this->assertTrue($this->orderClaim->claim($order1, $rider, $this->store)->claimed);
+
+        $order1->status = OrderStatus::Delivered;
+        $order1->save();
+
+        // Delivered orders don't count against the cap
+        $this->assertTrue($this->orderClaim->claim($order2, $rider, $this->store)->claimed);
+    }
+
+    public function test_claim_cap_of_zero_allows_unlimited_batching(): void
+    {
+        Config::set('dispatch.max_concurrent_orders_per_rider', 0);
+
+        $order1 = $this->createConfirmedOrder();
+        $order2 = $this->createConfirmedOrder();
+        $rider = $this->createRider();
+
+        $this->assertTrue($this->orderClaim->claim($order1, $rider, $this->store)->claimed);
+        $this->assertTrue($this->orderClaim->claim($order2, $rider, $this->store)->claimed);
     }
 
     public function test_claim_preserves_existing_rider_id_returns_false(): void

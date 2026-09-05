@@ -70,18 +70,14 @@ class OrderStateMachine
 
         $eventType = self::toEventType($to);
 
-        // Release reserved inventory on cancellation (reclaim reserved quantities)
-        if ($to === OrderStatus::Cancelled) {
-            foreach ($order->items as $item) {
-                $storeProductId = $item->store_product_id;
-                if ($storeProductId) {
-                    $sp = StoreProduct::where('id', $storeProductId)->lockForUpdate()->first();
-                    if ($sp) {
-                        $sp->reserved_quantity = max(0, ($sp->reserved_quantity ?? 0) - $item->quantity);
-                        $sp->save();
-                    }
-                }
-            }
+        // Release reserved inventory for items never bought (reclaim reservations).
+        // Runs on cancellation AND delivery so reservations can never leak:
+        //  - Cancelled: unbought items go back to the sellable pool; bought
+        //    items keep their (already released) state.
+        //  - Delivered: any item that somehow reached delivery without being
+        //    marked bought releases its reservation here.
+        if (in_array($to, [OrderStatus::Cancelled, OrderStatus::Delivered], true)) {
+            $this->releaseRemainingReservations($order);
         }
 
         $order->status = $to;
@@ -100,5 +96,28 @@ class OrderStateMachine
         ]);
 
         return $log;
+    }
+
+    /**
+     * Release reservations for order items that were never bought.
+     * Bought items already had their reservation released at buy time, so
+     * releasing them again here would corrupt accounting for other orders.
+     */
+    private function releaseRemainingReservations(Order $order): void
+    {
+        foreach ($order->items as $item) {
+            if ($item->bought_at !== null) {
+                continue;
+            }
+
+            $storeProductId = $item->store_product_id;
+            if ($storeProductId) {
+                $sp = StoreProduct::where('id', $storeProductId)->lockForUpdate()->first();
+                if ($sp) {
+                    $sp->reserved_quantity = max(0, ($sp->reserved_quantity ?? 0) - $item->quantity);
+                    $sp->save();
+                }
+            }
+        }
     }
 }

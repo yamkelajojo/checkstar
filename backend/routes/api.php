@@ -38,10 +38,12 @@ Route::post('/auth/register/rider', [AuthController::class, 'registerRider'])->m
 Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:10,1');
 Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword'])->middleware('throttle:5,1');
 Route::post('/auth/reset-password', [AuthController::class, 'resetPassword'])->middleware('throttle:5,1');
-Route::get('/auth/verify-email/{id}/{hash}', [AuthController::class, 'verifyEmail'])->name('verification.verify');
+Route::get('/auth/verify-email/{id}/{hash}', [AuthController::class, 'verifyEmail'])
+    ->middleware('signed')
+    ->name('verification.verify');
 Route::post('/auth/email/verification-notification', [AuthController::class, 'sendEmailVerificationNotification'])->middleware('throttle:5,1');
 
-    Route::middleware('auth:sanctum')->group(function () {
+    Route::middleware(['auth:sanctum', 'active.user'])->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout'])->middleware('throttle:30,1');
     Route::get('/auth/user', [AuthController::class, 'user']);
     Route::post('/auth/refresh', [AuthController::class, 'refresh'])->middleware('throttle:30,1');
@@ -161,10 +163,10 @@ Route::post('/auth/email/verification-notification', [AuthController::class, 'se
 Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/categories/{slug}', [CategoryController::class, 'show']);
 Route::get('/products', [ProductController::class, 'index']);
-Route::get('/products/{slug}', [ProductController::class, 'show']);
 Route::get('/products/trending', [ProductCarouselController::class, 'trending']);
 Route::get('/products/popular', [ProductCarouselController::class, 'popular']);
 Route::get('/products/new-arrivals', [ProductCarouselController::class, 'newArrivals']);
+Route::get('/products/{slug}', [ProductController::class, 'show']);
 Route::get('/specials', [SpecialController::class, 'index']);
 Route::get('/stores', [StoreController::class, 'index']);
 Route::get('/stores/{slug}', [StoreController::class, 'show']);

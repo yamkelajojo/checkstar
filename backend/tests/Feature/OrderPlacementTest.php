@@ -135,6 +135,15 @@ class OrderPlacementTest extends TestCase
             ->assertJsonPath('dispatch.store_id', $store->id)
             ->assertJsonPath('dispatch.rider_name', 'Test Rider')
             ->assertJsonPath('dispatch.store_name', 'Durban Central');
+
+        // Money contract: the JSON carries exact integer-cents mirrors of the
+        // decimal columns — the mobile app prices in cents and renders zero
+        // without them. (2 x R22.00 = R44.00 = 4400c, no delivery fee.)
+        $response->assertJsonPath('data.subtotal_cents', 4400)
+            ->assertJsonPath('data.delivery_fee_cents', 0)
+            ->assertJsonPath('data.total_cents', 4400)
+            ->assertJsonPath('data.items.0.unit_price_cents', 2200)
+            ->assertJsonPath('data.items.0.total_price_cents', 4400);
     }
 
     public function test_order_with_no_available_rider_enters_retrying_and_keeps_cart(): void

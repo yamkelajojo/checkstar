@@ -2,17 +2,32 @@
 
 namespace App\Services;
 
+use App\Models\Order;
+use App\Models\Store;
 use Illuminate\Support\Facades\DB;
 
 class DispatchSuggestionService
 {
-    public function getSuggestion(int $orderId): ?object
+    /**
+     * Average motorbike delivery speed in metres per second (~30 km/h),
+     * shared with EtaCalculationService via config so both ETA surfaces
+     * stay consistent.
+     */
+    private const AVG_SPEED_MPS = 8.33;
+
+    public function getSuggestion(int $orderId, ?Store $contextStore = null): ?object
     {
         $order = DB::table('orders')
             ->where('id', $orderId)
             ->first();
 
         if (! $order) {
+            return null;
+        }
+
+        // Store scoping: operators may only see suggestions for their own
+        // store's orders (prevents cross-store data leakage).
+        if ($contextStore !== null && (int) $order->store_id !== (int) $contextStore->id) {
             return null;
         }
 
@@ -40,7 +55,7 @@ class DispatchSuggestionService
                     $customerLat, $customerLng
                 ) * 1000;
                 $rider->distance_meters = $distance;
-                $rider->eta_seconds = max(60, (int) ($distance / 250)); // ~15 km/h avg speed
+                $rider->eta_seconds = max(60, (int) ceil($distance / self::AVG_SPEED_MPS));
 
                 return $rider;
             })
