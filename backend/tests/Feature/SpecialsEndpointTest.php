@@ -71,12 +71,19 @@ class SpecialsEndpointTest extends TestCase
         $live = Product::create(['category_id' => $category->id, 'name' => 'Live', 'slug' => 'live', 'unit' => 'each', 'price' => 10.00, 'is_active' => true]);
         Product::create(['category_id' => $category->id, 'name' => 'Ghost', 'slug' => 'ghost', 'unit' => 'each', 'price' => 10.00, 'is_active' => false]);
 
+        $ghost = Product::where('slug', 'ghost')->first();
         $special = Special::create(['title' => 'Mix', 'slug' => 'mix', 'start_date' => now()->subDay(), 'end_date' => now()->addDay(), 'is_active' => true]);
-        $special->products()->attach([$live->id => ['special_price' => 8.00]]);
+        $special->products()->attach([
+            $live->id => ['special_price' => 8.00],
+            $ghost->id => ['special_price' => 9.00],
+        ]);
 
-        $response = $this->getJson('/api/specials');
+        $products = $this->getJson('/api/specials')
+            ->assertStatus(200)
+            ->json('data.0.products');
 
-        $products = $response->json('data.0.products');
-        $this->assertCount(0, $products);
+        $this->assertCount(1, $products);
+        $this->assertSame('Live', $products[0]['name']);
+        $this->assertArrayHasKey('stores', $products[0]);
     }
 }

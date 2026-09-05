@@ -39,6 +39,24 @@ class SpecialController extends Controller
                 if ($product->images !== null) {
                     $product->images = array_map(fn (?string $img) => $img === null ? null : $this->absolutize($img), $product->images);
                 }
+
+                // Same `stores` shape the catalogue emits (mobile's mapper and
+                // add-to-cart read it): only in-stock, available rows.
+                $storeProducts = $product->storeProducts
+                    ->where('is_available', true)
+                    ->where('stock_quantity', '>', 0)
+                    ->values();
+
+                $product->store_count = $storeProducts->count();
+                $product->stores = $storeProducts->map(fn ($sp) => [
+                    'store_product_id' => $sp->id,
+                    'id' => $sp->store->id,
+                    'name' => $sp->store->name,
+                    'slug' => $sp->store->slug,
+                    'stock_quantity' => $sp->stock_quantity,
+                    'available_quantity' => max(0, $sp->stock_quantity - ($sp->reserved_quantity ?? 0)),
+                    'is_available' => $sp->is_available,
+                ])->values();
             }
         }
 
