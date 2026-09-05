@@ -6,9 +6,11 @@ import { useState, useEffect } from 'react';
 interface AnimatedNumberProps {
   value: number;
   className?: string;
+  /** Optional formatter (e.g. money) applied to the displayed value. */
+  format?: (n: number) => string;
 }
 
-export default function AnimatedNumber({ value, className }: AnimatedNumberProps) {
+export default function AnimatedNumber({ value, className, format }: AnimatedNumberProps) {
   const shouldReduceMotion = useReducedMotion();
   const [display, setDisplay] = useState(value);
   const [key, setKey] = useState(0);
@@ -22,8 +24,10 @@ export default function AnimatedNumber({ value, className }: AnimatedNumberProps
     }
   }, [value, display, shouldReduceMotion]);
 
+  const shown = format ? format(display) : display;
+
   if (shouldReduceMotion) {
-    return <span className={className}>{value}</span>;
+    return <span className={className}>{shown}</span>;
   }
 
   return (
@@ -36,7 +40,7 @@ export default function AnimatedNumber({ value, className }: AnimatedNumberProps
         transition={{ duration: 0.25, ease: [0.34, 1.56, 0.64, 1] }}
         className={className}
       >
-        {display}
+        {shown}
       </motion.span>
     </AnimatePresence>
   );

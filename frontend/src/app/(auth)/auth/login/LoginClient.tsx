@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { motion } from 'motion/react'
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react'
 import { Loader } from '@/components/Loader'
+import { Logo } from '@/components/Logo'
 import { useAuthStore } from '@/stores/auth-store'
 
 export default function LoginClient() {
@@ -53,10 +54,14 @@ export default function LoginClient() {
 
   return (
     <>
-      <main className="max-w-md mx-auto px-4 py-16">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <h1 className="font-display text-3xl font-bold mb-2 text-center">Welcome back</h1>
-          <p className="text-gray-500 text-center mb-8">Sign in to your Checkstar account.</p>
+      {/* Vertically centered card on the viewport (minus the sticky header) */}
+      <main className="flex min-h-[calc(100dvh-4rem)] flex-col justify-center px-4 py-10">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mx-auto w-full max-w-md">
+          <div className="mb-8 flex flex-col items-center">
+            <Logo variant="lockup" size={40} tone="dark" className="mb-5" />
+            <h1 className="font-display text-3xl font-bold mb-2 text-center">Welcome back</h1>
+            <p className="text-gray-500 text-center">Sign in to your Checkstar account.</p>
+          </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             {error && (

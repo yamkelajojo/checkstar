@@ -180,3 +180,35 @@ communicates this instead of showing orphan headers.
 Verification: mobile jest 64/64 suites (609 pass, +1 suite/+5 tests), tsc
 clean, SDK pin ✓; frontend vitest 127 pass (+12), tsc clean; CI green on all
 legs.
+
+## Round 8 — web-app debugging pass (mobile-first, user crash report)
+
+User hand-tested the web app on a phone (screenshot: cart rows crushed to one
+character per line) and reported seven issues plus a general "critically
+debug the web app" mandate.
+
+| # | Finding | Fix |
+|---|---|---|
+| R22 | **Cart item rows unusable on phones** — five fixed-width columns (image 64 + stepper ~100 + total 80 + trash 28 + gaps) left ~35px for the name column on a 390px viewport → one character per line (user screenshot). | Row restructured: image / name block / right rail; the rail stacks line-total → stepper → delete vertically on mobile and becomes a row on ≥sm. Names wrap to two lines instead of truncating; steppers hit 32px touch targets; aria-labels on every control. |
+| R23 | **Products page crash on navigation** — `ProductsClient` reads `?search=` via `useSearchParams` but was the only such route rendered without a `<Suspense>` boundary (login/reset/verify all had one). Missing boundaries around `useSearchParams` on prerendered routes are a documented client-navigation crash class in Next.js App Router. | Page wraps the client in `<Suspense>` with a skeleton fallback matching the page layout. |
+| R24 | **`Logo` wordmark rendered an ~1100px invisible line box** — React maps a numeric `lineHeight` to the *unitless* CSS property, so `lineHeight: size * 1.05` emitted `line-height: 34.44` (a multiplier), making the wordmark's line box `fontSize × 34.44` tall. The header masked it (fixed height), but it silently overlayed/intercepted content under the header on every page and destroyed layouts that gave the logo room. | `line-height` pinned in px (`${size*1.05}px`); regression test asserts px units. Found while implementing the centered login page. |
+| R25 | **Guest checkout dead-end** — guests filled the address form and then got an amber "session has expired" banner after a failed order call. | New `AuthRequiredModal`: spring-animated bottom-sheet on mobile / centered dialog on desktop — explains that checkout needs an account, offers Sign in (with `?redirect=/cart`) and Create account, plus App Store / Google Play links as requested. Also gates the checkout tap proactively and replaces the 401 banner. |
+| R26 | **iOS input zoom (round-7 follow-up found in the cart)** — the delivery-address textarea was `text-sm`. | Already covered by the round-7 mobile form-control pin; cart now compliant. |
+| R27 | **Login page**: logo was absent and content top-anchored. | Full lockup (icon + wordmark + tagline) at size 40 above "Welcome back"; page vertically centered via `min-h-[calc(100dvh-4rem)]` flex. |
+| R28 | **Special badge** red/semibold → black `bg-gray-900`, `text-[11px] font-medium`, per request. `ProductCard` also switched to `SafeImage`. | Done + pinned by tests. |
+| R29 | **Home page huge empty block before "How it works"** — the Download-app band sat between the (empty on the user's DB) trending carousels and "How it works". | `DownloadTheApp` moved below "How it works"; carousels already render `null` when empty. |
+| R30 | **Hamburger menu felt slow** — panel 0.32s, items staggered 0.045s with 0.06s delay, icon 0.4s. | Panel 0.2s open / 0.15s close, stagger 0.025 with 0.02 delay, icon 0.28s; header animation tests updated to codify the snappier spec. |
+| R31 | **Cart numbers change with no feedback** — quantities/totals snapped instantly. | `AnimatedNumber` extended with a `format` prop (react-animated-numbers pattern already in the codebase); applied to quantity, line total, subtotal and total. |
+
+**Hardening from the browser lab:** reproduced the app in headless Chromium
+(`@sparticuz/chromium`, AL2023 lib bundle + LD_LIBRARY_PATH) against a mock
+Laravel API — 12 customer routes probed on an iPhone-size viewport, including
+pagination (250 products), null images/units/tags, and images pointing at an
+unconfigured LAN host. next/image 500s (but survives) such hosts, so
+`SafeImage` now renders absolute media URLs as plain `<img>` — an image host
+misconfiguration can never take a page down again.
+
+Verification: frontend 144 vitest tests (20 files, +15: Products page
+stocked/empty/error/dirty-data, ProductCard badge + hostile-image, Logo
+line-height regression, cart guest-gate + 401-modal + mobile rail),
+typecheck/lint/build clean, all customer routes clean in real Chromium.

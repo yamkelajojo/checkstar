@@ -59,12 +59,12 @@ export default function Header() {
       y: shouldReduceMotion ? 0 : -8,
       filter: shouldReduceMotion ? 'blur(0px)' : 'blur(6px)',
       transition: shouldReduceMotion
-        ? { duration: 0.12 }
+        ? { duration: 0.1 }
         : {
-            duration: 0.22,
+            duration: 0.15,
             ease: cubic,
             when: 'afterChildren' as const,
-            staggerChildren: 0.03,
+            staggerChildren: 0.02,
             staggerDirection: -1 as const,
           },
     },
@@ -73,13 +73,13 @@ export default function Header() {
       y: 0,
       filter: 'blur(0px)',
       transition: shouldReduceMotion
-        ? { duration: 0.12 }
+        ? { duration: 0.1 }
         : {
-            duration: 0.32,
+            duration: 0.2,
             ease: cubic,
             when: 'beforeChildren' as const,
-            staggerChildren: 0.045,
-            delayChildren: 0.06,
+            staggerChildren: 0.025,
+            delayChildren: 0.02,
           },
     },
   }
@@ -87,17 +87,17 @@ export default function Header() {
   const itemVariants = {
     closed: {
       opacity: 0,
-      y: shouldReduceMotion ? 0 : -10,
-      scale: shouldReduceMotion ? 1 : 1.04,
+      y: shouldReduceMotion ? 0 : -8,
+      scale: shouldReduceMotion ? 1 : 1.03,
       filter: shouldReduceMotion ? 'blur(0px)' : 'blur(2px)',
-      transition: shouldReduceMotion ? { duration: 0.1 } : { duration: 0.2, ease: cubic },
+      transition: shouldReduceMotion ? { duration: 0.08 } : { duration: 0.12, ease: cubic },
     },
     open: {
       opacity: 1,
       y: 0,
       scale: 1,
       filter: 'blur(0px)',
-      transition: shouldReduceMotion ? { duration: 0.1 } : { duration: 0.32, ease: cubic },
+      transition: shouldReduceMotion ? { duration: 0.08 } : { duration: 0.18, ease: cubic },
     },
   }
 
@@ -160,8 +160,8 @@ export default function Header() {
                   }}
                   transition={
                     menuOpen
-                      ? { duration: 0.4, ease: cubic, delay: 0.12 }
-                      : { duration: 0.3, ease: cubic }
+                      ? { duration: 0.28, ease: cubic, delay: 0.05 }
+                      : { duration: 0.22, ease: cubic }
                   }
                   className="absolute left-0 top-0 w-full h-[2px] bg-current rounded-full origin-center"
                 />
@@ -172,8 +172,8 @@ export default function Header() {
                   }}
                   transition={
                     menuOpen
-                      ? { duration: 0.4, ease: cubic, delay: 0.12 }
-                      : { duration: 0.3, ease: cubic }
+                      ? { duration: 0.28, ease: cubic, delay: 0.05 }
+                      : { duration: 0.22, ease: cubic }
                   }
                   className="absolute left-0 top-0 w-full h-[2px] bg-current rounded-full origin-center"
                 />
@@ -191,7 +191,7 @@ export default function Header() {
               initial={{ opacity: 0, backdropFilter: 'blur(0px)' }}
               animate={{ opacity: 1, backdropFilter: 'blur(2px)' }}
               exit={{ opacity: 0, backdropFilter: 'blur(0px)' }}
-              transition={shouldReduceMotion ? { duration: 0.12 } : { duration: 0.28, ease: cubic }}
+              transition={shouldReduceMotion ? { duration: 0.1 } : { duration: 0.18, ease: cubic }}
               onClick={() => setMenuOpen(false)}
               className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[2px] lg:hidden"
               aria-hidden="true"

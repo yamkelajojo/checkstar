@@ -158,9 +158,6 @@ export default function HomePage() {
           />
         </section>
 
-        {/* Download the app */}
-        <DownloadTheApp />
-
         {/* How it works */}
         <section className="max-w-7xl mx-auto px-4 py-12">
           <motion.h2
@@ -193,6 +190,9 @@ export default function HomePage() {
             ))}
           </motion.div>
         </section>
+
+        {/* Download the app */}
+        <DownloadTheApp />
 
         {/* In-store services */}
         <AirtimeTicker />

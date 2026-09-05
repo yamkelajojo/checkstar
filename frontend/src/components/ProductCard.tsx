@@ -1,8 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import Image from 'next/image'
-import { mediaUrl } from '@/lib/media'
+import SafeImage from '@/components/SafeImage'
 import { motion } from 'motion/react'
 import { ShoppingCart } from 'lucide-react'
 import type { Product } from '@/types'
@@ -29,8 +28,8 @@ export default function ProductCard({ product, compact = false }: Props) {
       <Link href={`/products/${product.slug}`}>
         <div className={`relative ${compact ? 'aspect-square' : 'aspect-[4/3]'} bg-gray-50 flex items-center justify-center p-3`}>
           {product.image ? (
-            <Image
-              src={mediaUrl(product.image)}
+            <SafeImage
+              src={product.image}
               alt={product.name}
               fill
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
@@ -40,7 +39,7 @@ export default function ProductCard({ product, compact = false }: Props) {
             <div className="text-gray-300 text-sm">No image</div>
           )}
           {hasSale && (
-            <span className="absolute top-2 left-2 rounded-full bg-accent px-2 py-0.5 text-xs font-semibold text-white">
+            <span className="absolute top-2 left-2 rounded-full bg-gray-900 px-2 py-0.5 text-[11px] font-medium text-white">
               Special
             </span>
           )}

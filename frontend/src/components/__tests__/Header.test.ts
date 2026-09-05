@@ -22,7 +22,7 @@ describe('Header mobile menu', () => {
     expect(src).toMatch(/staggerChildren/)
     expect(src).toMatch(/delayChildren/)
     expect(src).toMatch(/itemVariants|stagger/)
-    expect(src).toMatch(/y:.*-10|scale.*1\.04/)
+    expect(src).toMatch(/y:.*-8|scale.*1\.03/)
     expect(src).toMatch(/filter.*blur/)
   })
 
@@ -68,10 +68,10 @@ describe('Header mobile menu', () => {
     expect(mobileTabMatches).toBeGreaterThanOrEqual(1)
   })
 
-  it('animation is faster/snappier with subtle blur', () => {
-    expect(src).toMatch(/duration: 0\.32/)
-    expect(src).toMatch(/duration: 0\.22/)
-    expect(src).toMatch(/staggerChildren: 0\.045/)
+  it('animation is snappier (user request: reduce menu durations) with subtle blur', () => {
+    expect(src).toMatch(/duration: 0\.2,/) // open panel
+    expect(src).toMatch(/duration: 0\.15,/) // close panel
+    expect(src).toMatch(/staggerChildren: 0\.025/)
     expect(src).toMatch(/blur\(6px\)/)
     expect(src).toMatch(/blur\(0px\)/)
     expect(src).toMatch(/backdropFilter/)

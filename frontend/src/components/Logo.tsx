@@ -65,7 +65,7 @@ function Wordmark({ tone, size, showTagline }: { tone: 'light' | 'dark'; size: n
         className="font-extrabold tracking-tight"
         style={{
           fontSize: size,
-          lineHeight: size * 1.05,
+          lineHeight: `${(size * 1.05).toFixed(2)}px`,
           letterSpacing: '-0.4px',
           color,
         }}
