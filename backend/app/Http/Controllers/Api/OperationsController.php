@@ -155,7 +155,9 @@ class OperationsController extends Controller
         $entityType = $request->input('entity_type');
         $userId = $request->input('user_id');
 
-        $query = AuditLog::with('user');
+        $store = $this->storeContext->resolve($request->user(), $request->input('store_id'));
+
+        $query = AuditLog::with('user')->where($this->storeAuditScope($store));
 
         if ($entityType) {
             $query->where('entity_type', $entityType);
@@ -169,10 +171,43 @@ class OperationsController extends Controller
         return response()->json(['audit_logs' => $logs]);
     }
 
-    public function auditLogsForEntity(string $entityType, int $entityId): JsonResponse
+    public function auditLogsForEntity(Request $request, string $entityType, int $entityId): JsonResponse
     {
+        $store = $this->storeContext->resolve($request->user(), $request->input('store_id'));
+
+        // Cross-tenant guard: the entity itself must belong to the resolved
+        // store, otherwise a store-level operator could read another store's
+        // audit trail by id.
+        $inScope = match ($entityType) {
+            'order' => Order::where('id', $entityId)->where('store_id', $store->id)->exists(),
+            'rider' => Rider::where('id', $entityId)->where('store_id', $store->id)->exists(),
+            default => false,
+        };
+
+        if (! $inScope) {
+            return response()->json(['audit_logs' => []]);
+        }
+
         $logs = $this->auditService->forEntity($entityType, $entityId);
 
         return response()->json(['audit_logs' => $logs]);
+    }
+
+    /**
+     * Audit rows are only written for `order` and `rider` entities; scope both
+     * to the resolved store so store-level operators can never read another
+     * store's trail.
+     */
+    private function storeAuditScope(Store $store): \Closure
+    {
+        return fn ($query) => $query->where(function ($q) use ($store) {
+            $q->where(function ($q) use ($store) {
+                $q->where('entity_type', 'order')
+                    ->whereIn('entity_id', Order::where('store_id', $store->id)->select('id'));
+            })->orWhere(function ($q) use ($store) {
+                $q->where('entity_type', 'rider')
+                    ->whereIn('entity_id', Rider::where('store_id', $store->id)->select('id'));
+            });
+        });
     }
 }

@@ -9,7 +9,10 @@ class PricingService
 {
     public function effectivePrice(Product $product, ?Collection $specials = null): float
     {
-        if ($product->sale_price !== null) {
+        // Cascade: min of (base price, product sale price, active special
+        // prices). A mistyped admin edit setting sale_price above the base
+        // price must never overcharge the customer.
+        if ($product->sale_price !== null && (float) $product->sale_price <= (float) $product->price) {
             return (float) $product->sale_price;
         }
 
@@ -36,7 +39,9 @@ class PricingService
                 ->map(fn ($s) => (float) ($s instanceof Product ? $s->sale_price : $s->pivot->special_price));
 
             if ($specialPrices->isNotEmpty()) {
-                return $specialPrices->min();
+                // Priority cascade clamped to base: the customer never pays
+                // more than the regular price, whichever deal applies.
+                return min((float) $product->price, $specialPrices->min());
             }
         }
 

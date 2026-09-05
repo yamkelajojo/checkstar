@@ -11,23 +11,36 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        User::create([
-            'name' => 'Developer',
-            'email' => 'dev@checkstar.co.za',
-            'password' => Hash::make('password'),
-            'role' => UserRole::Developer,
-            'phone' => '+27 82 000 0000',
-            'is_active' => true,
-        ]);
+        // The seeded developer account ships a well-known password by
+        // default. Never create it implicitly in production — the operator
+        // must opt in (and should override the credentials) via env.
+        $seedDeveloper = ! app()->environment('production') || env('DEVELOPER_PASSWORD') !== null;
 
-        User::create([
-            'name' => 'John Customer',
-            'email' => 'john@example.com',
-            'password' => Hash::make('password'),
-            'role' => UserRole::Customer,
-            'phone' => '+27 72 000 0000',
-            'is_active' => true,
-        ]);
+        if ($seedDeveloper) {
+            User::firstOrCreate(
+                ['email' => env('DEVELOPER_EMAIL', 'dev@checkstar.co.za')],
+                [
+                    'name' => 'Developer',
+                    'password' => Hash::make(env('DEVELOPER_PASSWORD', 'password')),
+                    'role' => UserRole::Developer,
+                    'phone' => '+27 82 000 0000',
+                    'is_active' => true,
+                ]
+            );
+        }
+
+        // firstOrCreate keeps `db:seed` idempotent instead of dying on the
+        // users.email unique index when demo data already exists.
+        User::firstOrCreate(
+            ['email' => env('DEMO_CUSTOMER_EMAIL', 'john@example.com')],
+            [
+                'name' => 'John Customer',
+                'password' => Hash::make(env('DEMO_CUSTOMER_PASSWORD', 'password')),
+                'role' => UserRole::Customer,
+                'phone' => '+27 72 000 0000',
+                'is_active' => true,
+            ]
+        );
 
         $this->call([
             StoreSeeder::class,

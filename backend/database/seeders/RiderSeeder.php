@@ -66,25 +66,29 @@ class RiderSeeder extends Seeder
         ];
 
         foreach ($riderData as $data) {
-            $user = User::create([
-                'name' => $data['name'],
-                'email' => $data['email'],
-                'password' => Hash::make('password'),
-                'role' => UserRole::Rider,
-                'phone' => '+27 76 000 0000',
-                'is_active' => true,
-            ]);
+            $user = User::firstOrCreate(
+                ['email' => $data['email']],
+                [
+                    'name' => $data['name'],
+                    'password' => Hash::make('password'),
+                    'role' => UserRole::Rider,
+                    'phone' => '+27 76 000 0000',
+                    'is_active' => true,
+                ]
+            );
 
-            Rider::create([
-                'user_id' => $user->id,
-                'store_id' => $data['store_id'],
-                'is_available' => false,
-                'vehicle_type' => $data['vehicle_type'],
-                'total_deliveries' => $data['total_deliveries'],
-                'average_rating' => $data['average_rating'],
-                'xp' => $data['xp'],
-                'level' => $data['level'],
-            ]);
+            Rider::firstOrCreate(
+                ['user_id' => $user->id],
+                [
+                    'store_id' => $data['store_id'],
+                    'is_available' => false,
+                    'vehicle_type' => $data['vehicle_type'],
+                    'total_deliveries' => $data['total_deliveries'],
+                    'average_rating' => $data['average_rating'],
+                    'xp' => $data['xp'],
+                    'level' => $data['level'],
+                ]
+            );
         }
     }
 }

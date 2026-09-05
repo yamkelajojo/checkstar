@@ -141,6 +141,32 @@ class OrderClaimTest extends TestCase
         ]);
     }
 
+    public function test_reservation_is_clamped_to_stock_when_two_unclaimed_orders_share_stock(): void
+    {
+        // Two orders placed against the same 3 units (placement checks
+        // availability but does not reserve). Claiming both must never push
+        // reserved_quantity past stock_quantity (a hard CHECK failure on
+        // MySQL) — the second reservation clamps at stock.
+        $product = $this->createProduct('Clamp Milk');
+        $sp = $this->createStoreProduct($this->store, $product, 3);
+
+        $orderA = $this->createConfirmedOrder();
+        $this->createOrderItem($orderA, $product, 2);
+        $orderB = $this->createConfirmedOrder();
+        $this->createOrderItem($orderB, $product, 2);
+
+        $riderA = $this->createRider();
+        $riderB = $this->createRider();
+
+        $resultA = $this->orderClaim->claim($orderA, $riderA, $this->store);
+        $this->assertTrue($resultA->claimed);
+        $this->assertSame(2, $sp->fresh()->reserved_quantity);
+
+        $resultB = $this->orderClaim->claim($orderB, $riderB, $this->store);
+        $this->assertTrue($resultB->claimed);
+        $this->assertSame(3, $sp->fresh()->reserved_quantity); // clamped, not 4
+    }
+
     public function test_successful_claim_assigns_rider_and_store(): void
     {
         $order = $this->createConfirmedOrder();

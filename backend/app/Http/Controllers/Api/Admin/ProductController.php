@@ -72,6 +72,22 @@ class ProductController extends Controller
     public function destroy(int $id): JsonResponse
     {
         $product = Product::findOrFail($id);
+
+        // order_items.product_id cascades on delete — destroying a product
+        // with purchase history would silently erase financial records (line
+        // items, revenue). Deactivate instead; deletion is only allowed for
+        // products never ordered.
+        $ordered = \App\Models\OrderItem::where('product_id', $id)->exists();
+        if ($ordered) {
+            $product->update(['is_active' => false]);
+
+            return response()->json([
+                'message' => 'Product has order history and cannot be deleted — it was deactivated instead.',
+                'reason' => 'has_order_history',
+                'data' => $product->fresh(),
+            ], 409);
+        }
+
         $product->delete();
 
         return response()->json(['message' => 'Deleted']);

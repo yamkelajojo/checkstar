@@ -61,3 +61,20 @@ mobile typecheck/SDK-pin/jest).
 - Sanctum guard caching masked suspensions/rotations within a process (tests now emulate per-request isolation).
 - Events feed `id` was typed `number` by web while the API emits composite strings.
 - Login page ignored `?redirect=`; reset/verify flows had no frontend pages at all.
+
+## Independent deep pass (post-green audit) — round 2 findings
+
+A second, adversarial review beyond the original report. Every fix below has a
+regression test; CI (incl. MySQL 8) is the acceptance gate.
+
+| # | Finding | Root cause | Fix |
+|---|---|---|---|
+| D1 | Rider claim could abort fatally on MySQL | `OrderClaim` incremented `reserved_quantity` blindly; two orders placed against the same stock (placement checks availability but does not reserve) meant the second claim could push `reserved > stock` and violate the DB CHECK → exception inside the claim transaction. | `syncAndReserveInventory()`: single `lockForUpdate()->whereIn('product_id',…)` query binds `store_product_id` and reserves with `min(stock, reserved+qty)` clamp. |
+| D2 | Cross-tenant audit-log leak | `/operations/audit-logs` (and per-entity variant) had **no store scoping** — any store operator could read every store's trail (`audit_logs` carries no `store_id`; rows are keyed by order/rider entity ids). | Store scope resolved from `StoreContext`; list = order-ids ∪ rider-ids of that store via `whereIn` subqueries; per-entity endpoint returns `[]` for entities outside the store. |
+| D3 | Admin product delete erased sales history | `order_items.product_id` cascades on delete; `destroy()` had no history guard. | 409 `has_order_history` + product deactivated instead of deleted. |
+| D4 | Effective price could exceed base price | `sale_price`/special prices were trusted as-is; a mistyped admin edit (`sale_price > price`, or special pivot above base) would overcharge customers. | `effectivePrice` clamps to base (`min(base, deal)`); sale_price only applies when ≤ base. Cascade priority (sale_price → special → base) preserved and pinned by test. |
+| D5 | Category delete destroyed catalogue + history | `products.category_id` cascades; deleting a populated category silently deleted every product, their stock rows, cart items and (via order_items) sales history. No guard at all. | 409 `has_products` guard; plus DB-level `RESTRICT` (see D7). |
+| D6 | Store delete erased all its orders | `orders.store_id` cascaded; the existing guard only blocked *active* orders, so deleting a store wiped every delivered order (and their reviews/transactions, which cascade from orders). | Guard extended: any order history (409 `has_order_history`) or assigned riders (409 `has_riders`) blocks deletion; deactivate instead. |
+| D7 | History-erasing FK cascades (DB layer) | reviews, order activity logs and transactions cascade from orders, which cascaded from stores and customers — a single admin delete could wipe the entire transactional ledger. | Migration re-creates the history FKs as `RESTRICT` on MySQL/MariaDB/Postgres (`orders.store_id`, `orders.customer_id`, `order_items.product_id`, `transactions.order_id`, `transactions.user_id`, `reviews.rider_id`, `store_product.product_id`). Ephemeral data (carts, favourites, audit logs) keeps its cascade. SQLite tests are covered by the app-level guards. |
+| D8 | Rider-user delete crashed on review history | `reviews.rider_id` (now RESTRICT) would make `DELETE users` for a reviewed rider fail with an SQL error; previously the reviews were silently cascade-deleted. | 409 `has_reviews` guard in `Admin\UserController::destroy`. |
+| D9 | Seeder created a known-password Developer account unconditionally | `dev@checkstar.co.za` / `password` was seeded even in production; also crashed on re-seed (unique email). | Developer demo account only when not in production, or when `DEVELOPER_PASSWORD` is explicitly set; all seed accounts idempotent (`firstOrCreate`); credentials overridable via env (`DEVELOPER_EMAIL`, `DEVELOPER_PASSWORD`, `DEMO_CUSTOMER_EMAIL`, `DEMO_CUSTOMER_PASSWORD`). |

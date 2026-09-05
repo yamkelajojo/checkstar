@@ -59,11 +59,7 @@ class OrderClaim
             $fresh->store_id = $store->id;
             $fresh->save();
 
-            $this->syncStoreProductIds($fresh);
-
-            // Reserve inventory at claim time so concurrent orders see the
-            // reserved quantity during placement/fulfillment checks.
-            $this->reserveInventory($fresh);
+            $this->syncAndReserveInventory($fresh);
 
             return true;
         });
@@ -92,30 +88,45 @@ class OrderClaim
         return $active >= $max;
     }
 
-    private function reserveInventory(Order $order): void
+    /**
+     * Bind each order item to the fulfilling store's stock row and reserve
+     * the quantities, in ONE locked query. Reservations are clamped to the
+     * physical stock: several orders can be placed against the same stock
+     * before any is claimed (placement checks availability but does not
+     * reserve), so a blind increment could push reserved_quantity past
+     * stock_quantity — a hard CHECK-constraint failure on MySQL that would
+     * abort the claim. The buy-time stock check still guards the customer,
+     * so clamping only affects the soft counter, never what is handed over.
+     */
+    private function syncAndReserveInventory(Order $order): void
     {
-        foreach ($order->items as $item) {
-            $storeProductId = $item->store_product_id;
-            if ($storeProductId) {
-                $sp = StoreProduct::where('id', $storeProductId)->lockForUpdate()->first();
-                if ($sp) {
-                    $sp->reserved_quantity += $item->quantity;
-                    $sp->save();
-                }
-            }
+        $productIds = $order->items->pluck('product_id')->unique()->all();
+        if ($productIds === []) {
+            return;
         }
-    }
 
-    private function syncStoreProductIds(Order $order): void
-    {
+        $storeProducts = StoreProduct::where('store_id', $order->store_id)
+            ->whereIn('product_id', $productIds)
+            ->lockForUpdate()
+            ->get()
+            ->keyBy('product_id');
+
         foreach ($order->items as $item) {
-            $sp = StoreProduct::where('store_id', $order->store_id)
-                ->where('product_id', $item->product_id)
-                ->first();
-            if ($sp) {
+            $sp = $storeProducts->get($item->product_id);
+            if (! $sp) {
+                continue;
+            }
+
+            if ((int) $item->store_product_id !== $sp->id) {
                 $item->store_product_id = $sp->id;
                 $item->save();
             }
+
+            $sp->reserved_quantity = min(
+                (int) $sp->stock_quantity,
+                (int) ($sp->reserved_quantity ?? 0) + (int) $item->quantity,
+            );
+            $sp->save();
         }
     }
 }

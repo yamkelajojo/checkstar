@@ -86,6 +86,21 @@ class StoreController extends Controller
             return response()->json(['message' => 'Cannot delete store with active orders', 'reason' => 'has_active_orders'], 409);
         }
 
+        // orders.store_id now RESTRICTs at the DB level (history must never
+        // cascade away), so any historical order also blocks deletion.
+        $orderCount = DB::table('orders')->where('store_id', $id)->count();
+        if ($orderCount > 0) {
+            return response()->json([
+                'message' => 'Cannot delete a store with order history — deactivate it instead',
+                'reason' => 'has_order_history',
+            ], 409);
+        }
+
+        $riderCount = DB::table('riders')->where('store_id', $id)->count();
+        if ($riderCount > 0) {
+            return response()->json(['message' => 'Cannot delete store with assigned riders', 'reason' => 'has_riders'], 409);
+        }
+
         $staffCount = DB::table('store_staff')->where('store_id', $id)->count();
         if ($staffCount > 0) {
             return response()->json(['message' => 'Cannot delete store with assigned staff', 'reason' => 'has_staff'], 409);

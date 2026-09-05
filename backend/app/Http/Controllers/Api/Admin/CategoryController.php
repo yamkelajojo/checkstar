@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Models\Product;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -68,7 +69,22 @@ class CategoryController extends Controller
 
     public function destroy(int $id): JsonResponse
     {
-        Category::findOrFail($id)->delete();
+        $category = Category::findOrFail($id);
+
+        // products.category_id cascades on delete: deleting a populated
+        // category would destroy the catalogue (and via order_items, sales
+        // history) instead of just the grouping. Refuse and let the admin
+        // re-home the products first.
+        $productCount = Product::where('category_id', $id)->count();
+        if ($productCount > 0) {
+            return response()->json([
+                'message' => 'Cannot delete a category that still has products',
+                'reason' => 'has_products',
+                'product_count' => $productCount,
+            ], 409);
+        }
+
+        $category->delete();
 
         return response()->json(['message' => 'Deleted']);
     }

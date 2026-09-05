@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Rider;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -64,6 +65,13 @@ class UserController extends Controller
         $orderCount = DB::table('orders')->where('customer_id', $id)->count();
         if ($orderCount > 0) {
             return response()->json(['message' => 'Cannot delete user with existing orders', 'reason' => 'has_orders'], 409);
+        }
+
+        // reviews.rider_id RESTRICTs at the DB level (review history must
+        // survive), so a rider with reviews cannot be deleted either.
+        $rider = Rider::where('user_id', $id)->first();
+        if ($rider !== null && $rider->reviews()->exists()) {
+            return response()->json(['message' => 'Cannot delete rider with existing reviews', 'reason' => 'has_reviews'], 409);
         }
 
         $user->delete();
