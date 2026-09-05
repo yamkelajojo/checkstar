@@ -9,10 +9,9 @@ class StoreSeeder extends Seeder
 {
     public function run(): void
     {
-        Store::create([
+        Store::firstOrCreate(['slug' => 'durban-central'], [
             'name' => 'Checkstar Durban Central',
-            'slug' => 'durban-central',
-            'description' => 'Our flagship store in the heart of Durban.',
+                        'description' => 'Our flagship store in the heart of Durban.',
             'address' => '123 West Street',
             'city' => 'Durban',
             'province' => 'KwaZulu-Natal',
@@ -34,10 +33,9 @@ class StoreSeeder extends Seeder
             'is_active' => true,
         ]);
 
-        Store::create([
+        Store::firstOrCreate(['slug' => 'umhlanga'], [
             'name' => 'Checkstar Umhlanga',
-            'slug' => 'umhlanga',
-            'description' => 'Serving the Umhlanga community.',
+                        'description' => 'Serving the Umhlanga community.',
             'address' => '45 Lighthouse Road',
             'city' => 'Umhlanga',
             'province' => 'KwaZulu-Natal',
@@ -59,10 +57,9 @@ class StoreSeeder extends Seeder
             'is_active' => true,
         ]);
 
-        Store::create([
+        Store::firstOrCreate(['slug' => 'pinetown'], [
             'name' => 'Checkstar Pinetown',
-            'slug' => 'pinetown',
-            'description' => 'Your local Checkstar in Pinetown.',
+                        'description' => 'Your local Checkstar in Pinetown.',
             'address' => '78 Main Road',
             'city' => 'Pinetown',
             'province' => 'KwaZulu-Natal',

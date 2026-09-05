@@ -82,7 +82,9 @@ class BannerSeeder extends Seeder
         ];
 
         foreach ($banners as $bannerData) {
-            BannerCreative::create($bannerData);
+            // banner_creatives has no unique key — match by name so
+            // re-seeding does not stack duplicates.
+            BannerCreative::firstOrCreate(['name' => $bannerData['name']], $bannerData);
         }
     }
 }

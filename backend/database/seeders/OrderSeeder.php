@@ -31,6 +31,13 @@ class OrderSeeder extends Seeder
 
     public function run(): void
     {
+        // Bulk demo data with fixed order numbers — only seed once.
+        if (DB::table('orders')->exists()) {
+            $this->command?->info('Orders already seeded; skipping.');
+
+            return;
+        }
+
         $storeIds = DB::table('stores')->pluck('id')->toArray();
         $productIds = DB::table('products')->pluck('id')->toArray();
         $riderIds = DB::table('riders')->pluck('id')->toArray();

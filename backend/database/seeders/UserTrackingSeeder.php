@@ -18,6 +18,12 @@ class UserTrackingSeeder extends Seeder
 
     public function run(): void
     {
+        if (DB::table('user_tracking_events')->exists()) {
+            $this->command?->info('Tracking events already seeded; skipping.');
+
+            return;
+        }
+
         $customerIds = DB::table('users')->where('role', 'customer')->pluck('id')->toArray();
         $productIds = DB::table('products')->pluck('id')->toArray();
 

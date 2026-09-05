@@ -20,6 +20,12 @@ class RiderDeliverySeeder extends Seeder
 
     public function run(): void
     {
+        if (DB::table('rider_deliveries')->exists()) {
+            $this->command?->info('Rider deliveries already seeded; skipping.');
+
+            return;
+        }
+
         $riderIds = DB::table('riders')->pluck('id')->toArray();
         $orderIds = DB::table('orders')
             ->where('status', 'delivered')

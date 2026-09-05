@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\File;
@@ -19,11 +20,25 @@ class ProductSeeder extends Seeder
 
         $dataset = json_decode(File::get($path), true);
 
+        // Never trust the dataset's category ids: they only line up with the
+        // categories table on a pristine database (MySQL does not reset
+        // auto-increment after rolled-back transactions). Match by slug.
+        $categoryIds = [];
+        foreach ($dataset['categories'] as $datasetCategory) {
+            $category = Category::firstOrCreate(
+                ['slug' => $datasetCategory['slug']],
+                ['name' => $datasetCategory['name'], 'sort_order' => $datasetCategory['sort_order']]
+            );
+            $categoryIds[$datasetCategory['id']] = $category->id;
+        }
+
         foreach ($dataset['products'] as $product) {
             $image = 'products/'.ltrim(str_replace('images/', '', $product['image']), '/');
 
-            Product::create([
-                'category_id' => $product['category_id'],
+            Product::updateOrCreate(
+                ['slug' => $product['slug']],
+                [
+                'category_id' => $categoryIds[$product['category_id']],
                 'name' => $product['name'],
                 'slug' => $product['slug'],
                 'image' => $image,
@@ -34,7 +49,8 @@ class ProductSeeder extends Seeder
                 'tags' => $product['tags'] ?: null,
                 'is_featured' => $product['is_featured'],
                 'is_active' => true,
-            ]);
+                ]
+            );
         }
     }
 }

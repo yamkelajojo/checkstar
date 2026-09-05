@@ -28,7 +28,8 @@ class CategorySeeder extends Seeder
         ];
 
         foreach ($categories as $cat) {
-            Category::create($cat);
+            // Idempotent: re-seeding must not die on the unique slug.
+            Category::firstOrCreate(['slug' => $cat['slug']], $cat);
         }
     }
 }

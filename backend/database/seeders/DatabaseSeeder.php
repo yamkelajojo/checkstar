@@ -15,15 +15,18 @@ class DatabaseSeeder extends Seeder
     {
         // The seeded developer account ships a well-known password by
         // default. Never create it implicitly in production — the operator
-        // must opt in (and should override the credentials) via env.
-        $seedDeveloper = ! app()->environment('production') || env('DEVELOPER_PASSWORD') !== null;
+        // must opt in (and should override the credentials) via env. An
+        // env var that is present but EMPTY counts as unset (`?:`), or the
+        // demo accounts would ship with empty-string passwords.
+        $developerPassword = env('DEVELOPER_PASSWORD') ?: 'password';
+        $seedDemoAccounts = ! app()->environment('production') || $developerPassword !== 'password';
 
-        if ($seedDeveloper) {
+        if ($seedDemoAccounts) {
             User::firstOrCreate(
-                ['email' => env('DEVELOPER_EMAIL', 'dev@checkstar.co.za')],
+                ['email' => env('DEVELOPER_EMAIL') ?: 'dev@checkstar.co.za'],
                 [
                     'name' => 'Developer',
-                    'password' => Hash::make(env('DEVELOPER_PASSWORD', 'password')),
+                    'password' => Hash::make($developerPassword),
                     'role' => UserRole::Developer,
                     'phone' => '+27 82 000 0000',
                     'is_active' => true,
@@ -34,10 +37,10 @@ class DatabaseSeeder extends Seeder
         // firstOrCreate keeps `db:seed` idempotent instead of dying on the
         // users.email unique index when demo data already exists.
         User::firstOrCreate(
-            ['email' => env('DEMO_CUSTOMER_EMAIL', 'john@example.com')],
+            ['email' => env('DEMO_CUSTOMER_EMAIL') ?: 'john@example.com'],
             [
                 'name' => 'John Customer',
-                'password' => Hash::make(env('DEMO_CUSTOMER_PASSWORD', 'password')),
+                'password' => Hash::make(env('DEMO_CUSTOMER_PASSWORD') ?: 'password'),
                 'role' => UserRole::Customer,
                 'phone' => '+27 72 000 0000',
                 'is_active' => true,
@@ -62,7 +65,7 @@ class DatabaseSeeder extends Seeder
         // console is unreachable from seeded data. Created after StoreSeeder
         // (it links to the flagship store). Same production guard as the
         // accounts above.
-        if (! app()->environment('production') || env('DEVELOPER_PASSWORD') !== null) {
+        if ($seedDemoAccounts) {
             $manager = User::firstOrCreate(
                 ['email' => 'manager@checkstar.co.za'],
                 [

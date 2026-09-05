@@ -121,16 +121,18 @@ class SpecialSeeder extends Seeder
             $products = $specialData['products'];
             unset($specialData['products']);
 
-            $special = Special::create($specialData);
+            // Idempotent: re-seeding must not die on the unique slug.
+            $special = Special::firstOrCreate(['slug' => $specialData['slug']], $specialData);
 
+            // sync() (not attach()) keeps re-seeds from duplicating pivots.
+            $pivot = [];
             foreach ($products as $productName => $specialPrice) {
                 $product = Product::where('name', $productName)->first();
                 if ($product) {
-                    $special->products()->attach($product->id, [
-                        'special_price' => $specialPrice,
-                    ]);
+                    $pivot[$product->id] = ['special_price' => $specialPrice];
                 }
             }
+            $special->products()->sync($pivot);
         }
     }
 }

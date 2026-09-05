@@ -9,9 +9,9 @@ class RecipeSeeder extends Seeder
 {
     public function run(): void
     {
-        Recipe::create([
+        Recipe::firstOrCreate(['slug' => 'classic-sa-braai'], [
             'title' => 'Classic South African Braai',
-            'slug' => 'classic-sa-braai',
+            
             'description' => 'The ultimate South African braai experience.',
             'ingredients' => [
                 '1kg beef boerewors',
@@ -28,9 +28,9 @@ class RecipeSeeder extends Seeder
             'is_featured' => true,
         ]);
 
-        Recipe::create([
+        Recipe::firstOrCreate(['slug' => 'chakalaka'], [
             'title' => 'Chakalaka',
-            'slug' => 'chakalaka',
+            
             'description' => 'A spicy South African relish.',
             'ingredients' => [
                 '2 tomatoes, chopped',
@@ -48,9 +48,9 @@ class RecipeSeeder extends Seeder
             'is_featured' => false,
         ]);
 
-        Recipe::create([
+        Recipe::firstOrCreate(['slug' => 'mango-lassi'], [
             'title' => 'Mango Lassi',
-            'slug' => 'mango-lassi',
+            
             'description' => 'A refreshing mango yoghurt drink.',
             'ingredients' => [
                 '2 ripe mangoes',
