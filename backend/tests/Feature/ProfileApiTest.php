@@ -4,7 +4,9 @@ namespace Tests\Feature;
 
 use App\Enums\UserRole;
 use App\Models\User;
+use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 /**
@@ -68,6 +70,28 @@ class ProfileApiTest extends TestCase
         $this->actingAs($this->customer)
             ->putJson('/api/profile', ['email' => 'taken@example.com'])
             ->assertStatus(422);
+    }
+
+    public function test_changing_email_sends_a_new_verification_email(): void
+    {
+        Notification::fake();
+
+        $this->actingAs($this->customer)
+            ->putJson('/api/profile', ['email' => 'profile-second@example.com'])
+            ->assertStatus(200);
+
+        Notification::assertSentTo($this->customer->fresh(), VerifyEmail::class);
+    }
+
+    public function test_unchanged_email_sends_no_verification_email(): void
+    {
+        Notification::fake();
+
+        $this->actingAs($this->customer)
+            ->putJson('/api/profile', ['name' => 'Same Email'])
+            ->assertStatus(200);
+
+        Notification::assertNothingSent();
     }
 
     public function test_role_is_not_mass_assignable(): void

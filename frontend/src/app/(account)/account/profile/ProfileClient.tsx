@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'motion/react'
-import { User, Mail, Phone, Loader2, Save, CheckCircle } from 'lucide-react'
+import { User, Mail, Phone, Loader2, Save, CheckCircle, MailCheck } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth-store'
 import { api } from '@/lib/api'
 
@@ -16,6 +16,7 @@ export default function ProfileClient() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
+  const [emailChanged, setEmailChanged] = useState(false)
   const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
@@ -41,8 +42,12 @@ export default function ProfileClient() {
     setSuccess(false)
     setSaving(true)
     try {
+      const previousEmail: string | undefined = user?.email
       const updated = await api.updateProfile({ name, email, phone: phone || undefined })
       setUser(updated as any)
+      // The backend resets verification and mails a fresh link when the
+      // address changes — say so, or the user thinks nothing happened.
+      setEmailChanged(previousEmail !== undefined && email.toLowerCase() !== previousEmail.toLowerCase())
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
     } catch (err: any) {
@@ -87,6 +92,12 @@ export default function ProfileClient() {
               {success && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-green-50 border border-green-200 text-green-700 text-sm rounded-lg px-4 py-3 flex items-center gap-2">
                   <CheckCircle size={16} /> Profile updated successfully.
+                </motion.div>
+              )}
+
+              {success && emailChanged && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} data-testid="verify-notice" className="bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-lg px-4 py-3 flex items-center gap-2">
+                  <MailCheck size={16} /> We&apos;ve sent a verification link to your new email address.
                 </motion.div>
               )}
 

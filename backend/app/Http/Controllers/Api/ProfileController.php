@@ -19,10 +19,17 @@ class ProfileController extends Controller
 
         $user = $request->user();
         $filtered = array_filter($validated, fn ($v) => $v !== null);
-        if (isset($filtered['email']) && $filtered['email'] !== $user->email) {
+        $emailChanged = isset($filtered['email']) && $filtered['email'] !== $user->email;
+        if ($emailChanged) {
             $filtered['email_verified_at'] = null;
         }
         $user->update($filtered);
+
+        // The new address must actually receive a verification link —
+        // otherwise the customer is silently stranded unverified.
+        if ($emailChanged) {
+            $user->sendEmailVerificationNotification();
+        }
 
         return response()->json($user->fresh());
     }
