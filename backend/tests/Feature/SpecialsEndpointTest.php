@@ -60,9 +60,11 @@ class SpecialsEndpointTest extends TestCase
             ->getJson('/api/specials')
             ->assertStatus(200)
             ->assertJsonStructure(['data' => [['products' => [['effective_price', 'stores', 'category']]]]])
-            ->assertJsonPath('data.0.products.0.effective_price', 15.0)
+            ->assertJsonPath('data.0.products.0.effective_price', 15)
             ->assertJsonPath('data.0.products.0.stores.0.id', $store->id)
             ->assertJsonPath('data.0.products.0.stores.0.stock_quantity', 7);
+
+        $this->assertEqualsWithDelta(15.0, $response->json('data.0.products.0.effective_price'), 0.001);
     }
 
     public function test_inactive_products_are_hidden_from_specials(): void
