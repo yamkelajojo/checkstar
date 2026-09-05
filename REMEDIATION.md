@@ -88,3 +88,17 @@ regression test; CI (incl. MySQL 8) is the acceptance gate.
 | D12 | API accepted `sale_price > price` | Admin product validation had no cross-field bound — the exact bad data D4 defends against at pricing time could be stored. | `store`: `lte:price`; `update`: closure comparing against the resulting price (request or stored) → 422. |
 
 Note on D3/D6 severity: `Product` and `Store` use SoftDeletes, so the admin endpoints only soft-deleted today; the hard-delete cascade path (and the Category case, which has **no** SoftDeletes and was a live catalogue+history wipe) is what D5/D7 close at the DB layer.
+
+| D13 | Reservation reconciliation could violate the stock CHECK and die mid-run | `ReconcileReservations` (scheduled every 15 min) wrote the raw order-item sum back to `reserved_quantity`; with placement-availability semantics that sum can legitimately exceed stock → MySQL CHECK violation → scheduler run aborts midway (partial corrections). | Corrections are clamped to `min(expected, stock)` mirroring the claim-time clamp; oversubscription case pinned by test. |
+| D14 | Banner update could reassign a banner into another store's rotation | `BannerController::store()` re-scoped `store_id` for non-developers, but `update()` trusted the request — a store operator could publish content into a competitor store's rotation. | Same tenant re-scope applied in `update()`; tests pin creation scoping, reassignment rejection, cross-store 403s. |
+| D15 | Recommendations scanned the whole catalogue per app-open | Mobile home calls `/api/recommendations` on every launch; both scoring paths loaded every active product to score in PHP. | Bounded candidate sets (top-400 by order count + 200 newest; cold-start = 200 newest) with identical scoring; endpoint contract pinned by tests (cold-start shape, inactive exclusion, guest 401). |
+
+Audited and found sound during the deep pass: `PaymentStateMachine` map (after D10),
+`RetryDispatch` (attempt-capped, afterCommit-safe, sweeper backstop), `OrderCancellationPolicy` + locked
+cancel transition, `DeliveryConfirmation` idempotency, `RiderStatsRecorder` (row-locked average) and
+`GamificationService` (atomic increments), `EventFeedService`/`MapLayersService` store scoping,
+`StoreFulfillmentService` availability math, `DispatchPolicy` concurrency-cap subquery, throttling on all
+public/external-proxy endpoints, CORS/sanctum configuration, raw-SQL surfaces (all constant expressions,
+no user interpolation), mass-assignment surface (no `guarded = []`), admin route privilege model,
+tracking batch bounds (≤50 events), mobile/web checkout money paths (client-side estimates only,
+backend authoritative).
