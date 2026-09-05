@@ -129,6 +129,13 @@ class BannerController extends Controller
             'end_date' => 'nullable|date|after_or_equal:start_date',
         ]);
 
+        // Same tenant guard as store(): a non-developer can never move a
+        // banner into another store's rotation by passing store_id.
+        $user = $request->user();
+        if ($user->role->value !== 'developer') {
+            $validated['store_id'] = $this->storeContext->resolve($user)->id;
+        }
+
         $banner->update($validated);
         $banner->load('store:id,name,slug');
 
