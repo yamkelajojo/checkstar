@@ -23,6 +23,7 @@ import { MIN_ORDER_CENTS, EST_DELIVERY_FEE_CENTS, VALIDATION_DEBOUNCE_MS } from 
 import type { RootStackParamList } from '../../navigation/types';
 import { canSubmit } from './model';
 import { trackCheckout } from '../../services/trackingService';
+import { useTopSafeArea } from '../../components/shared/ScreenHeader';
 
 type PaymentMethod = 'cash_on_delivery';
 
@@ -378,8 +379,9 @@ export function CheckoutScreen() {
 
 function ScreenTitle({ title }: { title: string }) {
   const theme = useTheme();
+  const topInset = useTopSafeArea();
   return (
-    <Text style={{ paddingTop: 56, paddingHorizontal: 16, fontSize: typeScale.title, fontWeight: weights.extrabold, color: theme.colors.text.primary }}>
+    <Text style={{ paddingTop: topInset, paddingHorizontal: 16, fontSize: typeScale.title, fontWeight: weights.extrabold, color: theme.colors.text.primary }}>
       {title}
     </Text>
   );

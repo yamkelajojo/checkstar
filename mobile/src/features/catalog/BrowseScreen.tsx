@@ -12,6 +12,7 @@ import { ProductSummaryModal, type SourceRect } from './ProductSummaryModal';
 import { SkeletonCard } from '../../components/shared/SkeletonCard';
 import { ProductCardSkeleton } from '../../components/shared/ProductCardSkeleton';
 import { CrashCascadeIn } from '../../components/shared/CrashCascadeIn';
+import { ScreenHeader } from '../../components/shared/ScreenHeader';
 import { useDeliveryStore } from '../../stores/deliveryStore';
 import type { ProductVO, StoreAvailabilityVO } from '../../lib/product';
 import { findStoreAvailability } from '../../lib/product';
@@ -59,9 +60,7 @@ export function BrowseScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background.primary }}>
-      <Text style={{ paddingTop: 56, paddingHorizontal: semanticSpacing.screenPadding, ...textStyle.h1, color: theme.colors.text.primary }}>
-        Browse
-      </Text>
+      <ScreenHeader title="Browse" />
 
       {/* Horizontal category filter — GreenBidder pattern: scrollable pills with fade edge, no desktop sidebar leak */}
       <View style={{ marginTop: semanticSpacing.xs }}>
@@ -97,14 +96,14 @@ export function BrowseScreen() {
         data={isLoading ? [] : products}
         keyExtractor={(p) => String(p.id)}
         numColumns={2}
-        columnWrapperStyle={{ gap: semanticSpacing.inlineGap, paddingHorizontal: semanticSpacing.md }}
+        columnWrapperStyle={{ gap: semanticSpacing.inlineGap, paddingHorizontal: semanticSpacing.screenPadding }}
         contentContainerStyle={{ gap: semanticSpacing.inlineGap, paddingVertical: semanticSpacing.xs, paddingBottom: semanticSpacing.xl }}
         showsVerticalScrollIndicator={false}
         onEndReached={handleLoadMore}
         onEndReachedThreshold={0.5}
         ListEmptyComponent={
           isLoading ? (
-            <View style={{ flexDirection: 'row', gap: semanticSpacing.inlineGap, paddingHorizontal: semanticSpacing.md }}>
+            <View style={{ flexDirection: 'row', gap: semanticSpacing.inlineGap, paddingHorizontal: semanticSpacing.screenPadding }}>
               <ProductCardSkeleton />
               <ProductCardSkeleton />
             </View>

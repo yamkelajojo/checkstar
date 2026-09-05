@@ -18,6 +18,7 @@ import { formatZar } from '../../lib/currency';
 import { TactilePressable } from '../../components/shared/TactilePressable';
 import { copy } from '../../lib/strings';
 import { MIN_ORDER_CENTS } from '../../lib/constants';
+import { ScreenHeader } from '../../components/shared/ScreenHeader';
 import { trackAddToCart, trackRemoveFromCart } from '../../services/trackingService';
 import type { RootStackParamList } from '../../navigation/types';
 
@@ -36,7 +37,7 @@ export function CartScreen() {
   if (items.length === 0) {
     return (
       <View style={{ flex: 1, backgroundColor: theme.colors.background.primary }}>
-        <Header title="Cart" />
+        <ScreenHeader title="Cart" />
         <EmptyState
           icon={ShoppingCart}
           title={copy.cart.emptyTitle}
@@ -59,7 +60,7 @@ export function CartScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background.primary }}>
-      <Header title="Cart" />
+      <ScreenHeader title="Cart" />
       {isLoading ? (
         <View style={{ paddingHorizontal: semanticSpacing.screenPadding, gap: semanticSpacing.inlineGap }}>
           <CartSkeletonRow />
@@ -163,15 +164,6 @@ export function CartScreen() {
         </TactilePressable>
       </View>
     </View>
-  );
-}
-
-function Header({ title }: { title: string }) {
-  const theme = useTheme();
-  return (
-    <Text style={{ paddingTop: 56, paddingHorizontal: semanticSpacing.screenPadding, ...textStyle.h1, color: theme.colors.text.primary }}>
-      {title}
-    </Text>
   );
 }
 

@@ -15,9 +15,11 @@ import { TactilePressable } from '../../components/shared/TactilePressable';
 import { EmptyState } from '../../components/shared/EmptyState';
 import type { ApiOrder } from '../../lib/types';
 import type { RootStackParamList } from '../../navigation/types';
+import { useTopSafeArea } from '../../components/shared/ScreenHeader';
 
 export function RiderHistoryScreen() {
   const theme = useTheme();
+  const topInset = useTopSafeArea();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [refreshing, setRefreshing] = useState(false);
 
@@ -91,7 +93,7 @@ export function RiderHistoryScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.bg }}>
       {/* Header */}
-      <View style={{ paddingTop: 56, paddingHorizontal: 16, paddingBottom: 12, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+      <View style={{ paddingTop: topInset, paddingHorizontal: 16, paddingBottom: 12, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
         <TactilePressable
           onPress={() => navigation.goBack()}
           haptic="selection"

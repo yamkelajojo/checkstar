@@ -1,13 +1,13 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { mediaUrl } from '@/lib/media'
 import { motion } from 'motion/react'
 import { Clock, Users, ChefHat, ChevronLeft, Check, ListOrdered, Package } from 'lucide-react'
 import { useRecipe, useAllProducts } from '@/lib/query'
-import type { Product } from '@/types'
+import { findIngredientProduct } from '@/lib/ingredientMatch'
 
 export default function RecipeDetailClient({ slug }: { slug: string }) {
   const { data: recipe, isLoading: loading, error } = useRecipe(slug)
@@ -44,22 +44,6 @@ export default function RecipeDetailClient({ slug }: { slug: string }) {
       : []
 
   const { data: allProducts = [] } = useAllProducts()
-
-  const productMap = useMemo(() => {
-    const map = new Map<string, Product>()
-    for (const p of allProducts) {
-      map.set(p.name.toLowerCase(), p)
-    }
-    return map
-  }, [allProducts])
-
-  const findProductMatch = (ingredient: string): Product | null => {
-    const lower = ingredient.toLowerCase()
-    for (const [name, product] of productMap) {
-      if (lower.includes(name)) return product
-    }
-    return null
-  }
 
   if (fetchError) {
     return (
@@ -177,47 +161,50 @@ export default function RecipeDetailClient({ slug }: { slug: string }) {
               <p className="text-sm text-gray-400">No ingredients listed.</p>
             ) : (
               <ul className="space-y-1">
-                {ingredients.map((ing, idx) => (
-                  <li key={idx}>
-                    <button
-                      onClick={() => toggleIngredient(idx)}
-                      className={`w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
-                        checked.has(idx)
-                          ? 'bg-green-50 text-green-700 line-through'
-                          : 'hover:bg-gray-50 text-gray-700'
+                {ingredients.map((ing, idx) => {
+                  const match = findIngredientProduct(ing, allProducts)
+                  const isChecked = checked.has(idx)
+                  return (
+                    <li
+                      key={idx}
+                      className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                        isChecked ? 'bg-green-50' : 'hover:bg-gray-50'
                       }`}
                     >
-                      <span className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                        checked.has(idx) ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300'
-                      }`}>
-                        {checked.has(idx) && <Check size={12} />}
+                      <button
+                        type="button"
+                        onClick={() => toggleIngredient(idx)}
+                        aria-pressed={isChecked}
+                        aria-label={isChecked ? `Mark ${ing} as not bought` : `Mark ${ing} as bought`}
+                        className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                          isChecked ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300'
+                        }`}
+                      >
+                        {isChecked && <Check size={12} />}
+                      </button>
+                      <span className={`flex flex-wrap items-center gap-x-2 gap-y-1 flex-1 min-w-0 ${isChecked ? 'text-green-700 line-through' : 'text-gray-700'}`}>
+                        <span>{ing}</span>
+                        {match && (
+                          <Link
+                            href={`/products/${match.slug}`}
+                            aria-label={`View ${match.name} product page`}
+                            className="inline-flex items-center gap-1.5 bg-primary/5 border border-primary/20 rounded-full pl-1 pr-2.5 py-0.5 text-xs font-medium text-primary hover:bg-primary/10 transition-colors flex-shrink-0 no-underline"
+                          >
+                            {match.image ? (
+                              <Image src={mediaUrl(match.image)} alt={match.name} width={20} height={20} className="rounded-full object-cover" />
+                            ) : (
+                              <Package size={12} className="flex-shrink-0" />
+                            )}
+                            <span className="truncate max-w-[80px]">{match.name}</span>
+                            <span className="font-semibold">
+                              R{(Number(match.effective_price ?? match.sale_price ?? match.price)).toFixed(2)}
+                            </span>
+                          </Link>
+                        )}
                       </span>
-                      {(() => {
-                        const match = findProductMatch(ing)
-                        if (!match) return <span>{ing}</span>
-                        const price = Number(match.effective_price ?? match.sale_price ?? match.price)
-                        return (
-                          <span className="flex items-center gap-2 flex-1 min-w-0">
-                            <span className="flex-1 min-w-0">{ing}</span>
-                            <Link
-                              href={`/products/${match.slug}`}
-                              onClick={(e) => e.stopPropagation()}
-                              className="inline-flex items-center gap-1.5 bg-primary/5 border border-primary/20 rounded-full pl-1 pr-2.5 py-0.5 text-xs font-medium text-primary hover:bg-primary/10 transition-colors flex-shrink-0"
-                            >
-                              {match.image ? (
-                                <Image src={mediaUrl(match.image)} alt={match.name} width={20} height={20} className="rounded-full object-cover" />
-                              ) : (
-                                <Package size={12} className="flex-shrink-0" />
-                              )}
-                              <span className="truncate max-w-[80px]">{match.name}</span>
-                              <span className="font-semibold">R{price.toFixed(2)}</span>
-                            </Link>
-                          </span>
-                        )
-                      })()}
-                    </button>
-                  </li>
-                ))}
+                    </li>
+                  )
+                })}
               </ul>
             )}
           </motion.div>

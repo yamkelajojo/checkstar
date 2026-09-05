@@ -19,9 +19,11 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../navigation/types';
 import { ORDER_STATUS_LABEL as STATUS_LABEL } from '../../lib/status';
 import { getOrderTotal } from '../../lib/orderTotal';
+import { useTopSafeArea } from '../../components/shared/ScreenHeader';
 
 export function RiderOrderDetailScreen() {
   const theme = useTheme();
+  const topInset = useTopSafeArea();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute();
   const { orderId } = route.params as { orderId: number };
@@ -132,7 +134,7 @@ export function RiderOrderDetailScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.bg }}>
       <ScrollView contentContainerStyle={{ paddingBottom: 140 }} showsVerticalScrollIndicator={false}>
-        <View style={{ paddingTop: 56, paddingHorizontal: 16, gap: 16 }}>
+        <View style={{ paddingTop: topInset, paddingHorizontal: 16, gap: 16 }}>
           <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' }}>
             <Text style={{ fontSize: typeScale.title, fontWeight: weights.extrabold, color: theme.colors.text.primary }}>
               Order #{order.id}

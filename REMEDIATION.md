@@ -154,3 +154,29 @@ Phase-3 DB truth audit: all uniqueness invariants verified (emails, order_number
 codes, favourites, pivots, badges); history-FK RESTRICT from D7 remains the anchor integrity rule.
 Phase-4 UX audit: every audited surface (specials, orders, order detail, cart, dispatch console)
 implements the error → skeleton → empty → content pattern consistently; no structural gaps.
+
+## Round 7 — customer-surface design-system & mobile pass (mobile app + web)
+
+User reported mobile issues from hands-on Expo Go testing (screenshots) and
+asked for a design-system audit plus a web recipe/responsive audit.
+
+| # | Finding | Fix |
+|---|---|---|
+| R15 | **Home hero was disconnected from the app background** — hardcoded light-peach `LinearGradient` over the near-black dark theme read as a muddy grey band with a hard seam (visible in screenshot). | Theme-aware `heroGradient()` token in `theme/colors.ts`: light keeps the peach wash; dark uses a faint ember glow whose final stop is exactly `background.primary`, so header and page are one continuous surface. |
+| R16 | **Logo/content slid under the Dynamic Island** — every screen hardcoded `paddingTop: 56` (Account 36); iPhone Dynamic-Island insets are 59pt. Only 2 of 14 screens used `useSafeAreaInsets`. | New `ScreenHeader` + `useTopSafeArea()` shared components; adopted by Browse, Cart, Favorites, Checkout, Home, Account, Order detail, Search, Store picker and all four rider screens. Content can never hide under the notch/island on any device. |
+| R17 | **Saved/Favorites screen diverged from Browse/Cart** — different title style (h3 vs h1), no safe-area padding, no column gutter spec (`numColumns=2` without `columnWrapperStyle`), 12px vs 16px edges, and a fetch error rendered as "No favorites yet". | Favorites rebuilt on the shared header + the exact Browse grid spec; Browse's off-token 12px gutter normalized to `screenPadding`; explicit error state with retry added. |
+| R18 | **Profile screen showed a role label** ("👤 Customer" / "🏪 Owner" …) under the name, and the appearance toggle used three large brand-orange-filled buttons that dominated the screen. | Role label removed (name + identity only); appearance is now a compact icon-only segmented control (iOS-settings pattern, quiet surface colors, radio semantics) beside a caption label. Orders container kept as-is (user asked). |
+| R19 | **Empty/unseeded database rendered three orphan section headers** ("Best Deals", "Shop by category", "Featured") over blank space. | When products, specials, categories and banners are all empty (and not loading), Home renders one coherent "The shelves are being stocked" empty state; pull-to-refresh revalidates all home queries. |
+| R20 | **Recipe ingredient→product linking had real defects** despite existing: `<a>` nested inside `<button>` (invalid HTML, broken a11y/click semantics); first-substring-match-wins so a product named "Milk" hijacked "500 ml Buttermilk". | Matcher extracted to `lib/ingredientMatch.ts` (whole-word, longest-name-wins, simple-plural folding, punctuation-insensitive, ignores degenerate names); checkbox and product pill are siblings with ARIA labels; pill wraps under the ingredient on narrow screens. 8 matcher unit tests + 4 component regression tests. |
+| R21 | **iOS input zoom on the whole web app** — all 28 form controls used `text-sm` (14px); iOS Safari force-zooms the page whenever a focused control is <16px (login, register, cart address, checkout, search). | Global mobile-only CSS pin: form controls render at 16px below 768px. |
+
+Mobile "no products" root cause: the API contract is correct end-to-end
+(`GET /api/products?featured=1` → `is_featured` filter → `ProductSeeder`
+populates it; mobile maps `result.data` → `mapProduct` → sections). Empty
+screens on the user's device are an **unseeded local database** — run
+`php artisan migrate --fresh --seed`. The first-run empty state (R19) now
+communicates this instead of showing orphan headers.
+
+Verification: mobile jest 64/64 suites (609 pass, +1 suite/+5 tests), tsc
+clean, SDK pin ✓; frontend vitest 127 pass (+12), tsc clean; CI green on all
+legs.

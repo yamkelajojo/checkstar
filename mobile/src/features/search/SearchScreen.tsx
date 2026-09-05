@@ -21,9 +21,11 @@ import { SEARCH_DEBOUNCE_MS } from '../../lib/constants';
 import type { ProductVO, StoreAvailabilityVO } from '../../lib/product';
 import { findStoreAvailability } from '../../lib/product';
 import { trackSearch, trackCategoryFilterTap } from '../../services/trackingService';
+import { useTopSafeArea } from '../../components/shared/ScreenHeader';
 
 export function SearchScreen() {
   const theme = useTheme();
+  const topInset = useTopSafeArea();
   const navigation = useNavigation();
   const store = useDeliveryStore((s) => s.fulfillmentStore);
   const [term, setTerm] = useState('');
@@ -96,7 +98,7 @@ export function SearchScreen() {
         flexDirection: 'row', 
         alignItems: 'center', 
         paddingHorizontal: 16, 
-        paddingTop: 56,
+        paddingTop: topInset,
         paddingBottom: 12,
         gap: 10,
         backgroundColor: theme.colors.background.primary,

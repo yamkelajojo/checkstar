@@ -1,12 +1,13 @@
-import { View, Text, FlatList, ScrollView } from 'react-native';
+import { useState } from 'react';
+import { View, Text, FlatList, ScrollView, RefreshControl } from 'react-native';
 import { PhysicsCarousel } from '../../components/shared/PhysicsCarousel';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Search, MapPin, Store } from 'lucide-react-native';
+import { Search, MapPin, Store, RefreshCw } from 'lucide-react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTheme } from '../../theme';
-import { brand } from '../../theme/colors';
+import { brand, heroGradient } from '../../theme/colors';
 import { textStyle, fontWeight } from '../../theme/typography';
 import { semanticSpacing, semanticRadius } from '../../theme/spacing';
 import { useCategories, useProducts, useSpecials } from '../catalog/hooks';
@@ -23,6 +24,7 @@ import { Tag } from 'lucide-react-native';
 import type { RootStackParamList } from '../../navigation/types';
 import { Logo } from '../../components/shared/Logo';
 import { useStoreSelection } from '../catalog/storeSelection';
+import { useTopSafeArea } from '../../components/shared/ScreenHeader';
 import type { ProductVO, StoreAvailabilityVO } from '../../lib/product';
 import { findStoreAvailability } from '../../lib/product';
 import { ErrorBoundary } from '../../components/shared/ErrorBoundary';
@@ -41,6 +43,9 @@ function getSelectedStoreProductId(product: ProductVO, selection: { storeProduct
 export function HomeScreen() {
   const theme = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const queryClient = useQueryClient();
+  const topInset = useTopSafeArea();
+  const [refreshing, setRefreshing] = useState(false);
   const store = useDeliveryStore((s) => s.fulfillmentStore);
   const { data: categories = [] } = useCategories();
   const { data: products = [], isLoading } = useProducts({ storeId: store?.id ?? null, featured: true });
@@ -84,16 +89,36 @@ export function HomeScreen() {
       style={{ flex: 1, backgroundColor: theme.colors.background.primary }}
       contentContainerStyle={{ paddingBottom: semanticSpacing.xl }}
       showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={async () => {
+            setRefreshing(true);
+            try {
+              await queryClient.invalidateQueries({ queryKey: queryKeys.products({}) });
+              await queryClient.invalidateQueries({ queryKey: queryKeys.categories });
+              await queryClient.invalidateQueries({ queryKey: queryKeys.specials({ storeId: store?.id ?? null }) });
+              await queryClient.invalidateQueries({ queryKey: queryKeys.banners });
+            } finally {
+              setRefreshing(false);
+            }
+          }}
+          tintColor={brand.orange}
+        />
+      }
     >
-      {/* Hero: subtle orange atmospheric gradient */}
+      {/* Hero: atmospheric gradient that melts into the page background —
+          light mode uses the warm peach wash, dark mode a faint ember glow
+          (heroGradient keeps the final stop = background.primary so the
+          header and page read as one continuous surface). */}
       <LinearGradient
-        colors={['rgba(255,224,204,0.35)', 'rgba(255,224,204,0.08)', theme.colors.background.primary]}
+        colors={heroGradient(theme.name, theme.colors.background.primary)}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={{ paddingBottom: semanticSpacing.md }}
+        style={{ paddingBottom: semanticSpacing.sm }}
       >
         {/* Header: CheckStar logo + search + delivery Store */}
-        <View style={{ paddingHorizontal: semanticSpacing.screenPadding, paddingTop: 56, gap: semanticSpacing.inlineGap }}>
+        <View style={{ paddingHorizontal: semanticSpacing.screenPadding, paddingTop: topInset, gap: semanticSpacing.xs }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <FadeSlideIn>
               <Logo variant="lockup" size={22} tone={theme.name} />
@@ -121,7 +146,8 @@ export function HomeScreen() {
             haptic="selection"
             accessibilityRole="button"
             accessibilityLabel="Choose delivery store"
-            style={{ flexDirection: 'row', alignItems: 'center', gap: semanticSpacing.xxs }}
+            hitSlop={{ top: semanticSpacing.xs, bottom: semanticSpacing.xs }}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: semanticSpacing.xxs, paddingVertical: 2 }}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: semanticSpacing.xxs }}>
               <MapPin size={16} color={brand.orange} />
@@ -138,6 +164,18 @@ export function HomeScreen() {
         </View>
       </LinearGradient>
 
+      {/* First-run / unseeded catalogue: one coherent empty state instead of a
+          stack of orphan section headers, with pull-to-refresh to re-check. */}
+      {!isLoading && products.length === 0 && specials.length === 0 && categories.length === 0 && banners.length === 0 ? (
+        <View style={{ marginTop: semanticSpacing.sectionGap }}>
+          <EmptyState
+            icon={Store}
+            title="The shelves are being stocked"
+            caption="Products will appear here as soon as the store catalogue is ready. Pull down to refresh."
+          />
+        </View>
+      ) : (
+        <>
       {/* Banner carousel */}
       <BannerCarousel banners={banners} />
 
@@ -214,6 +252,8 @@ export function HomeScreen() {
           />
         )}
       </View>
+        </>
+      )}
     </ScrollView>
   );
 }

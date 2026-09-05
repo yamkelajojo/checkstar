@@ -9,9 +9,11 @@ import { TactilePressable } from '../../components/shared/TactilePressable';
 import { SkeletonCard } from '../../components/shared/SkeletonCard';
 import { useSession } from '../../stores/session';
 import { copy } from '../../lib/strings';
+import { useTopSafeArea } from '../../components/shared/ScreenHeader';
 
 export function RiderProfileScreen() {
   const theme = useTheme();
+  const topInset = useTopSafeArea();
   const signOut = useSession((s) => s.signOut);
 
   const { data: profile, isLoading } = useQuery({
@@ -36,7 +38,7 @@ export function RiderProfileScreen() {
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: theme.colors.bg }} contentContainerStyle={{ paddingBottom: 32 }}>
-      <View style={{ paddingTop: 56, paddingHorizontal: 16, gap: 16 }}>
+      <View style={{ paddingTop: topInset, paddingHorizontal: 16, gap: 16 }}>
         <Text style={{ fontSize: typeScale.title, fontWeight: weights.extrabold, color: theme.colors.text.primary }}>
           Profile
         </Text>

@@ -79,6 +79,16 @@ describe('authenticated account', () => {
     expect(screen.getByText(copy.orders.emptyTitle)).toBeTruthy();
   });
 
+  it('never surfaces a role label — the profile is just the person', async () => {
+    useSession.setState({ status: 'authenticated', token: 't', user: { ...customer, role: 'store_owner' } });
+    await renderAccount();
+
+    expect(screen.getByText('Anna')).toBeTruthy();
+    expect(screen.queryByText(/Owner/)).toBeNull();
+    expect(screen.queryByText(/Customer/)).toBeNull();
+    expect(screen.queryByText(/Rider/)).toBeNull();
+  });
+
   it('signs out and confirms with a toast', async () => {
     const signOut = jest.fn().mockResolvedValue(undefined);
     useSession.setState({ signOut });

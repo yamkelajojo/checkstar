@@ -9,9 +9,11 @@ import { useDeliveryStore } from '../../stores/deliveryStore';
 import { TactilePressable } from '../../components/shared/TactilePressable';
 import { EmptyState } from '../../components/shared/EmptyState';
 import { haptic } from '../../lib/haptics';
+import { useTopSafeArea } from '../../components/shared/ScreenHeader';
 
 export function StorePickerScreen() {
   const theme = useTheme();
+  const topInset = useTopSafeArea();
   const navigation = useNavigation();
   const stores = useDeliveryStore((s) => s.stores);
   const fulfillmentStore = useDeliveryStore((s) => s.fulfillmentStore);
@@ -25,7 +27,7 @@ export function StorePickerScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: theme.colors.background.primary, paddingTop: 56 }}>
+    <View style={{ flex: 1, backgroundColor: theme.colors.background.primary, paddingTop: topInset }}>
       <Text style={{ paddingHorizontal: semanticSpacing.screenPadding, ...textStyle.h1, color: theme.colors.text.primary }}>
         Checkstar Stores
       </Text>

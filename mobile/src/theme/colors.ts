@@ -384,6 +384,24 @@ export interface ColorPalette {
 export const palettes: Record<ThemeName, ColorPalette> = { light, dark };
 
 // ============================================================================
+// HERO GRADIENT (theme-aware atmospheric wash for the Home header)
+// ============================================================================
+
+/**
+ * Hero gradient stops for the Home header. In light mode this is the classic
+ * warm peach wash; in dark mode the same peach wash goes muddy grey over the
+ * near-black background, so dark mode uses a faint ember glow of brand orange
+ * that melts into background.primary. The final stop MUST be
+ * background.primary so the header blends seamlessly into the page.
+ */
+export function heroGradient(name: ThemeName, backgroundPrimary: string): [string, string, string] {
+  if (name === 'dark') {
+    return ['rgba(235,101,34,0.14)', 'rgba(235,101,34,0.04)', backgroundPrimary];
+  }
+  return ['rgba(255,224,204,0.35)', 'rgba(255,224,204,0.08)', backgroundPrimary];
+}
+
+// ============================================================================
 // HELPER: Get palette by theme name
 // ============================================================================
 

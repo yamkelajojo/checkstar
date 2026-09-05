@@ -43,6 +43,18 @@
     font: inherit;
   }
 
+  /* Mobile web: iOS Safari zooms the whole page whenever a focused form
+     control has a computed font-size below 16px, which made login, register,
+     cart and checkout jarring on phones. Form controls used to ship at
+     text-sm (14px), so pin them to 16px on mobile viewports only. */
+  @media (max-width: 767px) {
+    input,
+    select,
+    textarea {
+      font-size: 16px !important;
+    }
+  }
+
   p,
   h1,
   h2,

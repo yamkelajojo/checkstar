@@ -26,9 +26,11 @@ import { useRiderLocationUpdates } from './useRiderLocationUpdates';
 
 import { getOrderTotal } from '../../lib/orderTotal';
 import { POLL_BASE_MS, POLL_MAX_MS } from '../../lib/constants';
+import { useTopSafeArea } from '../../components/shared/ScreenHeader';
 
 export function RiderHomeScreen() {
   const theme = useTheme();
+  const topInset = useTopSafeArea();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const queryClient = useQueryClient();
   const toast = useToast();
@@ -164,7 +166,7 @@ export function RiderHomeScreen() {
       showsVerticalScrollIndicator={false}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.action.primary.background} />}
     >
-      <View style={{ paddingTop: 56, paddingHorizontal: 16, gap: 16 }}>
+      <View style={{ paddingTop: topInset, paddingHorizontal: 16, gap: 16 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: theme.colors.surface.primary, alignItems: 'center', justifyContent: 'center' }}>

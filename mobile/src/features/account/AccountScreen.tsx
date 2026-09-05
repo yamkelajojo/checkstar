@@ -18,6 +18,7 @@ import { useCart } from '../cart/store';
 import { haptic } from '../../lib/haptics';
 import { EmptyState } from '../../components/shared/EmptyState';
 import { Logo } from '../../components/shared/Logo';
+import { useTopSafeArea } from '../../components/shared/ScreenHeader';
 import { copy } from '../../lib/strings';
 import { useToast } from '../../components/shared/GlassToast';
 import type { RootStackParamList } from '../../navigation/types';
@@ -37,6 +38,7 @@ export function AccountScreen() {
   const status = useSession((s) => s.status);
   const signOut = useSession((s) => s.signOut);
   const toast = useToast();
+  const topInset = useTopSafeArea(semanticSpacing.sm);
   const themePreference = useThemePreference((s) => s.preference);
   const setThemePreference = useThemePreference((s) => s.setPreference);
 
@@ -60,16 +62,14 @@ export function AccountScreen() {
   };
 
   const name = user?.name ?? 'Guest';
-  const role = user?.role ?? 'customer';
   const initial = name?.[0]?.toUpperCase() ?? '?';
-  const roleLabel = role === 'rider' ? '🚲 Rider' : role === 'store_owner' ? '🏪 Owner' : role === 'store_manager' ? '📋 Manager' : role === 'logistics_officer' ? '📦 Logistics' : role === 'developer' ? '💻 Developer' : '👤 Customer';
 
   const [devExpanded, setDevExpanded] = React.useState(false);
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background.primary }}>
       {/* Profile header with layered logo */}
-      <View style={{ paddingTop: 36, paddingHorizontal: semanticSpacing.screenPadding, alignItems: 'center', gap: semanticSpacing.md }}>
+      <View style={{ paddingTop: topInset, paddingHorizontal: semanticSpacing.screenPadding, alignItems: 'center', gap: semanticSpacing.md }}>
         {/* Logo overlaid above profile image */}
         <View style={{ position: 'relative', alignItems: 'center' }}>
           <Logo variant="stacked" size={30} tone={theme.name} style={{ zIndex: 2 }} />
@@ -84,10 +84,6 @@ export function AccountScreen() {
 
         <Text style={{ ...textStyle.h2, fontWeight: fontWeight.bold, color: theme.colors.text.primary, textAlign: 'center', marginTop: -semanticSpacing.md }}>
           {name}
-        </Text>
-
-        <Text style={{ color: theme.colors.text.secondary, ...textStyle.caption, textAlign: 'center' }}>
-          {roleLabel}
         </Text>
       </View>
 
@@ -118,12 +114,26 @@ export function AccountScreen() {
         )}
       </View>
 
-      {/* Appearance toggle */}
-      <View style={{ paddingHorizontal: semanticSpacing.screenPadding, paddingBottom: semanticSpacing.md }}>
-        <Text style={{ ...textStyle.caption, fontWeight: fontWeight.semibold, color: theme.colors.text.secondary, marginBottom: semanticSpacing.xs, textTransform: 'uppercase', letterSpacing: 1.1 }}>
+      {/* Appearance — deliberately quiet chrome: a compact icon segmented
+          control (iOS-settings pattern) tucked to the right of a caption
+          label. No brand-colour fill, so it never competes with the profile
+          identity or the Orders section for attention. */}
+      <View style={{ paddingHorizontal: semanticSpacing.screenPadding, paddingTop: semanticSpacing.xs, paddingBottom: semanticSpacing.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Text style={{ ...textStyle.caption, color: theme.colors.text.tertiary }}>
           Appearance
         </Text>
-        <View style={{ flexDirection: 'row', gap: semanticSpacing.xs }}>
+        <View
+          accessibilityRole="radiogroup"
+          accessibilityLabel="Appearance"
+          style={{
+            flexDirection: 'row',
+            backgroundColor: theme.colors.background.secondary,
+            borderRadius: semanticRadius.smallControl,
+            padding: 2,
+            borderWidth: 1,
+            borderColor: theme.colors.border.subtle,
+          }}
+        >
           {([
             { key: 'light' as ThemePreference, icon: Sun, label: 'Light' },
             { key: 'system' as ThemePreference, icon: Monitor, label: 'System' },
@@ -135,27 +145,21 @@ export function AccountScreen() {
                 key={key}
                 onPress={() => setThemePreference(key)}
                 haptic="selection"
+                accessibilityRole="radio"
+                accessibilityLabel={`${label} appearance`}
+                accessibilityState={{ selected: active }}
                 style={{
-                  flex: 1,
-                  flexDirection: 'row',
+                  width: 42,
+                  height: 30,
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: semanticSpacing.xxs,
-                  paddingVertical: semanticSpacing.sm,
-                  borderRadius: semanticRadius.smallControl,
-                  backgroundColor: active ? brand.orange : theme.colors.surface.primary,
+                  borderRadius: semanticRadius.smallControl - 2,
+                  backgroundColor: active ? theme.colors.surface.elevated : 'transparent',
                   borderWidth: 1,
-                  borderColor: active ? brand.orange : theme.colors.border.subtle,
+                  borderColor: active ? theme.colors.border.subtle : 'transparent',
                 }}
               >
-                <Icon size={16} color={active ? '#FFFFFF' : theme.colors.text.secondary} />
-                <Text style={{
-                  ...textStyle.caption,
-                  fontWeight: active ? fontWeight.semibold : fontWeight.regular,
-                  color: active ? '#FFFFFF' : theme.colors.text.secondary,
-                }}>
-                  {label}
-                </Text>
+                <Icon size={15} color={active ? theme.colors.text.primary : theme.colors.text.tertiary} />
               </TactilePressable>
             );
           })}

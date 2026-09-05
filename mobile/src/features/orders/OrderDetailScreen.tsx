@@ -35,6 +35,7 @@ import {
 } from './model';
 import { useAdaptivePoll, createAdaptiveRefetchInterval } from '../../lib/adaptivePoll';
 import { CUSTOMER_STATUS_LABEL as STATUS_LABEL } from '../../lib/status';
+import { useTopSafeArea } from '../../components/shared/ScreenHeader';
 
 const PAYMENT_LABEL: Record<string, string> = {
   pending: 'Pending',
@@ -67,6 +68,7 @@ function isPollingStatus(status: string | undefined): boolean {
 
 export function OrderDetailScreen() {
   const theme = useTheme();
+  const topInset = useTopSafeArea();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute();
   const { orderId } = route.params as { orderId: number };
@@ -167,7 +169,7 @@ export function OrderDetailScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background.primary }}>
       <ScrollView contentContainerStyle={{ paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
-        <View style={{ paddingTop: 56, paddingHorizontal: semanticSpacing.screenPadding, gap: semanticSpacing.lg }}>
+        <View style={{ paddingTop: topInset, paddingHorizontal: semanticSpacing.screenPadding, gap: semanticSpacing.lg }}>
           <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' }}>
             <Text style={{ ...textStyle.h2, color: theme.colors.text.primary }}>
               Order #{order.id}
