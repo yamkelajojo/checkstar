@@ -123,3 +123,21 @@ Also audited and found sound: `ContactController` (throttled, validated),
 cross-store ids for non-developers), mobile `apiClient.ts` envelopes
 (truthful), delivery-fee constants (0 on all three sides; estimates labelled
 "estimated"), web cart totals (backend-authoritative).
+
+## Round 5 — "will a manual run actually work?" (seeder hardening)
+
+Question from the user prompted a strict manual-runnability audit. The new
+`DatabaseSeedingTest` (runs the real `db:seed`, twice, on every CI engine)
+found **four independent demo-data blockers** — none surfaced before because
+nothing in CI ever executed the seeders:
+
+| # | Finding | Impact | Fix |
+|---|---|---|---|
+| R8 | `.env.example` ships `DEVELOPER_PASSWORD=`/`DEMO_CUSTOMER_PASSWORD=` **empty**; `env()` returns `''` (not null), so demo accounts hashed the empty string | **No seeded login worked** with `password` | Present-but-empty env falls back to the default (`?:`); production opt-in gate uses the resolved password |
+| R9 | Seeders trusted literal ids: ProductSeeder (dataset category ids), RiderSeeder (hard-coded store ids), BannerSeeder (`created_by => 1`), OrderSeeder (positional counter as `order_id`) | FK violations on any non-pristine DB (MySQL never resets auto-increment after rolled-back test transactions) | Everything resolved by slug/email/real inserted ids; OrderSeeder inserts per-order and chunks items |
+| R10 | Store/Category/Recipe/CommunityPost/Special/Banner seeders were create-only | `db:seed` twice died on unique indexes | `firstOrCreate` / pivot `sync` everywhere; bulk seeders skip when populated |
+| R11 | No seeded account could reach the store operations console (no StoreStaff rows); a developer is deliberately refused unscoped operations calls | Ops console manually untestable from demo data | `manager@checkstar.co.za` seeded and linked to the flagship store |
+
+`DatabaseSeedingTest` now pins every demo login (customer, developer, store
+manager, rider) — including that the password actually verifies — plus
+re-seed idempotency, on all four backend legs.
