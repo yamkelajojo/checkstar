@@ -57,16 +57,15 @@ class OrderSeeder extends Seeder
         $orderCount = rand(500, 1000);
         $this->command?->info("Seeding {$orderCount} orders over 30 days...");
 
-        $orders = [];
         $orderItems = [];
-        $orderNum = 1;
+        $orderSeq = 0;
 
         for ($day = 0; $day < 30; $day++) {
             $date = Carbon::now()->subDays(29 - $day);
             $isWeekend = $date->isSaturday() || $date->isSunday();
             $dailyCount = $isWeekend ? rand(40, 60) : rand(25, 45);
 
-            for ($i = 0; $i < $dailyCount && $orderNum <= $orderCount; $i++) {
+            for ($i = 0; $i < $dailyCount && $orderSeq < $orderCount; $i++) {
                 $hour = $this->weightedHour();
                 $minute = rand(0, 59);
                 $createdAt = $date->copy()->hour($hour)->minute($minute);
@@ -89,8 +88,11 @@ class OrderSeeder extends Seeder
                     ? $createdAt->copy()->addMinutes(rand(20, 60))
                     : null;
 
-                $orders[] = [
-                    'order_number' => 'ORD-'.str_pad($orderNum, 6, '0', STR_PAD_LEFT),
+                // Insert per order and use the REAL id for its items — a
+                // positional counter only matches on a pristine database
+                // (MySQL never resets auto-increment after rollbacks).
+                $orderId = (int) DB::table('orders')->insertGetId([
+                    'order_number' => 'ORD-'.str_pad($orderSeq + 1, 6, '0', STR_PAD_LEFT),
                     'customer_id' => $customerId,
                     'rider_id' => $riderId,
                     'store_id' => $storeId,
@@ -105,7 +107,9 @@ class OrderSeeder extends Seeder
                     'customer_confirmed_at' => $customerConfirmedAt,
                     'created_at' => $createdAt,
                     'updated_at' => $createdAt,
-                ];
+                ]);
+
+                $orderSeq++;
 
                 $itemCount = rand(1, 8);
                 $usedProducts = [];
@@ -119,7 +123,7 @@ class OrderSeeder extends Seeder
                     $unitPrice = $this->gaussianRandom(45, 20, 10, 200);
 
                     $orderItems[] = [
-                        'order_id' => $orderNum,
+                        'order_id' => $orderId,
                         'product_id' => $productId,
                         'quantity' => $quantity,
                         'unit_price' => $unitPrice,
@@ -130,14 +134,16 @@ class OrderSeeder extends Seeder
                     ];
                 }
 
-                $orderNum++;
             }
         }
 
-        DB::table('orders')->insert($orders);
-        DB::table('order_items')->insert($orderItems);
+        if ($orderItems !== []) {
+            foreach (array_chunk($orderItems, 500) as $chunk) {
+                DB::table('order_items')->insert($chunk);
+            }
+        }
 
-        $this->command?->info("Created {$orderNum} orders with ".count($orderItems).' items.');
+        $this->command?->info("Created {$orderSeq} orders with ".count($orderItems).' items.');
     }
 
     private function createCustomers(int $count): void
