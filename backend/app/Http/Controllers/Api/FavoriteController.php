@@ -34,10 +34,16 @@ class FavoriteController extends Controller
             return response()->json(['error' => 'Already favorited'], 409);
         }
 
-        ProductFavorite::create([
-            'customer_id' => $request->user()->id,
-            'product_id' => $validated['product_id'],
-        ]);
+        try {
+            ProductFavorite::create([
+                'customer_id' => $request->user()->id,
+                'product_id' => $validated['product_id'],
+            ]);
+        } catch (\Illuminate\Database\UniqueConstraintViolationException) {
+            // A simultaneous double-tap raced the exists() check to the
+            // unique index — same answer, no 500.
+            return response()->json(['error' => 'Already favorited'], 409);
+        }
 
         return response()->json(['success' => true], 201);
     }

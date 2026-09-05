@@ -30,7 +30,7 @@ class StoreOrderController extends Controller
         $orders = Order::where('store_id', $storeId)
             ->with(['items', 'rider.user', 'customer'])
             ->orderByDesc('created_at')
-            ->paginate($request->input('per_page', 25));
+            ->paginate(min(max((int) $request->input('per_page', 25), 1), 100));
 
         return response()->json(['data' => $orders]);
     }
