@@ -102,3 +102,24 @@ public/external-proxy endpoints, CORS/sanctum configuration, raw-SQL surfaces (a
 no user interpolation), mass-assignment surface (no `guarded = []`), admin route privilege model,
 tracking batch bounds (≤50 events), mobile/web checkout money paths (client-side estimates only,
 backend authoritative).
+
+## Round 4 — TDD / V-model SDLC & STLC pass (test-first hardening)
+
+Methodology: see `TEST_PLAN.md` (V-model traceability + the STLC loop).
+Every fix below landed together with the failing test that demanded it.
+
+| # | Finding | Severity | Fix + test |
+|---|---|---|---|
+| R1 | **Favorites were broken in production**: `ProductFavorite` model managed `updated_at` but the table only has a DB-defaulted `created_at` — every `POST /api/favorites` (and any DB write) 500'd. Mobile mocks HTTP in its e2e suite, so this never surfaced. | High (customer feature dead) | `$timestamps = false`; `FavoritesApiTest` (5 cases incl. duplicate-409 and unique-index race). |
+| R2 | Favorite double-tap race hit the DB unique index as an unhandled 500 (the `exists()` pre-check races). | Medium | Catch `UniqueConstraintViolationException` → friendly 409; race pinned by test. |
+| R3 | Profile email change silently reset `email_verified_at` without ever sending a new verification link — customer stranded unverified with no path back. | High (auth UX) | `sendEmailVerificationNotification()` on change; `Notification::fake` tests pin send-on-change / no-send-on-unchanged; ProfileClient now shows the "verification link sent" notice (component-tested). |
+| R4 | Web rider dashboard read `is_available`/`store_id` off the wrong envelope shape (always `undefined`) — masked by `any`-typed API client. | Medium (UI correctness) | `api.ts` rider contracts typed truthfully (`{data}` envelopes); query seam unwraps; tsc now enforces it. |
+| R5 | `api.markItemsBought` defaulted to an empty item batch, which the backend rejects (`min:1`) — an unusable footgun contract. | Low | ids now required in the type; advance flow passes the order's item ids. |
+| R6 | `StoreOrderController::orders` accepted unbounded `per_page` (memory/DoS vector on the store console). | Medium | Capped at 100 (same bound as admin endpoints); pinned by test. |
+| R7 | Admin/ops/catalogue surfaces with **zero HTTP-level coverage**: order lifecycle, fulfillment validate/nearest-store, profile self-service, favorites, contact, public content. | Coverage debt | New suites: `OrderLifecycleApiTest`, `FulfillmentApiTest`, `ProfileApiTest`, `FavoritesApiTest`, `PublicCatalogueTest` (incl. unpublished-content exclusion), plus 8 web contract tests and the ProfileClient component test. |
+
+Also audited and found sound: `ContactController` (throttled, validated),
+`AnalyticsController`/`OperationsController` scoping (StoreContext ignores
+cross-store ids for non-developers), mobile `apiClient.ts` envelopes
+(truthful), delivery-fee constants (0 on all three sides; estimates labelled
+"estimated"), web cart totals (backend-authoritative).
