@@ -7,6 +7,7 @@ use App\Models\AuditLog;
 use App\Models\Order;
 use App\Models\Rider;
 use App\Models\RiderLocation;
+use App\Models\Store;
 use App\Services\AuditService;
 use App\Services\EventFeedService;
 use App\Services\MapLayersService;

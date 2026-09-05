@@ -84,7 +84,6 @@ class AdminProductDeletionTest extends TestCase
             ->assertStatus(200);
 
         // Product uses SoftDeletes — deletion trashes the row.
-        $this->assertDatabaseHas('products', ['id' => $product->id, 'deleted_at' => null]);
         $this->assertSoftDeleted('products', ['id' => $product->id]);
     }
 }
