@@ -18,7 +18,7 @@ export default function CareersClient() {
 
   return (
     <>
-      <main className="max-w-5xl mx-auto px-4 py-8">
+      <div className="max-w-5xl mx-auto px-4 py-8">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="font-display text-2xl sm:text-4xl font-bold mb-2">Careers</h1>
           <p className="text-gray-500 mb-8">Join the Checkstar team — view current job openings in Durban.</p>
@@ -41,7 +41,7 @@ export default function CareersClient() {
             ))}
           </div>
         ) : Object.keys(grouped).length === 0 ? (
-          <div className="text-center py-16 text-gray-400">
+          <div className="text-center py-16 text-gray-500">
             <Briefcase size={40} className="mx-auto mb-3 opacity-50" />
             <p className="text-lg">No openings right now</p>
             <p className="text-sm mt-1">Check back soon for new opportunities.</p>
@@ -106,7 +106,7 @@ export default function CareersClient() {
             ))}
           </motion.div>
         )}
-      </main>
+      </div>
     </>
   )
 }

@@ -4,6 +4,7 @@ import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { usePathname } from 'next/navigation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import CartToast from '@/components/CartToast';
 
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -24,6 +25,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
         </motion.main>
       </AnimatePresence>
       <Footer />
+      <CartToast />
     </>
   );
 }

@@ -10,7 +10,7 @@ interface OrderConfirmationProps {
 export default function OrderConfirmation({ order, dispatch }: OrderConfirmationProps) {
   if (dispatch?.status === 'retrying') {
     return (
-      <main className="max-w-md mx-auto px-4 py-20 text-center">
+      <div className="max-w-md mx-auto px-4 py-20 text-center">
         <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <RotateCcw size={32} className="text-yellow-600 animate-spin" />
         </div>
@@ -25,14 +25,14 @@ export default function OrderConfirmation({ order, dispatch }: OrderConfirmation
         >
           Track Order <ArrowRight size={16} />
         </Link>
-      </main>
+      </div>
     )
   }
 
   if (dispatch?.status === 'cancelled') {
     const paid = order.payment_status === 'paid'
     return (
-      <main className="max-w-md mx-auto px-4 py-20 text-center">
+      <div className="max-w-md mx-auto px-4 py-20 text-center">
         <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <XCircle size={32} className="text-red-600" />
         </div>
@@ -49,13 +49,13 @@ export default function OrderConfirmation({ order, dispatch }: OrderConfirmation
         >
           Continue Shopping <ArrowRight size={16} />
         </Link>
-      </main>
+      </div>
     )
   }
 
   if (dispatch?.status === 'assigned') {
     return (
-      <main className="max-w-md mx-auto px-4 py-20 text-center">
+      <div className="max-w-md mx-auto px-4 py-20 text-center">
         <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <CheckCircle size={32} className="text-green-600" />
         </div>
@@ -89,12 +89,12 @@ export default function OrderConfirmation({ order, dispatch }: OrderConfirmation
             Continue Shopping
           </Link>
         </div>
-      </main>
+      </div>
     )
   }
 
   return (
-    <main className="max-w-md mx-auto px-4 py-20 text-center">
+    <div className="max-w-md mx-auto px-4 py-20 text-center">
       <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
         <Clock size={32} className="text-gray-600" />
       </div>
@@ -109,6 +109,6 @@ export default function OrderConfirmation({ order, dispatch }: OrderConfirmation
       >
         Track Order <ArrowRight size={16} />
       </Link>
-    </main>
+    </div>
   )
 }

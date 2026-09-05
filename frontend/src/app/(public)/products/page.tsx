@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 function ProductsFallback() {
   return (
-    <main className="max-w-7xl mx-auto px-4 pt-4 pb-6 sm:pt-6 sm:pb-8 lg:py-8">
+    <div className="max-w-7xl mx-auto px-4 pt-4 pb-6 sm:pt-6 sm:pb-8 lg:py-8">
       <div className="h-9 w-44 rounded-lg bg-gray-50 animate-pulse" />
       <div className="mt-3 h-4 w-72 rounded bg-gray-50 animate-pulse" />
       <div className="mt-6 h-11 max-w-md rounded-lg bg-gray-50 animate-pulse" />
@@ -18,7 +18,7 @@ function ProductsFallback() {
           <div key={i} className="bg-gray-50 rounded-xl aspect-square animate-pulse" />
         ))}
       </div>
-    </main>
+    </div>
   )
 }
 

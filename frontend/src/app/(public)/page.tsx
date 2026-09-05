@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useState } from 'react'
 import { motion } from 'motion/react'
@@ -27,7 +27,7 @@ export default function HomePage() {
 
   return (
     <>
-      <main>
+      <div>
         {/* Hero — warm, inviting, Durban-rooted */}
         <section className="relative overflow-hidden bg-gradient-to-br from-[#FFF5ED] via-white to-[#FFF0E5]">
           <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.03]" aria-hidden="true" />
@@ -63,26 +63,16 @@ export default function HomePage() {
                   </span>
                   <span className="flex items-center gap-1.5">
                     <Star size={16} className="text-warning" />
-                    Trusted by Durban since 2012
+                    Trusted across Durban
                   </span>
                 </motion.div>
               </motion.div>
 
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                className="hidden md:block"
-              >
-                <div className="relative aspect-[4/3] rounded-3xl overflow-hidden bg-gradient-to-br from-primary-light to-[#FFE8D6] border border-primary/10">
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-center">
-                      <ShoppingBag className="mx-auto text-primary/30" size={80} />
-                      <p className="mt-4 text-primary/50 text-sm font-medium">Your groceries, delivered fresh</p>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
+              {/* Hero image slot. Replace public/images/hero-checkstar.jpg
+                  with the real Checkstar photo — no code change needed. Until
+                  the file exists (or if it fails to load) the branded
+                  placeholder panel shows instead. */}
+              <HeroVisual />
             </div>
           </div>
         </section>
@@ -199,7 +189,49 @@ export default function HomePage() {
 
         {/* Community */}
         <CommunityBanner />
-      </main>
+      </div>
     </>
+  )
+}
+
+/**
+ * Hero image slot. Renders /images/hero-checkstar.jpg when that file exists
+ * (drop the real Checkstar photo there — no code change), falling back to the
+ * branded placeholder panel on load failure so the hero is never empty.
+ */
+function HeroVisual() {
+  const [imageFailed, setImageFailed] = useState(false)
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.6, delay: 0.2 }}
+      className="mt-10 md:mt-0"
+    >
+      <div className="relative aspect-[4/3] rounded-3xl overflow-hidden bg-gradient-to-br from-primary-light to-[#FFE8D6] border border-primary/10">
+        {!imageFailed ? (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/images/hero-checkstar.jpg"
+              alt="Fresh Checkstar groceries ready for delivery"
+              className="absolute inset-0 w-full h-full object-cover"
+              onError={() => setImageFailed(true)}
+            />
+            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/45 to-transparent px-5 pb-4 pt-10">
+              <p className="text-white text-sm font-medium drop-shadow">Your groceries, delivered fresh</p>
+            </div>
+          </>
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="text-center">
+              <ShoppingBag className="mx-auto text-primary/30" size={80} />
+              <p className="mt-4 text-primary/50 text-sm font-medium">Your groceries, delivered fresh</p>
+            </div>
+          </div>
+        )}
+      </div>
+    </motion.div>
   )
 }

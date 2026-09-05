@@ -116,7 +116,7 @@ export default function Header() {
           </nav>
 
           <div className="flex items-center gap-3">
-            <Link href="/cart" className="relative p-2 text-gray-600 hover:text-primary transition-colors">
+            <Link href="/cart" aria-label={`View cart${itemCount > 0 ? `, ${itemCount} item${itemCount === 1 ? '' : 's'}` : ''}`} className="relative p-2 text-gray-600 hover:text-primary transition-colors">
               <ShoppingCart size={20} />
               {itemCount > 0 && (
                 <span className="absolute -top-1 -right-1 bg-primary text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-medium shadow-md shadow-primary/20">

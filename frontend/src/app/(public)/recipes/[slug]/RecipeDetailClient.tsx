@@ -48,11 +48,11 @@ export default function RecipeDetailClient({ slug }: { slug: string }) {
   if (fetchError) {
     return (
       <>
-        <main className="max-w-4xl mx-auto px-4 py-8 text-center">
+        <div className="max-w-4xl mx-auto px-4 py-8 text-center">
           <p className="text-red-500 text-lg font-medium">{fetchError}</p>
-          <p className="text-sm text-gray-400 mt-1">Please try again later.</p>
+          <p className="text-sm text-gray-500 mt-1">Please try again later.</p>
           <Link href="/recipes" className="text-primary hover:underline mt-4 inline-block">Back to recipes</Link>
-        </main>
+        </div>
       </>
     )
   }
@@ -60,7 +60,7 @@ export default function RecipeDetailClient({ slug }: { slug: string }) {
   if (loading) {
     return (
       <>
-        <main className="max-w-4xl mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto px-4 py-8">
           <div className="animate-pulse space-y-6">
             <div className="h-6 bg-gray-50 rounded w-1/4" />
             <div className="aspect-[2/1] bg-gray-50 rounded-xl" />
@@ -68,7 +68,7 @@ export default function RecipeDetailClient({ slug }: { slug: string }) {
             <div className="h-4 bg-gray-50 rounded w-1/3" />
             <div className="h-40 bg-gray-50 rounded" />
           </div>
-        </main>
+        </div>
       </>
     )
   }
@@ -76,19 +76,19 @@ export default function RecipeDetailClient({ slug }: { slug: string }) {
   if (!recipe) {
     return (
       <>
-        <main className="max-w-4xl mx-auto px-4 py-8 text-center">
-          <p className="text-gray-400 text-lg">Recipe not found.</p>
+        <div className="max-w-4xl mx-auto px-4 py-8 text-center">
+          <p className="text-gray-500 text-lg">Recipe not found.</p>
           <Link href="/recipes" className="text-primary hover:underline mt-4 inline-block">Back to recipes</Link>
-        </main>
+        </div>
       </>
     )
   }
 
   return (
     <>
-      <main className="max-w-4xl mx-auto px-4 py-16">
+      <div className="max-w-4xl mx-auto px-4 py-16">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-          <Link href="/recipes" className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-primary mb-8 transition-colors">
+          <Link href="/recipes" className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-primary mb-8 transition-colors">
             <ChevronLeft size={16} />
             All Recipes
           </Link>
@@ -158,7 +158,7 @@ export default function RecipeDetailClient({ slug }: { slug: string }) {
               Ingredients
             </h2>
             {ingredients.length === 0 ? (
-              <p className="text-sm text-gray-400">No ingredients listed.</p>
+              <p className="text-sm text-gray-500">No ingredients listed.</p>
             ) : (
               <ul className="space-y-1">
                 {ingredients.map((ing, idx) => {
@@ -176,11 +176,11 @@ export default function RecipeDetailClient({ slug }: { slug: string }) {
                         onClick={() => toggleIngredient(idx)}
                         aria-pressed={isChecked}
                         aria-label={isChecked ? `Mark ${ing} as not bought` : `Mark ${ing} as bought`}
-                        className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                        className={`w-6 h-6 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-colors -my-1 ${
                           isChecked ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300'
                         }`}
                       >
-                        {isChecked && <Check size={12} />}
+                        {isChecked && <Check size={14} />}
                       </button>
                       <span className={`flex flex-wrap items-center gap-x-2 gap-y-1 flex-1 min-w-0 ${isChecked ? 'text-green-700 line-through' : 'text-gray-700'}`}>
                         <span>{ing}</span>
@@ -220,7 +220,7 @@ export default function RecipeDetailClient({ slug }: { slug: string }) {
               Method
             </h2>
             {methodSteps.length === 0 ? (
-              <p className="text-sm text-gray-400">No method available.</p>
+              <p className="text-sm text-gray-500">No method available.</p>
             ) : (
               <ol className="space-y-4">
                 {methodSteps.map((step, idx) => (
@@ -235,7 +235,7 @@ export default function RecipeDetailClient({ slug }: { slug: string }) {
             )}
           </motion.div>
         </div>
-      </main>
+      </div>
     </>
   )
 }

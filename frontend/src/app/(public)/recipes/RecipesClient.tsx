@@ -21,7 +21,7 @@ export default function RecipesClient() {
 
   return (
     <>
-      <main className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-4 py-8">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="font-display text-2xl sm:text-4xl font-bold mb-2">Recipes</h1>
           <p className="text-gray-500 mb-8">Discover delicious recipes made with Checkstar ingredients.</p>
@@ -75,7 +75,7 @@ className={`px-3 py-1.5 rounded-full text-sm font-light transition-colors ${
             initial={{ opacity: 0, scale: 0.8, filter: 'blur(8px)' }}
             animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
             transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-            className="text-center py-16 text-gray-400"
+            className="text-center py-16 text-gray-500"
           >
             <ChefHat size={40} className="mx-auto mb-3 opacity-50" />
             <p className="text-lg">No recipes found</p>
@@ -113,7 +113,7 @@ className={`px-3 py-1.5 rounded-full text-sm font-light transition-colors ${
                       {recipe.description && (
                         <p className="text-sm text-gray-500 line-clamp-2 mb-4">{recipe.description}</p>
                       )}
-                      <div className="flex items-center gap-4 text-xs text-gray-400">
+                      <div className="flex items-center gap-4 text-xs text-gray-500">
                         {recipe.prep_time && (
                           <span className="flex items-center gap-1">
                             <Clock size={14} />
@@ -143,7 +143,7 @@ className={`px-3 py-1.5 rounded-full text-sm font-light transition-colors ${
             ))}
           </motion.div>
         )}
-      </main>
+      </div>
     </>
   )
 }

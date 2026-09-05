@@ -18,7 +18,7 @@ export default function SpecialsClient() {
 
   return (
     <>
-      <main className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-4 py-8">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="font-display text-2xl sm:text-4xl font-bold mb-2">Specials</h1>
           <p className="text-gray-500 mb-8">Limited-time offers on your favourite products.</p>
@@ -47,7 +47,7 @@ export default function SpecialsClient() {
             initial={{ opacity: 0, scale: 0.8, filter: 'blur(8px)' }}
             animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
             transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-            className="text-center py-16 text-gray-400"
+            className="text-center py-16 text-gray-500"
           >
             <Tag size={40} className="mx-auto mb-3 opacity-50" />
             <p className="text-lg">No specials right now</p>
@@ -114,7 +114,7 @@ export default function SpecialsClient() {
             })}
           </motion.div>
         )}
-      </main>
+      </div>
     </>
   )
 }

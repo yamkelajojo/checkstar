@@ -6,6 +6,7 @@ import { motion } from 'motion/react'
 import { ShoppingCart } from 'lucide-react'
 import type { Product } from '@/types'
 import { useCartStore } from '@/stores/cart-store'
+import { emitCartAdded } from '@/lib/cart-events'
 
 interface Props {
   product: Product
@@ -50,23 +51,27 @@ export default function ProductCard({ product, compact = false }: Props) {
         <Link href={`/products/${product.slug}`}>
           <h3 className={`font-medium ${compact ? 'text-xs' : 'text-sm'} text-gray-900 line-clamp-2 mb-1`}>{product.name}</h3>
         </Link>
-        <p className="text-xs text-gray-400 mb-3">{product.unit}</p>
+        <p className="text-xs text-gray-500 mb-3">{product.unit}</p>
 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className={`font-semibold ${compact ? 'text-sm' : 'text-base'} text-gray-900`}>R{price.toFixed(2)}</span>
             {hasSale && (
-              <span className="text-xs text-gray-400 line-through">R{Number(product.price).toFixed(2)}</span>
+              <span className="text-xs text-gray-500 line-through">R{Number(product.price).toFixed(2)}</span>
             )}
           </div>
 
           {!compact && (
             <motion.button
               whileTap={{ scale: 0.9 }}
-              onClick={() => addItem(product)}
-              className="bg-primary text-white p-1.5 rounded-lg hover:bg-primary-dark transition-colors"
+              onClick={() => {
+                addItem(product)
+                emitCartAdded(product.name)
+              }}
+              aria-label={`Add ${product.name} to cart`}
+              className="bg-primary text-white w-10 h-10 flex items-center justify-center rounded-lg hover:bg-primary-dark transition-colors"
             >
-              <ShoppingCart size={15} strokeWidth={1} />
+              <ShoppingCart size={16} strokeWidth={1.5} />
             </motion.button>
           )}
         </div>

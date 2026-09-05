@@ -7,6 +7,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { mediaUrl } from '@/lib/media'
 import { useCartStore } from '@/stores/cart-store'
+import { emitCartAdded } from '@/lib/cart-events'
 import { useProduct } from '@/lib/query'
 
 export default function ProductDetailClient({ slug }: { slug: string }) {
@@ -18,11 +19,11 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
   if (fetchError) {
     return (
       <>
-        <main className="max-w-7xl mx-auto px-4 py-8 text-center">
+        <div className="max-w-7xl mx-auto px-4 py-8 text-center">
           <p className="text-red-500 text-lg font-medium">{fetchError}</p>
-          <p className="text-sm text-gray-400 mt-1">Please try again later.</p>
+          <p className="text-sm text-gray-500 mt-1">Please try again later.</p>
           <Link href="/products" className="text-primary hover:underline mt-4 inline-block">Back to products</Link>
-        </main>
+        </div>
       </>
     )
   }
@@ -30,7 +31,7 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
   if (loading) {
     return (
       <>
-        <main className="max-w-7xl mx-auto px-4 py-8">
+        <div className="max-w-7xl mx-auto px-4 py-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 animate-pulse">
             <div className="aspect-square bg-gray-50 rounded-2xl" />
             <div className="space-y-4">
@@ -40,7 +41,7 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
               <div className="h-20 bg-gray-50 rounded" />
             </div>
           </div>
-        </main>
+        </div>
       </>
     )
   }
@@ -48,12 +49,12 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
   if (!product) {
     return (
       <>
-        <main className="max-w-7xl mx-auto px-4 py-8 text-center">
-          <p className="text-gray-400 text-lg">Product not found.</p>
+        <div className="max-w-7xl mx-auto px-4 py-8 text-center">
+          <p className="text-gray-500 text-lg">Product not found.</p>
           <Link href="/products" className="text-primary hover:underline mt-4 inline-block">
             Back to products
           </Link>
-        </main>
+        </div>
       </>
     )
   }
@@ -63,15 +64,16 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
 
   const handleAddToCart = () => {
     addItem(product)
+    emitCartAdded(product.name)
     setAdded(true)
     setTimeout(() => setAdded(false), 1500)
   }
 
   return (
     <>
-      <main className="max-w-7xl mx-auto px-4 py-16">
+      <div className="max-w-7xl mx-auto px-4 py-16">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-          <Link href="/products" className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-primary mb-8 transition-colors">
+          <Link href="/products" className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-primary mb-8 transition-colors">
             <ChevronLeft size={16} />
             Back to Products
           </Link>
@@ -99,13 +101,13 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
             <h1 className="font-display text-xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2">
               {product.name}
             </h1>
-            <p className="text-sm text-gray-400 mb-4">{product.unit}</p>
+            <p className="text-sm text-gray-500 mb-4">{product.unit}</p>
 
             <div className="flex items-baseline gap-3 mb-6">
               <span className="font-bold text-3xl text-gray-900">R{price.toFixed(2)}</span>
               {hasSale && (
                 <>
-                  <span className="text-lg text-gray-400 line-through">R{product.price.toFixed(2)}</span>
+                  <span className="text-lg text-gray-500 line-through">R{product.price.toFixed(2)}</span>
                   <span className="bg-green-100 text-green-700 text-xs font-medium px-2 py-0.5 rounded-full">
                     Sale
                   </span>
@@ -140,7 +142,7 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
             </motion.button>
           </motion.div>
         </div>
-      </main>
+      </div>
     </>
   )
 }

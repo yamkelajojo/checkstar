@@ -47,11 +47,11 @@ export default function StoreDetailClient({ slug }: { slug: string }) {
   if (fetchError) {
     return (
       <>
-        <main className="max-w-4xl mx-auto px-4 py-8 text-center">
+        <div className="max-w-4xl mx-auto px-4 py-8 text-center">
           <p className="text-red-500 text-lg font-medium">{fetchError}</p>
           <p className="text-sm text-gray-400 mt-1">Please try again later.</p>
           <Link href="/stores" className="text-primary hover:underline mt-4 inline-block">Back to stores</Link>
-        </main>
+        </div>
       </>
     )
   }
@@ -59,13 +59,13 @@ export default function StoreDetailClient({ slug }: { slug: string }) {
   if (loading) {
     return (
       <>
-        <main className="max-w-4xl mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto px-4 py-8">
           <div className="animate-pulse space-y-6">
             <div className="h-6 bg-gray-50 rounded w-1/4" />
             <div className="h-10 bg-gray-50 rounded w-1/2" />
             <div className="h-[300px] bg-gray-50 rounded-xl" />
           </div>
-        </main>
+        </div>
       </>
     )
   }
@@ -73,17 +73,17 @@ export default function StoreDetailClient({ slug }: { slug: string }) {
   if (!store) {
     return (
       <>
-        <main className="max-w-4xl mx-auto px-4 py-8 text-center">
+        <div className="max-w-4xl mx-auto px-4 py-8 text-center">
           <p className="text-gray-400 text-lg">Store not found.</p>
           <Link href="/stores" className="text-primary hover:underline mt-4 inline-block">Back to stores</Link>
-        </main>
+        </div>
       </>
     )
   }
 
   return (
     <>
-      <main className="max-w-4xl mx-auto px-4 py-16">
+      <div className="max-w-4xl mx-auto px-4 py-16">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
           <Link href="/stores" className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-primary mb-8 transition-colors">
             <ChevronLeft size={16} />
@@ -143,7 +143,7 @@ export default function StoreDetailClient({ slug }: { slug: string }) {
             />
           </motion.div>
         </div>
-      </main>
+      </div>
     </>
   )
 }

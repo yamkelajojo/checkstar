@@ -30,7 +30,7 @@ const services = [
 export default function ServicesClient() {
   return (
     <>
-      <main>
+      <div>
         <section className="relative bg-gradient-to-br from-primary-light via-white to-white overflow-hidden">
           <div className="max-w-4xl mx-auto px-4 py-20 md:py-28 text-center">
             <motion.div initial="hidden" animate="show" variants={stagger}>
@@ -102,7 +102,7 @@ export default function ServicesClient() {
             </motion.div>
           </div>
         </section>
-      </main>
+      </div>
     </>
   )
 }

@@ -252,3 +252,34 @@ reading was disproven by screenshot (images visibly rendered).
 Verification: frontend **158 vitest tests / 21 files** green (+14 vs round 8),
 typecheck clean, ESLint clean, production build clean (30/30 routes), sweep +
 flow probes green in real Chromium.
+
+## Round 10 — `/impeccable critique` + `/impeccable polish` (design-language pass)
+
+Ran the pbakaus/impeccable critique playbook against the whole customer
+surface (degraded single-context run: no sub-agent tool in this session;
+official detector binary unreachable — release assets are on a blocked host —
+so Assessment B used a scripted browser-evidence audit: landmarks, heading
+order, touch targets, accessible names, computed contrast, keyboard walk,
+20 captures at 390/1440px). Score 26/40 (Acceptable). Findings triaged with
+the user: add-to-cart feedback first, then the P1s; hero prepared for real
+photography; founding-year claim removed.
+
+| # | Finding | Fix |
+|---|---|---|
+| R39 | **Silent add-to-cart** (user priority; heuristic 1 = 2/4): no toast, no aria-live; header badge off-screen on a phone grid. | New `cart-events` bus + layout-mounted `CartToast` (mirrors the CartDrawer undo-toast language): check chip, "Added {product}", View-cart link, `aria-live="polite"` status region, 2.5s auto-dismiss, re-arms per add. Emitted from ProductCard and product detail. Verified live: shows centred (0.0px off), dismisses, re-arms; 3 unit tests. |
+| R40 | **Two `<main>` landmarks on 11/11 public routes** — layout `motion.main` + page-level `<main>`; broke screen-reader main-region navigation everywhere. | 28 page-level `<main>` elements demoted to `<div>` across 16 public files; structural test pins the one-landmark convention; browser-verified 1 main on every route. |
+| R41 | **Unnamed interactive elements + sub-floor touch targets**: 541 icon-only add-to-cart buttons on /products, 20×20 recipe checkboxes, 16×16 password toggle, 20×20 social icons, header cart link unnamed when cart empty. | `aria-label="Add {name} to cart"` everywhere (pattern the steppers already used); recipe checkbox 24px with negative-margin rhythm; password toggle 32px + aria-pressed + label; social icons padded to 32px hit areas; cart link labelled with live item count. Browser re-audit: unnamed buttons on /products 541→0 (image links with alt text were detector false positives), sub-40px targets 274→4 (remaining are padded 32px-class). |
+| R42 | **Caption text failed AA**: unit labels gray-400 at 12px ≈2.5:1 on white. | Informational gray-400 → gray-500 across the customer surface (unit captions, empty-state copy, meta rows, back links); decorative icons untouched. Verified computed audit reads zero gray-400 informational text on audited routes. |
+| R43 | **Hero's right half was an empty branded panel, and mobile got no hero visual at all** (`hidden md:block`). | `HeroVisual` slot: shows `/images/hero-checkstar.jpg` (mock photograph committed; user replaces the file, no code change) on **all** viewports, branded fallback panel on load failure. |
+| R44 | **Category tiles were text-only** and the user will supply photos. | `CategoryGrid` renders `category.image` via `SafeImage` when the backend serves one; text tile until then — swap-ready with zero code change. Mock verified 15 image tiles render. |
+| R45 | Copy: "Trusted by Durban since 2012" conflicted with the brand doc's 2014 founding (user decision: remove the year). | "Trusted across Durban". |
+
+Incidental fix: both bottom toasts (CartToast and the CartDrawer undo-toast)
+were centred with `-translate-x-1/2`, which motion's inline transform clobbers
+— toasts rendered off-centre; both now centre via motion `x: '-50%'`.
+
+Verification: 167 vitest tests (23 files, +9: toast flow ×3, add-button
+naming/target/bus ×3, single-landmark structural ×2, unit-caption token),
+typecheck clean, ESLint clean, production build clean; live browser checks for
+toast geometry/auto-dismiss, landmark count, unnamed-button and target audits,
+hero + category image rendering.

@@ -98,7 +98,7 @@ export default function CartDrawer({ open, onClose }: Props) {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">{item.product.name}</p>
-                        <p className="text-xs text-gray-400">{item.product.unit}</p>
+                        <p className="text-xs text-gray-500">{item.product.unit}</p>
                         <p className="text-sm font-semibold text-primary mt-1">
                           R{(Number(item.product.effective_price ?? item.product.sale_price ?? item.product.price) * item.quantity).toFixed(2)}
                         </p>
@@ -142,11 +142,11 @@ export default function CartDrawer({ open, onClose }: Props) {
       <AnimatePresence>
         {toast && (
           <motion.div
-            initial={{ y: 40, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 40, opacity: 0 }}
+            initial={{ y: 40, opacity: 0, x: '-50%' }}
+            animate={{ y: 0, opacity: 1, x: '-50%' }}
+            exit={{ y: 40, opacity: 0, x: '-50%' }}
             transition={{ duration: 0.2 }}
-            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] flex items-center gap-3 bg-gray-900 text-white px-4 py-3 rounded-lg shadow-lg text-sm"
+            className="fixed bottom-6 left-1/2 z-[60] flex items-center gap-3 bg-gray-900 text-white px-4 py-3 rounded-lg shadow-lg text-sm"
           >
             <span>Removed</span>
             <button onClick={undo} className="font-semibold underline underline-offset-2 hover:opacity-80" style={{ color: '#EB6522' }}>

@@ -21,7 +21,7 @@ export default function CommunityClient() {
 
   return (
     <>
-      <main className="max-w-7xl mx-auto px-4 py-8 min-h-[60vh]">
+      <div className="max-w-7xl mx-auto px-4 py-8 min-h-[60vh]">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="font-display text-2xl sm:text-4xl font-bold mb-2">Community</h1>
           <p className="text-gray-500 mb-8">See how Checkstar connects with the community.</p>
@@ -54,7 +54,7 @@ className={`px-4 py-2 rounded-lg text-sm font-light transition-colors ${
             ))}
           </div>
         ) : fetchError ? (
-          <div className="text-center py-16 text-gray-400">
+          <div className="text-center py-16 text-gray-500">
             <Heart size={40} className="mx-auto mb-3 opacity-50" />
             <p className="text-lg">{fetchError}</p>
             <p className="text-sm mt-1">Please try again later.</p>
@@ -64,7 +64,7 @@ className={`px-4 py-2 rounded-lg text-sm font-light transition-colors ${
             initial={{ opacity: 0, scale: 0.8, filter: 'blur(8px)' }}
             animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
             transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-            className="text-center py-16 text-gray-400"
+            className="text-center py-16 text-gray-500"
           >
             <Heart size={40} className="mx-auto mb-3 opacity-50" />
             <p className="text-lg">No posts yet</p>
@@ -95,7 +95,7 @@ className={`px-4 py-2 rounded-lg text-sm font-light transition-colors ${
                           Gallery
                         </span>
                         {post.event_date && (
-                          <span className="text-xs text-gray-400 flex items-center gap-1">
+                          <span className="text-xs text-gray-500 flex items-center gap-1">
                             <Calendar size={12} />
                             {new Date(post.event_date).toLocaleDateString('en-ZA')}
                           </span>
@@ -123,7 +123,7 @@ className={`px-4 py-2 rounded-lg text-sm font-light transition-colors ${
                           CSR
                         </span>
                         {post.event_date && (
-                          <span className="text-xs text-gray-400 flex items-center gap-1">
+                          <span className="text-xs text-gray-500 flex items-center gap-1">
                             <Calendar size={12} />
                             {new Date(post.event_date).toLocaleDateString('en-ZA')}
                           </span>
@@ -140,7 +140,7 @@ className={`px-4 py-2 rounded-lg text-sm font-light transition-colors ${
             )}
           </motion.div>
         )}
-      </main>
+      </div>
     </>
   )
 }

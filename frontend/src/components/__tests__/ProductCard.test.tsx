@@ -6,12 +6,15 @@ vi.mock('motion/react', () => ({
   motion: new Proxy({}, { get: (_t, tag) => tag }),
 }))
 
+const addItem = vi.fn()
+
 vi.mock('@/stores/cart-store', () => ({
   useCartStore: (selector: (s: { addItem: () => void }) => unknown) =>
-    selector({ addItem: () => {} }),
+    selector({ addItem }),
 }))
 
 import ProductCard from '../ProductCard'
+import { onCartAdded } from '@/lib/cart-events'
 import type { Product } from '@/types'
 
 const product = (over: Partial<Product> = {}): Product => ({
@@ -63,5 +66,34 @@ describe('ProductCard', () => {
     render(<ProductCard product={product()} />)
     const links = screen.getAllByRole('link')
     expect(links.every((l) => l.getAttribute('href') === '/products/fresh-spinach')).toBe(true)
+  })
+  it('names the add-to-cart button with the product it adds (screen readers hear 541 unnamed buttons otherwise)', () => {
+    render(<ProductCard product={product()} />)
+    const btn = screen.getByRole('button', { name: 'Add Fresh Spinach to cart' })
+    expect(btn).toBeTruthy()
+  })
+
+  it('gives the add-to-cart button a 40px hit target (was 27px, below the 24px WCAG floor comfort)', () => {
+    render(<ProductCard product={product()} />)
+    const btn = screen.getByRole('button', { name: 'Add Fresh Spinach to cart' })
+    expect(btn.className).toContain('w-10')
+    expect(btn.className).toContain('h-10')
+  })
+
+  it('announces the add on the cart bus so the layout toast can confirm it', () => {
+    let announced: { name: string; quantity: number } | null = null
+    const off = onCartAdded((e) => { announced = e })
+    render(<ProductCard product={product()} />)
+    screen.getByRole('button', { name: 'Add Fresh Spinach to cart' }).click()
+    expect(addItem).toHaveBeenCalledWith(product())
+    expect(announced).toEqual({ name: 'Fresh Spinach', quantity: 1, at: expect.any(Number) })
+    off()
+  })
+
+  it('keeps the pack-size caption on the muted-but-legible gray-500 token (gray-400 failed AA at 12px)', () => {
+    render(<ProductCard product={product()} />)
+    const unit = screen.getByText('bunch')
+    expect(unit.className).toContain('text-gray-500')
+    expect(unit.className).not.toContain('text-gray-400')
   })
 })

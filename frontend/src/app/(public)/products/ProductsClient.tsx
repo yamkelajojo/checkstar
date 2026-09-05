@@ -67,7 +67,7 @@ export default function ProductsClient() {
 
   return (
     <>
-      <main className="max-w-7xl mx-auto px-4 pt-4 pb-6 sm:pt-6 sm:pb-8 lg:py-8">
+      <div className="max-w-7xl mx-auto px-4 pt-4 pb-6 sm:pt-6 sm:pb-8 lg:py-8">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="font-display text-[1.75rem] leading-tight sm:text-4xl font-bold mb-1.5 sm:mb-2">Products</h1>
           <p className="text-gray-500 text-sm sm:text-base mb-4 sm:mb-6">Browse our full range of groceries and household essentials.</p>
@@ -148,7 +148,7 @@ export default function ProductsClient() {
             </div>
           )}
         </motion.div>
-      </main>
+      </div>
     </>
   )
 }
