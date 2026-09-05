@@ -3,6 +3,8 @@
 namespace Database\Seeders;
 
 use App\Enums\UserRole;
+use App\Models\Store;
+use App\Models\StoreStaff;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -55,5 +57,30 @@ class DatabaseSeeder extends Seeder
             SpecialSeeder::class,
             BannerSeeder::class,
         ]);
+
+        // Demo store manager: without a staff-linked login the operations
+        // console is unreachable from seeded data. Created after StoreSeeder
+        // (it links to the flagship store). Same production guard as the
+        // accounts above.
+        if (! app()->environment('production') || env('DEVELOPER_PASSWORD') !== null) {
+            $manager = User::firstOrCreate(
+                ['email' => 'manager@checkstar.co.za'],
+                [
+                    'name' => 'Store Manager',
+                    'password' => Hash::make('password'),
+                    'role' => UserRole::StoreManager,
+                    'phone' => '+27 82 000 0001',
+                    'is_active' => true,
+                ]
+            );
+
+            $flagship = Store::where('slug', 'durban-central')->first();
+            if ($flagship !== null) {
+                StoreStaff::firstOrCreate(
+                    ['user_id' => $manager->id],
+                    ['store_id' => $flagship->id, 'role' => 'store_manager']
+                );
+            }
+        }
     }
 }
