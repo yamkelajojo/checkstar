@@ -29,9 +29,15 @@ class RecommendationService
 
     private function coldStartRecommendations(int $limit): array
     {
+        // Bounded candidate set: cold-start scoring is dominated by
+        // freshness (7-day half-life), so the newest window contains every
+        // competitive candidate and we never scan the whole catalogue on
+        // the app home screen.
         $products = Product::query()
             ->where('is_active', true)
             ->with(['category', 'storeProducts'])
+            ->orderByDesc('created_at')
+            ->limit(200)
             ->get()
             ->map(function ($product) {
                 $ageDays = max(1, (now()->diffInDays($product->created_at)));
@@ -57,11 +63,25 @@ class RecommendationService
         $categoryAffinity = $this->buildCategoryAffinity($customer->id);
         $viewedProductIds = $this->getViewedProductIds($customer->id);
 
+        // Bounded candidate set that preserves both scoring signals:
+        // the most-ordered products (popularity) plus the newest window
+        // (freshness). Scoring itself is unchanged.
         $products = Product::query()
             ->where('is_active', true)
             ->with(['category', 'storeProducts'])
             ->withCount('orderItems')
+            ->orderByDesc('order_items_count')
+            ->limit(400)
             ->get()
+            ->merge(
+                Product::query()
+                    ->where('is_active', true)
+                    ->with(['category', 'storeProducts'])
+                    ->withCount('orderItems')
+                    ->orderByDesc('created_at')
+                    ->limit(200)
+                    ->get()
+            )->unique('id')
             ->map(function ($product) use ($categoryAffinity, $viewedProductIds) {
                 $catId = $product->category_id;
                 $categoryMatch = $categoryAffinity[$catId] ?? 0;
