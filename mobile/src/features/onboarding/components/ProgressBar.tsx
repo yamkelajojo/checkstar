@@ -92,7 +92,12 @@ export function ProgressBar({
 const styles = StyleSheet.create({
   container: { width: '100%', height: 4, marginBottom: semanticSpacing.xl },
   track: {
-    ...StyleSheet.absoluteFillObject,
+    // RN 0.86 removed StyleSheet.absoluteFillObject — inline the equivalent.
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     backgroundColor: 'transparent',
     borderRadius: semanticRadius.badge,
   },
