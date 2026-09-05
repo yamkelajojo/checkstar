@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'motion/react'
 import { X, Trash2, ShoppingBag } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { mediaUrl } from '@/lib/media'
 import { useCartStore } from '@/stores/cart-store'
 import type { CartItem } from '@/types'
 
@@ -93,7 +94,7 @@ export default function CartDrawer({ open, onClose }: Props) {
                   {items.map(item => (
                     <div key={item.product.id} className="flex items-center gap-3 bg-gray-50 rounded-lg p-3">
                       <div className="relative w-14 h-14 bg-white rounded-lg flex items-center justify-center overflow-hidden">
-                        {item.product.image && <Image src={item.product.image} alt={item.product.name} fill sizes="56px" className="object-contain" />}
+                        {item.product.image && <Image src={mediaUrl(item.product.image)} alt={item.product.name} fill sizes="56px" className="object-contain" />}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">{item.product.name}</p>

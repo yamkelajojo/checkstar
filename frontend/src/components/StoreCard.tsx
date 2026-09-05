@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
+import { mediaUrl } from '@/lib/media'
 import { motion } from 'motion/react'
 import { MapPin, Phone, Clock } from 'lucide-react'
 import type { Store } from '@/types'
@@ -20,7 +21,7 @@ export default function StoreCard({ store }: Props) {
     >
       {store.image && (
         <div className="relative aspect-[2/1] bg-gray-50">
-          <Image src={store.image} alt={store.name} fill sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw" className="object-cover" />
+          <Image src={mediaUrl(store.image)} alt={store.name} fill sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw" className="object-cover" />
         </div>
       )}
       <div className="p-5">

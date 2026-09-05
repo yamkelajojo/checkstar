@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
+import { mediaUrl } from '@/lib/media'
 import { motion } from 'motion/react'
 import { ShoppingCart } from 'lucide-react'
 import type { Product } from '@/types'
@@ -29,7 +30,7 @@ export default function ProductCard({ product, compact = false }: Props) {
         <div className={`relative ${compact ? 'aspect-square' : 'aspect-[4/3]'} bg-gray-50 flex items-center justify-center p-3`}>
           {product.image ? (
             <Image
-              src={product.image}
+              src={mediaUrl(product.image)}
               alt={product.name}
               fill
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"

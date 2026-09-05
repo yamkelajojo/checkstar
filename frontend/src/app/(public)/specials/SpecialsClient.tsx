@@ -2,6 +2,7 @@
 
 import { motion } from 'motion/react'
 import Image from 'next/image'
+import { mediaUrl } from '@/lib/media'
 import { Calendar, Clock, Tag } from 'lucide-react'
 import ProductCard from '@/components/ProductCard'
 import { useSpecials } from '@/lib/query'

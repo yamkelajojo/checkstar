@@ -5,6 +5,7 @@ import { motion } from 'motion/react'
 import { ShoppingCart, ChevronLeft, Tag, Package } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { mediaUrl } from '@/lib/media'
 import { useCartStore } from '@/stores/cart-store'
 import { useProduct } from '@/lib/query'
 
@@ -84,7 +85,7 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
             className="relative aspect-square bg-gray-50 rounded-2xl flex items-center justify-center p-8"
           >
             {product.image ? (
-              <Image src={product.image} alt={product.name} fill sizes="(max-width: 768px) 100vw, 50vw" className="object-contain p-8" />
+              <Image src={mediaUrl(product.image)} alt={product.name} fill sizes="(max-width: 768px) 100vw, 50vw" className="object-contain p-8" />
             ) : (
               <Package size={64} className="text-gray-200" />
             )}

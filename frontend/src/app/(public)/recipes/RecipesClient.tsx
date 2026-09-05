@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { mediaUrl } from '@/lib/media'
 import { motion } from 'motion/react'
 import { Clock, Users, ChefHat, ArrowRight } from 'lucide-react'
 import { useRecipes } from '@/lib/query'
@@ -93,7 +94,7 @@ className={`px-3 py-1.5 rounded-full text-sm font-light transition-colors ${
                     <div className="relative aspect-[4/3] bg-gray-50 overflow-hidden">
                       {recipe.image ? (
                         <Image
-                          src={recipe.image}
+                          src={mediaUrl(recipe.image)}
                           alt={recipe.title}
                           fill
                           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"

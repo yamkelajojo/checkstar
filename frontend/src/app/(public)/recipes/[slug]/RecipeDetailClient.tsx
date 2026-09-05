@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { mediaUrl } from '@/lib/media'
 import { motion } from 'motion/react'
 import { Clock, Users, ChefHat, ChevronLeft, Check, ListOrdered, Package } from 'lucide-react'
 import { useRecipe, useAllProducts } from '@/lib/query'
@@ -115,7 +116,7 @@ export default function RecipeDetailClient({ slug }: { slug: string }) {
           className="relative aspect-[2/1] rounded-xl overflow-hidden bg-gray-50 mb-8"
         >
           {recipe.image ? (
-            <Image src={recipe.image} alt={recipe.title} fill sizes="(max-width: 768px) 100vw, 768px" className="object-cover" />
+            <Image src={mediaUrl(recipe.image)} alt={recipe.title} fill sizes="(max-width: 768px) 100vw, 768px" className="object-cover" />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-gray-200">
               <ChefHat size={64} />
@@ -204,7 +205,7 @@ export default function RecipeDetailClient({ slug }: { slug: string }) {
                               className="inline-flex items-center gap-1.5 bg-primary/5 border border-primary/20 rounded-full pl-1 pr-2.5 py-0.5 text-xs font-medium text-primary hover:bg-primary/10 transition-colors flex-shrink-0"
                             >
                               {match.image ? (
-                                <Image src={match.image} alt={match.name} width={20} height={20} className="rounded-full object-cover" />
+                                <Image src={mediaUrl(match.image)} alt={match.name} width={20} height={20} className="rounded-full object-cover" />
                               ) : (
                                 <Package size={12} className="flex-shrink-0" />
                               )}
