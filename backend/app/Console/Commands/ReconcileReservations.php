@@ -62,18 +62,30 @@ class ReconcileReservations extends Command
                 continue;
             }
 
+            // Oversubscribed stock (more active reservations than units
+            // available — legal: placement checks availability per order
+            // without reserving) must reconcile to the clamped value, or the
+            // correction itself would violate reserved_quantity <= stock
+            // (a hard CHECK on MySQL) and abort the run midway.
+            $clampedReserved = min($expectedReserved, (int) $sp->stock_quantity);
+
+            if ((int) $sp->reserved_quantity === $clampedReserved) {
+                continue;
+            }
+
             $drifted++;
             $this->line(sprintf(
-                'store_product #%d (store %d, product %d): reserved %d → expected %d',
+                'store_product #%d (store %d, product %d): reserved %d → expected %d%s',
                 $sp->id,
                 $sp->store_id,
                 $sp->product_id,
                 $sp->reserved_quantity,
-                $expectedReserved,
+                $clampedReserved,
+                $clampedReserved < $expectedReserved ? ' (clamped to stock)' : '',
             ));
 
             if (! $this->option('dry-run')) {
-                $sp->reserved_quantity = $expectedReserved;
+                $sp->reserved_quantity = $clampedReserved;
                 $sp->save();
             }
         }
