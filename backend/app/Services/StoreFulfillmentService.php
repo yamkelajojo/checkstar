@@ -95,6 +95,90 @@ class StoreFulfillmentService
     }
 
     /**
+     * Resolve the fulfilment store for a PICKUP order. The customer collects
+     * from the store, so delivery radius is irrelevant — every active store
+     * qualifies, preferring the store the customer explicitly chose.
+     *
+     * @param  array<int, array{product_id: int, quantity: int}>  $cartItems
+     */
+    public function resolveForPickup(array $cartItems, ?int $requestedStoreId = null): FulfillmentResult
+    {
+        if (empty($cartItems)) {
+            return new FulfillmentResult(
+                success: false,
+                store: null,
+                eligibleStores: [],
+                unfulfillableItems: [],
+                reason: 'Cart is empty',
+            );
+        }
+
+        $stores = Store::where('is_active', true)->orderBy('id')->get();
+
+        if ($stores->isEmpty()) {
+            return new FulfillmentResult(
+                success: false,
+                store: null,
+                eligibleStores: [],
+                unfulfillableItems: [],
+                reason: 'No stores are currently available for pickup',
+            );
+        }
+
+        if ($requestedStoreId !== null) {
+            $requested = $stores->firstWhere('id', $requestedStoreId);
+
+            if (! $requested) {
+                return new FulfillmentResult(
+                    success: false,
+                    store: null,
+                    eligibleStores: [],
+                    unfulfillableItems: [],
+                    reason: 'The selected store is not available for pickup',
+                );
+            }
+
+            if (! $this->storeCanFulfillCart($requested, $cartItems)) {
+                return new FulfillmentResult(
+                    success: false,
+                    store: null,
+                    eligibleStores: [$requested],
+                    unfulfillableItems: $this->getUnfulfillableItems($cartItems, collect([['store' => $requested]])),
+                    reason: 'The selected store cannot fulfil the complete cart',
+                );
+            }
+
+            return new FulfillmentResult(
+                success: true,
+                store: $requested,
+                eligibleStores: [$requested],
+                unfulfillableItems: [],
+                reason: null,
+            );
+        }
+
+        $fulfillableStores = $stores->filter(fn (Store $store) => $this->storeCanFulfillCart($store, $cartItems))->values();
+
+        if ($fulfillableStores->isEmpty()) {
+            return new FulfillmentResult(
+                success: false,
+                store: null,
+                eligibleStores: [],
+                unfulfillableItems: $this->getUnfulfillableItems($cartItems, $stores->map(fn (Store $s) => ['store' => $s])->values()),
+                reason: 'No single store can fulfil the complete cart',
+            );
+        }
+
+        return new FulfillmentResult(
+            success: true,
+            store: $fulfillableStores->first(),
+            eligibleStores: $fulfillableStores->all(),
+            unfulfillableItems: [],
+            reason: null,
+        );
+    }
+
+    /**
      * Check if a store has all cart items available and in sufficient stock.
      */
     private function storeCanFulfillCart(Store $store, array $cartItems): bool

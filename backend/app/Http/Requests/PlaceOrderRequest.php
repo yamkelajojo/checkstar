@@ -17,9 +17,14 @@ class PlaceOrderRequest extends FormRequest
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
             'items.*.quantity' => 'required|integer|min:1|max:8',
-            'delivery_address' => 'required|string|max:500',
-            'delivery_latitude' => 'required|numeric|between:-90,90',
-            'delivery_longitude' => 'required|numeric|between:-180,180',
+            'fulfilment_method' => 'nullable|in:delivery,pickup',
+            // Delivery needs a destination for dispatch; pickup needs the
+            // store the customer will collect from. The coordinates back the
+            // address (checkout resolves the fulfilment store from them).
+            'store_id' => 'required_if:fulfilment_method,pickup|nullable|integer|exists:stores,id',
+            'delivery_address' => 'required_unless:fulfilment_method,pickup|nullable|string|max:500',
+            'delivery_latitude' => 'required_unless:fulfilment_method,pickup|nullable|numeric|between:-90,90',
+            'delivery_longitude' => 'required_unless:fulfilment_method,pickup|nullable|numeric|between:-180,180',
             'delivery_notes' => 'nullable|string|max:1000',
             'payment_method' => 'nullable|in:cash_on_delivery',
         ];
@@ -43,6 +48,9 @@ class PlaceOrderRequest extends FormRequest
             'delivery_longitude.between' => 'Delivery longitude must be between -180 and 180.',
             'delivery_notes.max' => 'Delivery notes must not exceed 1000 characters.',
             'payment_method.in' => 'The only accepted payment method is cash on delivery.',
+            'fulfilment_method.in' => 'Fulfilment must be either delivery or pickup.',
+            'store_id.required_if' => 'Please choose a store for pickup.',
+            'store_id.exists' => 'The selected store does not exist.',
         ];
     }
 }

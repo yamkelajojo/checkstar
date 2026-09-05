@@ -83,10 +83,18 @@ class OrderIntake
                 ];
             }
 
-            // Resolve fulfillment store BEFORE creating order
-            $customerLat = (float) $validated['delivery_latitude'];
-            $customerLng = (float) $validated['delivery_longitude'];
-            $fulfillmentResult = $this->fulfillmentService->resolve($consolidated, $customerLat, $customerLng);
+            // Resolve fulfilment. Delivery orders resolve from the customer's
+            // coordinates (nearest eligible store); pickup orders from the
+            // store the customer chose (radius is irrelevant — they travel).
+            $fulfilmentMethod = $validated['fulfilment_method'] ?? 'delivery';
+
+            if ($fulfilmentMethod === 'pickup') {
+                $fulfillmentResult = $this->fulfillmentService->resolveForPickup($consolidated, isset($validated['store_id']) ? (int) $validated['store_id'] : null);
+            } else {
+                $customerLat = (float) $validated['delivery_latitude'];
+                $customerLng = (float) $validated['delivery_longitude'];
+                $fulfillmentResult = $this->fulfillmentService->resolve($consolidated, $customerLat, $customerLng);
+            }
 
             if (! $fulfillmentResult->success) {
                 throw new \InvalidArgumentException($fulfillmentResult->reason ?? 'Cannot fulfill order from any store');
@@ -94,7 +102,10 @@ class OrderIntake
 
             $fulfillmentStore = $fulfillmentResult->store;
 
-            $deliveryFee = (float) config('dispatch.delivery_fee', 0);
+            // The customer who collects pays no delivery fee.
+            $deliveryFee = $fulfilmentMethod === 'pickup'
+                ? 0.0
+                : (float) config('dispatch.delivery_fee', 0);
             $total = $subtotal + $deliveryFee;
 
             // Retry order number generation on collision. The insert runs in a
@@ -113,9 +124,10 @@ class OrderIntake
                             'status' => OrderStatus::Pending,
                             'payment_status' => PaymentStatus::Pending,
                             'payment_method' => $validated['payment_method'] ?? 'cash_on_delivery',
-                            'delivery_address' => $validated['delivery_address'],
-                            'delivery_latitude' => $validated['delivery_latitude'],
-                            'delivery_longitude' => $validated['delivery_longitude'],
+                            'fulfilment_method' => $fulfilmentMethod,
+                            'delivery_address' => $fulfilmentMethod === 'delivery' ? $validated['delivery_address'] : null,
+                            'delivery_latitude' => $fulfilmentMethod === 'delivery' ? $validated['delivery_latitude'] : null,
+                            'delivery_longitude' => $fulfilmentMethod === 'delivery' ? $validated['delivery_longitude'] : null,
                             'delivery_notes' => $validated['delivery_notes'] ?? null,
                             'subtotal' => $subtotal,
                             'delivery_fee' => $deliveryFee,
@@ -160,6 +172,24 @@ class OrderIntake
             ]);
 
             $dispatchedOrder = $order->fresh();
+
+            // Pickup orders never enter the rider dispatch pipeline: the store
+            // prepares the order and marks it Ready for collection (Ready →
+            // Delivered closes the loop when the customer collects).
+            if ($fulfilmentMethod === 'pickup') {
+                if ($this->cartPolicy->shouldClearAfterPlacement($dispatchedOrder)) {
+                    $customer->cartItems()->delete();
+                }
+
+                return new OrderIntakeResult(
+                    order: $dispatchedOrder->fresh()->load('items'),
+                    dispatchStatus: 'pickup',
+                    claimLatencyMs: null,
+                    riderId: null,
+                    storeId: $dispatchedOrder->store_id,
+                );
+            }
+
             $dispatchResult = $this->dispatchService->dispatch($dispatchedOrder);
 
             if ($this->cartPolicy->shouldClearAfterPlacement($dispatchedOrder)) {

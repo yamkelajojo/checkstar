@@ -8,6 +8,8 @@ enum EventType: string
     case OrderConfirmed = 'order_confirmed';
     case DispatchRetrying = 'dispatch_retrying';
     case RiderAssigned = 'rider_assigned';
+    case OrderReady = 'order_ready';
+    case OrderPreparing = 'order_preparing';
     case ItemsBought = 'items_bought';
     case OutForDelivery = 'out_for_delivery';
     case Delivered = 'delivered';

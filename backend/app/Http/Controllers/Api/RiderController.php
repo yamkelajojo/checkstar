@@ -38,6 +38,8 @@ class RiderController extends Controller
 
         $orders = Order::whereIn('status', [OrderStatus::Confirmed, OrderStatus::Retrying])
             ->whereNull('rider_id')
+            // Pickup orders are collected by the customer — never rider work.
+            ->where('fulfilment_method', 'delivery')
             ->with('items', 'store')
             ->when($rider->store_id, function ($query) use ($rider) {
                 $query->where(function ($q) use ($rider) {

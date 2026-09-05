@@ -25,7 +25,14 @@ class OrderStateMachine
             OrderStatus::Pending->value => [OrderStatus::Confirmed->value, OrderStatus::Cancelled->value],
             OrderStatus::Confirmed->value => [OrderStatus::Preparing->value, OrderStatus::Retrying->value, OrderStatus::Cancelled->value],
             OrderStatus::Retrying->value => [OrderStatus::Preparing->value, OrderStatus::Cancelled->value],
-            OrderStatus::Preparing->value => [OrderStatus::OutForDelivery->value, OrderStatus::Cancelled->value],
+            OrderStatus::Preparing->value => [
+                // Delivery orders go out with a rider; pickup orders become
+                // Ready for the customer to collect.
+                OrderStatus::OutForDelivery->value,
+                OrderStatus::Ready->value,
+                OrderStatus::Cancelled->value,
+            ],
+            OrderStatus::Ready->value => [OrderStatus::Delivered->value, OrderStatus::Cancelled->value],
             OrderStatus::OutForDelivery->value => [OrderStatus::Delivered->value, OrderStatus::Cancelled->value],
             OrderStatus::Delivered->value => [],
             OrderStatus::Cancelled->value => [],
@@ -34,12 +41,17 @@ class OrderStateMachine
         return self::$transitions;
     }
 
-    private static function toEventType(OrderStatus $to): EventType
+    private static function toEventType(OrderStatus $to, ?Order $order = null): EventType
     {
         return match ($to) {
             OrderStatus::Confirmed => EventType::OrderConfirmed,
             OrderStatus::Retrying => EventType::DispatchRetrying,
-            OrderStatus::Preparing => EventType::RiderAssigned,
+            // Preparing means "rider assigned" only for delivery orders; a
+            // pickup order entering preparation has no rider in its story.
+            OrderStatus::Preparing => ($order !== null && $order->fulfilment_method === 'pickup')
+                ? EventType::OrderPreparing
+                : EventType::RiderAssigned,
+            OrderStatus::Ready => EventType::OrderReady,
             OrderStatus::OutForDelivery => EventType::OutForDelivery,
             OrderStatus::Delivered => EventType::Delivered,
             OrderStatus::Cancelled => EventType::Cancelled,
@@ -68,7 +80,7 @@ class OrderStateMachine
             );
         }
 
-        $eventType = self::toEventType($to);
+        $eventType = self::toEventType($to, $order);
 
         // Release reserved inventory for items never bought (reclaim reservations).
         // Runs on cancellation AND delivery so reservations can never leak:

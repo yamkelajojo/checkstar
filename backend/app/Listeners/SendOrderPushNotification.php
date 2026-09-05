@@ -30,6 +30,7 @@ class SendOrderPushNotification implements ShouldQueueAfterCommit
     private array $statusMessages = [
         'confirmed' => ['title' => 'Order Confirmed!', 'body' => 'Your order has been confirmed and is being prepared.'],
         'preparing' => ['title' => 'Being Prepared', 'body' => 'Your items are being picked and packed.'],
+        'ready' => ['title' => 'Ready for Pickup!', 'body' => 'Your order is packed and waiting for you at the store.'],
         'out_for_delivery' => ['title' => 'On the Way!', 'body' => 'Your rider is heading to you now.'],
         'delivered' => ['title' => 'Delivered!', 'body' => 'Your order has been delivered. Enjoy!'],
         'retrying' => ['title' => 'Finding a Rider', 'body' => "We're still locating a rider for your order — hang tight."],
@@ -48,6 +49,12 @@ class SendOrderPushNotification implements ShouldQueueAfterCommit
         $message = $this->statusMessages[$event->newStatus] ?? null;
         if (! $message) {
             return;
+        }
+
+        // Pickup orders are collected, not delivered — the closing message
+        // should speak the customer's language.
+        if ($event->newStatus === 'delivered' && $order->fulfilment_method === 'pickup') {
+            $message = ['title' => 'Collected!', 'body' => 'Thanks for picking up your order. Enjoy!'];
         }
 
         try {

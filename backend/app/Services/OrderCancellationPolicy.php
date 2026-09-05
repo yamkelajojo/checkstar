@@ -12,6 +12,9 @@ class OrderCancellationPolicy
         OrderStatus::Confirmed->value,
         OrderStatus::Retrying->value,
         OrderStatus::Preparing->value,
+        // A packed pickup order can still be cancelled until the customer
+        // collects it.
+        OrderStatus::Ready->value,
     ];
 
     public function customerCanCancel(Order $order): bool

@@ -41,8 +41,24 @@ class StoreOrderController extends Controller
         $order = Order::where('id', $id)->where('store_id', $store->id)->firstOrFail();
 
         $validated = $request->validate([
-            'status' => 'required|string|in:confirmed,preparing,out_for_delivery,delivered,cancelled',
+            // 'ready' is pickup-only: the store flags a packed pickup order so
+            // the customer can come collect. Delivery orders go out_for_delivery.
+            'status' => 'required|string|in:confirmed,preparing,ready,out_for_delivery,delivered,cancelled',
         ]);
+
+        if ($validated['status'] === 'ready' && $order->fulfilment_method !== 'pickup') {
+            return response()->json([
+                'message' => 'Only pickup orders can be marked ready for collection',
+                'reason' => 'ready_is_pickup_only',
+            ], 422);
+        }
+
+        if ($validated['status'] === 'out_for_delivery' && $order->fulfilment_method !== 'delivery') {
+            return response()->json([
+                'message' => 'Pickup orders are collected by the customer and never go out for delivery',
+                'reason' => 'delivery_is_delivery_only',
+            ], 422);
+        }
 
         try {
             $this->stateMachine->transition($order, OrderStatus::from($validated['status']), $request->user());

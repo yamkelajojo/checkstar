@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\Admin;
+use App\Http\Controllers\Api\AddressController;
 use App\Http\Controllers\Api\AnalyticsController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BannerController;
@@ -52,6 +53,12 @@ Route::post('/auth/email/verification-notification', [AuthController::class, 'se
 
     // Profile
     Route::put('/profile', [ProfileController::class, 'update'])->middleware('throttle:20,1');
+
+    // Saved delivery addresses (address book)
+    Route::get('/addresses', [AddressController::class, 'index'])->middleware('throttle:30,1');
+    Route::post('/addresses', [AddressController::class, 'store'])->middleware('throttle:20,1');
+    Route::put('/addresses/{id}', [AddressController::class, 'update'])->middleware('throttle:20,1');
+    Route::delete('/addresses/{id}', [AddressController::class, 'destroy'])->middleware('throttle:20,1');
 
     // Customer orders
     Route::get('/orders', [OrderController::class, 'index'])->middleware('throttle:30,1');

@@ -39,6 +39,11 @@ class RiderOrderService
             return null;
         }
 
+        // Pickup orders have no rider in their lifecycle at all.
+        if ($order->fulfilment_method === 'pickup') {
+            return null;
+        }
+
         // For retrying orders store_id is null until claimed; allow any rider if order has no store
         // For confirmed orders with store_id set, enforce rider's store matches
         if ($order->store_id !== null && $order->store_id !== $rider->store_id) {
