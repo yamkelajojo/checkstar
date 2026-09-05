@@ -116,7 +116,7 @@ class OrderIntake
             do {
                 $orderNumber = 'CS-'.now()->format('Ymd').'-'.strtoupper(Str::random(4));
                 try {
-                    $order = DB::transaction(function () use ($orderNumber, $customer, $fulfillmentStore, $validated, $subtotal, $deliveryFee, $total) {
+                    $order = DB::transaction(function () use ($orderNumber, $customer, $fulfillmentStore, $validated, $subtotal, $deliveryFee, $total, $fulfilmentMethod) {
                         return Order::create([
                             'order_number' => $orderNumber,
                             'customer_id' => $customer->id,

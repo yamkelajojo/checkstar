@@ -209,14 +209,14 @@ class PickupOrderTest extends TestCase
         ])->json('data.id');
 
         // Store packs the order → Ready (pickup-only state)
-        $ready = $this->actingAs($staff)->postJson("/api/store/orders/{$orderId}/status", [
+        $ready = $this->actingAs($staff)->patchJson("/api/store/orders/{$orderId}/status", [
             'status' => 'ready',
         ]);
         $ready->assertStatus(200)->assertJsonPath('data.status', 'ready');
 
         // Customer collects → Delivered (collection closes the loop), then
         // the customer confirms to settle payment exactly as with delivery.
-        $collected = $this->actingAs($staff)->postJson("/api/store/orders/{$orderId}/status", [
+        $collected = $this->actingAs($staff)->patchJson("/api/store/orders/{$orderId}/status", [
             'status' => 'delivered',
         ]);
         $collected->assertStatus(200)->assertJsonPath('data.status', 'delivered');
@@ -280,11 +280,11 @@ class PickupOrderTest extends TestCase
             'total' => 10,
         ]);
 
-        $this->actingAs($staff)->postJson("/api/store/orders/{$deliveryOrder->id}/status", [
+        $this->actingAs($staff)->patchJson("/api/store/orders/{$deliveryOrder->id}/status", [
             'status' => 'ready',
         ])->assertStatus(422)->assertJsonPath('reason', 'ready_is_pickup_only');
 
-        $this->actingAs($staff)->postJson("/api/store/orders/{$pickupOrder->id}/status", [
+        $this->actingAs($staff)->patchJson("/api/store/orders/{$pickupOrder->id}/status", [
             'status' => 'out_for_delivery',
         ])->assertStatus(422)->assertJsonPath('reason', 'delivery_is_delivery_only');
     }
