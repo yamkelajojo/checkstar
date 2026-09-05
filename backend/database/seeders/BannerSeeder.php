@@ -12,6 +12,15 @@ class BannerSeeder extends Seeder
     public function run(): void
     {
         $store = Store::first();
+        // Never trust user id 1 — resolve the seeded developer by email
+        // (MySQL does not reset auto-increment after rolled-back
+        // transactions, so literal ids only line up on a pristine DB).
+        $creatorId = (int) (\App\Models\User::query()->min('id') ?? 0);
+        if ($creatorId === 0) {
+            $this->command?->warn('Skipped BannerSeeder: no users exist yet.');
+
+            return;
+        }
 
         $banners = [
             [
@@ -20,7 +29,7 @@ class BannerSeeder extends Seeder
                 'status' => 'published',
                 'start_date' => Carbon::now()->subDays(7),
                 'end_date' => Carbon::now()->addDays(60),
-                'created_by' => 1,
+                'created_by' => $creatorId,
                 'slides' => [
                     [
                         'title' => 'Fresh Groceries, Delivered Fast',
@@ -57,7 +66,7 @@ class BannerSeeder extends Seeder
                 'status' => 'published',
                 'start_date' => Carbon::now()->subDays(2),
                 'end_date' => Carbon::now()->addDays(30),
-                'created_by' => 1,
+                'created_by' => $creatorId,
                 'slides' => [
                     [
                         'title' => 'Spring Into Savings',
