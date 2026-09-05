@@ -23,404 +23,404 @@
 ```
 #### phpunit.log
 ```
+  ✓ claim rejects rider already at concurrent order cap                  0.03s  
+  ✓ claim allows rider to take order after delivery                      0.04s  
+  ✓ claim cap of zero allows unlimited batching                          0.04s  
+  ✓ claim preserves existing rider id returns false                      0.04s  
+  ✓ claim unsets null rider id in where clause                           0.02s  
+  ✓ claim transitions from confirmed creates activity log with correct…  0.03s  
+  ✓ claim transitions from retrying creates activity log                 0.03s  
 
-The following exception occurred during the last request:
+   PASS  Tests\Unit\OrderPolicyTest
+  ✓ customer can view own order                                          0.04s  
+  ✓ customer cannot view others order                                    0.02s  
+  ✓ customer can confirm delivery of own order                           0.02s  
+  ✓ customer cannot confirm delivery of others order                     0.02s  
+  ✓ customer can review own order                                        0.02s  
+  ✓ customer cannot review others order                                  0.02s  
+  ✓ customer can cancel own order                                        0.02s  
+  ✓ customer cannot cancel others order                                  0.02s  
+  ✓ assigned rider can view the order                                    0.02s  
+  ✓ unassigned rider cannot view the order                               0.02s  
+  ✓ rider cannot confirm delivery                                        0.02s  
 
-ErrorException: Undefined variable $fulfilmentMethod in /home/runner/work/checkstar/checkstar/backend/app/Services/OrderIntake.php:127
-Stack trace:
-#0 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(258): Illuminate\Foundation\Bootstrap\HandleExceptions->handleError()
-#1 /home/runner/work/checkstar/checkstar/backend/app/Services/OrderIntake.php(127): Illuminate\Foundation\Bootstrap\HandleExceptions->Illuminate\Foundation\Bootstrap\{closure}()
-#2 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Database/Concerns/ManagesTransactions.php(32): App\Services\OrderIntake->App\Services\{closure}()
-#3 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Database/DatabaseManager.php(495): Illuminate\Database\Connection->transaction()
-#4 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Support/Facades/Facade.php(361): Illuminate\Database\DatabaseManager->__call()
-#5 /home/runner/work/checkstar/checkstar/backend/app/Services/OrderIntake.php(119): Illuminate\Support\Facades\Facade::__callStatic()
-#6 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Database/Concerns/ManagesTransactions.php(32): App\Services\OrderIntake->App\Services\{closure}()
-#7 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Database/DatabaseManager.php(495): Illuminate\Database\Connection->transaction()
-#8 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Support/Facades/Facade.php(361): Illuminate\Database\DatabaseManager->__call()
-#9 /home/runner/work/checkstar/checkstar/backend/app/Services/OrderIntake.php(49): Illuminate\Support\Facades\Facade::__callStatic()
-#10 /home/runner/work/checkstar/checkstar/backend/app/Http/Controllers/Api/OrderController.php(74): App\Services\OrderIntake->place()
-#11 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Routing/ControllerDispatcher.php(47): App\Http\Controllers\Api\OrderController->store()
-#12 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Routing/Route.php(266): Illuminate\Routing\ControllerDispatcher->dispatch()
-#13 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Routing/Route.php(212): Illuminate\Routing\Route->runController()
-#14 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Routing/Router.php(808): Illuminate\Routing\Route->run()
-#15 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(170): Illuminate\Routing\Router->Illuminate\Routing\{closure}()
-#16 /home/runner/work/checkstar/checkstar/backend/app/Http/Middleware/EnsureUserIsActive.php(34): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#17 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): App\Http\Middleware\EnsureUserIsActive->handle()
-#18 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Routing/Middleware/SubstituteBindings.php(51): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#19 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): Illuminate\Routing\Middleware\SubstituteBindings->handle()
-#20 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Routing/Middleware/ThrottleRequests.php(161): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#21 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Routing/Middleware/ThrottleRequests.php(92): Illuminate\Routing\Middleware\ThrottleRequests->handleRequest()
-#22 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): Illuminate\Routing\Middleware\ThrottleRequests->handle()
-#23 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Auth/Middleware/Authenticate.php(64): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#24 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): Illuminate\Auth\Middleware\Authenticate->handle()
-#25 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/sanctum/src/Http/Middleware/EnsureFrontendRequestsAreStateful.php(26): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#26 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(170): Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful->Laravel\Sanctum\Http\Middleware\{closure}()
-#27 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(127): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#28 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/sanctum/src/Http/Middleware/EnsureFrontendRequestsAreStateful.php(25): Illuminate\Pipeline\Pipeline->then()
-#29 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful->handle()
-#30 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(127): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#31 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Routing/Router.php(807): Illuminate\Pipeline\Pipeline->then()
-#32 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Routing/Router.php(786): Illuminate\Routing\Router->runRouteWithinStack()
-#33 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Routing/Router.php(750): Illuminate\Routing\Router->runRoute()
-#34 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Routing/Router.php(739): Illuminate\Routing\Router->dispatchToRoute()
-#35 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php(201): Illuminate\Routing\Router->dispatch()
-#36 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(170): Illuminate\Foundation\Http\Kernel->Illuminate\Foundation\Http\{closure}()
-#37 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/TransformsRequest.php(21): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#38 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/ConvertEmptyStringsToNull.php(31): Illuminate\Foundation\Http\Middleware\TransformsRequest->handle()
-#39 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull->handle()
-#40 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/TransformsRequest.php(21): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#41 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/TrimStrings.php(51): Illuminate\Foundation\Http\Middleware\TransformsRequest->handle()
-#42 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): Illuminate\Foundation\Http\Middleware\TrimStrings->handle()
-#43 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Http/Middleware/ValidatePostSize.php(27): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#44 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): Illuminate\Http\Middleware\ValidatePostSize->handle()
-#45 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/PreventRequestsDuringMaintenance.php(110): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#46 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): Illuminate\Foundation\Http\Middleware\PreventRequestsDuringMaintenance->handle()
-#47 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Http/Middleware/HandleCors.php(62): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#48 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): Illuminate\Http\Middleware\HandleCors->handle()
-#49 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Http/Middleware/TrustProxies.php(58): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#50 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): Illuminate\Http\Middleware\TrustProxies->handle()
-#51 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/InvokeDeferredCallbacks.php(22): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#52 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): Illuminate\Foundation\Http\Middleware\InvokeDeferredCallbacks->handle()
-#53 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(127): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#54 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php(176): Illuminate\Pipeline\Pipeline->then()
-#55 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php(145): Illuminate\Foundation\Http\Kernel->sendRequestThroughRouter()
-#56 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Foundation/Testing/Concerns/MakesHttpRequests.php(607): Illuminate\Foundation\Http\Kernel->handle()
-#57 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Foundation/Testing/Concerns/MakesHttpRequests.php(573): Illuminate\Foundation\Testing\TestCase->call()
-#58 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Foundation/Testing/Concerns/MakesHttpRequests.php(411): Illuminate\Foundation\Testing\TestCase->json()
-#59 /home/runner/work/checkstar/checkstar/backend/tests/Feature/OrderPlacementTest.php(222): Illuminate\Foundation\Testing\TestCase->postJson()
-#60 /home/runner/work/checkstar/checkstar/backend/vendor/phpunit/phpunit/src/Framework/TestCase.php(1667): Tests\Feature\OrderPlacementTest->test_placing_an_order_clears_the_server_cart()
-#61 /home/runner/work/checkstar/checkstar/backend/vendor/phpunit/phpunit/src/Framework/TestCase.php(519): PHPUnit\Framework\TestCase->runTest()
-#62 /home/runner/work/checkstar/checkstar/backend/vendor/phpunit/phpunit/src/Framework/TestRunner/TestRunner.php(87): PHPUnit\Framework\TestCase->runBare()
-#63 /home/runner/work/checkstar/checkstar/backend/vendor/phpunit/phpunit/src/Framework/TestCase.php(365): PHPUnit\Framework\TestRunner->run()
-#64 /home/runner/work/checkstar/checkstar/backend/vendor/phpunit/phpunit/src/Framework/TestSuite.php(369): PHPUnit\Framework\TestCase->run()
-#65 /home/runner/work/checkstar/checkstar/backend/vendor/phpunit/phpunit/src/Framework/TestSuite.php(369): PHPUnit\Framework\TestSuite->run()
-#66 /home/runner/work/checkstar/checkstar/backend/vendor/phpunit/phpunit/src/Framework/TestSuite.php(369): PHPUnit\Framework\TestSuite->run()
-#67 /home/runner/work/checkstar/checkstar/backend/vendor/phpunit/phpunit/src/TextUI/TestRunner.php(64): PHPUnit\Framework\TestSuite->run()
-#68 /home/runner/work/checkstar/checkstar/backend/vendor/phpunit/phpunit/src/TextUI/Application.php(211): PHPUnit\TextUI\TestRunner->run()
-#69 /home/runner/work/checkstar/checkstar/backend/vendor/phpunit/phpunit/phpunit(104): PHPUnit\TextUI\Application->run()
-#70 {main}
+   PASS  Tests\Unit\OrderStateMachineTest
+  ✓ pending to confirmed                                                 0.03s  
+  ✓ confirmed to preparing                                               0.02s  
+  ✓ preparing to out for delivery                                        0.02s  
+  ✓ out for delivery to delivered                                        0.02s  
+  ✓ pending to cancelled                                                 0.02s  
+  ✓ confirmed to cancelled                                               0.02s  
+  ✓ out for delivery to cancelled                                        0.02s  
+  ✓ confirmed to retrying                                                0.02s  
+  ✓ retrying to preparing                                                0.02s  
+  ✓ retrying to cancelled                                                0.02s  
+  ✓ pending to retrying throws                                           0.01s  
+  ✓ delivered to preparing throws                                        0.02s  
+  ✓ cancelled to confirmed throws                                        0.02s  
+  ✓ same status transition throws                                        0.01s  
+  ✓ activity log contains correct data with actor and metadata           0.02s  
+  ✓ activity log persisted in database                                   0.02s  
 
-----------------------------------------------------------------------------------
+   PASS  Tests\Unit\PaymentStateMachineTest
+  ✓ pending to paid                                                      0.03s  
+  ✓ paid to refunded                                                     0.02s  
+  ✓ pending to refunded throws                                           0.01s  
+  ✓ paid to pending throws                                               0.01s  
+  ✓ refunded to paid throws                                              0.02s  
+  ✓ refunded to pending throws                                           0.01s  
+  ✓ same status transition throws                                        0.01s  
+  ✓ paid to paid throws                                                  0.01s  
+  ✓ can transition returns true for valid                                0.01s  
+  ✓ can transition returns false for invalid                             0.01s  
+  ✓ transaction created on pending to paid                               0.02s  
+  ✓ transaction created on paid to refunded                              0.02s  
+  ✓ actor user id used when provided                                     0.02s  
+  ✓ customer id used when no actor                                       0.02s  
+  ✓ multiple transitions create multiple transactions                    0.02s  
+  ✓ order relationship maintained on transaction                         0.02s  
+  ✓ idempotent transition throws on second call                          0.02s  
+  ✓ transaction not created when record transaction disabled             0.02s  
 
-Undefined variable $fulfilmentMethod
+   PASS  Tests\Unit\PricingServiceTest
+  ✓ base price when no deals                                             0.02s  
+  ✓ sale price wins when below base                                      0.01s  
+  ✓ sale price above base never overcharges                              0.01s  
+  ✓ special pivot price is honoured                                      0.02s  
+  ✓ special price above base never overcharges                           0.01s  
+  ✓ sale price takes priority over specials                              0.02s  
 
-  at tests/Feature/OrderPlacementTest.php:227
-    223▕             'items' => [['product_id' => $product->id, 'quantity' => 2]],
-    224▕             'delivery_address' => '1 Test Street, Durban',
-    225▕             'delivery_latitude' => self::LAT,
-    226▕             'delivery_longitude' => self::LNG,
-  ➜ 227▕         ])->assertStatus(201);
-    228▕ 
-    229▕         $this->actingAs($customer)
-    230▕             ->getJson('/api/cart')
-    231▕             ->assertStatus(200)
+   PASS  Tests\Unit\ReviewServiceTest
+  ✓ submit review success                                                0.03s  
+  ✓ submit review updates order rating                                   0.03s  
+  ✓ submit review rejects order without rider                            0.02s  
+  ✓ submit review rejects non delivered order                            0.02s  
+  ✓ submit review rejects duplicate review                               0.03s  
+  ✓ submit review creates review record                                  0.03s  
+  ✓ submit review updates rider average rating                           0.03s  
+  ✓ submit review throws on nonexistent order                            0.01s  
 
-  ────────────────────────────────────────────────────────────────────────────  
-   FAILED  Tests\Feature\PickupOrderTest > customer can place a pickup order…   
-  Expected response status code [201] but received 500.
-Failed asserting that 500 is identical to 201.
+   PASS  Tests\Unit\RiderStatsRecorderTest
+  ✓ first review sets average rating                                     0.03s  
+  ✓ second review computes weighted average                              0.03s  
+  ✓ multiple reviews compute correct average                             0.04s  
+  ✓ review count matches database                                        0.03s  
+  ✓ rider must exist to record                                           0.02s  
+  ✓ weighted average is accurate with decimals                           0.03s  
 
-The following exception occurred during the last request:
+   PASS  Tests\Unit\RoutingServiceTest
+  ✓ mock provider returns known values                                   0.01s  
+  ✓ mock provider returns null geometry                                  0.01s  
+  ✓ haversine fallback when osrm unavailable                             0.01s  
+  ✓ osrm used when configured and available                              0.02s  
+  ✓ osrm failure falls back to haversine                                 0.01s  
+  ✓ osrm timeout falls back to haversine                                 0.01s  
+  ✓ get route geometry returns null when osrm unavailable                0.01s  
+  ✓ route result to array                                                0.01s  
+  ✓ route result null geometry                                           0.01s  
+  ✓ custom osrm base url overrides config                                0.01s  
 
-ErrorException: Undefined variable $fulfilmentMethod in /home/runner/work/checkstar/checkstar/backend/app/Services/OrderIntake.php:127
-Stack trace:
-#0 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(258): Illuminate\Foundation\Bootstrap\HandleExceptions->handleError()
-#1 /home/runner/work/checkstar/checkstar/backend/app/Services/OrderIntake.php(127): Illuminate\Foundation\Bootstrap\HandleExceptions->Illuminate\Foundation\Bootstrap\{closure}()
-#2 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Database/Concerns/ManagesTransactions.php(32): App\Services\OrderIntake->App\Services\{closure}()
-#3 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Database/DatabaseManager.php(495): Illuminate\Database\Connection->transaction()
-#4 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Support/Facades/Facade.php(361): Illuminate\Database\DatabaseManager->__call()
-#5 /home/runner/work/checkstar/checkstar/backend/app/Services/OrderIntake.php(119): Illuminate\Support\Facades\Facade::__callStatic()
-#6 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Database/Concerns/ManagesTransactions.php(32): App\Services\OrderIntake->App\Services\{closure}()
-#7 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Database/DatabaseManager.php(495): Illuminate\Database\Connection->transaction()
-#8 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Support/Facades/Facade.php(361): Illuminate\Database\DatabaseManager->__call()
-#9 /home/runner/work/checkstar/checkstar/backend/app/Services/OrderIntake.php(49): Illuminate\Support\Facades\Facade::__callStatic()
-#10 /home/runner/work/checkstar/checkstar/backend/app/Http/Controllers/Api/OrderController.php(74): App\Services\OrderIntake->place()
-#11 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Routing/ControllerDispatcher.php(47): App\Http\Controllers\Api\OrderController->store()
-#12 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Routing/Route.php(266): Illuminate\Routing\ControllerDispatcher->dispatch()
-#13 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Routing/Route.php(212): Illuminate\Routing\Route->runController()
-#14 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Routing/Router.php(808): Illuminate\Routing\Route->run()
-#15 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(170): Illuminate\Routing\Router->Illuminate\Routing\{closure}()
-#16 /home/runner/work/checkstar/checkstar/backend/app/Http/Middleware/EnsureUserIsActive.php(34): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#17 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): App\Http\Middleware\EnsureUserIsActive->handle()
-#18 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Routing/Middleware/SubstituteBindings.php(51): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#19 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): Illuminate\Routing\Middleware\SubstituteBindings->handle()
-#20 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Routing/Middleware/ThrottleRequests.php(161): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#21 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Routing/Middleware/ThrottleRequests.php(92): Illuminate\Routing\Middleware\ThrottleRequests->handleRequest()
-#22 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): Illuminate\Routing\Middleware\ThrottleRequests->handle()
-#23 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Auth/Middleware/Authenticate.php(64): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#24 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): Illuminate\Auth\Middleware\Authenticate->handle()
-#25 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/sanctum/src/Http/Middleware/EnsureFrontendRequestsAreStateful.php(26): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#26 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(170): Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful->Laravel\Sanctum\Http\Middleware\{closure}()
-#27 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(127): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#28 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/sanctum/src/Http/Middleware/EnsureFrontendRequestsAreStateful.php(25): Illuminate\Pipeline\Pipeline->then()
-#29 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful->handle()
-#30 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(127): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#31 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Routing/Router.php(807): Illuminate\Pipeline\Pipeline->then()
-#32 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Routing/Router.php(786): Illuminate\Routing\Router->runRouteWithinStack()
-#33 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Routing/Router.php(750): Illuminate\Routing\Router->runRoute()
-#34 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Routing/Router.php(739): Illuminate\Routing\Router->dispatchToRoute()
-#35 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php(201): Illuminate\Routing\Router->dispatch()
-#36 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(170): Illuminate\Foundation\Http\Kernel->Illuminate\Foundation\Http\{closure}()
-#37 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/TransformsRequest.php(21): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#38 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/ConvertEmptyStringsToNull.php(31): Illuminate\Foundation\Http\Middleware\TransformsRequest->handle()
-#39 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull->handle()
-#40 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/TransformsRequest.php(21): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#41 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/TrimStrings.php(51): Illuminate\Foundation\Http\Middleware\TransformsRequest->handle()
-#42 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): Illuminate\Foundation\Http\Middleware\TrimStrings->handle()
-#43 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Http/Middleware/ValidatePostSize.php(27): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#44 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): Illuminate\Http\Middleware\ValidatePostSize->handle()
-#45 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/PreventRequestsDuringMaintenance.php(110): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#46 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): Illuminate\Foundation\Http\Middleware\PreventRequestsDuringMaintenance->handle()
-#47 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Http/Middleware/HandleCors.php(62): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#48 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): Illuminate\Http\Middleware\HandleCors->handle()
-#49 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Http/Middleware/TrustProxies.php(58): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#50 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): Illuminate\Http\Middleware\TrustProxies->handle()
-#51 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/InvokeDeferredCallbacks.php(22): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#52 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): Illuminate\Foundation\Http\Middleware\InvokeDeferredCallbacks->handle()
-#53 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(127): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#54 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php(176): Illuminate\Pipeline\Pipeline->then()
-#55 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php(145): Illuminate\Foundation\Http\Kernel->sendRequestThroughRouter()
-#56 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Foundation/Testing/Concerns/MakesHttpRequests.php(607): Illuminate\Foundation\Http\Kernel->handle()
-#57 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Foundation/Testing/Concerns/MakesHttpRequests.php(573): Illuminate\Foundation\Testing\TestCase->call()
-#58 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Foundation/Testing/Concerns/MakesHttpRequests.php(411): Illuminate\Foundation\Testing\TestCase->json()
-#59 /home/runner/work/checkstar/checkstar/backend/tests/Feature/PickupOrderTest.php(111): Illuminate\Foundation\Testing\TestCase->postJson()
-#60 /home/runner/work/checkstar/checkstar/backend/vendor/phpunit/phpunit/src/Framework/TestCase.php(1667): Tests\Feature\PickupOrderTest->test_customer_can_place_a_pickup_order_without_delivery_details()
-#61 /home/runner/work/checkstar/checkstar/backend/vendor/phpunit/phpunit/src/Framework/TestCase.php(519): PHPUnit\Framework\TestCase->runTest()
-#62 /home/runner/work/checkstar/checkstar/backend/vendor/phpunit/phpunit/src/Framework/TestRunner/TestRunner.php(87): PHPUnit\Framework\TestCase->runBare()
-#63 /home/runner/work/checkstar/checkstar/backend/vendor/phpunit/phpunit/src/Framework/TestCase.php(365): PHPUnit\Framework\TestRunner->run()
-#64 /home/runner/work/checkstar/checkstar/backend/vendor/phpunit/phpunit/src/Framework/TestSuite.php(369): PHPUnit\Framework\TestCase->run()
-#65 /home/runner/work/checkstar/checkstar/backend/vendor/phpunit/phpunit/src/Framework/TestSuite.php(369): PHPUnit\Framework\TestSuite->run()
-#66 /home/runner/work/checkstar/checkstar/backend/vendor/phpunit/phpunit/src/Framework/TestSuite.php(369): PHPUnit\Framework\TestSuite->run()
-#67 /home/runner/work/checkstar/checkstar/backend/vendor/phpunit/phpunit/src/TextUI/TestRunner.php(64): PHPUnit\Framework\TestSuite->run()
-#68 /home/runner/work/checkstar/checkstar/backend/vendor/phpunit/phpunit/src/TextUI/Application.php(211): PHPUnit\TextUI\TestRunner->run()
-#69 /home/runner/work/checkstar/checkstar/backend/vendor/phpunit/phpunit/phpunit(104): PHPUnit\TextUI\Application->run()
-#70 {main}
+   PASS  Tests\Unit\Services\AnalyticsServiceTest
+  ✓ sales data returns revenue over time                                 0.02s  
+  ✓ sales data respects period                                           0.02s  
+  ✓ products data returns top products                                   0.01s  
+  ✓ riders data returns utilization                                      0.02s  
+  ✓ empty store returns zeros                                            0.01s  
 
-----------------------------------------------------------------------------------
+   PASS  Tests\Unit\Services\BehavioralTrackingServiceTest
+  ✓ signal taxonomy has explicit intent tier                             0.01s  
+  ✓ capture does not throw                                               0.01s  
+  ✓ negative signals have negative weights                               0.01s  
 
-Undefined variable $fulfilmentMethod
+   PASS  Tests\Unit\Services\DispatchSuggestionServiceTest
+  ✓ returns nearest rider by distance                                    0.02s  
+  ✓ excludes unavailable riders                                          0.02s  
+  ✓ excludes riders with insufficient radius                             0.02s  
+  ✓ returns alternative riders                                           0.02s  
+  ✓ returns order details                                                0.01s  
+  ✓ returns null for nonexistent order                                   0.01s  
+  ✓ distance is calculated correctly                                     0.02s  
 
-  at tests/Feature/PickupOrderTest.php:117
-    113▕             'fulfilment_method' => 'pickup',
-    114▕             'store_id' => $store->id,
-    115▕         ]);
-    116▕ 
-  ➜ 117▕         $response->assertStatus(201)
-    118▕             ->assertJsonPath('data.fulfilment_method', 'pickup')
-    119▕             ->assertJsonPath('data.store_id', $store->id)
-    120▕             ->assertJsonPath('data.delivery_address', null)
-    121▕             ->assertJsonPath('data.delivery_latitude', null)
+   PASS  Tests\Unit\Services\EventFeedServiceTest
+  ✓ returns order state change events                                    0.02s  
+  ✓ returns rider availability events                                    0.02s  
+  ✓ returns dispatch events from audit logs                              0.02s  
+  ✓ respects cursor pagination                                           0.02s  
+  ✓ severity is mapped from order status                                 0.02s  
+  ✓ events are ordered by created at desc                                0.02s  
+  ✓ limit is respected                                                   0.04s  
+  ✓ empty result when no data                                            0.01s  
 
-  ────────────────────────────────────────────────────────────────────────────  
-   FAILED  Tests\Feature\PickupOrderTest > pickup order does not notify ride…   
-  Expected response status code [201] but received 500.
-Failed asserting that 500 is identical to 201.
+   PASS  Tests\Unit\StockManagementTest
+  ✓ mark items bought decrements stock quantity                          0.04s  
+  ✓ mark items bought decrements stock for multiple items                0.04s  
+  ✓ mark items bought releases reservation and decrements stock          0.03s  
+  ✓ partial batch can be continued in a later call                       0.04s  
+  ✓ mark items bought ignores unknown item ids                           0.02s  
+  ✓ mark items bought throws when insufficient stock                     0.03s  
+  ✓ mark items bought does not decrement stock on failure                0.03s  
+  ✓ mark items bought throws when product not available                  0.04s  
+  ✓ mark items bought is idempotent                                      0.04s  
+  ✓ mark items bought creates activity log                               0.06s  
+  ✓ order cancellation releases reserved quantity                        0.03s  
+  ✓ order cancellation does not affect stock quantity                    0.31s  
+  ✓ order cancellation clamps reserved quantity at zero                  0.03s  
+  ✓ order cancellation does not release reservations for bought items    0.04s  
+  ✓ delivery releases reservations for unbought items                    0.03s  
+  ✓ reservation counts against availability during placement             0.02s  
+  ✓ reservation prevents fulfillment when stock is reserved              0.03s  
+  ✓ store product not available prevents order placement                 0.02s  
+  ✓ insufficient stock prevents order placement                          0.02s  
+  ✓ order placement rejects when stock insufficient                      0.02s  
+  ✓ multiple orders decrement stock independently                        0.04s  
+  ✓ second order fails when stock depleted by first                      0.04s  
+  ✓ mark items bought uses lock for update                               0.05s  
+  ✓ concurrent mark items bought results are consistent                  0.04s  
 
-The following exception occurred during the last request:
+   PASS  Tests\Unit\StoreContextTest
+  ✓ developer requires explicit store id                                 0.03s  
+  ✓ developer with store id resolves store                               0.01s  
+  ✓ store owner resolves their store                                     0.01s  
+  ✓ store manager resolves through staff                                 0.02s  
+  ✓ logistics officer resolves through staff                             0.02s  
+  ✓ user without store or staff aborts 403                               0.01s  
+  ✓ store owner without store aborts 403                                 0.01s  
+  ✓ developer with nonexistent store throws                              0.01s  
 
-ErrorException: Undefined variable $fulfilmentMethod in /home/runner/work/checkstar/checkstar/backend/app/Services/OrderIntake.php:127
-Stack trace:
-#0 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(258): Illuminate\Foundation\Bootstrap\HandleExceptions->handleError()
-#1 /home/runner/work/checkstar/checkstar/backend/app/Services/OrderIntake.php(127): Illuminate\Foundation\Bootstrap\HandleExceptions->Illuminate\Foundation\Bootstrap\{closure}()
-#2 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Database/Concerns/ManagesTransactions.php(32): App\Services\OrderIntake->App\Services\{closure}()
-#3 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Database/DatabaseManager.php(495): Illuminate\Database\Connection->transaction()
-#4 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Support/Facades/Facade.php(361): Illuminate\Database\DatabaseManager->__call()
-#5 /home/runner/work/checkstar/checkstar/backend/app/Services/OrderIntake.php(119): Illuminate\Support\Facades\Facade::__callStatic()
-#6 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Database/Concerns/ManagesTransactions.php(32): App\Services\OrderIntake->App\Services\{closure}()
-#7 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Database/DatabaseManager.php(495): Illuminate\Database\Connection->transaction()
-#8 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Support/Facades/Facade.php(361): Illuminate\Database\DatabaseManager->__call()
-#9 /home/runner/work/checkstar/checkstar/backend/app/Services/OrderIntake.php(49): Illuminate\Support\Facades\Facade::__callStatic()
-#10 /home/runner/work/checkstar/checkstar/backend/app/Http/Controllers/Api/OrderController.php(74): App\Services\OrderIntake->place()
-#11 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Routing/ControllerDispatcher.php(47): App\Http\Controllers\Api\OrderController->store()
-#12 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Routing/Route.php(266): Illuminate\Routing\ControllerDispatcher->dispatch()
-#13 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Routing/Route.php(212): Illuminate\Routing\Route->runController()
-#14 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Routing/Router.php(808): Illuminate\Routing\Route->run()
-#15 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(170): Illuminate\Routing\Router->Illuminate\Routing\{closure}()
-#16 /home/runner/work/checkstar/checkstar/backend/app/Http/Middleware/EnsureUserIsActive.php(34): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#17 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): App\Http\Middleware\EnsureUserIsActive->handle()
-#18 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Routing/Middleware/SubstituteBindings.php(51): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#19 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): Illuminate\Routing\Middleware\SubstituteBindings->handle()
-#20 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Routing/Middleware/ThrottleRequests.php(161): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#21 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Routing/Middleware/ThrottleRequests.php(92): Illuminate\Routing\Middleware\ThrottleRequests->handleRequest()
-#22 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): Illuminate\Routing\Middleware\ThrottleRequests->handle()
-#23 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Auth/Middleware/Authenticate.php(64): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#24 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): Illuminate\Auth\Middleware\Authenticate->handle()
-#25 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/sanctum/src/Http/Middleware/EnsureFrontendRequestsAreStateful.php(26): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#26 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(170): Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful->Laravel\Sanctum\Http\Middleware\{closure}()
-#27 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(127): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#28 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/sanctum/src/Http/Middleware/EnsureFrontendRequestsAreStateful.php(25): Illuminate\Pipeline\Pipeline->then()
-#29 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful->handle()
-#30 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(127): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#31 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Routing/Router.php(807): Illuminate\Pipeline\Pipeline->then()
-#32 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Routing/Router.php(786): Illuminate\Routing\Router->runRouteWithinStack()
-#33 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Routing/Router.php(750): Illuminate\Routing\Router->runRoute()
-#34 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Routing/Router.php(739): Illuminate\Routing\Router->dispatchToRoute()
-#35 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php(201): Illuminate\Routing\Router->dispatch()
-#36 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(170): Illuminate\Foundation\Http\Kernel->Illuminate\Foundation\Http\{closure}()
-#37 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/TransformsRequest.php(21): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#38 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/ConvertEmptyStringsToNull.php(31): Illuminate\Foundation\Http\Middleware\TransformsRequest->handle()
-#39 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull->handle()
-#40 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/TransformsRequest.php(21): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#41 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/TrimStrings.php(51): Illuminate\Foundation\Http\Middleware\TransformsRequest->handle()
-#42 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): Illuminate\Foundation\Http\Middleware\TrimStrings->handle()
-#43 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Http/Middleware/ValidatePostSize.php(27): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#44 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): Illuminate\Http\Middleware\ValidatePostSize->handle()
-#45 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/PreventRequestsDuringMaintenance.php(110): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#46 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): Illuminate\Foundation\Http\Middleware\PreventRequestsDuringMaintenance->handle()
-#47 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Http/Middleware/HandleCors.php(62): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#48 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): Illuminate\Http\Middleware\HandleCors->handle()
-#49 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Http/Middleware/TrustProxies.php(58): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#50 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): Illuminate\Http\Middleware\TrustProxies->handle()
-#51 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/InvokeDeferredCallbacks.php(22): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#52 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): Illuminate\Foundation\Http\Middleware\InvokeDeferredCallbacks->handle()
-#53 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(127): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#54 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php(176): Illuminate\Pipeline\Pipeline->then()
-#55 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php(145): Illuminate\Foundation\Http\Kernel->sendRequestThroughRouter()
-#56 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Foundation/Testing/Concerns/MakesHttpRequests.php(607): Illuminate\Foundation\Http\Kernel->handle()
-#57 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Foundation/Testing/Concerns/MakesHttpRequests.php(573): Illuminate\Foundation\Testing\TestCase->call()
-#58 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Foundation/Testing/Concerns/MakesHttpRequests.php(411): Illuminate\Foundation\Testing\TestCase->json()
-#59 /home/runner/work/checkstar/checkstar/backend/tests/Feature/PickupOrderTest.php(147): Illuminate\Foundation\Testing\TestCase->postJson()
-#60 /home/runner/work/checkstar/checkstar/backend/vendor/phpunit/phpunit/src/Framework/TestCase.php(1667): Tests\Feature\PickupOrderTest->test_pickup_order_does_not_notify_riders_and_keeps_the_cart_clearing()
-#61 /home/runner/work/checkstar/checkstar/backend/vendor/phpunit/phpunit/src/Framework/TestCase.php(519): PHPUnit\Framework\TestCase->runTest()
-#62 /home/runner/work/checkstar/checkstar/backend/vendor/phpunit/phpunit/src/Framework/TestRunner/TestRunner.php(87): PHPUnit\Framework\TestCase->runBare()
-#63 /home/runner/work/checkstar/checkstar/backend/vendor/phpunit/phpunit/src/Framework/TestCase.php(365): PHPUnit\Framework\TestRunner->run()
-#64 /home/runner/work/checkstar/checkstar/backend/vendor/phpunit/phpunit/src/Framework/TestSuite.php(369): PHPUnit\Framework\TestCase->run()
-#65 /home/runner/work/checkstar/checkstar/backend/vendor/phpunit/phpunit/src/Framework/TestSuite.php(369): PHPUnit\Framework\TestSuite->run()
-#66 /home/runner/work/checkstar/checkstar/backend/vendor/phpunit/phpunit/src/Framework/TestSuite.php(369): PHPUnit\Framework\TestSuite->run()
-#67 /home/runner/work/checkstar/checkstar/backend/vendor/phpunit/phpunit/src/TextUI/TestRunner.php(64): PHPUnit\Framework\TestSuite->run()
-#68 /home/runner/work/checkstar/checkstar/backend/vendor/phpunit/phpunit/src/TextUI/Application.php(211): PHPUnit\TextUI\TestRunner->run()
-#69 /home/runner/work/checkstar/checkstar/backend/vendor/phpunit/phpunit/phpunit(104): PHPUnit\TextUI\Application->run()
-#70 {main}
+   PASS  Tests\Feature\AddressBookTest
+  ✓ customer can save list update and delete addresses                   0.06s  
+  ✓ exactly one default is kept and reassignment demotes the previous h… 0.04s  
+  ✓ addresses require coordinates because checkout resolves stores from… 0.02s  
+  ✓ addresses are scoped to their owner                                  0.03s  
 
-----------------------------------------------------------------------------------
+   PASS  Tests\Feature\AdminMessageReplyTest
+  ✓ developer can reply to contact message                               0.03s  
+  ✓ customer cannot reply                                                0.02s  
 
-Undefined variable $fulfilmentMethod
+   PASS  Tests\Feature\AdminProductDeletionTest
+  ✓ product with order history is deactivated not deleted                0.02s  
+  ✓ product without history is deleted                                   0.02s  
 
-  at tests/Feature/PickupOrderTest.php:153
-    149▕             'fulfilment_method' => 'pickup',
-    150▕             'store_id' => $store->id,
-    151▕         ]);
-    152▕ 
-  ➜ 153▕         $response->assertStatus(201);
-    154▕         $this->assertSame(0, $customer->cartItems()->count());
-    155▕     }
-    156▕ 
-    157▕     public function test_pickup_requires_a_store(): void
+   PASS  Tests\Feature\AuditLogScopingTest
+  ✓ store manager sees only their stores audit logs                      0.03s  
+  ✓ entity audit endpoint hides cross store entities                     0.03s  
+  ✓ rider audits are scoped by store                                     0.03s  
 
+   PASS  Tests\Feature\AuthSecurityTest
+  ✓ suspended user is rejected with a live token                         0.03s  
+  ✓ suspended rider cannot claim orders                                  0.02s  
+  ✓ forgot password response does not reveal account existence           0.42s  
+  ✓ password reset revokes all existing tokens                           0.03s  
+  ✓ refresh rotates the token                                            0.02s  
+
+   PASS  Tests\Feature\AuthTest
+  ✓ user can register                                                    0.03s  
+  ✓ user can login                                                       0.02s  
+  ✓ login fails with invalid credentials                                 0.01s  
+  ✓ authenticated user can access user endpoint                          0.02s  
+  ✓ unauthenticated user cannot access protected route                   0.01s  
+
+   PASS  Tests\Feature\BannerTenantGuardTest
+  ✓ owner can create banner scoped to their store                        0.03s  
+  ✓ owner cannot reassign banner to another store on update              0.03s  
+  ✓ owner cannot touch another stores banner                             0.03s  
+
+   PASS  Tests\Feature\CartSyncTest
+  ✓ sync sums quantities for matching products                           0.03s  
+  ✓ sync caps quantity at eight                                          0.03s  
+  ✓ sync drops inactive products with feedback                           0.02s  
+  ✓ sync returns merged cart so device can replace draft                 0.02s  
+
+   PASS  Tests\Feature\DatabaseSeedingTest
+  ✓ seed creates demo logins for every console                           2.50s  
+  ✓ seeding twice is idempotent                                          2.54s  
+
+   PASS  Tests\Feature\EmailVerificationFlowTest
+  ✓ registration sends the verification email with an spa link           0.02s  
+  ✓ verify email marks the user verified                                 0.02s  
+  ✓ verify email rejects a wrong hash                                    0.01s  
+
+   PASS  Tests\Feature\ExampleTest
+  ✓ the application returns a successful response                        0.01s  
+
+   PASS  Tests\Feature\FavoritesApiTest
+  ✓ customer can favorite and list                                       0.03s  
+  ✓ duplicate favorite is 409 not 500                                    0.02s  
+  ✓ unfavorite is idempotent                                             0.02s  
+  ✓ check endpoint reports favorited state                               0.02s  
+  ✓ guest gets 401                                                       0.01s  
+
+   PASS  Tests\Feature\FulfillmentApiTest
+  ✓ validate returns the resolved store for a fulfillable cart           0.02s  
+  ✓ inactive stores are never suggested                                  0.02s  
+  ✓ validate rejects malformed payloads                                  0.01s  
+  ✓ nearest store endpoint reports a store or null                       0.02s  
+
+   PASS  Tests\Feature\HistoryCascadeGuardsTest
+  ✓ category with products cannot be deleted                             0.02s  
+  ✓ empty category can be deleted                                        0.02s  
+  ✓ store with delivered order history cannot be deleted                 0.02s  
+  ✓ store without history can be deleted                                 0.02s  
+  ✓ rider with reviews cannot be deleted                                 0.03s  
+  ✓ product stock rows are not orphaned by category delete guard         0.02s  
+
+   PASS  Tests\Feature\ManualDispatchTest
+  ✓ manager can list pending dispatch orders for their store             0.03s  
+  ✓ manager can manually dispatch order to specific rider                0.04s  
+  ✓ operations assign rejects order from another store                   0.03s  
+  ✓ operations suggestion hides other stores orders                      0.03s  
+  ✓ dispatch rejects rider from another store                            0.03s  
+  ✓ manager can reassign already claimed order                           0.06s  
+  ✓ dispatch rejects rider with deactivated account                      0.03s  
+  ✓ reassign rejects rider already at concurrent cap                     0.07s  
+  ✓ pending list applies exact radius within the search box              0.03s  
+  ✓ reassign rejects order from different store                          0.05s  
+  ✓ developer requires explicit store id                                 0.02s  
+
+   PASS  Tests\Feature\MigrationRollbackTest
+  ✓ nullable store id migration can roll back                            0.25s  
+
+   PASS  Tests\Feature\OrderLifecycleApiTest
+  ✓ customer order journey list show cancel                              3.24s  
+  ✓ customer cannot view another customers order                         0.05s  
+  ✓ cancelling twice is rejected                                         0.06s  
+
+   PASS  Tests\Feature\OrderPlacementTest
+  ✓ customer can place an order                                          0.06s  
+  ✓ order with no available rider enters retrying and keeps cart         0.04s  
+  ✓ order defaults to cash on delivery                                   0.05s  
+  ✓ placing an order clears the server cart                              0.06s  
+  ✓ failed placement leaves server cart intact                           0.02s  
+  ✓ order requires delivery coordinates                                  0.02s  
+  ✓ customer can view own order                                          0.02s  
+  ✓ customer cannot view others order                                    0.02s  
+  ✓ customer can cancel own order                                        0.02s  
+  ✓ customer cannot cancel others order                                  0.02s  
+  ✓ customer cannot cancel out for delivery order                        0.02s  
+  ✓ customer can confirm own delivery                                    0.05s  
+  ✓ customer cannot confirm others order                                 0.02s  
+
+   FAIL  Tests\Feature\PickupOrderTest
+  ✓ customer can place a pickup order without delivery details           0.04s  
+  ✓ pickup order does not notify riders and keeps the cart clearing      0.05s  
+  ✓ pickup requires a store                                              0.02s  
+  ✓ pickup from a store that cannot fulfil the cart is rejected          0.03s  
+  ⨯ store moves a pickup order through ready and the customer confirms…  0.04s  
+  ✓ ready is rejected for delivery orders and out for delivery for pick… 0.02s  
+  ✓ pickup orders never appear in rider available orders                 0.04s  
+  ✓ rider cannot claim a pickup order                                    0.03s  
+  ✓ customer can cancel a ready pickup order before collecting           0.02s  
+
+   PASS  Tests\Feature\ProductCarouselTest
+  ✓ trending endpoint is not shadowed by slug route                      0.02s  
+  ✓ popular returns delivered order products                             0.02s  
+  ✓ new arrivals returns recent products without error                   0.02s  
+  ✓ trending returns empty array when no orders                          0.01s  
+
+   PASS  Tests\Feature\ProductIndexTest
+  ✓ index respects per page param                                        0.05s  
+  ✓ index filters by multiple category slugs                             0.04s  
+  ✓ index defaults to twenty per page                                    0.05s  
+  ✓ index caps per page at one hundred                                   0.16s  
+  ✓ index ignores non numeric per page                                   0.05s  
+
+   PASS  Tests\Feature\ProfileApiTest
+  ✓ customer can update name and phone                                   0.02s  
+  ✓ changing email resets verification                                   0.02s  
+  ✓ keeping the same email keeps verification                            0.02s  
+  ✓ email conflicts are 422                                              0.02s  
+  ✓ changing email sends a new verification email                        0.02s  
+  ✓ unchanged email sends no verification email                          0.02s  
+  ✓ role is not mass assignable                                          0.02s  
+
+   PASS  Tests\Feature\PromotionRedemptionTest
+  ✓ validate rejects fully redeemed codes                                0.02s  
+  ✓ validate rejects expired codes                                       0.02s  
+  ✓ validate rejects orders below the minimum                            0.02s  
+  ✓ validate computes percentage discount                                0.02s  
+  ✓ validate caps fixed discounts at the subtotal                        0.02s  
+  ✓ apply increments used count                                          0.02s  
+  ✓ apply can never overshoot max uses                                   0.02s  
+  ✓ apply redeems the final allowed use                                  0.02s  
+
+   PASS  Tests\Feature\PublicCatalogueTest
+  ✓ guest can list stores and view one by slug                           0.02s  
+  ✓ guest can browse categories and products                             0.02s  
+  ✓ guest can read recipes and unpublished are hidden                    0.02s  
+  ✓ guest can read careers and community posts                           0.03s  
+  ✓ guest can submit a contact message                                   0.02s  
+  ✓ contact validation rejects garbage                                   0.02s  
+
+   PASS  Tests\Feature\PushNotificationTest
+  ✓ cancelled transition pushes notification                             0.02s  
+  ✓ retrying transition pushes notification                              0.02s  
+  ✓ delivered transition pushes notification                             0.02s  
+  ✓ notification listener is queued not synchronous                      0.01s  
+  ✓ no push without token                                                0.02s  
+
+   PASS  Tests\Feature\RecommendationsEndpointTest
+  ✓ cold start returns recommendations for new customer                  0.02s  
+  ✓ inactive products are never recommended                              0.02s  
+  ✓ guest gets 401                                                       0.01s  
+
+   PASS  Tests\Feature\ReconcileReservationsTest
+  ✓ consistent ledger is left alone                                      0.02s  
+  ✓ drift is corrected                                                   0.02s  
+  ✓ oversubscribed stock reconciles to clamped value without failing     0.03s  
+  ✓ bought items and terminal orders do not count                        0.02s  
+
+   PASS  Tests\Feature\RiderLocationTest
+  ✓ customer can view rider location for their order                     0.03s  
+  ✓ returns null when order has no rider                                 0.02s  
+  ✓ returns null when rider has no location                              0.03s  
+  ✓ cannot view other customers order rider location                     0.04s  
+  ✓ returns most recent location when multiple exist                     0.04s  
+  ✓ rider can update location                                            0.02s  
+  ✓ rider location update sets recorded at                               0.02s  
+  ✓ rider location update overwrites previous                            0.02s  
+  ✓ non rider cannot update location                                     0.01s  
+  ✓ location update requires valid coordinates                           0.02s  
+
+   PASS  Tests\Feature\SpecialsEndpointTest
+  ✓ index lists only active specials within their window                 0.03s  
+  ✓ products carry availability and effective price                      0.03s  
+  ✓ inactive products are hidden from specials                           0.02s  
+
+   PASS  Tests\Feature\StaffManagementTest
+  ✓ owner can hire store staff                                           0.03s  
+  ✓ owner can fire store staff                                           0.02s  
+  ✓ store manager cannot hire staff                                      0.02s  
+
+   PASS  Tests\Feature\StoreOrderApiTest
+  ✓ orders are scoped to the managers store                              0.03s  
+  ✓ per page is capped                                                   0.03s  
+  ✓ status update on another stores order is 404                         0.02s  
+  ✓ invalid transition is 409                                            0.02s  
+  ✓ valid transition succeeds                                            0.03s  
+
+   PASS  Tests\Feature\TrackingEndpointTest
+  ✓ view endpoint captures behavioral signal                             0.02s  
+  ✓ search endpoint captures explicit intent                             0.01s  
+  ✓ contact endpoint captures strong purchase intent                     0.01s  
+  ✓ all tracking endpoints use rate limiting                             0.01s  
   ────────────────────────────────────────────────────────────────────────────  
    FAILED  Tests\Feature\PickupOrderTest > store moves a pickup order throug…   
-  Expected response status code [200] but received 404.
-Failed asserting that 404 is identical to 200.
-
-The following exception occurred during the last request:
-
-ErrorException: Undefined variable $fulfilmentMethod in /home/runner/work/checkstar/checkstar/backend/app/Services/OrderIntake.php:127
-Stack trace:
-#0 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(258): Illuminate\Foundation\Bootstrap\HandleExceptions->handleError()
-#1 /home/runner/work/checkstar/checkstar/backend/app/Services/OrderIntake.php(127): Illuminate\Foundation\Bootstrap\HandleExceptions->Illuminate\Foundation\Bootstrap\{closure}()
-#2 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Database/Concerns/ManagesTransactions.php(32): App\Services\OrderIntake->App\Services\{closure}()
-#3 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Database/DatabaseManager.php(495): Illuminate\Database\Connection->transaction()
-#4 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Support/Facades/Facade.php(361): Illuminate\Database\DatabaseManager->__call()
-#5 /home/runner/work/checkstar/checkstar/backend/app/Services/OrderIntake.php(119): Illuminate\Support\Facades\Facade::__callStatic()
-#6 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Database/Concerns/ManagesTransactions.php(32): App\Services\OrderIntake->App\Services\{closure}()
-#7 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Database/DatabaseManager.php(495): Illuminate\Database\Connection->transaction()
-#8 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Support/Facades/Facade.php(361): Illuminate\Database\DatabaseManager->__call()
-#9 /home/runner/work/checkstar/checkstar/backend/app/Services/OrderIntake.php(49): Illuminate\Support\Facades\Facade::__callStatic()
-#10 /home/runner/work/checkstar/checkstar/backend/app/Http/Controllers/Api/OrderController.php(74): App\Services\OrderIntake->place()
-#11 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Routing/ControllerDispatcher.php(47): App\Http\Controllers\Api\OrderController->store()
-#12 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Routing/Route.php(266): Illuminate\Routing\ControllerDispatcher->dispatch()
-#13 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Routing/Route.php(212): Illuminate\Routing\Route->runController()
-#14 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Routing/Router.php(808): Illuminate\Routing\Route->run()
-#15 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(170): Illuminate\Routing\Router->Illuminate\Routing\{closure}()
-#16 /home/runner/work/checkstar/checkstar/backend/app/Http/Middleware/EnsureUserIsActive.php(34): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#17 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): App\Http\Middleware\EnsureUserIsActive->handle()
-#18 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Routing/Middleware/SubstituteBindings.php(51): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#19 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): Illuminate\Routing\Middleware\SubstituteBindings->handle()
-#20 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Routing/Middleware/ThrottleRequests.php(161): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#21 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Routing/Middleware/ThrottleRequests.php(92): Illuminate\Routing\Middleware\ThrottleRequests->handleRequest()
-#22 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): Illuminate\Routing\Middleware\ThrottleRequests->handle()
-#23 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Auth/Middleware/Authenticate.php(64): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#24 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): Illuminate\Auth\Middleware\Authenticate->handle()
-#25 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/sanctum/src/Http/Middleware/EnsureFrontendRequestsAreStateful.php(26): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#26 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(170): Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful->Laravel\Sanctum\Http\Middleware\{closure}()
-#27 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(127): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#28 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/sanctum/src/Http/Middleware/EnsureFrontendRequestsAreStateful.php(25): Illuminate\Pipeline\Pipeline->then()
-#29 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful->handle()
-#30 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(127): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#31 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Routing/Router.php(807): Illuminate\Pipeline\Pipeline->then()
-#32 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Routing/Router.php(786): Illuminate\Routing\Router->runRouteWithinStack()
-#33 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Routing/Router.php(750): Illuminate\Routing\Router->runRoute()
-#34 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Routing/Router.php(739): Illuminate\Routing\Router->dispatchToRoute()
-#35 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php(201): Illuminate\Routing\Router->dispatch()
-#36 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(170): Illuminate\Foundation\Http\Kernel->Illuminate\Foundation\Http\{closure}()
-#37 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/TransformsRequest.php(21): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#38 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/ConvertEmptyStringsToNull.php(31): Illuminate\Foundation\Http\Middleware\TransformsRequest->handle()
-#39 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull->handle()
-#40 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/TransformsRequest.php(21): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#41 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/TrimStrings.php(51): Illuminate\Foundation\Http\Middleware\TransformsRequest->handle()
-#42 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): Illuminate\Foundation\Http\Middleware\TrimStrings->handle()
-#43 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Http/Middleware/ValidatePostSize.php(27): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#44 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): Illuminate\Http\Middleware\ValidatePostSize->handle()
-#45 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/PreventRequestsDuringMaintenance.php(110): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#46 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): Illuminate\Foundation\Http\Middleware\PreventRequestsDuringMaintenance->handle()
-#47 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Http/Middleware/HandleCors.php(62): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#48 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): Illuminate\Http\Middleware\HandleCors->handle()
-#49 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Http/Middleware/TrustProxies.php(58): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#50 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): Illuminate\Http\Middleware\TrustProxies->handle()
-#51 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/InvokeDeferredCallbacks.php(22): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#52 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): Illuminate\Foundation\Http\Middleware\InvokeDeferredCallbacks->handle()
-#53 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(127): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}()
-#54 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php(176): Illuminate\Pipeline\Pipeline->then()
-#55 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php(145): Illuminate\Foundation\Http\Kernel->sendRequestThroughRouter()
-#56 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Foundation/Testing/Concerns/MakesHttpRequests.php(607): Illuminate\Foundation\Http\Kernel->handle()
-#57 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Foundation/Testing/Concerns/MakesHttpRequests.php(573): Illuminate\Foundation\Testing\TestCase->call()
-#58 /home/runner/work/checkstar/checkstar/backend/vendor/laravel/framework/src/Illuminate/Foundation/Testing/Concerns/MakesHttpRequests.php(411): Illuminate\Foundation\Testing\TestCase->json()
-#59 /home/runner/work/checkstar/checkstar/backend/tests/Feature/PickupOrderTest.php(205): Illuminate\Foundation\Testing\TestCase->postJson()
-#60 /home/runner/work/checkstar/checkstar/backend/vendor/phpunit/phpunit/src/Framework/TestCase.php(1667): Tests\Feature\PickupOrderTest->test_store_moves_a_pickup_order_through_ready_and_the_customer_confirms_collection()
-#61 /home/runner/work/checkstar/checkstar/backend/vendor/phpunit/phpunit/src/Framework/TestCase.php(519): PHPUnit\Framework\TestCase->runTest()
-#62 /home/runner/work/checkstar/checkstar/backend/vendor/phpunit/phpunit/src/Framework/TestRunner/TestRunner.php(87): PHPUnit\Framework\TestCase->runBare()
-#63 /home/runner/work/checkstar/checkstar/backend/vendor/phpunit/phpunit/src/Framework/TestCase.php(365): PHPUnit\Framework\TestRunner->run()
-#64 /home/runner/work/checkstar/checkstar/backend/vendor/phpunit/phpunit/src/Framework/TestSuite.php(369): PHPUnit\Framework\TestCase->run()
-#65 /home/runner/work/checkstar/checkstar/backend/vendor/phpunit/phpunit/src/Framework/TestSuite.php(369): PHPUnit\Framework\TestSuite->run()
-#66 /home/runner/work/checkstar/checkstar/backend/vendor/phpunit/phpunit/src/Framework/TestSuite.php(369): PHPUnit\Framework\TestSuite->run()
-#67 /home/runner/work/checkstar/checkstar/backend/vendor/phpunit/phpunit/src/TextUI/TestRunner.php(64): PHPUnit\Framework\TestSuite->run()
-#68 /home/runner/work/checkstar/checkstar/backend/vendor/phpunit/phpunit/src/TextUI/Application.php(211): PHPUnit\TextUI\TestRunner->run()
-#69 /home/runner/work/checkstar/checkstar/backend/vendor/phpunit/phpunit/phpunit(104): PHPUnit\TextUI\Application->run()
-#70 {main}
-
-----------------------------------------------------------------------------------
-
-Undefined variable $fulfilmentMethod
+  Expected response status code [200] but received 409.
+Failed asserting that 409 is identical to 200.
 
   at tests/Feature/PickupOrderTest.php:215
     211▕         // Store packs the order → Ready (pickup-only state)
-    212▕         $ready = $this->actingAs($staff)->postJson("/api/store/orders/{$orderId}/status", [
+    212▕         $ready = $this->actingAs($staff)->patchJson("/api/store/orders/{$orderId}/status", [
     213▕             'status' => 'ready',
     214▕         ]);
   ➜ 215▕         $ready->assertStatus(200)->assertJsonPath('data.status', 'ready');
     216▕ 
     217▕         // Customer collects → Delivered (collection closes the loop), then
     218▕         // the customer confirms to settle payment exactly as with delivery.
-    219▕         $collected = $this->actingAs($staff)->postJson("/api/store/orders/{$orderId}/status", [
-
-  ────────────────────────────────────────────────────────────────────────────  
-   FAILED  Tests\Feature\PickupOrderTest > ready is rejected for delivery or…   
-  Expected response status code [422] but received 405.
-Failed asserting that 405 is identical to 422.
-
-  at tests/Feature/PickupOrderTest.php:285
-    281▕         ]);
-    282▕ 
-    283▕         $this->actingAs($staff)->postJson("/api/store/orders/{$deliveryOrder->id}/status", [
-    284▕             'status' => 'ready',
-  ➜ 285▕         ])->assertStatus(422)->assertJsonPath('reason', 'ready_is_pickup_only');
-    286▕ 
-    287▕         $this->actingAs($staff)->postJson("/api/store/orders/{$pickupOrder->id}/status", [
-    288▕             'status' => 'out_for_delivery',
-    289▕         ])->assertStatus(422)->assertJsonPath('reason', 'delivery_is_delivery_only');
+    219▕         $collected = $this->actingAs($staff)->patchJson("/api/store/orders/{$orderId}/status", [
 
 
-  Tests:    11 failed, 403 passed (990 assertions)
-  Duration: 23.03s
+  Tests:    1 failed, 413 passed (1045 assertions)
+  Duration: 22.84s
 
 ```
