@@ -56,7 +56,7 @@ class SpecialsEndpointTest extends TestCase
         // Attach at a special price of R15 via the pivot.
         $special->products()->attach($product->id, ['special_price' => 15.00]);
 
-        $this->actingAs($user)
+        $response = $this->actingAs($user)
             ->getJson('/api/specials')
             ->assertStatus(200)
             ->assertJsonStructure(['data' => [['products' => [['effective_price', 'stores', 'category']]]]])
