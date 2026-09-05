@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Enums\UserRole;
 use App\Models\Rider;
+use App\Models\Store;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -16,7 +17,7 @@ class RiderSeeder extends Seeder
             [
                 'name' => 'Thabo Mokoena',
                 'email' => 'thabo@checkstar.co.za',
-                'store_id' => 1,
+                'store_slug' => 'durban-central',
                 'vehicle_type' => 'motorbike',
                 'total_deliveries' => 45,
                 'average_rating' => 4.7,
@@ -26,7 +27,7 @@ class RiderSeeder extends Seeder
             [
                 'name' => 'Lindiwe Nkosi',
                 'email' => 'lindiwe@checkstar.co.za',
-                'store_id' => 1,
+                'store_slug' => 'durban-central',
                 'vehicle_type' => 'scooter',
                 'total_deliveries' => 28,
                 'average_rating' => 4.5,
@@ -36,7 +37,7 @@ class RiderSeeder extends Seeder
             [
                 'name' => 'Sipho Dlamini',
                 'email' => 'sipho@checkstar.co.za',
-                'store_id' => 2,
+                'store_slug' => 'umhlanga',
                 'vehicle_type' => 'motorbike',
                 'total_deliveries' => 112,
                 'average_rating' => 4.9,
@@ -46,7 +47,7 @@ class RiderSeeder extends Seeder
             [
                 'name' => 'Zanele Khumalo',
                 'email' => 'zanele@checkstar.co.za',
-                'store_id' => 2,
+                'store_slug' => 'umhlanga',
                 'vehicle_type' => 'motorbike',
                 'total_deliveries' => 67,
                 'average_rating' => 4.3,
@@ -56,7 +57,7 @@ class RiderSeeder extends Seeder
             [
                 'name' => 'Bongani Zulu',
                 'email' => 'bongani@checkstar.co.za',
-                'store_id' => 3,
+                'store_slug' => 'pinetown',
                 'vehicle_type' => 'scooter',
                 'total_deliveries' => 15,
                 'average_rating' => 4.1,
@@ -66,6 +67,16 @@ class RiderSeeder extends Seeder
         ];
 
         foreach ($riderData as $data) {
+            // Never trust hard-coded store ids: resolve by slug (MySQL does
+            // not reset auto-increment after rolled-back transactions, so
+            // literal ids only line up on a pristine database).
+            $store = Store::where('slug', $data['store_slug'])->first();
+            if ($store === null) {
+                throw new \RuntimeException("RiderSeeder: unknown store slug [{$data['store_slug']}] — run StoreSeeder first.");
+            }
+            $data['store_id'] = $store->id;
+            unset($data['store_slug']);
+
             $user = User::firstOrCreate(
                 ['email' => $data['email']],
                 [

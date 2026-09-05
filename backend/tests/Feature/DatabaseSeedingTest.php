@@ -45,7 +45,7 @@ class DatabaseSeedingTest extends TestCase
         $staff = StoreStaff::where('user_id', $manager->id)->first();
         $this->assertNotNull($staff);
         $this->assertNotNull(Store::find($staff->store_id));
-        $this->assertSame('store_manager', $staff->role);
+        $this->assertSame('store_manager', $staff->role->value);
 
         // Rider app.
         $this->assertTrue(Rider::exists());
