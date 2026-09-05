@@ -282,9 +282,6 @@ class ManualDispatchTest extends TestCase
         $this->actingAs($this->manager)
             ->postJson("/api/store/orders/{$orderB->id}/dispatch", ['rider_id' => $other->id])
             ->assertStatus(200);
-        $this->actingAs($this->manager)
-            ->patchJson("/api/store/orders/{$orderB->id}/status", ['status' => 'preparing'])
-            ->assertStatus(200);
 
         // Reassigning order B to the capped rider would push them past the
         // cap that auto-dispatch and claims respect.
@@ -302,10 +299,11 @@ class ManualDispatchTest extends TestCase
 
         $near = $this->makeConfirmedOrder($customer); // at store coordinates
 
-        // ~4.4km north + ~4.3km east: inside the bounding box of a 5km
-        // radius store but ~6.1km away by haversine — must still be excluded.
+        $this->store->update(['delivery_radius_km' => 5]);
+        // 5 km radius: box is ~ +/-0.045 lat / +/-0.0519 lng; a diagonal-corner
+        // order ~5.7 km away sits inside the box but outside the radius.
         $diagonal = $this->makeConfirmedOrder($customer);
-        $diagonal->update(['delivery_latitude' => -29.8587 + 0.04, 'delivery_longitude' => 31.0218 + 0.045]);
+        $diagonal->update(['delivery_latitude' => -29.8587 + 0.036, 'delivery_longitude' => 31.0218 + 0.0417]);
 
         $pending = $this->actingAs($this->manager)
             ->getJson('/api/store/dispatch/pending')
