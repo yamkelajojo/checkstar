@@ -168,7 +168,7 @@ export function useOrder(id: number | string) {
 export function useRiderProfile() {
   return useQuery({
     queryKey: ['rider-profile'],
-    queryFn: () => api.getRiderProfile(),
+    queryFn: () => api.getRiderProfile().then(r => r.data),
   })
 }
 
@@ -224,7 +224,7 @@ export function useClaimOrder() {
 export function useAdvanceOrder() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ orderId, action, itemIds }: { orderId: number; action: string; itemIds?: number[] }) => {
+    mutationFn: ({ orderId, action, itemIds }: { orderId: number; action: string; itemIds: number[] }) => {
       if (action === 'items_bought') return api.markItemsBought(orderId, itemIds)
       if (action === 'out_for_delivery') return api.markOutForDelivery(orderId)
       return api.markDelivered(orderId)

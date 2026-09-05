@@ -82,7 +82,7 @@ export default function RiderDashboardClient() {
     await claimMutation.mutateAsync(orderId)
   }, [claimMutation])
 
-  const advanceOrder = useCallback(async (orderId: number, action: string, itemIds?: number[]) => {
+  const advanceOrder = useCallback(async (orderId: number, action: string, itemIds: number[]) => {
     await advanceMutation.mutateAsync({ orderId, action, itemIds })
   }, [advanceMutation])
 
@@ -225,7 +225,7 @@ export default function RiderDashboardClient() {
                         badge={{ label: order.status.replace(/_/g, ' ') }}
                         action={next ? (
                           <button
-                            onClick={() => advanceOrder(order.id, next.action, order.items?.map(i => i.id))}
+                            onClick={() => advanceOrder(order.id, next.action, order.items?.map(i => i.id) ?? [])}
                             className="inline-flex items-center gap-1.5 bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors"
                           >
                             {next.label}

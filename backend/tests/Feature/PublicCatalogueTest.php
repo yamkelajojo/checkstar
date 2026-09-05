@@ -93,15 +93,15 @@ class PublicCatalogueTest extends TestCase
             'location' => 'Durban', 'type' => 'full_time', 'is_active' => true,
         ]);
         CommunityPost::create([
-            'title' => 'Hello', 'slug' => 'hello', 'content' => 'Hi', 'category' => 'news', 'is_published' => true,
+            'title' => 'Hello', 'slug' => 'hello', 'content' => 'Hi', 'category' => 'gallery', 'is_published' => true,
         ]);
         CommunityPost::create([
-            'title' => 'Draft', 'slug' => 'draft', 'content' => 'x', 'category' => 'news', 'is_published' => false,
+            'title' => 'Draft', 'slug' => 'draft', 'content' => 'x', 'category' => 'gallery', 'is_published' => false,
         ]);
 
         $this->getJson('/api/careers')->assertStatus(200)->assertJsonPath('data.0.slug', 'driver');
         $this->getJson('/api/community-posts')->assertStatus(200)->assertJsonPath('data.0.slug', 'hello');
-        $this->getJson('/api/community-posts?category=news')->assertStatus(200);
+        $this->getJson('/api/community-posts?category=gallery')->assertStatus(200);
     }
 
     public function test_guest_can_submit_a_contact_message(): void

@@ -127,15 +127,17 @@ export const api = {
   replyToMessage: (id: number, body: string) => request<{ data: unknown }>(`/admin/messages/${id}/reply`, { method: 'POST', body: JSON.stringify({ body }) }),
   // Rider
   getAvailableOrders: () => request<{ data: Order[] }>('/rider/available-orders'),
-  claimOrder: (id: number) => request<Order>(`/rider/claim/${id}`, { method: 'POST' }),
-  markItemsBought: (id: number, itemIds?: number[]) => request<Order>(`/rider/items-bought/${id}`, { method: 'POST', body: JSON.stringify({ item_ids: itemIds ?? [] }) }),
-  markOutForDelivery: (id: number) => request<Order>(`/rider/out-for-delivery/${id}`, { method: 'POST' }),
-  markDelivered: (id: number) => request<Order>(`/rider/delivered/${id}`, { method: 'POST' }),
-  toggleAvailability: () => request<Rider>('/rider/toggle-availability', { method: 'POST' }),
+  // Backend wraps rider mutations in {data} — keep the envelope in the type.
+  claimOrder: (id: number) => request<{ data: Order }>(`/rider/claim/${id}`, { method: 'POST' }),
+  // item_ids is min:1 on the backend — callers must pass the batch explicitly.
+  markItemsBought: (id: number, itemIds: number[]) => request<{ data: Order }>(`/rider/items-bought/${id}`, { method: 'POST', body: JSON.stringify({ item_ids: itemIds }) }),
+  markOutForDelivery: (id: number) => request<{ data: Order }>(`/rider/out-for-delivery/${id}`, { method: 'POST' }),
+  markDelivered: (id: number) => request<{ data: Order }>(`/rider/delivered/${id}`, { method: 'POST' }),
+  toggleAvailability: () => request<{ data: Rider }>('/rider/toggle-availability', { method: 'POST' }),
   getRiderStats: () => request<{ data: { xp: number; level: number; total_deliveries: number; average_rating: number; badges: Array<{ id: number; badge_type: string; metadata: Record<string, unknown> | null; awarded_at: string }> } }>('/rider/stats'),
   getRiderHistory: () => request<{ data: Order[] }>('/rider/history'),
   getActiveDeliveries: () => request<{ data: Order[] }>('/rider/active-deliveries'),
-  getRiderProfile: () => request<Rider>('/rider/profile'),
+  getRiderProfile: () => request<{ data: Rider }>('/rider/profile'),
   // Operations dashboard
   getOperationsMetrics: () => request<{ active_riders: number; total_riders: number; orders_this_hour: number; pending_orders: number; active_deliveries: number; delivered_today: number }>('/operations/metrics'),
   getOperationsAlerts: () => request<{ alerts: Array<{ id: string; type: string; severity: string; message: string }> }>('/operations/alerts'),
