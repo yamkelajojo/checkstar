@@ -59,9 +59,16 @@ class OrderStateMachine
         };
     }
 
-    public function canTransition(OrderStatus $from, OrderStatus $to): bool
+    public function canTransition(OrderStatus $from, OrderStatus $to, ?Order $order = null): bool
     {
         $allowed = self::map()[$from->value] ?? [];
+
+        // Pickup orders can jump straight from Confirmed to Ready — a packed
+        // order waits for collection with no rider leg in between. Delivery
+        // orders must always pass through Preparing (rider dispatch).
+        if ($from === OrderStatus::Confirmed && $to === OrderStatus::Ready) {
+            return $order !== null && $order->fulfilment_method === 'pickup';
+        }
 
         return in_array($to->value, $allowed, true);
     }
@@ -74,7 +81,7 @@ class OrderStateMachine
             throw new InvalidArgumentException("Order is already in status: {$to->value}");
         }
 
-        if (! $this->canTransition($from, $to)) {
+        if (! $this->canTransition($from, $to, $order)) {
             throw new InvalidArgumentException(
                 "Cannot transition from {$from->value} to {$to->value}"
             );
