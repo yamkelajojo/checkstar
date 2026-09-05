@@ -10,7 +10,7 @@ export function DownloadTheApp() {
       whileInView="visible"
       viewport={{ once: true, margin: '-80px' }}
       variants={fadeUp}
-      className="py-0"
+      className="py-0 overflow-x-clip"
     >
       <div className="bg-[#1B1816]">
         <div className="max-w-7xl mx-auto px-4 py-16 md:py-24">

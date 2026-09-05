@@ -68,6 +68,11 @@ export default function StoresClient() {
             {stores.map(store => (
               <StoreCard key={store.id} store={store} />
             ))}
+            {stores.length === 0 && (
+              <p className="col-span-full text-center py-12 text-gray-500">
+                No stores to show yet — check back soon.
+              </p>
+            )}
           </motion.div>
         )}
       </main>

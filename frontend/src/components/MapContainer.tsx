@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import './MapContainer.css'
 
 export interface MapMarker {
@@ -43,11 +43,18 @@ export default function MapContainer({
   // later prop changes are handled by the separate view-sync effects below.
   const initialPropsRef = useRef({ center, zoom, onMapReady })
   initialPropsRef.current = { center, zoom, onMapReady }
+  // Set when the component unmounts while the leaflet chunk is still being
+  // imported — the pending init must not attach a map to a detached element.
+  const disposedRef = useRef(false)
+  // True when map tiles cannot be fetched (offline / blocked hosts): the map
+  // would otherwise be a silent black rectangle with no explanation.
+  const [tilesUnavailable, setTilesUnavailable] = useState(false)
 
   useEffect(() => {
     const el = mapRef.current
     if (!el || initializedRef.current) return
     initializedRef.current = true
+    disposedRef.current = false
     const mapEl = el
     const { center: initialCenter, zoom: initialZoom, onMapReady: initialOnMapReady } = initialPropsRef.current
 
@@ -82,7 +89,26 @@ export default function MapContainer({
         maxZoom: 18,
       })
 
+      // Graceful degradation: if tiles keep failing (offline, blocked hosts,
+      // firewall) say so on the map instead of leaving a black rectangle.
+      let tileErrors = 0
+      let tilesLoaded = 0
+      tileLayer.on('tileerror', () => {
+        tileErrors += 1
+        if (tileErrors >= 3 && tilesLoaded === 0) setTilesUnavailable(true)
+      })
+      tileLayer.on('tileload', () => {
+        tilesLoaded += 1
+        setTilesUnavailable(false)
+      })
+
       tileLayer.addTo(map)
+
+      if (disposedRef.current) {
+        // Unmounted while the chunk was loading — tear down immediately.
+        try { map.remove() } catch {}
+        return
+      }
       mapInstance.current = map
 
       map!.whenReady(() => {
@@ -97,6 +123,7 @@ export default function MapContainer({
     initMap()
 
     return () => {
+      disposedRef.current = true
       if (map) {
         try { map.remove() } catch {}
       }
@@ -135,6 +162,18 @@ export default function MapContainer({
       ref={mapRef}
       className={`MapContainer ${className}`}
       style={style}
-    />
+    >
+      {tilesUnavailable && (
+        <div
+          role="status"
+          className="pointer-events-none absolute inset-0 z-[500] flex items-center justify-center bg-[#090B10]/70 px-6 text-center"
+        >
+          <p className="text-sm text-slate-300">
+            Map unavailable right now — check your connection. Store details are
+            listed below.
+          </p>
+        </div>
+      )}
+    </div>
   )
 }

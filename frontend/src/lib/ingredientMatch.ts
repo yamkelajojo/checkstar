@@ -1,25 +1,50 @@
 import type { Product } from '@/types'
 
 /**
- * Ingredient → product matching for recipe pages.
+ * Ingredient → product linking for recipe pages.
  *
- * Given a raw ingredient line from a recipe (e.g. "1 tsp sugar") and the
- * catalogue, find the product the ingredient most plausibly refers to, so the
- * UI can attach an inline product thumbnail that links to the product page.
+ * Given a raw ingredient line ("2 tbsp sugar") and the catalogue, find the
+ * product the ingredient most plausibly refers to, so the recipe can render
+ * an inline thumbnail that links to the product page.
  *
- * Matching rules (deliberately conservative — a wrong link is worse than no
- * link):
- *  - Case- and punctuation-insensitive.
- *  - Whole-word matching only: a product named "Milk" must NOT hijack
- *    "500 ml Buttermilk".
- *  - Longest product name wins when several products match ("brown sugar"
- *    prefers "Brown Sugar" over "Sugar").
- *  - Trailing simple plurals are folded ("2 eggs" matches a product named
- *    "Egg" or "Eggs"), but nothing else is fuzzy.
- *  - Product names shorter than 3 characters are ignored.
+ * The catalogue is a real retail dataset ("Clover Fresh Full Cream Milk 1L",
+ * "Grain Field Chickens Fresh Chicken Drumsticks & Thighs Per kg"), so the
+ * full product name can never appear inside an ingredient line. The algorithm
+ * therefore works on significant tokens:
+ *
+ *  1. Skip non-edible ranges (pet food, baby food) — "lamb chops" must not
+ *     link to Whiskas cat food.
+ *  2. Normalize case/punctuation, strip sizes/units ("1.5kg", "6 x 91g") and
+ *     stopwords, and fold simple English plurals on BOTH sides ("mangoes" →
+ *     "mango", "apples" → "apple").
+ *  3. A product matches when at least one significant token appears as a
+ *     whole word in the ingredient.
+ *  4. Guards (a wrong link is worse than no link):
+ *     - Negation: "Coca-Cola Zero Sugar" must not match "2 tbsp sugar".
+ *     - A single-token match must carry the product's head noun ("Festive
+ *       Fresh Chicken Thighs" needs "chicken" or "thigh(s)"), unless the
+ *       head is a generic word ("drink", "juice", "mix"…) and the matched
+ *       token is its flavour ("cola" in "Zip Cola Flavoured Soft Drink").
+ *  5. Rank: more matched tokens, then matches closer to the head of the
+ *     name, then shorter (more canonical) names.
  */
 
-/** Lowercase, treat any punctuation as whitespace, collapse runs of spaces. */
+/** Catalogue ranges that must never be linked from a food recipe. */
+const NON_EDIBLE_CATEGORIES = new Set(['pet-supplies', 'baby-toddler'])
+
+const STOPWORDS = new Set(['pack', 'pk', 'each', 'fresh', 'and', 'with', 'the', 'of', 'in', 'per', 'from'])
+
+/** A neighbour of a matched token that voids the match ("Zero Sugar"). */
+const NEGATIONS = new Set(['no', 'zero', 'free', 'less', 'light', 'lite'])
+
+/** Head nouns that carry no identity on their own ("… Protein Powder"). */
+const GENERIC_HEADS = new Set(['powder', 'juice', 'mix', 'drink', 'water', 'flavoured', 'flavour', 'soft', 'blend'])
+
+const SIZE_UNITS = '(?:g|kg|ml|l|cl|m|cm|pk|pack|caps?|capsules|sachets?|sheets?|tablets?|tabs?|bars?|rolls?|wipes|nappies|units?|each|bottles?|cans?|tins?|pouches?|bags?)'
+const SIZE_RE = new RegExp(`^\\d+([.,]\\d+)?${SIZE_UNITS}*$`)
+const RANGE_RE = new RegExp(`^\\d+([-–]\\d+)?${SIZE_UNITS}*$`)
+
+/** Lowercase, punctuation → space, collapse whitespace. */
 function normalize(text: string): string {
   return text
     .toLowerCase()
@@ -28,36 +53,69 @@ function normalize(text: string): string {
     .replace(/\s+/g, ' ')
 }
 
-function escapeRegExp(text: string): string {
-  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+/** Fold simple English plural endings. */
+function singular(word: string): string {
+  if (word.length > 4 && word.endsWith('ies')) return word.slice(0, -3) + 'y'
+  if (word.length > 4 && word.endsWith('oes')) return word.slice(0, -2)
+  if (word.length > 4 && /(x|z|s|sh|ch)es$/.test(word)) return word.slice(0, -2)
+  if (word.length > 3 && word.endsWith('ss')) return word
+  if (word.length > 3 && word.endsWith('s')) return word.slice(0, -1)
+  return word
 }
 
-/** Whole-word pattern for a product name, tolerating a simple plural ending. */
-function productPattern(name: string): RegExp {
-  const words = name.split(' ').map(escapeRegExp)
-  const last = words.length - 1
-  const parts = words.map((w, i) => {
-    if (i !== last) return w
-    // Fold plurals on the final word: "Eggs" should match "3 egg" as well as
-    // "3 eggs"; a stem ending in a non-plural 's' ("Sugar") is untouched.
-    const stem = w.endsWith('s') ? w.slice(0, -1) : w
-    return `${stem}(?:s|es)?`
-  })
-  return new RegExp(`(^|[^a-z0-9])${parts.join(' ')}([^a-z0-9]|$)`)
+/** Significant, singularized tokens of a name or ingredient line. */
+function tokens(text: string): string[] {
+  return normalize(text)
+    .split(' ')
+    .filter((word) => word && !/^\d+$/.test(word) && !SIZE_RE.test(word) && !RANGE_RE.test(word) && !STOPWORDS.has(word))
+    .map(singular)
+}
+
+function isEdible(product: Product): boolean {
+  const slug = product.category?.slug
+  return !slug || !NON_EDIBLE_CATEGORIES.has(slug)
 }
 
 export function findIngredientProduct(ingredient: string, products: Product[]): Product | null {
-  const text = normalize(ingredient)
-  if (!text) return null
+  const ingredientTokens = new Set(tokens(ingredient))
+  if (ingredientTokens.size === 0) return null
 
   let best: Product | null = null
-  let bestLength = 0
+  let bestScore: [number, number, number] | null = null
+
   for (const product of products) {
-    const name = normalize(product.name)
-    if (name.length < 3 || name.length <= bestLength) continue
-    if (productPattern(name).test(text)) {
+    if (!isEdible(product)) continue
+    const toks = tokens(product.name)
+    if (toks.length === 0) continue
+
+    const matched: number[] = []
+    for (let i = 0; i < toks.length; i++) {
+      const token = toks[i]
+      if (token.length >= 3 && ingredientTokens.has(token)) matched.push(i)
+    }
+    if (matched.length === 0) continue
+
+    const last = toks.length - 1
+    const negated = matched.some((idx) => NEGATIONS.has(toks[idx - 1] ?? '') || NEGATIONS.has(toks[idx + 1] ?? ''))
+    if (negated) continue
+
+    // A lone match must carry the head noun, unless the head is generic and
+    // the match is its flavour word ("cola" in "Zip Cola Flavoured Soft
+    // Drink"). A lone match ON the generic head itself ("powder" in a
+    // protein powder) is never specific enough.
+    if (matched.length === 1 && !GENERIC_HEADS.has(toks[last]) && matched[0] !== last) continue
+    if (matched.length === 1 && matched[0] === last && GENERIC_HEADS.has(toks[last])) continue
+
+    // Positional strength: a match near the end of the name is head-like.
+    const positional = Math.max(...matched.map((idx) => (idx + 1) / toks.length))
+    const score: [number, number, number] = [matched.length, positional, -toks.length]
+    if (
+      !bestScore ||
+      score[0] > bestScore[0] ||
+      (score[0] === bestScore[0] && (score[1] > bestScore[1] || (score[1] === bestScore[1] && score[2] > bestScore[2])))
+    ) {
       best = product
-      bestLength = name.length
+      bestScore = score
     }
   }
   return best

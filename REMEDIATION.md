@@ -212,3 +212,43 @@ Verification: frontend 144 vitest tests (20 files, +15: Products page
 stocked/empty/error/dirty-data, ProductCard badge + hostile-image, Logo
 line-height regression, cart guest-gate + 401-modal + mobile rail),
 typecheck/lint/build clean, all customer routes clean in real Chromium.
+
+## Round 9 — full-app critical audit (user: round 8 was "very light and not critical enough")
+
+Mandate: fix the tagline startup jump, make recipe product thumbnails actually
+visible with real data, and critically audit the entire web app fixing
+everything broken — analyse → debug → think → plan → reflect → review → test →
+implement, with every fix independently verified in a real browser.
+
+| # | Finding | Root cause & fix |
+|---|---|---|
+| R32 | **Recipe detail showed no product thumbnails and paired ingredients with pet food** (user complaint #2, three rounds running). Three stacked root causes: (1) the ingredient matcher was substring-scor based — "chicken thighs" matched *Whiskas Chicken & Milk Cat Food* (highest score won); (2) the seeded recipes' ingredients had no catalogue coherence, so even a correct matcher had nothing right to match; (3) every matched pill thumbnail 400'd because `/products/:file` (single-segment images) had no rewrite — only `/products/:cat/:file` existed. | Matcher rewritten as a token-based matcher (normalise → strip sizes/units/stopwords → whole-word tokens ≥3 chars, plural-folded both sides; pet-supplies/baby categories skipped; negation neighbours rejected; a lone token match must equal/inherit the head noun unless the head is generic — powder/juice/mix/…; deterministic ranking). Seeded with 3 catalogue-coherent recipes (classic-SApbraai, creamy-chicken-pasta, banana-apple-smoothie) via `updateOrCreate`; hero + pill images through `SafeImage`; single-segment rewrite added. **Verified in real Chromium: 4/4 pills render with correct products and loaded thumbnails** (Festive Fresh Chicken Thighs, Clover Full Cream Milk 1L, Ladismith Unsalted Butter 500g, Galbani Mozzarella 300g) — was 0/4 with wrong products. Salt/pepper and "500 g pasta" correctly match nothing. Pinned by 16 matcher tests incl. a 22-verbatim-catalogue-name regression test. |
+| R33 | **Logo tagline "appears on startup, then moves to the right"** (user complaint #1). Root cause chain: the tagline SSR-painted *visible* (state initialised `true`), so reloading a scrolled page painted it and hydration removed it (the flash); worse, show/hide *toggled layout* — the collapsing in-flow span re-centred the wordmark inside the sticky header, shifting the whole lockup (and page) on first scroll. | Tagline now hidden at SSR (server cannot know restored scroll position), evaluated once post-hydration, and **absolutely positioned with an opacity-only fade — it can never participate in layout again**. Frame-by-frame Chromium verification: scrolled reload shows 0 visible frames (was a flash), wordmark top constant at 20.8px through fade-in/scroll-out/in (was reflowing), header height constant. 4 new tests pin SSR-hidden, hydrate-in, scroll-out/in and absolute/no-max-height behaviour. |
+| R34 | `/products/:file` single-segment product images returned 400 through the image optimizer. | `next.config.js` rewrite added beside the two-segment one. |
+| R35 | Home hero background and favicon 404'd on every page (`/grid.svg`, no `src/app/icon.*`). | Created `public/grid.svg` (hero pattern) and `src/app/icon.svg` (favicon). |
+| R36 | `/about` horizontal overflow (+40px at 390px) — the timeline cards' entrance slide starts at `x:40`, escaping the viewport before animating in. | Timeline wrapper `overflow-x-clip`; static layout verified clean. |
+| R37 | Home `DownloadTheApp` phone mockup has the same `x:40` slide-in — measured `scrollWidth` 414 during the transient. | Section `overflow-x-clip`; steady-state scrollWidth verified 390. |
+| R38 | Leaflet map failed silent + leaky: tile fetch failures left a permanent black rectangle with no explanation (offline/firewall), and unmounting during the async `import('leaflet')` attached a map to a detached element. | `tileerror` counter → explanatory overlay ("Map unavailable right now — check your connection…") that clears on first `tileload`; disposed-guard tears down a pending init; empty store list now shows an explicit empty state instead of an empty grid. Verified in the lab (blocked tile hosts): overlay + empty state render. |
+
+**Full-app audit method & results:** headless-Chromium lab (puppeteer-core +
+@sparticuz/chromium) against a mock Laravel API serving the real 270-product
+catalogue (90 edible products with real names/images — upgraded this round from
+1×1-pixel placeholders to distinct 96px PNGs, and given Sanctum-style
+CSRF + auth/contact/order endpoints). A 13-route sweep at 390px (console
+errors, failed requests, broken images, horizontal overflow, pill acceptance)
+ends **clean everywhere**; the only remaining lab noise is OpenStreetMap tile
+requests blocked by the sandbox (covered by R38's fallback UI), and the
+expected logged-out `401` session probe. Deep flow probes **7/7**: login with
+invalid credentials (error shown, no navigation), login with valid credentials
+(user persisted, redirect), add-to-cart, cart stepper increment, product search
+debounce ("milk" → 11/11 correct results), contact-form submit (success
+banner), zero uncaught page errors across all flows.
+
+Lab note for future rounds: in this Chromium build `img.naturalWidth` reads 0
+via CDP even for *painted* images — the sweep's broken-image detector was
+rewritten to use `img.decode()` as ground truth after a 62-"broken"-image
+reading was disproven by screenshot (images visibly rendered).
+
+Verification: frontend **158 vitest tests / 21 files** green (+14 vs round 8),
+typecheck clean, ESLint clean, production build clean (30/30 routes), sweep +
+flow probes green in real Chromium.

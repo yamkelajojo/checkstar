@@ -211,7 +211,7 @@ function Timeline() {
   });
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className="relative overflow-x-clip">
       <div className="absolute left-6 md:left-1/2 top-0 bottom-0 w-0.5 -translate-x-1/2 bg-gray-200" />
       <motion.div
         style={{ scaleY: fillScale }}

@@ -26,7 +26,12 @@ function StarIcon({ size, tone }: { size: number; tone: 'light' | 'dark' }) {
 }
 
 export function Logo({ variant = 'lockup', size = 28, tone = 'dark', className }: LogoProps) {
-  const [showTagline, setShowTagline] = React.useState(true);
+  // Start hidden: the server cannot know the restored scroll position, so a
+  // visible-at-SSR tagline painted itself onto reload-while-scrolled pages and
+  // vanished right after hydration (the "appears on startup, then moves"
+  // jump). Post-hydration evaluation below fades it in only when truly at the
+  // top of the page, and the fade never participates in layout (see Wordmark).
+  const [showTagline, setShowTagline] = React.useState(false);
   const iconSize = size * 1.7;
   const wordSize = variant === 'stacked' ? size : size * 0.82;
   const color = tone === 'dark' ? '#1B1816' : '#FFFCF9';
@@ -36,7 +41,7 @@ export function Logo({ variant = 'lockup', size = 28, tone = 'dark', className }
       setShowTagline(window.scrollY <= 80);
     };
     handleScroll();
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
@@ -60,7 +65,7 @@ export function Logo({ variant = 'lockup', size = 28, tone = 'dark', className }
 function Wordmark({ tone, size, showTagline }: { tone: 'light' | 'dark'; size: number; showTagline: boolean }) {
   const color = tone === 'dark' ? '#1B1816' : '#FFFCF9';
   return (
-    <div className="flex flex-col leading-none">
+    <div className="relative flex flex-col leading-none">
       <span
         className="font-extrabold tracking-tight"
         style={{
@@ -73,19 +78,24 @@ function Wordmark({ tone, size, showTagline }: { tone: 'light' | 'dark'; size: n
         <span style={{ color: '#EB6522' }}>Check</span>
         <span style={{ color }}>star</span>
       </span>
-      {showTagline && (
-        <span
-          className="font-normal"
-          style={{
-            fontSize: size * 0.34,
-            color: '#EB6522',
-            lineHeight: 1,
-            letterSpacing: '0.2px',
-          }}
-        >
-          cares enough
-        </span>
-      )}
+      {/* Absolutely positioned below the wordmark: fading it in/out must never
+          re-flow the lockup or the page. A collapsing in-flow span made the
+          wordmark re-centre (the layout jump) on every show/hide. */}
+      <span
+        className="absolute left-0 top-full mt-[2px] whitespace-nowrap font-normal"
+        aria-hidden={!showTagline}
+        style={{
+          fontSize: size * 0.34,
+          color: '#EB6522',
+          lineHeight: 1,
+          letterSpacing: '0.2px',
+          opacity: showTagline ? 1 : 0,
+          transition: 'opacity 200ms ease',
+          pointerEvents: 'none',
+        }}
+      >
+        cares enough
+      </span>
     </div>
   );
 }

@@ -3,11 +3,11 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { mediaUrl } from '@/lib/media'
 import { motion } from 'motion/react'
 import { Clock, Users, ChefHat, ChevronLeft, Check, ListOrdered, Package } from 'lucide-react'
 import { useRecipe, useAllProducts } from '@/lib/query'
 import { findIngredientProduct } from '@/lib/ingredientMatch'
+import SafeImage from '@/components/SafeImage'
 
 export default function RecipeDetailClient({ slug }: { slug: string }) {
   const { data: recipe, isLoading: loading, error } = useRecipe(slug)
@@ -100,7 +100,7 @@ export default function RecipeDetailClient({ slug }: { slug: string }) {
           className="relative aspect-[2/1] rounded-xl overflow-hidden bg-gray-50 mb-8"
         >
           {recipe.image ? (
-            <Image src={mediaUrl(recipe.image)} alt={recipe.title} fill sizes="(max-width: 768px) 100vw, 768px" className="object-cover" />
+            <SafeImage src={recipe.image} alt={recipe.title} fill sizes="(max-width: 768px) 100vw, 768px" className="object-cover" />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-gray-200">
               <ChefHat size={64} />
@@ -191,7 +191,7 @@ export default function RecipeDetailClient({ slug }: { slug: string }) {
                             className="inline-flex items-center gap-1.5 bg-primary/5 border border-primary/20 rounded-full pl-1 pr-2.5 py-0.5 text-xs font-medium text-primary hover:bg-primary/10 transition-colors flex-shrink-0 no-underline"
                           >
                             {match.image ? (
-                              <Image src={mediaUrl(match.image)} alt={match.name} width={20} height={20} className="rounded-full object-cover" />
+                              <SafeImage src={match.image} alt={match.name} width={20} height={20} className="rounded-full object-cover" />
                             ) : (
                               <Package size={12} className="flex-shrink-0" />
                             )}

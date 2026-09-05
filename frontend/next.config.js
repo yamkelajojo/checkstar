@@ -27,6 +27,11 @@ const nextConfig = {
         source: '/products/:cat/:file',
         destination: `${apiBase}/products/:cat/:file`,
       },
+      {
+        // Media stored directly under products/ (no category segment).
+        source: '/products/:file',
+        destination: `${apiBase}/products/:file`,
+      },
     ]
   },
 }
