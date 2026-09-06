@@ -1,25 +1,27 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { mediaUrl } from '@/lib/media'
 import { motion, AnimatePresence } from 'motion/react'
-import { Minus, Plus, Trash2, ShoppingBag, ArrowRight, Loader2, MapPin } from 'lucide-react'
+import { Minus, Plus, Trash2, ShoppingBag, ArrowRight, Loader2, MapPin, Store as StoreIcon } from 'lucide-react'
 import { useCartStore } from '@/stores/cart-store'
 import { useAuthStore } from '@/stores/auth-store'
 import AnimatedNumber from '@/components/AnimatedNumber'
 import AuthRequiredModal from '@/components/AuthRequiredModal'
 import { usePlaceOrder } from '@/lib/query'
-import { ApiError } from '@/lib/api'
+import { api, ApiError } from '@/lib/api'
 import { getDeliveryCoords, type DeliveryCoords } from '@/lib/delivery-coords'
 import LocationFallbackNotice from '@/components/LocationFallbackNotice'
-import type { Dispatch } from '@/types'
+import type { Dispatch, FulfilmentMethod, Store as StoreType, UserAddress } from '@/types'
 import OrderConfirmation from './OrderConfirmation'
 
 export default function CartClient() {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const { items, total, removeItem, updateQuantity, decrementItem, addItem, clearCart } = useCartStore()
   const isAuthenticated = useAuthStore(s => s.isAuthenticated)
   const [deliveryAddress, setDeliveryAddress] = useState('')
@@ -29,8 +31,41 @@ export default function CartClient() {
   const [placedOrder, setPlacedOrder] = useState<{ order_number: string; id: number; payment_status?: string } | null>(null)
   const [dispatch, setDispatch] = useState<Dispatch | null>(null)
   const [coords, setCoords] = useState<DeliveryCoords | null>(null)
+  const [fulfilment, setFulfilment] = useState<FulfilmentMethod>('delivery')
+  const [selectedAddressId, setSelectedAddressId] = useState<number | 'new'>('new')
+  const [selectedStoreId, setSelectedStoreId] = useState<number | ''>('')
+  const [saveAddress, setSaveAddress] = useState(false)
+  const [addressLabel, setAddressLabel] = useState('Home')
 
   const placeOrderMutation = usePlaceOrder()
+
+  // Address book + store list are only needed once checkout opens.
+  const { data: addressesData, isLoading: addressesLoading } = useQuery({
+    queryKey: ['addresses'],
+    queryFn: api.getAddresses,
+    enabled: showCheckoutForm && isAuthenticated,
+  })
+  const { data: storesData } = useQuery({
+    queryKey: ['stores'],
+    queryFn: api.getStores,
+    enabled: showCheckoutForm && fulfilment === 'pickup',
+  })
+  const savedAddresses: UserAddress[] = addressesData?.data ?? []
+  const stores: StoreType[] = (storesData?.data ?? []).filter(s => s.is_active)
+
+  // Prompt with the customer's saved addresses: default to their default one.
+  useEffect(() => {
+    if (savedAddresses.length === 0) return
+    if (selectedAddressId !== 'new') return
+    const preferred = savedAddresses.find(a => a.is_default) ?? savedAddresses[0]
+    setSelectedAddressId(preferred.id)
+  }, [savedAddresses, selectedAddressId])
+
+  useEffect(() => {
+    if (selectedStoreId === '' && stores.length > 0) {
+      setSelectedStoreId(stores[0].id)
+    }
+  }, [stores, selectedStoreId])
 
   const handleProceedToCheckout = () => {
     if (!isAuthenticated) {
@@ -45,24 +80,60 @@ export default function CartClient() {
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault()
     setPlaceError('')
-    if (!deliveryAddress.trim()) {
-      setPlaceError('Please enter a delivery address.')
-      return
+
+    let payload: Parameters<typeof api.placeOrder>[0] = {
+      items: items.map(i => ({ product_id: i.product.id, quantity: i.quantity })),
+      fulfilment_method: fulfilment,
+      payment_method: 'cash_on_delivery',
     }
+
+    if (fulfilment === 'pickup') {
+      if (!selectedStoreId) {
+        setPlaceError('Please choose a store to collect from.')
+        return
+      }
+      payload.store_id = selectedStoreId
+    } else {
+      const saved = selectedAddressId === 'new' ? null : savedAddresses.find(a => a.id === selectedAddressId)
+      if (saved) {
+        // Deliver to a saved address — its pinned coordinates resolve the store.
+        payload.delivery_address = saved.address
+        payload.delivery_latitude = saved.latitude
+        payload.delivery_longitude = saved.longitude
+      } else {
+        if (!deliveryAddress.trim()) {
+          setPlaceError('Please enter a delivery address.')
+          return
+        }
+        const resolved = coords ?? (await getDeliveryCoords())
+        payload.delivery_address = deliveryAddress.trim()
+        payload.delivery_latitude = resolved.latitude
+        payload.delivery_longitude = resolved.longitude
+      }
+    }
+
     try {
-      const resolved = coords ?? (await getDeliveryCoords())
-      const result = await placeOrderMutation.mutateAsync({
-        items: items.map(i => ({ product_id: i.product.id, quantity: i.quantity })),
-        delivery_address: deliveryAddress.trim(),
-        delivery_latitude: resolved.latitude,
-        delivery_longitude: resolved.longitude,
-        payment_method: 'cash_on_delivery',
-      })
+      const result = await placeOrderMutation.mutateAsync(payload)
       // Keep-on-cancel decision (#04): OrderCartPolicy keeps cart when dispatch is
-      // cancelled/retrying so Customer can re-checkout. Only clear when backend
-      // confirms the order proceeded (assigned).
-      if (result.dispatch?.status === 'assigned') {
+      // cancelled/retrying so Customer can re-checkout. Clear when the order
+      // proceeded (assigned) or was accepted for store pickup.
+      if (result.dispatch?.status === 'assigned' || result.dispatch?.status === 'pickup') {
         clearCart()
+      }
+      // Optionally keep a newly typed address for next time (non-fatal).
+      if (fulfilment === 'delivery' && selectedAddressId === 'new' && saveAddress && payload.delivery_address && payload.delivery_latitude != null) {
+        try {
+          await api.createAddress({
+            label: addressLabel.trim() || 'Home',
+            address: payload.delivery_address,
+            latitude: payload.delivery_latitude,
+            longitude: payload.delivery_longitude!,
+            is_default: savedAddresses.length === 0,
+          })
+          queryClient.invalidateQueries({ queryKey: ['addresses'] })
+        } catch {
+          // The order matters more than the address book write.
+        }
       }
       setPlacedOrder({ order_number: result.data.order_number, id: result.data.id, payment_status: result.data.payment_status })
       setDispatch(result.dispatch)
@@ -193,7 +264,7 @@ export default function CartClient() {
                       </span>
                     </div>
                     <div className="flex justify-between text-gray-500">
-                      <span>Delivery</span>
+                      <span>{fulfilment === 'pickup' ? 'Pickup' : 'Delivery'}</span>
                       <span className={deliveryFee === 0 ? 'text-green-600 font-medium' : ''}>
                         {deliveryFee === 0 ? 'Free' : `R${deliveryFee.toFixed(2)}`}
                       </span>
@@ -225,24 +296,118 @@ export default function CartClient() {
                         <p className="text-xs text-accent">{placeError}</p>
                       )}
 
-                      {coords?.usedFallback && <LocationFallbackNotice />}
-
-                      <div>
-                        <label htmlFor="delivery-address" className="block text-xs font-medium text-gray-600 mb-1">
-                          Delivery Address
-                        </label>
-                        <div className="relative">
-                          <MapPin size={14} className="absolute left-3 top-3 text-gray-400" />
-                          <textarea
-                            id="delivery-address"
-                            rows={2}
-                            value={deliveryAddress}
-                            onChange={e => setDeliveryAddress(e.target.value)}
-                            className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none resize-none"
-                            placeholder="Enter your delivery address"
-                          />
-                        </div>
+                      {/* How would you like to get your order? */}
+                      <div className="grid grid-cols-2 gap-1 p-1 bg-gray-100 rounded-lg" role="group" aria-label="Fulfilment method">
+                        {(['delivery', 'pickup'] as const).map(method => (
+                          <button
+                            key={method}
+                            type="button"
+                            aria-pressed={fulfilment === method}
+                            onClick={() => setFulfilment(method)}
+                            className={`flex items-center justify-center gap-1.5 py-2 rounded-md text-sm font-medium transition-colors ${
+                              fulfilment === method ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                            }`}
+                          >
+                            {method === 'delivery' ? <MapPin size={15} /> : <StoreIcon size={15} />}
+                            {method === 'delivery' ? 'Deliver' : 'Pickup'}
+                          </button>
+                        ))}
                       </div>
+
+                      {coords?.usedFallback && fulfilment === 'delivery' && selectedAddressId === 'new' && <LocationFallbackNotice />}
+
+                      {fulfilment === 'delivery' ? (
+                        savedAddresses.length > 0 || addressesLoading ? (
+                          <div>
+                            <label htmlFor="saved-address" className="block text-xs font-medium text-gray-600 mb-1">
+                              Deliver to
+                            </label>
+                            {addressesLoading ? (
+                              <div className="h-9 rounded-lg bg-gray-100 animate-pulse" aria-hidden="true" />
+                            ) : (
+                              <select
+                                id="saved-address"
+                                value={String(selectedAddressId)}
+                                onChange={e => setSelectedAddressId(e.target.value === 'new' ? 'new' : Number(e.target.value))}
+                                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+                              >
+                                {savedAddresses.map(a => (
+                                  <option key={a.id} value={a.id}>
+                                    {a.label} — {a.address}
+                                  </option>
+                                ))}
+                                <option value="new">Enter a new address…</option>
+                              </select>
+                            )}
+                          </div>
+                        ) : null
+                      ) : (
+                        <div>
+                          <label htmlFor="pickup-store" className="block text-xs font-medium text-gray-600 mb-1">
+                            Collect from
+                          </label>
+                          <select
+                            id="pickup-store"
+                            value={selectedStoreId === '' ? '' : String(selectedStoreId)}
+                            onChange={e => setSelectedStoreId(e.target.value === '' ? '' : Number(e.target.value))}
+                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+                          >
+                            {stores.length === 0 && <option value="">Loading stores…</option>}
+                            {stores.map(s => (
+                              <option key={s.id} value={s.id}>
+                                {s.name} — {s.address}
+                              </option>
+                            ))}
+                          </select>
+                          <p className="text-xs text-gray-400 mt-1">We&apos;ll pack your order ready for you to collect. No delivery fee.</p>
+                        </div>
+                      )}
+
+                      {fulfilment === 'delivery' && selectedAddressId === 'new' && (
+                        <>
+                          <div>
+                            <label htmlFor="delivery-address" className="block text-xs font-medium text-gray-600 mb-1">
+                              Delivery Address
+                            </label>
+                            <div className="relative">
+                              <MapPin size={14} className="absolute left-3 top-3 text-gray-400" />
+                              <textarea
+                                id="delivery-address"
+                                rows={2}
+                                value={deliveryAddress}
+                                onChange={e => setDeliveryAddress(e.target.value)}
+                                className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none resize-none"
+                                placeholder="Enter your delivery address"
+                              />
+                            </div>
+                          </div>
+
+                          {coords && (
+                            <div className="text-xs text-gray-500 space-y-1.5">
+                              <label className="flex items-center gap-2 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={saveAddress}
+                                  onChange={e => setSaveAddress(e.target.checked)}
+                                  className="h-3.5 w-3.5 accent-primary"
+                                />
+                                Save this address for next time
+                              </label>
+                              {saveAddress && (
+                                <input
+                                  type="text"
+                                  value={addressLabel}
+                                  onChange={e => setAddressLabel(e.target.value)}
+                                  maxLength={50}
+                                  aria-label="Address label"
+                                  placeholder="Label (e.g. Home, Work)"
+                                  className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+                                />
+                              )}
+                            </div>
+                          )}
+                        </>
+                      )}
 
                       <div className="flex gap-2">
                         <button

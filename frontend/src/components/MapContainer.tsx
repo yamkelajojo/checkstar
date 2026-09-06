@@ -25,6 +25,29 @@ const TILE_ATTRIBUTION = '&copy; OpenStreetMap contributors'
 const DURBAN_CENTER: [number, number] = [-29.825, 31.00]
 const DEFAULT_ZOOM = 12.5
 
+/**
+ * Checkstar-branded store pin: the brand-orange teardrop with the star mark,
+ * replacing Leaflet's default blue marker on the store locator.
+ */
+function checkstarPinIcon(L: any) {
+  return L.divIcon({
+    className: 'checkstar-map-pin',
+    html: `
+      <svg width="30" height="40" viewBox="0 0 36 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M18 1C8.6 1 1 8.6 1 18c0 5.5 3.2 11.6 6.4 16.4 3.3 5 6.9 9 8.9 11 .9.9 2.5.9 3.4 0 2-2 5.6-6 8.9-11C31.8 29.6 35 23.5 35 18 35 8.6 27.4 1 18 1z"
+          fill="#EB6522" stroke="#ffffff" stroke-width="2"/>
+        <g transform="translate(6.6, 5.6) scale(1.0)">
+          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+            fill="#ffffff"/>
+        </g>
+      </svg>`,
+    iconSize: [30, 40],
+    iconAnchor: [15, 40],
+    popupAnchor: [0, -38],
+    tooltipAnchor: [0, -34],
+  })
+}
+
 export default function MapContainer({
   center = DURBAN_CENTER,
   zoom = DEFAULT_ZOOM,
@@ -63,16 +86,6 @@ export default function MapContainer({
     async function initMap() {
       const L = await import('leaflet')
       leafletRef.current = L
-
-      if (!(L.Icon.Default.prototype as any)._checkstarPatched) {
-        delete (L.Icon.Default.prototype as any)._getIconUrl
-        L.Icon.Default.mergeOptions({
-          iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-          iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-          shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-        })
-        ;(L.Icon.Default.prototype as any)._checkstarPatched = true
-      }
 
       map = L.map(mapEl, {
         center: initialCenter,
@@ -144,7 +157,7 @@ export default function MapContainer({
     markersRef.current = []
 
     markers.forEach(({ position, popup, tooltip }) => {
-      const marker = L.marker(position).addTo(map)
+      const marker = L.marker(position, { icon: checkstarPinIcon(L) }).addTo(map)
       if (popup) marker.bindPopup(popup)
       if (tooltip) marker.bindTooltip(tooltip)
       markersRef.current.push(marker)

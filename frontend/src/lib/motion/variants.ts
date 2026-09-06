@@ -238,6 +238,7 @@ import {
   Bike,
   CheckCircle,
   XCircle,
+  ShoppingBag,
 } from 'lucide-react'
 
 export const statusConfig: Record<string, { color: string; bg: string; icon: typeof ClockIcon; label: string }> = {
@@ -245,6 +246,8 @@ export const statusConfig: Record<string, { color: string; bg: string; icon: typ
   confirmed: { color: 'text-blue-600', bg: 'bg-blue-100', icon: AlertCircle, label: 'Confirmed' },
   retrying: { color: 'text-amber-600', bg: 'bg-amber-100', icon: ClockIcon, label: 'Finding Rider' },
   preparing: { color: 'text-indigo-600', bg: 'bg-indigo-100', icon: Package, label: 'Preparing' },
+  // Pickup fulfilment only: order packed, waiting at the store for collection.
+  ready: { color: 'text-orange-600', bg: 'bg-orange-100', icon: ShoppingBag, label: 'Ready for Pickup' },
   out_for_delivery: { color: 'text-purple-600', bg: 'bg-purple-100', icon: Bike, label: 'Out for Delivery' },
   delivered: { color: 'text-green-600', bg: 'bg-green-100', icon: CheckCircle, label: 'Delivered' },
   cancelled: { color: 'text-red-600', bg: 'bg-red-100', icon: XCircle, label: 'Cancelled' },

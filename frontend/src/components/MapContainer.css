@@ -9,6 +9,23 @@
   background: #090B10 !important;
 }
 
+/* Checkstar store pin: reset Leaflet's default white box around divIcon
+   content and give the teardrop a soft lift off the tiles. */
+.MapContainer .checkstar-map-pin {
+  background: transparent;
+  border: none;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.35));
+}
+
+.MapContainer .checkstar-map-pin:hover svg {
+  transform: scale(1.08);
+  transform-origin: 50% 100%;
+}
+
+.MapContainer .checkstar-map-pin svg {
+  transition: transform 120ms ease;
+}
+
 .MapContainer .leaflet-control-zoom {
   background: rgba(13, 17, 26, 0.82) !important;
   backdrop-filter: blur(16px);

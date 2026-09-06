@@ -162,10 +162,12 @@ export default function OrderDetailClient({ id }: { id: string }) {
   const StatusIcon = statusCfg.icon
   // Server-driven cancellation gate (#05): prefer API can_cancel, no hardcoded array.
   const isCancellable = order.can_cancel ?? false
+  const isPickup = (order.fulfilment_method ?? 'delivery') === 'pickup'
   const isOutForDelivery = order.status === 'out_for_delivery'
   const isDelivered = order.status === 'delivered'
   const alreadyReviewed = !!(order as any).review || (order as any).rider_rating != null
-  const canReview = isDelivered && !reviewSubmitted && !alreadyReviewed
+  // Pickup orders have no rider, so there is nobody to rate.
+  const canReview = isDelivered && !!order.rider && !reviewSubmitted && !alreadyReviewed
 
   return (
     <>
@@ -206,7 +208,7 @@ export default function OrderDetailClient({ id }: { id: string }) {
                 <p className="font-medium">R{Number(order.subtotal).toFixed(2)}</p>
               </div>
               <div>
-                <span className="text-gray-400">Delivery Fee</span>
+                <span className="text-gray-400">{isPickup ? 'Pickup' : 'Delivery Fee'}</span>
                 <p className="font-medium">{Number(order.delivery_fee) === 0 ? 'Free' : `R${Number(order.delivery_fee).toFixed(2)}`}</p>
               </div>
               <div>
@@ -214,11 +216,18 @@ export default function OrderDetailClient({ id }: { id: string }) {
                 <p className="font-semibold text-lg">R{Number(order.total).toFixed(2)}</p>
               </div>
               <div>
-                <span className="text-gray-400">Delivery Address</span>
-                <p className="font-medium flex items-start gap-1.5">
-                  <MapPin size={14} className="mt-0.5 flex-shrink-0 text-gray-400" />
-                  {order.delivery_address || 'No address specified'}
-                </p>
+                <span className="text-gray-400">{isPickup ? 'Collect From' : 'Delivery Address'}</span>
+                {isPickup ? (
+                  <p className="font-medium flex items-start gap-1.5">
+                    <MapPin size={14} className="mt-0.5 flex-shrink-0 text-gray-400" />
+                    {order.store ? `${order.store.name} — ${order.store.address}` : 'Store pickup'}
+                  </p>
+                ) : (
+                  <p className="font-medium flex items-start gap-1.5">
+                    <MapPin size={14} className="mt-0.5 flex-shrink-0 text-gray-400" />
+                    {order.delivery_address || 'No address specified'}
+                  </p>
+                )}
               </div>
             </div>
 

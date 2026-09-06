@@ -51,6 +51,7 @@ export default function OrdersClient() {
               <option value="confirmed">Confirmed</option>
               <option value="retrying">Finding Rider</option>
               <option value="preparing">Preparing</option>
+              <option value="ready">Ready for Pickup</option>
               <option value="out_for_delivery">Out for Delivery</option>
               <option value="delivered">Delivered</option>
               <option value="cancelled">Cancelled</option>

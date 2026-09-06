@@ -6,6 +6,7 @@ import { motion } from 'motion/react'
 import { User, Mail, Phone, Loader2, Save, CheckCircle, MailCheck } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth-store'
 import { api } from '@/lib/api'
+import AddressBookSection from './AddressBookSection'
 
 export default function ProfileClient() {
   const router = useRouter()
@@ -135,6 +136,8 @@ export default function ProfileClient() {
               </motion.button>
             </form>
           </div>
+
+          <AddressBookSection />
         </motion.div>
       </main>
     </>

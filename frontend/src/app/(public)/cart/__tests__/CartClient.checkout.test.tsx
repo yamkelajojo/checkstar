@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import React from 'react'
-import { ApiError } from '@/lib/api'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { Product } from '@/types'
 
 /**
@@ -9,7 +9,37 @@ import type { Product } from '@/types'
  * - Guests get an animated sign-in modal instead of the old amber banner.
  * - The item row must keep the name readable on phones (the old 5-column row
  *   squeezed it to one character per line — see user screenshot).
+ * - Fulfilment toggle: delivery (saved-address prompt) vs store pickup.
  */
+
+const { ApiError, getAddressesMock, getStoresMock, createAddressMock } = vi.hoisted(() => {
+  class ApiError extends Error {
+    status: number
+    payload: unknown
+    constructor(message: string, status: number, payload: unknown = null) {
+      super(message)
+      this.name = 'ApiError'
+      this.status = status
+      this.payload = payload
+    }
+  }
+  return {
+    ApiError,
+    getAddressesMock: vi.fn(),
+    getStoresMock: vi.fn(),
+    createAddressMock: vi.fn(),
+  }
+})
+
+vi.mock('@/lib/api', () => ({
+  ApiError,
+  apiErrorReason: () => null,
+  api: {
+    getAddresses: (...args: unknown[]) => getAddressesMock(...args),
+    getStores: (...args: unknown[]) => getStoresMock(...args),
+    createAddress: (...args: unknown[]) => createAddressMock(...args),
+  },
+}))
 
 const push = vi.fn()
 vi.mock('next/navigation', () => ({
@@ -82,16 +112,39 @@ const seedCart = (over: Partial<Product> = {}) =>
     itemCount: 2,
   } as never)
 
+function renderCart() {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  })
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <CartClient />
+    </QueryClientProvider>,
+  )
+}
+
+async function openCheckout() {
+  authState.authenticated = true
+  renderCart()
+  fireEvent.click(screen.getByRole('button', { name: /proceed to checkout/i }))
+  await screen.findByRole('group', { name: /fulfilment method/i })
+}
+
 beforeEach(() => {
   vi.clearAllMocks()
   authState.authenticated = false
   document.body.style.overflow = ''
   seedCart()
+  getAddressesMock.mockResolvedValue({ data: [] })
+  getStoresMock.mockResolvedValue({ data: [
+    { id: 3, name: 'Overport Store', address: '78 Phoenix Highway', is_active: true },
+    { id: 5, name: 'Umhlanga Store', address: '12 Lagoon Drive', is_active: false },
+  ] })
 })
 
 describe('CartClient guest checkout gate', () => {
   it('opens the sign-in modal when a guest proceeds to checkout', async () => {
-    render(<CartClient />)
+    renderCart()
 
     fireEvent.click(screen.getByRole('button', { name: /proceed to checkout/i }))
 
@@ -106,10 +159,7 @@ describe('CartClient guest checkout gate', () => {
   })
 
   it('does not show the modal for authenticated users — straight to the checkout form', async () => {
-    authState.authenticated = true
-    render(<CartClient />)
-
-    fireEvent.click(screen.getByRole('button', { name: /proceed to checkout/i }))
+    await openCheckout()
 
     expect(await screen.findByLabelText(/delivery address/i)).toBeTruthy()
     expect(screen.queryByText('Sign in to check out')).toBeNull()
@@ -117,10 +167,9 @@ describe('CartClient guest checkout gate', () => {
 
   it('opens the modal (not the old amber banner) when placing the order returns 401', async () => {
     authState.authenticated = true
-    mutateAsync.mockRejectedValue(new ApiError('Unauthenticated.', 401, null))
+    mutateAsync.mockRejectedValue(new ApiError('Unauthenticated.', 401))
 
-    render(<CartClient />)
-    fireEvent.click(screen.getByRole('button', { name: /proceed to checkout/i }))
+    await openCheckout()
     const address = await screen.findByLabelText(/delivery address/i)
     fireEvent.change(address, { target: { value: '12 Umgeni Rd, Durban' } })
     fireEvent.click(screen.getByRole('button', { name: /place order/i }))
@@ -130,7 +179,7 @@ describe('CartClient guest checkout gate', () => {
   })
 
   it('closes the modal from the close button', async () => {
-    render(<CartClient />)
+    renderCart()
     fireEvent.click(screen.getByRole('button', { name: /proceed to checkout/i }))
     await screen.findByText('Sign in to check out')
     fireEvent.click(screen.getByRole('button', { name: 'Close' }))
@@ -140,7 +189,7 @@ describe('CartClient guest checkout gate', () => {
 
 describe('CartClient mobile row layout', () => {
   it('groups the line total, stepper and remove control into one right rail so the name keeps its width on phones', () => {
-    render(<CartClient />)
+    renderCart()
 
     const name = screen.getByText('Baby Spinach 500g')
     // Name column allows two lines (line-clamp) instead of a crushed single-line truncate.
@@ -158,9 +207,119 @@ describe('CartClient mobile row layout', () => {
 
   it('shows the empty state with a browse action', () => {
     useCartStore.setState({ items: [], total: 0, itemCount: 0 } as never)
-    render(<CartClient />)
+    renderCart()
 
     expect(screen.getByText('Your cart is empty')).toBeTruthy()
     expect(screen.getByRole('link', { name: /browse products/i })).toHaveAttribute('href', '/products')
+  })
+})
+
+describe('CartClient fulfilment (delivery vs pickup)', () => {
+  it('prompts delivery customers with their saved addresses and uses the saved pin for the order', async () => {
+    getAddressesMock.mockResolvedValue({ data: [
+      { id: 7, label: 'Home', address: '12 Flint Road, Durban', latitude: -29.8123, longitude: 31.0099, is_default: true },
+      { id: 9, label: 'Work', address: '45 Umbilo Road, Durban', latitude: -29.8671, longitude: 31.0052, is_default: false },
+    ] })
+    mutateAsync.mockResolvedValue({
+      data: { id: 1, order_number: 'CS-1', payment_status: 'pending' },
+      dispatch: { status: 'assigned' },
+    })
+
+    await openCheckout()
+
+    // The picker is preselected to the default address — no typing needed.
+    const picker = await screen.findByLabelText(/deliver to/i) as HTMLSelectElement
+    expect(picker.value).toBe('7')
+    expect(screen.getByRole('option', { name: /Home — 12 Flint Road/ })).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: /place order/i }))
+
+    await waitFor(() => expect(mutateAsync).toHaveBeenCalledWith(expect.objectContaining({
+      fulfilment_method: 'delivery',
+      delivery_address: '12 Flint Road, Durban',
+      delivery_latitude: -29.8123,
+      delivery_longitude: 31.0099,
+    })))
+  })
+
+  it('switching to pickup offers active stores, sends the store id, and clears the cart', async () => {
+    mutateAsync.mockResolvedValue({
+      data: { id: 2, order_number: 'CS-2', payment_status: 'pending' },
+      dispatch: { status: 'pickup' },
+    })
+
+    await openCheckout()
+
+    fireEvent.click(screen.getByRole('button', { name: /pickup/i }))
+
+    const storeSelect = await screen.findByLabelText(/collect from/i) as HTMLSelectElement
+    // Only ACTIVE stores are offered (Umhlanga is inactive).
+    expect(await screen.findByRole('option', { name: /Overport Store — 78 Phoenix Highway/ })).toBeTruthy()
+    expect(screen.queryByRole('option', { name: /Umhlanga/ })).toBeNull()
+    expect(storeSelect.value).toBe('3')
+
+    fireEvent.click(screen.getByRole('button', { name: /place order/i }))
+
+    await waitFor(() => expect(mutateAsync).toHaveBeenCalledWith(expect.objectContaining({
+      fulfilment_method: 'pickup',
+      store_id: 3,
+    })))
+    // A pickup order was accepted — the cart must be cleared even though no
+    // rider was assigned (status 'pickup', not 'assigned').
+    await waitFor(() => expect(useCartStore.getState().items).toHaveLength(0))
+  })
+
+  it('pickup without a store choice is blocked with a message, not a request', async () => {
+    getStoresMock.mockResolvedValue({ data: [] })
+
+    await openCheckout()
+    fireEvent.click(screen.getByRole('button', { name: /pickup/i }))
+
+    fireEvent.click(screen.getByRole('button', { name: /place order/i }))
+
+    expect(await screen.findByText(/choose a store to collect from/i)).toBeTruthy()
+    expect(mutateAsync).not.toHaveBeenCalled()
+  })
+
+  it('keeps the cart when a delivery order could not be assigned', async () => {
+    mutateAsync.mockResolvedValue({
+      data: { id: 3, order_number: 'CS-3', payment_status: 'pending' },
+      dispatch: { status: 'retrying' },
+    })
+
+    await openCheckout()
+    const address = await screen.findByLabelText(/delivery address/i)
+    fireEvent.change(address, { target: { value: '12 Umgeni Rd, Durban' } })
+    fireEvent.click(screen.getByRole('button', { name: /place order/i }))
+
+    await waitFor(() => expect(mutateAsync).toHaveBeenCalled())
+    expect(useCartStore.getState().items).toHaveLength(1)
+  })
+
+  it('offers to save a newly typed address with the order', async () => {
+    createAddressMock.mockResolvedValue({ data: { id: 21, label: 'Home' } })
+    mutateAsync.mockResolvedValue({
+      data: { id: 4, order_number: 'CS-4', payment_status: 'pending' },
+      dispatch: { status: 'assigned' },
+    })
+
+    await openCheckout()
+
+    // Choose "Enter a new address…" in the picker (single saved address case:
+    // none saved → the textarea shows immediately).
+    fireEvent.change(screen.getByLabelText(/delivery address/i), { target: { value: '9 New Street, Durban' } })
+    fireEvent.click(screen.getByRole('checkbox', { name: /save this address for next time/i }))
+    fireEvent.change(screen.getByLabelText(/address label/i), { target: { value: 'Home' } })
+    fireEvent.click(screen.getByRole('button', { name: /place order/i }))
+
+    await waitFor(() => expect(mutateAsync).toHaveBeenCalledWith(expect.objectContaining({
+      delivery_address: '9 New Street, Durban',
+      delivery_latitude: -29.85,
+    })))
+    await waitFor(() => expect(createAddressMock).toHaveBeenCalledWith(expect.objectContaining({
+      label: 'Home',
+      address: '9 New Street, Durban',
+      is_default: true,
+    })))
   })
 })
