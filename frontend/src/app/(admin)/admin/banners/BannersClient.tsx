@@ -7,6 +7,8 @@ import {
   ChevronDown, ChevronUp, Save, X, Loader2, AlertCircle,
 } from 'lucide-react'
 import { useAdminBanners, useCreateBanner, useUpdateBanner, useDeleteBanner } from '@/lib/query'
+import Link from 'next/link'
+import { useAuthStore } from '@/stores/auth-store'
 import { toast } from 'sonner'
 import { fadeUpTight as fadeUp, staggerTight as stagger } from '@/lib/motion/variants'
 import type { Banner, BannerSlide } from '@/types'
@@ -313,8 +315,16 @@ function BannerForm({ banner, onClose }: { banner?: Banner | null; onClose: () =
   )
 }
 
+const BANNER_ROLES = ['developer', 'store_owner', 'store_manager']
+
 export default function BannersClient() {
-  const { data: banners = [], isLoading, error } = useAdminBanners()
+  const { user } = useAuthStore()
+  // Banner routes are role:developer,store_owner,store_manager — the (admin)
+  // layout also admits logistics officers to /admin/*, so gate here rather
+  // than rendering a page whose every API call 403s.
+  const canManage = !!user && BANNER_ROLES.includes(user.role)
+
+  const { data: banners = [], isLoading, error } = useAdminBanners({ enabled: canManage })
   const deleteBanner = useDeleteBanner()
 
   const [showForm, setShowForm] = useState(false)
@@ -329,6 +339,23 @@ export default function BannersClient() {
     if (deletingId != null) {
       deleteBanner.mutate(deletingId, { onSuccess: () => { toast.success('Banner deleted'); setDeletingId(null) } })
     }
+  }
+
+  if (!canManage) {
+    return (
+      <main className="max-w-4xl mx-auto px-4 py-16 text-center">
+        <div className="w-12 h-12 rounded-full bg-rose-100 flex items-center justify-center mx-auto mb-4">
+          <X size={20} className="text-rose-500" />
+        </div>
+        <h1 className="text-xl font-semibold">Banner access only</h1>
+        <p className="text-sm text-gray-500 mt-2">
+          Banners are managed by store owners and managers. Ask an owner for access.
+        </p>
+        <Link href="/admin/dashboard" className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline mt-4">
+          Back to Dashboard
+        </Link>
+      </main>
+    )
   }
 
   return (

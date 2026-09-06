@@ -33,12 +33,9 @@ export default function StaffClient() {
   const [storeId, setStoreId] = useState<string>('')
   const [hireError, setHireError] = useState<string | null>(null)
 
-  // Roster gate: store owners/managers manage staff; developers are platform
-  // admins and get the same view (mirrors the (admin) layout staffRoles).
-  const canManage =
-    user?.role === 'store_owner' ||
-    user?.role === 'store_manager' ||
-    user?.role === 'developer'
+  // Gate mirrors the backend route group exactly (role:store_owner,developer).
+  // Managers must NOT see a staff UI the API would 403.
+  const canManage = user?.role === 'store_owner' || user?.role === 'developer'
 
   const { data: stores = [] } = useStores()
   const activeStoreId = storeId || (stores.length ? String((stores[0] as { id: number }).id) : '')

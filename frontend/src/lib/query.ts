@@ -68,10 +68,11 @@ export function useBanners() {
   })
 }
 
-export function useAdminBanners() {
+export function useAdminBanners(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['admin-banners'],
     queryFn: () => api.getAdminBanners().then(r => r.data),
+    enabled: options?.enabled,
   })
 }
 

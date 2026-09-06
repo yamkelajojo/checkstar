@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -50,8 +50,10 @@ export default function CartClient() {
     queryFn: api.getStores,
     enabled: showCheckoutForm && fulfilment === 'pickup',
   })
-  const savedAddresses: UserAddress[] = addressesData?.data ?? []
-  const stores: StoreType[] = (storesData?.data ?? []).filter(s => s.is_active)
+  // useMemo keeps these referentially stable across renders — the selection
+  // effects below depend on them and must not re-run on every render.
+  const savedAddresses: UserAddress[] = useMemo(() => addressesData?.data ?? [], [addressesData])
+  const stores: StoreType[] = useMemo(() => (storesData?.data ?? []).filter(s => s.is_active), [storesData])
 
   // Prompt with the customer's saved addresses: default to their default one.
   useEffect(() => {

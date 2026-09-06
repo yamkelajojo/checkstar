@@ -42,8 +42,9 @@ export default function MessagesClient() {
   const [replyBody, setReplyBody] = useState('')
   const [replyError, setReplyError] = useState<string | null>(null)
 
-  // Inbox is a platform-admin tool — matches the dashboard gate.
-  const canView = user?.role === 'developer' || user?.role === 'store_owner' || user?.role === 'store_manager'
+  // The inbox lives under /api/admin/* which is role:developer only — the UI
+  // must not offer it to roles the backend would 403.
+  const canView = user?.role === 'developer'
 
   const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ['contact-messages'],

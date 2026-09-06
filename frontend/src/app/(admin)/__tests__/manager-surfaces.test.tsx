@@ -188,14 +188,21 @@ const staffRoster = {
 }
 
 describe('StaffClient', () => {
-  it('blocks users without owner/manager roles', () => {
+  it('blocks users without staff-management roles', () => {
     setAuth({ id: 5, name: 'Rider Rita', email: 'rider@x.co.za', role: 'rider' })
     renderWithProviders(<StaffClient />)
     expect(screen.getByText('Staff access only')).toBeInTheDocument()
   })
 
-  it('renders the roster with nested user data and shields owners from revocation', async () => {
+  it('blocks store managers — the backend staff routes are owner/developer only', () => {
     setAuth({ id: 3, name: 'Sipho Manager', email: 'manager@x.co.za', role: 'store_manager' })
+    renderWithProviders(<StaffClient />)
+    expect(screen.getByText('Staff access only')).toBeInTheDocument()
+    expect(apiMocks.listStaff).not.toHaveBeenCalled()
+  })
+
+  it('renders the roster with nested user data and shields owners from revocation', async () => {
+    setAuth({ id: 2, name: 'Thandi Owner', email: 'owner@x.co.za', role: 'store_owner' })
     apiMocks.listStaff.mockResolvedValue(staffRoster)
 
     renderWithProviders(<StaffClient />)
@@ -211,7 +218,7 @@ describe('StaffClient', () => {
   })
 
   it('validates the hire form before calling the API', async () => {
-    setAuth({ id: 3, name: 'Sipho Manager', email: 'manager@x.co.za', role: 'store_manager' })
+    setAuth({ id: 2, name: 'Thandi Owner', email: 'owner@x.co.za', role: 'store_owner' })
     apiMocks.listStaff.mockResolvedValue({ data: [] })
 
     renderWithProviders(<StaffClient />)
@@ -228,7 +235,7 @@ describe('StaffClient', () => {
   })
 
   it('surfaces a 409 duplicate-hire rejection inline', async () => {
-    setAuth({ id: 3, name: 'Sipho Manager', email: 'manager@x.co.za', role: 'store_manager' })
+    setAuth({ id: 2, name: 'Thandi Owner', email: 'owner@x.co.za', role: 'store_owner' })
     apiMocks.listStaff.mockResolvedValue({ data: [] })
     const { ApiError } = await import('@/lib/api')
     apiMocks.hireStaff.mockRejectedValue(new ApiError('User already has a store assignment', 409, { message: 'User already has a store assignment' }))
@@ -257,6 +264,13 @@ describe('MessagesClient', () => {
     setAuth({ id: 6, name: 'Rider Rita', email: 'rider@x.co.za', role: 'rider' })
     renderWithProviders(<MessagesClient />)
     expect(screen.getByText('Admin access only')).toBeInTheDocument()
+  })
+
+  it('blocks store owners — the admin message routes are developer-only', () => {
+    setAuth({ id: 2, name: 'Thandi Owner', email: 'owner@x.co.za', role: 'store_owner' })
+    renderWithProviders(<MessagesClient />)
+    expect(screen.getByText('Admin access only')).toBeInTheDocument()
+    expect(apiMocks.getMessages).not.toHaveBeenCalled()
   })
 
   it('marks an unread message read when opened and allows replying', async () => {

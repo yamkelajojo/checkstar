@@ -73,6 +73,41 @@ export default function AdminDashboardClient() {
   return <AdminDashboardBody user={user} queryClient={queryClient} />
 }
 
+// Module scope — components defined inside a render function get a fresh
+// identity every render, forcing React to unmount/remount the whole grid.
+function StatCard({ icon: Icon, label, value, color }: { icon: React.ElementType; label: string; value: number | string; color: string }) {
+  return (
+    <motion.div variants={fadeUp} className="bg-white border border-gray-100 rounded-xl p-5 hover:shadow-md transition-shadow">
+      <div className="flex items-center gap-3 mb-3">
+        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${color}`}>
+          <Icon size={20} className="text-white" />
+        </div>
+        <span className="text-sm text-gray-500">{label}</span>
+      </div>
+      <p className="font-display text-2xl font-bold text-gray-900">{value}</p>
+    </motion.div>
+  )
+}
+
+function LinkCard({ link }: { link: { href: string; label: string; icon: React.ElementType; desc: string } }) {
+  const Icon = link.icon
+  return (
+    <Link
+      href={link.href}
+      className="group bg-white border border-gray-100 rounded-xl p-5 hover:shadow-md hover:border-primary/20 transition-all"
+    >
+      <div className="flex items-center gap-3 mb-2">
+        <div className="w-10 h-10 bg-primary-light rounded-lg flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+          <Icon size={20} className="text-primary" />
+        </div>
+        <ArrowUpRight size={16} className="text-gray-300 ml-auto group-hover:text-primary transition-colors" />
+      </div>
+      <h3 className="font-medium text-gray-900 mb-0.5">{link.label}</h3>
+      <p className="text-xs text-gray-400">{link.desc}</p>
+    </Link>
+  )
+}
+
 function AdminDashboardBody({ user, queryClient }: { user: ReturnType<typeof useAuthStore.getState>['user']; queryClient: ReturnType<typeof useQueryClient> }) {
   const { data: products = [], isLoading: productsLoading, error: productsError } = useAllProducts()
   const { data: categories = [], isLoading: categoriesLoading, error: categoriesError } = useCategories()
@@ -121,39 +156,6 @@ function AdminDashboardBody({ user, queryClient }: { user: ReturnType<typeof use
   const healthStatus = health?.status ?? (healthError ? 'error' : undefined)
   const serviceValues = Object.values(health?.services ?? {})
   const allOk = healthStatus === 'ok' && serviceValues.every((s) => s === 'ok')
-
-  function StatCard({ icon: Icon, label, value, color }: { icon: React.ElementType; label: string; value: number | string; color: string }) {
-    return (
-      <motion.div variants={fadeUp} className="bg-white border border-gray-100 rounded-xl p-5 hover:shadow-md transition-shadow">
-        <div className="flex items-center gap-3 mb-3">
-          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${color}`}>
-            <Icon size={20} className="text-white" />
-          </div>
-          <span className="text-sm text-gray-500">{label}</span>
-        </div>
-        <p className="font-display text-2xl font-bold text-gray-900">{value}</p>
-      </motion.div>
-    )
-  }
-
-  function LinkCard({ link }: { link: { href: string; label: string; icon: React.ElementType; desc: string } }) {
-    const Icon = link.icon
-    return (
-      <Link
-        href={link.href}
-        className="group bg-white border border-gray-100 rounded-xl p-5 hover:shadow-md hover:border-primary/20 transition-all"
-      >
-        <div className="flex items-center gap-3 mb-2">
-          <div className="w-10 h-10 bg-primary-light rounded-lg flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-            <Icon size={20} className="text-primary" />
-          </div>
-          <ArrowUpRight size={16} className="text-gray-300 ml-auto group-hover:text-primary transition-colors" />
-        </div>
-        <h3 className="font-medium text-gray-900 mb-0.5">{link.label}</h3>
-        <p className="text-xs text-gray-400">{link.desc}</p>
-      </Link>
-    )
-  }
 
   return (
     <main className="max-w-6xl mx-auto px-4 py-8">
