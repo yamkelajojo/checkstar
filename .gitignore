@@ -26,3 +26,7 @@ homepage-evidence.png
 # Dependencies & build caches (never commit)
 node_modules/
 *.tsbuildinfo
+
+# Playwright artifacts
+test-results/
+playwright-report/

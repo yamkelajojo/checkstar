@@ -1,5 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Dev-server asset requests arrive from the Arena preview proxy origins
+  // (3000-<sandbox>.e2b.app) and the device-simulator origin; allow them so
+  // next dev does not warn on cross-origin _next/* requests.
+  allowedDevOrigins: ['*.e2b.app'],
   images: {
     // Fallback for media that cannot be same-origin proxied. Product/store
     // images are normalised to same-origin paths via lib/media.ts; these
