@@ -13,12 +13,20 @@ use App\Models\User;
 use App\Services\DeliveryConfirmation;
 use App\Services\OrderStateMachine;
 use App\Services\PaymentStateMachine;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class DeliveryConfirmationTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function tearDown(): void
+    {
+        Carbon::setTestNow();
+
+        parent::tearDown();
+    }
 
     private DeliveryConfirmation $service;
 
@@ -29,6 +37,11 @@ class DeliveryConfirmationTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        // Freeze the clock: timestamp assertions compare against now() after
+        // several DB round-trips, which under a loaded runner can drift past
+        // the ±1s window and flake (seen on the MySQL 8 CI job).
+        Carbon::setTestNow(Carbon::parse('2026-09-06 12:00:00'));
 
         $this->service = new DeliveryConfirmation(
             new OrderStateMachine,
@@ -95,8 +108,7 @@ class DeliveryConfirmationTest extends TestCase
 
         $this->assertNotNull($result->fresh()->customer_confirmed_at);
         $this->assertTrue(
-            $result->fresh()->customer_confirmed_at->lte(now()->addSecond())
-            && $result->fresh()->customer_confirmed_at->gte(now()->subSecond()),
+            $result->fresh()->customer_confirmed_at->equalTo(now()),
         );
     }
 
