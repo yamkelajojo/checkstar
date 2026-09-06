@@ -24,12 +24,17 @@ const nextConfig = {
         destination: `${apiBase}/sanctum/:path*`,
       },
       {
-        source: '/products/:cat/:file',
+        // Media lives under /products/** on the API — but ONLY match real
+        // image files. Without the extension guard this rewrite would sit in
+        // front of the product detail route for every /products/<slug> URL
+        // (afterFiles rewrites run before dynamic routes) and product pages
+        // would be served the API's image fallback instead of HTML.
+        source: '/products/:cat/:file(.+\\.(?:png|jpe?g|webp|svg|gif|avif))',
         destination: `${apiBase}/products/:cat/:file`,
       },
       {
         // Media stored directly under products/ (no category segment).
-        source: '/products/:file',
+        source: '/products/:file(.+\\.(?:png|jpe?g|webp|svg|gif|avif))',
         destination: `${apiBase}/products/:file`,
       },
     ]

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'motion/react'
 import { ShoppingCart, ChevronLeft, Tag, Package } from 'lucide-react'
 import Link from 'next/link'
@@ -34,6 +35,15 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
   // the inline button when the related shelf leaves the viewport.
   const relatedSectionRef = useRef<HTMLElement | null>(null)
   const [relatedInView, setRelatedInView] = useState(false)
+  // Portalled to <body>: the page transition leaves a blur filter on the
+  // layout's main element, and any filtered ancestor becomes the containing
+  // block for position:fixed — which would pin the button to the page
+  // instead of the viewport.
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => {
+    setMounted(true)
+    return () => setMounted(false)
+  }, [])
 
   useEffect(() => {
     const el = relatedSectionRef.current
@@ -239,7 +249,9 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
       </div>
 
       {/* Fixed CTA — visible while the related shelf is on screen. Adds the
-          product you are viewing (not the item being scrolled). */}
+          product you are viewing (not the item being scrolled). Portalled to
+          <body> so it is truly viewport-fixed. */}
+      {mounted ? createPortal(
       <AnimatePresence>
         {relatedInView && (
           <motion.button
@@ -260,7 +272,9 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
             <span className="text-sm font-semibold border-l border-white/30 pl-2.5">R{price.toFixed(2)}</span>
           </motion.button>
         )}
-      </AnimatePresence>
+      </AnimatePresence>,
+      document.body,
+      ) : null}
     </>
   )
 }
