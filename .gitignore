@@ -30,3 +30,6 @@ node_modules/
 # Playwright artifacts
 test-results/
 playwright-report/
+
+# TS incremental build artifact
+*.tsbuildinfo
