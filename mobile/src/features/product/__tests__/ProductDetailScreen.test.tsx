@@ -6,8 +6,10 @@ import { useDeliveryStore } from '../../../stores/deliveryStore';
 import { TestWrapper } from '../../../test/utils';
 import type { ProductVO } from '../../../lib/product';
 
+const mockUseRelated = jest.fn(() => ({ data: [] }));
 jest.mock('../../catalog/hooks', () => ({
   useProduct: (slug: string) => mockUseProduct(slug),
+  useRelatedProducts: (slug: string) => mockUseRelated(slug),
 }));
 
 jest.mock('react-native-safe-area-context', () => ({
@@ -128,6 +130,24 @@ describe('specials display', () => {
   it('shows no special flag at full price', async () => {
     await renderDetail();
     expect(screen.queryByText(/Special Offer/i)).toBeNull();
+  });
+});
+
+describe('related items shelf', () => {
+  it('lists related products below the product info', async () => {
+    const related = vo();
+    related.id = 99;
+    related.name = 'Baby Carrots 500g';
+    mockUseRelated.mockReturnValue({ data: [related] });
+    await renderDetail();
+    expect(screen.getByText('You might also like')).toBeTruthy();
+    expect(screen.getByText('Baby Carrots 500g')).toBeTruthy();
+  });
+
+  it('renders no shelf when there are no related products', async () => {
+    mockUseRelated.mockReturnValue({ data: [] });
+    await renderDetail();
+    expect(screen.queryByText('You might also like')).toBeNull();
   });
 });
 

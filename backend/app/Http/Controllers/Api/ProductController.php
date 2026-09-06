@@ -184,4 +184,31 @@ class ProductController extends Controller
 
         return response()->json(['data' => $product]);
     }
+
+    /**
+     * Related / recommended items for the product page. Item-to-item scoring
+     * (same aisle, bought together, price band, popularity) with a popularity
+     * backfill so the shelf is always full. Same card shape as show().
+     */
+    public function related(string $slug, Request $request): JsonResponse
+    {
+        $product = Product::where('slug', $slug)
+            ->where('is_active', true)
+            ->firstOrFail();
+
+        $limit = min(12, max(1, (int) $request->query('limit', 8)));
+
+        $service = new \App\Services\RecommendationService;
+        $related = $service->getRelatedProducts($product, $limit);
+
+        $related->each(function (Product $item) {
+            $this->absolutizeImages($item);
+            $item->effective_price = $this->pricingService->effectivePrice($item, $item->specials ?? collect());
+            $this->appendStoreAvailability($item);
+        });
+
+        $this->appendTrackingMetrics($related->all());
+
+        return response()->json(['data' => $related->values()]);
+    }
 }

@@ -45,6 +45,15 @@ export function useProduct(slug: string) {
   })
 }
 
+export function useRelatedProducts(slug: string, limit = 8) {
+  return useQuery({
+    queryKey: ['related-products', slug],
+    queryFn: () => api.getRelatedProducts(slug, limit),
+    enabled: !!slug,
+    staleTime: 60_000,
+  })
+}
+
 export function useSpecials() {
   return useQuery({
     queryKey: ['specials'],

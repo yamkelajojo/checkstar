@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, Pressable, Modal } from 'react-native';
+import { View, Text, ScrollView, Pressable, Modal, Animated, useWindowDimensions, Image as RNImage } from 'react-native';
 import { Image } from 'expo-image';
 import { useEffect, useRef, useState } from 'react';
 import { useRoute, useNavigation } from '@react-navigation/native';
@@ -7,7 +7,8 @@ import { useTheme } from '../../theme';
 import { brand } from '../../theme/colors';
 import { textStyle, fontWeight, letterSpacing, fontFamily } from '../../theme/typography';
 import { semanticSpacing, semanticRadius } from '../../theme/spacing';
-import { useProduct } from '../catalog/hooks';
+import { useProduct, useRelatedProducts } from '../catalog/hooks';
+import type { ProductVO } from '../../lib/product';
 import { PriceLabel } from '../../components/shared/PriceLabel';
 import { PriceGauge } from '../../components/shared/PriceGauge';
 import { Stepper } from '../../components/shared/Stepper';
@@ -21,6 +22,56 @@ import { useDeliveryStore } from '../../stores/deliveryStore';
 import { useToast } from '../../components/shared/GlassToast';
 import { trackProductView } from '../../services/trackingService';
 import { SaveHeart } from '../../components/shared/SaveHeart';
+
+function RelatedCard({ item }: { item: ProductVO }) {
+  const theme = useTheme();
+  const navigation = useNavigation<any>();
+
+  return (
+    <TactilePressable
+      onPress={() => navigation.push('ProductDetail', { slug: item.slug, source: 'related' })}
+      haptic="tap"
+      accessibilityRole="button"
+      accessibilityLabel={`View ${item.name}`}
+      style={{
+        width: 132,
+        backgroundColor: theme.colors.surface.primary,
+        borderRadius: semanticRadius.card,
+        padding: semanticSpacing.inlineGap,
+        gap: 4,
+        borderWidth: 1,
+        borderColor: theme.colors.border.subtle,
+      }}
+    >
+      <View
+        style={{
+          width: '100%',
+          aspectRatio: 1,
+          borderRadius: semanticRadius.chip,
+          backgroundColor: theme.colors.background.primary,
+          alignItems: 'center',
+          justifyContent: 'center',
+          overflow: 'hidden',
+          marginBottom: 4,
+        }}
+      >
+        {item.images[0] ? (
+          <RNImage
+            source={{ uri: item.images[0] }}
+            style={{ width: '100%', height: '100%' }}
+            resizeMode="cover"
+          />
+        ) : (
+          <Text style={{ fontSize: 34 }}>🛒</Text>
+        )}
+      </View>
+      <Text numberOfLines={2} style={{ ...textStyle.caption, color: theme.colors.text.primary, fontWeight: fontWeight.semibold, minHeight: 30 }}>
+        {item.name}
+      </Text>
+      <PriceLabel priceCents={item.basePriceCents} salePriceCents={item.salePriceCents} unit={item.unit} size={13} />
+    </TactilePressable>
+  );
+}
 
 export function ProductDetailScreen() {
   const theme = useTheme();
@@ -50,6 +101,34 @@ export function ProductDetailScreen() {
   const quantity = useCart((s) => (product ? s.items.find((i) => i.productId === String(product.id))?.quantity ?? 0 : 0));
   const add = useCart((s) => s.add);
   const decrement = useCart((s) => s.decrement);
+  const { data: relatedProducts } = useRelatedProducts(slug);
+
+  // Scroll-triggered CTA morph: while the related shelf is on screen the full
+  // bottom bar condenses into a fixed floating pill in the bottom-right; back
+  // at the product info it expands into the bar again. Animated so the morph
+  // reads as one control moving, not two swapping.
+  const { height: windowHeight } = useWindowDimensions();
+  const [scrollY, setScrollY] = useState(0);
+  const relatedLayout = useRef<{ y: number; height: number } | null>(null);
+  const [relatedInView, setRelatedInView] = useState(false);
+  const morph = useRef(new Animated.Value(0)).current; // 0 = bar, 1 = floating pill
+
+  useEffect(() => {
+    const layout = relatedLayout.current;
+    if (!layout) {
+      setRelatedInView(false);
+      return;
+    }
+    const viewportBottom = scrollY + windowHeight;
+    const inView = viewportBottom > layout.y + 80 && scrollY < layout.y + layout.height - 80;
+    setRelatedInView(inView);
+  }, [scrollY, relatedProducts, windowHeight]);
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(morph, { toValue: relatedInView ? 1 : 0, duration: 220, useNativeDriver: true }),
+    ]).start();
+  }, [relatedInView, morph]);
 
   const handleBack = () => {
     navigation.goBack();
@@ -110,7 +189,12 @@ export function ProductDetailScreen() {
         </Text>
       </Pressable>
 
-      <ScrollView contentContainerStyle={{ paddingBottom: 140 }} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: 140 }}
+        showsVerticalScrollIndicator={false}
+        scrollEventThrottle={16}
+        onScroll={(e) => setScrollY(e.nativeEvent.contentOffset.y)}
+      >
         <View style={{ paddingTop: insets.top + 56, paddingHorizontal: semanticSpacing.screenPadding, gap: semanticSpacing.inlineGap }}>
           {/* Product Image - full width like GreenBidder */}
           <FadeSlideIn>
@@ -315,11 +399,39 @@ export function ProductDetailScreen() {
               </View>
             </View>
           )}
+
+          {/* Related / recommended items */}
+          {relatedProducts && relatedProducts.length > 0 && (
+            <View
+              onLayout={(e) => {
+                relatedLayout.current = { y: e.nativeEvent.layout.y, height: e.nativeEvent.layout.height };
+              }}
+              style={{ marginTop: semanticSpacing.lg, gap: semanticSpacing.xs }}
+            >
+              <Text style={{ ...textStyle.h3, color: theme.colors.text.primary, fontFamily: fontFamily.primary }}>
+                You might also like
+              </Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ gap: semanticSpacing.inlineGap, paddingRight: semanticSpacing.screenPadding }}
+                nestedScrollEnabled
+              >
+                {relatedProducts.map((item) => (
+                  <RelatedCard key={item.id} item={item} />
+                ))}
+              </ScrollView>
+            </View>
+          )}
         </View>
       </ScrollView>
 
-      {/* Sticky Bottom Bar */}
-      <View
+      {/* Sticky Bottom Bar — morphs into a floating pill (bottom-right) while
+          the related shelf is on screen, and back into the bar at the top.
+          Exactly one of the two is mounted at a time; `morph` drives the
+          entrance of whichever one just took over. */}
+      {!relatedInView && (
+      <Animated.View
         style={{
           position: 'absolute',
           left: 0,
@@ -331,6 +443,8 @@ export function ProductDetailScreen() {
           borderTopWidth: 1,
           borderTopColor: theme.colors.border.subtle,
           backgroundColor: theme.colors.background.primary,
+          opacity: morph,
+          transform: [{ translateY: morph.interpolate({ inputRange: [0, 1], outputRange: [24, 0] }) }],
         }}
       >
         {isOutOfStockEverywhere ? (
@@ -364,7 +478,67 @@ export function ProductDetailScreen() {
             <Stepper quantity={quantity} onIncrement={handleAddToCart} onDecrement={handleDecrement} />
           </View>
         )}
-      </View>
+      </Animated.View>
+      )}
+
+      {/* Floating CTA — the bar's condensed twin while browsing related items */}
+      {relatedInView && (
+      <Animated.View
+        style={{
+          position: 'absolute',
+          right: semanticSpacing.screenPadding,
+          bottom: semanticSpacing.md + insets.bottom,
+          opacity: morph,
+          transform: [
+            { scale: morph.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1] }) },
+            { translateY: morph.interpolate({ inputRange: [0, 1], outputRange: [16, 0] }) },
+          ],
+        }}
+      >
+        {isOutOfStockEverywhere ? null : quantity === 0 ? (
+          <TactilePressable
+            onPress={handleAddToCart}
+            haptic="commit"
+            accessibilityRole="button"
+            accessibilityLabel={`Add ${product.name} to cart`}
+            disabled={showAvailabilityAlert}
+            style={{
+              backgroundColor: showAvailabilityAlert ? theme.colors.action.secondary.background : brand.orange,
+              borderRadius: 28,
+              paddingHorizontal: 18,
+              paddingVertical: 14,
+              opacity: showAvailabilityAlert ? 0.7 : 1,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.25,
+              shadowRadius: 8,
+              elevation: 6,
+            }}
+          >
+            <Text style={{ color: theme.colors.text.inverse, fontWeight: fontWeight.bold, ...textStyle.buttonPrimary }}>
+              {showAvailabilityAlert ? 'No store' : `Add \u00B7 ${formatZar(product.effectivePriceCents)}`}
+            </Text>
+          </TactilePressable>
+        ) : (
+          <View
+            style={{
+              backgroundColor: theme.colors.background.primary,
+              borderRadius: 28,
+              padding: 6,
+              borderWidth: 1,
+              borderColor: theme.colors.border.subtle,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.2,
+              shadowRadius: 8,
+              elevation: 6,
+            }}
+          >
+            <Stepper quantity={quantity} onIncrement={handleAddToCart} onDecrement={handleDecrement} />
+          </View>
+        )}
+      </Animated.View>
+      )}
     </View>
   );
 }

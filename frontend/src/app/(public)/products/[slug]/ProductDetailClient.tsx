@@ -1,20 +1,50 @@
 'use client'
 
-import { useState } from 'react'
-import { motion } from 'motion/react'
+import { useEffect, useRef, useState } from 'react'
+import { motion, AnimatePresence } from 'motion/react'
 import { ShoppingCart, ChevronLeft, Tag, Package } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { mediaUrl } from '@/lib/media'
 import { useCartStore } from '@/stores/cart-store'
 import { emitCartAdded } from '@/lib/cart-events'
-import { useProduct } from '@/lib/query'
+import { useProduct, useRelatedProducts } from '@/lib/query'
+
+function ProductPrice({ product }: { product: { effective_price?: number | null; sale_price: number | null; price: number } }) {
+  const price = Number(product.effective_price ?? product.sale_price ?? product.price)
+  const hasSale = product.effective_price !== null && product.effective_price !== undefined && product.effective_price < product.price
+  return (
+    <div className="flex items-baseline gap-3">
+      <span className="font-bold text-lg text-gray-900">R{price.toFixed(2)}</span>
+      {hasSale && <span className="text-sm text-gray-500 line-through">R{product.price.toFixed(2)}</span>}
+    </div>
+  )
+}
 
 export default function ProductDetailClient({ slug }: { slug: string }) {
   const { data: product, isLoading: loading, error } = useProduct(slug)
+  const { data: related, isLoading: relatedLoading } = useRelatedProducts(slug)
   const fetchError = error ? 'Failed to load product' : null
   const [added, setAdded] = useState(false)
   const addItem = useCartStore(s => s.addItem)
+
+  // Scroll-triggered CTA morph: once the related shelf scrolls into view the
+  // inline "Add to Cart" morphs into a fixed button pinned to the bottom-right
+  // (so it stays reachable while browsing similar items), and morphs back to
+  // the inline button when the related shelf leaves the viewport.
+  const relatedSectionRef = useRef<HTMLElement | null>(null)
+  const [relatedInView, setRelatedInView] = useState(false)
+
+  useEffect(() => {
+    const el = relatedSectionRef.current
+    if (!el || typeof IntersectionObserver === 'undefined') return
+    const observer = new IntersectionObserver(
+      ([entry]) => setRelatedInView(entry.isIntersecting),
+      { threshold: 0.15 },
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [related])
 
   if (fetchError) {
     return (
@@ -68,6 +98,8 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
     setAdded(true)
     setTimeout(() => setAdded(false), 1500)
   }
+
+  const ctaLabel = added ? 'Added!' : 'Add to Cart'
 
   return (
     <>
@@ -130,19 +162,105 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
               </div>
             )}
 
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={handleAddToCart}
-              className={`w-full md:w-auto inline-flex items-center justify-center gap-2 px-8 py-3 rounded-lg font-medium text-white transition-colors ${
-                added ? 'bg-green-600' : 'bg-primary hover:bg-primary-dark'
-              }`}
-            >
-              <ShoppingCart size={18} />
-              {added ? 'Added!' : 'Add to Cart'}
-            </motion.button>
+            {/* The inline CTA morphs away while the related shelf is on screen
+                (its fixed twin is visible bottom-right), and morphs back when
+                the shelf scrolls out of view. */}
+            <AnimatePresence mode="wait" initial={false}>
+              {!relatedInView && (
+                <motion.button
+                  key="inline-cta"
+                  initial={{ opacity: 0, y: 8, scale: 0.97 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 8, scale: 0.97 }}
+                  transition={{ duration: 0.18 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={handleAddToCart}
+                  className={`w-full md:w-auto inline-flex items-center justify-center gap-2 px-8 py-3 rounded-lg font-medium text-white transition-colors ${
+                    added ? 'bg-green-600' : 'bg-primary hover:bg-primary-dark'
+                  }`}
+                >
+                  <ShoppingCart size={18} />
+                  {ctaLabel}
+                </motion.button>
+              )}
+            </AnimatePresence>
           </motion.div>
         </div>
+
+        {/* Related / recommended items */}
+        <section
+          ref={relatedSectionRef}
+          aria-label="Related products"
+          className="mt-16"
+          data-testid="related-products"
+        >
+          <h2 className="font-display text-lg sm:text-xl font-bold mb-6">You might also like</h2>
+
+          {relatedLoading ? (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-pulse" aria-hidden="true">
+              {[0, 1, 2, 3].map(i => (
+                <div key={i} className="bg-gray-50 rounded-xl aspect-[3/4]" />
+              ))}
+            </div>
+          ) : related && related.length > 0 ? (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {related.map(item => {
+                const itemPrice = Number(item.effective_price ?? item.sale_price ?? item.price)
+                const itemOnSale = item.effective_price !== null && item.effective_price !== undefined && item.effective_price < item.price
+                return (
+                  <Link
+                    key={item.id}
+                    href={`/products/${item.slug}`}
+                    className="group bg-white border border-gray-100 rounded-xl overflow-hidden hover:shadow-md transition-shadow"
+                  >
+                    <div className="relative aspect-square bg-gray-50 flex items-center justify-center">
+                      {item.image ? (
+                        <Image src={mediaUrl(item.image)} alt={item.name} fill sizes="(max-width: 768px) 50vw, 25vw" className="object-contain p-4 group-hover:scale-105 transition-transform" />
+                      ) : (
+                        <Package size={28} className="text-gray-200" />
+                      )}
+                      {itemOnSale && (
+                        <span className="absolute top-2 left-2 bg-green-100 text-green-700 text-[10px] font-medium px-2 py-0.5 rounded-full">
+                          Sale
+                        </span>
+                      )}
+                    </div>
+                    <div className="p-3">
+                      <p className="text-sm font-medium line-clamp-2 mb-1">{item.name}</p>
+                      <p className="text-xs text-gray-400 mb-2">{item.unit}</p>
+                      <ProductPrice product={item} />
+                    </div>
+                  </Link>
+                )
+              })}
+            </div>
+          ) : null}
+        </section>
       </div>
+
+      {/* Fixed CTA — visible while the related shelf is on screen. Adds the
+          product you are viewing (not the item being scrolled). */}
+      <AnimatePresence>
+        {relatedInView && (
+          <motion.button
+            key="floating-cta"
+            initial={{ opacity: 0, y: 24, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 24, scale: 0.9 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+            whileTap={{ scale: 0.93 }}
+            onClick={handleAddToCart}
+            aria-label={`Add ${product.name} to cart`}
+            className={`fixed bottom-6 right-6 z-50 inline-flex items-center gap-2 rounded-full shadow-lg px-5 py-3.5 font-medium text-white transition-colors ${
+              added ? 'bg-green-600' : 'bg-primary hover:bg-primary-dark'
+            }`}
+          >
+            <ShoppingCart size={18} />
+            <span className="text-sm">{added ? 'Added!' : 'Add to Cart'}</span>
+            <span className="text-sm font-semibold border-l border-white/30 pl-2.5">R{price.toFixed(2)}</span>
+          </motion.button>
+        )}
+      </AnimatePresence>
     </>
   )
 }

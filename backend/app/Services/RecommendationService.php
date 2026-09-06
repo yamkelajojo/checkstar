@@ -35,7 +35,7 @@ class RecommendationService
         // the app home screen.
         $products = Product::query()
             ->where('is_active', true)
-            ->with(['category', 'storeProducts'])
+            ->with(['category', 'storeProducts', 'specials'])
             ->orderByDesc('created_at')
             ->limit(200)
             ->get()
@@ -68,7 +68,7 @@ class RecommendationService
         // (freshness). Scoring itself is unchanged.
         $products = Product::query()
             ->where('is_active', true)
-            ->with(['category', 'storeProducts'])
+            ->with(['category', 'storeProducts', 'specials'])
             ->withCount('orderItems')
             ->orderByDesc('order_items_count')
             ->limit(400)
@@ -76,7 +76,7 @@ class RecommendationService
             ->merge(
                 Product::query()
                     ->where('is_active', true)
-                    ->with(['category', 'storeProducts'])
+                    ->with(['category', 'storeProducts', 'specials'])
                     ->withCount('orderItems')
                     ->orderByDesc('created_at')
                     ->limit(200)
@@ -143,6 +143,92 @@ class RecommendationService
             ->whereNotNull('product_id')
             ->pluck('product_id')
             ->toArray();
+    }
+
+    /**
+     * Item-to-item "related products" for the product page. Signals, in
+     * order of weight:
+     *  - Same aisle: sharing a category is the strongest "similar item" cue.
+     *  - Bought together: products that land in the same orders as this one
+     *    (classic market-basket co-purchase signal, bounded candidate set).
+     *  - Price proximity: a similar price band feels like a comparable item.
+     *  - Popularity: well-ordered products break ties.
+     * The product itself and inactive products are never recommended. When
+     * scoring leaves the list short it is backfilled with the most-ordered
+     * active products so the shelf never renders half-empty.
+     *
+     * @return \Illuminate\Support\Collection<int, Product>
+     */
+    public function getRelatedProducts(Product $product, int $limit = 8): \Illuminate\Support\Collection
+    {
+        // Co-purchase counts for products seen in the same orders as this one.
+        $coCounts = DB::table('order_items as a')
+            ->join('order_items as b', 'a.order_id', '=', 'b.order_id')
+            ->where('a.product_id', $product->id)
+            ->where('b.product_id', '!=', $product->id)
+            ->select('b.product_id', DB::raw('count(*) as co_count'))
+            ->groupBy('b.product_id')
+            ->orderByDesc('co_count')
+            ->limit(60)
+            ->pluck('co_count', 'b.product_id');
+
+        $maxCo = max(1, (int) $coCounts->max());
+
+        $candidates = Product::query()
+            ->where('is_active', true)
+            ->where('products.id', '!=', $product->id)
+            ->with(['category', 'storeProducts', 'specials'])
+            ->withCount('orderItems')
+            ->orderByDesc('order_items_count')
+            ->limit(400)
+            ->get();
+
+        $categoryId = $product->category_id;
+        $basePrice = max(0.01, (float) ($product->sale_price ?? $product->price));
+
+        $scored = $candidates
+            ->map(function (Product $candidate) use ($categoryId, $coCounts, $maxCo, $basePrice) {
+                $sameCategory = $candidate->category_id === $categoryId ? 1.0 : 0.0;
+                $boughtTogether = min(1.0, (int) ($coCounts[$candidate->id] ?? 0) / $maxCo);
+
+                $candidatePrice = max(0.01, (float) ($candidate->sale_price ?? $candidate->price));
+                $priceProximity = 1.0 - min(1.0, abs(log($candidatePrice / $basePrice)) / log(3.0));
+
+                $popularity = min(1.0, $candidate->order_items_count / 50);
+
+                $candidate->_score = ($sameCategory * 0.45)
+                    + ($boughtTogether * 0.35)
+                    + ($priceProximity * 0.10)
+                    + ($popularity * 0.10);
+
+                return $candidate;
+            })
+            ->sortByDesc('_score')
+            ->values();
+
+        if ($scored->count() > $limit) {
+            $scored = $scored->slice(0, $limit)->values();
+        }
+
+        // Backfill: a sparse aisle shouldn't render a sparse shelf. Most
+        // ordered active products first, never duplicating what's chosen.
+        if ($scored->count() < $limit) {
+            $chosen = $scored->pluck('id')->all();
+            $backfill = Product::query()
+                ->where('is_active', true)
+                ->where('products.id', '!=', $product->id)
+                ->whereNotIn('products.id', $chosen)
+                ->with(['category', 'storeProducts', 'specials'])
+                ->withCount('orderItems')
+                ->orderByDesc('order_items_count')
+                ->limit($limit - $scored->count())
+                ->get()
+                ->each(fn (Product $p) => $p->_score = 0.0);
+
+            $scored = $scored->merge($backfill)->values();
+        }
+
+        return $scored;
     }
 
     private function applyDiversity($products, int $limit): array

@@ -326,6 +326,12 @@ export async function fetchProductBySlug(slug: string): Promise<ApiProduct> {
   return res.data;
 }
 
+export async function fetchRelatedProducts(slug: string): Promise<ApiProduct[]> {
+  const api = await getApi();
+  const res = await api.get<{ data: ApiProduct[] }>(`/products/${slug}/related`, undefined, false);
+  return res.data;
+}
+
 export async function fetchStores(): Promise<ApiStore[]> {
   const api = await getApi();
   const res = await api.get<ApiStore[] | { data: ApiStore[] }>('/stores', undefined, false);

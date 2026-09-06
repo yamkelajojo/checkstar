@@ -173,6 +173,7 @@ Route::get('/products', [ProductController::class, 'index']);
 Route::get('/products/trending', [ProductCarouselController::class, 'trending']);
 Route::get('/products/popular', [ProductCarouselController::class, 'popular']);
 Route::get('/products/new-arrivals', [ProductCarouselController::class, 'newArrivals']);
+Route::get('/products/{slug}/related', [ProductController::class, 'related'])->middleware('throttle:30,1');
 Route::get('/products/{slug}', [ProductController::class, 'show']);
 Route::get('/specials', [SpecialController::class, 'index']);
 Route::get('/stores', [StoreController::class, 'index']);

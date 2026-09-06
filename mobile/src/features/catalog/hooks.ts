@@ -1,5 +1,5 @@
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
-import { fetchCategories, fetchProducts, fetchAllProducts, fetchStores, fetchSpecials, fetchProductBySlug } from '../../lib/apiClient';
+import { fetchCategories, fetchProducts, fetchAllProducts, fetchStores, fetchSpecials, fetchProductBySlug, fetchRelatedProducts } from '../../lib/apiClient';
 import { mapProduct, type ProductVO } from '../../lib/product';
 import { queryKeys } from '../../lib/queryKeys';
 import type { ApiCategory, ApiProduct, ApiStore } from '../../lib/types';
@@ -96,6 +96,18 @@ export function useSpecials(storeId?: number | null) {
       }
       return products.map(mapProduct);
     },
+  });
+}
+
+export function useRelatedProducts(slug: string) {
+  return useQuery({
+    queryKey: [...queryKeys.product(slug), 'related'],
+    queryFn: async (): Promise<ProductVO[]> => {
+      const related = await fetchRelatedProducts(slug);
+      return related.map(mapProduct);
+    },
+    enabled: !!slug,
+    staleTime: 60_000,
   });
 }
 
