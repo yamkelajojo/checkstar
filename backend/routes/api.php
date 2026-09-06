@@ -111,6 +111,7 @@ Route::post('/auth/email/verification-notification', [AuthController::class, 'se
 
     // Staff management (Store Owner / Developer only)
     Route::middleware('role:store_owner,developer')->group(function () {
+        Route::get('/store/staff', [StaffController::class, 'index'])->middleware('throttle:30,1');
         Route::post('/store/staff', [StaffController::class, 'store'])->middleware('throttle:10,1');
         Route::delete('/store/staff/{id}', [StaffController::class, 'destroy'])->middleware('throttle:10,1');
     });
@@ -129,6 +130,7 @@ Route::post('/auth/email/verification-notification', [AuthController::class, 'se
         Route::get('messages', [Admin\MessageController::class, 'index'])->middleware('throttle:30,1');
         Route::get('messages/{id}', [Admin\MessageController::class, 'show'])->middleware('throttle:30,1');
         Route::post('messages/{id}/reply', [Admin\MessageController::class, 'reply'])->middleware('throttle:20,1');
+        Route::patch('messages/{id}/read', [Admin\MessageController::class, 'markRead'])->middleware('throttle:20,1');
         Route::get('health', [Admin\HealthController::class, 'index'])->middleware('throttle:30,1');
     });
 

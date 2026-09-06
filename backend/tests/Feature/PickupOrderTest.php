@@ -289,6 +289,107 @@ class PickupOrderTest extends TestCase
         ])->assertStatus(422)->assertJsonPath('reason', 'delivery_is_delivery_only');
     }
 
+    public function test_pickup_order_cannot_be_manually_dispatched_to_a_rider(): void
+    {
+        $store = $this->makeStore();
+        $product = $this->makeProduct();
+        $this->stockAt($store, $product, 5);
+        $customer = $this->makeCustomer();
+        $rider = $this->makeRider($store);
+        $owner = User::create([
+            'name' => 'Pickup Owner',
+            'email' => 'pickup-owner@example.com',
+            'password' => Hash::make('password123'),
+            'role' => \App\Enums\UserRole::StoreOwner,
+            'is_active' => true,
+        ]);
+        Store::where('id', $store->id)->update(['owner_id' => $owner->id]);
+
+        $this->actingAs($customer)->postJson('/api/orders', [
+            'items' => [['product_id' => $product->id, 'quantity' => 1]],
+            'fulfilment_method' => 'pickup',
+            'store_id' => $store->id,
+        ])->assertStatus(201);
+
+        $order = Order::latest('id')->first();
+
+        $this->actingAs($owner)
+            ->postJson("/api/store/orders/{$order->id}/dispatch", [
+                'rider_id' => $rider->id,
+                'store_id' => $store->id,
+            ])
+            ->assertStatus(409)
+            ->assertJsonPath('reason', 'order_is_pickup');
+
+        $this->assertNull($order->fresh()->rider_id);
+    }
+
+    public function test_pickup_orders_do_not_appear_in_the_store_dispatch_queue(): void
+    {
+        $store = $this->makeStore();
+        $product = $this->makeProduct();
+        $this->stockAt($store, $product, 5);
+        $customer = $this->makeCustomer();
+        $owner = User::create([
+            'name' => 'Pickup Owner 2',
+            'email' => 'pickup-owner2@example.com',
+            'password' => Hash::make('password123'),
+            'role' => \App\Enums\UserRole::StoreOwner,
+            'is_active' => true,
+        ]);
+        Store::where('id', $store->id)->update(['owner_id' => $owner->id]);
+
+        $this->actingAs($customer)->postJson('/api/orders', [
+            'items' => [['product_id' => $product->id, 'quantity' => 1]],
+            'fulfilment_method' => 'pickup',
+            'store_id' => $store->id,
+        ])->assertStatus(201);
+
+        $this->actingAs($owner)
+            ->getJson("/api/store/dispatch/pending?store_id={$store->id}")
+            ->assertStatus(200)
+            ->assertJsonCount(0, 'data');
+    }
+
+    public function test_pickup_with_stray_delivery_fields_stores_nulls(): void
+    {
+        $store = $this->makeStore();
+        $product = $this->makeProduct();
+        $this->stockAt($store, $product, 5);
+        $customer = $this->makeCustomer();
+
+        $this->actingAs($customer)->postJson('/api/orders', [
+            'items' => [['product_id' => $product->id, 'quantity' => 1]],
+            'fulfilment_method' => 'pickup',
+            'store_id' => $store->id,
+            'delivery_address' => '42 Should Be Ignored Rd',
+            'delivery_latitude' => -29.85,
+            'delivery_longitude' => 31.02,
+        ])->assertStatus(201);
+
+        $order = Order::latest('id')->first();
+        $this->assertNull($order->delivery_address);
+        $this->assertNull($order->delivery_latitude);
+        $this->assertNull($order->delivery_longitude);
+    }
+
+    public function test_pickup_order_money_cents_mirrors_are_exact(): void
+    {
+        $store = $this->makeStore();
+        $product = $this->makeProduct();
+        $this->stockAt($store, $product, 50);
+        $customer = $this->makeCustomer();
+
+        $this->actingAs($customer)->postJson('/api/orders', [
+            'items' => [['product_id' => $product->id, 'quantity' => 3]],
+            'fulfilment_method' => 'pickup',
+            'store_id' => $store->id,
+        ])->assertStatus(201)
+            ->assertJsonPath('data.subtotal_cents', 5697)
+            ->assertJsonPath('data.delivery_fee_cents', 0)
+            ->assertJsonPath('data.total_cents', 5697);
+    }
+
     public function test_pickup_orders_never_appear_in_rider_available_orders(): void
     {
         $store = $this->makeStore();

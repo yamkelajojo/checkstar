@@ -33,6 +33,20 @@ class MessageController extends Controller
         return response()->json(['data' => $message]);
     }
 
+    public function markRead(Request $request, int $id): JsonResponse
+    {
+        $validated = $request->validate([
+            'read' => 'sometimes|boolean',
+        ]);
+
+        $message = ContactMessage::findOrFail($id);
+        $message->update([
+            'is_read' => (bool) ($validated['read'] ?? ! $message->is_read),
+        ]);
+
+        return response()->json(['data' => $message]);
+    }
+
     public function reply(Request $request, int $id): JsonResponse
     {
         $validated = $request->validate([

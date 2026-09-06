@@ -14,6 +14,18 @@ class StaffController extends Controller
 {
     public function __construct(private StoreContext $storeContext) {}
 
+    public function index(Request $request): JsonResponse
+    {
+        $store = $this->storeContext->resolve($request->user(), $request->query('store_id') !== null ? (int) $request->query('store_id') : null);
+
+        $assignments = StoreStaff::with('user')
+            ->where('store_id', $store->id)
+            ->orderBy('created_at')
+            ->get();
+
+        return response()->json(['data' => $assignments]);
+    }
+
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([

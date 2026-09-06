@@ -63,6 +63,13 @@ class ManualDispatch
             return ['reason' => 'order_not_claimable'];
         }
 
+        // Pickup orders bypass the rider pipeline entirely (the customer
+        // collects). The pending queue already hides them (null delivery
+        // coords), but a direct API call must not be able to attach a rider.
+        if ($order->fulfilment_method === 'pickup') {
+            return ['reason' => 'order_is_pickup'];
+        }
+
         // Guard against cross-store hijack: an operator may only dispatch
         // orders that belong to their own store (or are unassigned). Without
         // this, a Store A operator could assign a Store A rider to Store B's

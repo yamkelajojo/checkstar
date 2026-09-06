@@ -83,6 +83,83 @@ class StaffManagementTest extends TestCase
         $this->assertDatabaseMissing('store_staff', ['id' => $assignment->id]);
     }
 
+    public function test_owner_can_list_store_roster(): void
+    {
+        $manager = User::factory()->create(['name' => 'Sipho M', 'role' => UserRole::StoreManager]);
+        StoreStaff::create([
+            'user_id' => $manager->id,
+            'store_id' => $this->store->id,
+            'role' => StaffRole::StoreManager,
+        ]);
+
+        $this->actingAs($this->owner)
+            ->getJson("/api/store/staff?store_id={$this->store->id}")
+            ->assertStatus(200)
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.user.id', $manager->id)
+            ->assertJsonPath('data.0.user.name', 'Sipho M')
+            ->assertJsonPath('data.0.role', StaffRole::StoreManager->value)
+            ->assertJsonPath('data.0.store_id', $this->store->id);
+    }
+
+    public function test_developer_can_list_store_roster(): void
+    {
+        $developer = User::factory()->create(['role' => UserRole::Developer]);
+        $staffUser = User::factory()->create(['role' => UserRole::Customer]);
+        StoreStaff::create([
+            'user_id' => $staffUser->id,
+            'store_id' => $this->store->id,
+            'role' => StaffRole::LogisticsOfficer,
+        ]);
+
+        $this->actingAs($developer)
+            ->getJson("/api/store/staff?store_id={$this->store->id}")
+            ->assertStatus(200)
+            ->assertJsonCount(1, 'data');
+    }
+
+    public function test_roster_is_scoped_to_one_store(): void
+    {
+        $otherStore = Store::create([
+            'name' => 'Umhlanga',
+            'slug' => 'umhlanga',
+            'address' => '2 Lagoon Drive',
+            'city' => 'Durban',
+            'province' => 'KwaZulu-Natal',
+            'postal_code' => '4320',
+            'phone' => '+27 31 000 0001',
+            'latitude' => -29.7261,
+            'longitude' => 31.0836,
+            'delivery_radius_km' => 30,
+            'is_active' => true,
+        ]);
+        $outsider = User::factory()->create(['role' => UserRole::Customer]);
+        StoreStaff::create([
+            'user_id' => $outsider->id,
+            'store_id' => $otherStore->id,
+            'role' => StaffRole::StoreManager,
+        ]);
+
+        $this->actingAs($this->owner)
+            ->getJson("/api/store/staff?store_id={$this->store->id}")
+            ->assertStatus(200)
+            ->assertJsonCount(0, 'data');
+    }
+
+    public function test_store_manager_cannot_list_roster(): void
+    {
+        $manager = User::factory()->create(['role' => UserRole::StoreManager]);
+        StoreStaff::create([
+            'user_id' => $manager->id,
+            'store_id' => $this->store->id,
+            'role' => StaffRole::StoreManager,
+        ]);
+
+        $this->actingAs($manager)
+            ->getJson("/api/store/staff?store_id={$this->store->id}")
+            ->assertStatus(403);
+    }
+
     public function test_store_manager_cannot_hire_staff(): void
     {
         $manager = User::factory()->create(['role' => UserRole::StoreManager]);
