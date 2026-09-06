@@ -17,6 +17,7 @@ import { useCart } from '../../features/cart/store';
 import { useDeliveryStore } from '../../stores/deliveryStore';
 import type { RootStackParamList } from '../../navigation/types';
 import { SaveHeart } from './SaveHeart';
+import { haptic } from '../../lib/haptics';
 
 export interface BadgeRect {
   x: number;
@@ -137,6 +138,7 @@ export function ProductCard({ product, storeProductId = null, style, onRequestSu
             <Pressable
               ref={badgeRef}
               onPress={() => {
+                haptic.tap();
                 const fallback = () => onRequestSummary(product, null);
                 const ref = badgeRef.current as unknown as { measureInWindow?: (cb: (x: number, y: number, w: number, h: number) => void) => void } | null;
                 if (typeof ref?.measureInWindow === 'function') {

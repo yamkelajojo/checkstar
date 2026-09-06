@@ -8,6 +8,10 @@ import type { ApiOrder, ApiUser } from '../../../lib/types';
 
 jest.mock('../../../lib/apiClient', () => ({
   fetchOrders: jest.fn(),
+  fetchAddresses: jest.fn(() => Promise.resolve([])),
+  createAddress: jest.fn(),
+  updateAddress: jest.fn(),
+  deleteAddress: jest.fn(),
   getApiBaseUrl: jest.fn().mockResolvedValue('http://test.api'),
   setApiBaseUrl: jest.fn().mockResolvedValue(undefined),
   resetApiClient: jest.fn().mockResolvedValue(undefined),

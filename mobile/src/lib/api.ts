@@ -1,4 +1,4 @@
-export type HttpMethod = 'GET' | 'POST' | 'PATCH' | 'DELETE';
+export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
 export interface QueryParams {
   [key: string]: string | number | boolean | undefined | null;
@@ -196,6 +196,8 @@ export function createApiClient(config: ApiClientConfig) {
       request<T>('POST', path, body, auth, params ?? {}),
     patch: <T>(path: string, body?: unknown, auth = true) =>
       request<T>('PATCH', path, body, auth, {}),
+    put: <T>(path: string, body?: unknown, auth = true) =>
+      request<T>('PUT', path, body, auth, {}),
     delete: <T>(path: string, auth = true) =>
       request<T>('DELETE', path, undefined, auth, {}),
   };

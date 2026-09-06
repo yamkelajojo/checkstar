@@ -6,7 +6,7 @@ import { useDeliveryStore } from '../../../stores/deliveryStore';
 import { TestWrapper } from '../../../test/utils';
 import type { ProductVO } from '../../../lib/product';
 
-const mockUseRelated = jest.fn(() => ({ data: [] }));
+const mockUseRelated = jest.fn((_slug?: string) => ({ data: [] as ProductVO[] }));
 jest.mock('../../catalog/hooks', () => ({
   useProduct: (slug: string) => mockUseProduct(slug),
   useRelatedProducts: (slug: string) => mockUseRelated(slug),

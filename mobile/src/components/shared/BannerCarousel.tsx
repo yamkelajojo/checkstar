@@ -5,6 +5,7 @@ import { useTheme } from '../../theme';
 import { textStyle, fontWeight } from '../../theme/typography';
 import { semanticSpacing } from '../../theme/spacing';
 import type { ApiBanner, ApiBannerSlide } from '../../lib/types';
+import { haptic } from '../../lib/haptics';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const AUTO_ADVANCE_MS = 5000;
@@ -138,7 +139,10 @@ export function BannerCarousel({ banners, onSlidePress }: BannerCarouselProps) {
 
     return (
       <Pressable
-        onPress={() => handleSlidePress(item)}
+        onPress={() => {
+          haptic.tap();
+          handleSlidePress(item);
+        }}
         accessibilityRole="button"
         accessibilityLabel={`${item.title}. ${item.subtitle ?? ''}`}
         style={{ width: SCREEN_WIDTH }}

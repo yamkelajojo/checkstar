@@ -13,6 +13,8 @@ import type { ApiStore, ApiUser } from '../../../lib/types';
 jest.mock('../../../lib/apiClient', () => ({
   placeOrder: jest.fn(),
   validateFulfillment: jest.fn(),
+  fetchStores: jest.fn(() => Promise.resolve([])),
+  fetchAddresses: jest.fn(() => Promise.resolve([])),
 }));
 
 jest.mock('../../../lib/deliveryCoords', () => ({

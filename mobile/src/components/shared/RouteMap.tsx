@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import MapView, { Marker, Polyline, PROVIDER_DEFAULT } from 'react-native-maps';
+import { StorePin } from './StorePin';
 import { MapPin, Navigation } from 'lucide-react-native';
 import { useTheme } from '../../theme';
 import { brand } from '../../theme/colors';
@@ -116,12 +117,12 @@ export function RouteMap({
         toolbarEnabled={false}
         cacheEnabled
       >
-        {/* Store marker */}
+        {/* Store marker — branded checkstar pin */}
         <Marker
           coordinate={{ latitude: storeLat!, longitude: storeLng! }}
-          anchor={{ x: 0.5, y: 0.5 }}
+          anchor={{ x: 0.5, y: 1 }}
         >
-          <View style={[styles.markerDot, { backgroundColor: brand.orange }]} />
+          <StorePin size={28} />
         </Marker>
 
         {/* Delivery marker */}

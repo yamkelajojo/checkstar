@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import MapView, { Marker, Polyline, PROVIDER_DEFAULT } from 'react-native-maps';
+import { StorePin } from './StorePin';
 import { useQuery } from '@tanstack/react-query';
 import { Navigation, Clock, MapPin, WifiOff, Hourglass } from 'lucide-react-native';
 import Animated, {
@@ -215,12 +216,10 @@ export function LiveDeliveryMap({
             {/* Store marker */}
             <Marker
               coordinate={{ latitude: storeLat!, longitude: storeLng! }}
-              anchor={{ x: 0.5, y: 0.5 }}
+              anchor={{ x: 0.5, y: 1 }}
               accessibilityLabel={`${storeName} store`}
             >
-              <View style={[styles.markerDot, { backgroundColor: brand.orange }]}>
-                <View style={[styles.markerInner, { backgroundColor: '#fff' }]} />
-              </View>
+              <StorePin size={30} />
             </Marker>
 
             {/* Delivery marker */}

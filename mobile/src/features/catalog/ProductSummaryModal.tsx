@@ -17,6 +17,7 @@ import { useReducedMotion } from '../../components/shared/useReducedMotion';
 import { useCart } from '../cart/store';
 import { MAX_QUANTITY } from '../cart/types';
 import type { RootStackParamList } from '../../navigation/types';
+import { haptic } from '../../lib/haptics';
 
 export interface SourceRect {
   x: number;
@@ -95,7 +96,10 @@ export function ProductSummaryModal({ product, storeProductId = null, sourceRect
         <Pressable
           accessibilityLabel="Dismiss"
           accessibilityRole="button"
-          onPress={onClose}
+          onPress={() => {
+            haptic.tap();
+            onClose();
+          }}
           style={StyleSheet.absoluteFill}
         />
         <Animated.View style={[cardStyle, { width: '100%', maxWidth: 360 }]}>

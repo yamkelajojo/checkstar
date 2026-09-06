@@ -28,12 +28,14 @@ export default function HomePage() {
   return (
     <>
       <div>
-        {/* Hero — warm, inviting, Durban-rooted */}
-        <section className="relative overflow-hidden bg-gradient-to-br from-[#FFF5ED] via-white to-[#FFF0E5]">
-          <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.03]" aria-hidden="true" />
-          <div className="max-w-7xl mx-auto px-4 py-16 md:py-24 lg:py-32">
-            <div className="grid md:grid-cols-2 gap-12 items-center">
-              <motion.div variants={stagger} initial="hidden" animate="show" className="max-w-xl">
+        {/* Hero — warm, inviting, Durban-rooted. The photo is a full-bleed
+          background: washed with white/orange tints so the copy sits on a
+          calm, atmospheric surface. Swap public/images/hero-checkstar.jpg
+          to change the photo — no code change needed. */}
+        <section className="relative overflow-hidden">
+          <HeroBackground />
+          <div className="relative max-w-7xl mx-auto px-4 py-16 md:py-24 lg:py-32">
+            <motion.div variants={stagger} initial="hidden" animate="show" className="max-w-xl">
 
                 <motion.h1 variants={fadeUp} className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 leading-[1.1] tracking-tight">
                   Fresh groceries,{' '}
@@ -67,13 +69,6 @@ export default function HomePage() {
                   </span>
                 </motion.div>
               </motion.div>
-
-              {/* Hero image slot. Replace public/images/hero-checkstar.jpg
-                  with the real Checkstar photo — no code change needed. Until
-                  the file exists (or if it fails to load) the branded
-                  placeholder panel shows instead. */}
-              <HeroVisual />
-            </div>
           </div>
         </section>
 
@@ -195,43 +190,49 @@ export default function HomePage() {
 }
 
 /**
- * Hero image slot. Renders /images/hero-checkstar.jpg when that file exists
- * (drop the real Checkstar photo there — no code change), falling back to the
- * branded placeholder panel on load failure so the hero is never empty.
+ * Hero background — the Checkstar photo fills the whole section and is
+ * calmed with layered tints: a white wash where the copy sits, a warm
+ * orange glow, and a soft dark scrim so the photo reads as atmosphere
+ * rather than a subject. The tile grid stays on top. If the image file is
+ * missing, the tinted gradient + tiles still carry the section.
  */
-function HeroVisual() {
+function HeroBackground() {
   const [imageFailed, setImageFailed] = useState(false)
 
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.6, delay: 0.2 }}
-      className="mt-10 md:mt-0"
-    >
-      <div className="relative aspect-[4/3] rounded-3xl overflow-hidden bg-gradient-to-br from-primary-light to-[#FFE8D6] border border-primary/10">
-        {!imageFailed ? (
-          <>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/images/hero-checkstar.jpg"
-              alt="Fresh Checkstar groceries ready for delivery"
-              className="absolute inset-0 w-full h-full object-cover"
-              onError={() => setImageFailed(true)}
-            />
-            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/45 to-transparent px-5 pb-4 pt-10">
-              <p className="text-white text-sm font-medium drop-shadow">Your groceries, delivered fresh</p>
-            </div>
-          </>
-        ) : (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-center">
-              <ShoppingBag className="mx-auto text-primary/30" size={80} />
-              <p className="mt-4 text-primary/50 text-sm font-medium">Your groceries, delivered fresh</p>
-            </div>
-          </div>
-        )}
-      </div>
-    </motion.div>
+    <div className="absolute inset-0" aria-hidden="true">
+      {/* Photo layer */}
+      {!imageFailed && (
+        <motion.div
+          initial={{ opacity: 0, scale: 1.04 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 1.4, ease: 'easeOut' }}
+          className="absolute inset-0"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/images/hero-checkstar.jpg"
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover"
+            onError={() => setImageFailed(true)}
+          />
+        </motion.div>
+      )}
+
+      {/* Tints — white-ish where the text sits, warming to the right */}
+      <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/80 to-[#FFF3E8]/45" />
+      <div className="absolute inset-0 bg-gradient-to-t from-white/90 via-transparent to-[#FFF5ED]/60" />
+
+      {/* Atmospheric orange glows */}
+      <div className="absolute -top-32 right-0 w-[34rem] h-[34rem] rounded-full bg-primary/10 blur-3xl" />
+      <div className="absolute bottom-0 left-1/4 w-96 h-64 rounded-full bg-[#FFB27A]/10 blur-3xl" />
+
+      {/* Soft dark scrim — gives the photo depth without going moody */}
+      <div className="absolute inset-0 bg-gradient-to-bl from-transparent via-transparent to-[#2A1608]/15" />
+
+      {/* The tiles */}
+      <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.04]" />
+    </div>
   )
 }
+

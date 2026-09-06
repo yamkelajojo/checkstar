@@ -391,7 +391,7 @@ function ReviewCard({ orderId, onDone }: { orderId: number; onDone: () => void }
       <Text style={{ fontWeight: fontWeight.bold, color: theme.colors.text.primary, ...textStyle.body }}>{copy.review.title}</Text>
       <View style={{ flexDirection: 'row', gap: semanticSpacing.inlineGap }}>
         {[1, 2, 3, 4, 5].map((n) => (
-          <Pressable key={n} onPress={() => setRating(n)} accessibilityRole="button" accessibilityLabel={`${n} stars`} hitSlop={6}>
+          <Pressable key={n} onPress={() => { haptic.selection(); setRating(n); }} accessibilityRole="button" accessibilityLabel={`${n} stars`} hitSlop={6}>
             <Star size={28} color={n <= rating ? brand.star : theme.colors.border.subtle} fill={n <= rating ? brand.star : 'transparent'} />
           </Pressable>
         ))}

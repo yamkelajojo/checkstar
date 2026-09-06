@@ -17,6 +17,7 @@ import { TactilePressable } from '../../components/shared/TactilePressable';
 import { useCart } from '../cart/store';
 import { haptic } from '../../lib/haptics';
 import { EmptyState } from '../../components/shared/EmptyState';
+import { AddressesSection } from './AddressesSection';
 import { Logo } from '../../components/shared/Logo';
 import { useTopSafeArea } from '../../components/shared/ScreenHeader';
 import { copy } from '../../lib/strings';
@@ -165,6 +166,11 @@ export function AccountScreen() {
           })}
         </View>
       </View>
+
+      <Text style={{ marginTop: semanticSpacing.xl, paddingHorizontal: semanticSpacing.screenPadding, ...textStyle.h3, fontWeight: fontWeight.bold, color: theme.colors.text.primary }}>
+        Addresses
+      </Text>
+      <AddressesSection />
 
       <Text style={{ marginTop: semanticSpacing.xl, paddingHorizontal: semanticSpacing.screenPadding, ...textStyle.h3, fontWeight: fontWeight.bold, color: theme.colors.text.primary }}>
         Orders

@@ -22,6 +22,7 @@ import { useDeliveryStore } from '../../stores/deliveryStore';
 import { useToast } from '../../components/shared/GlassToast';
 import { trackProductView } from '../../services/trackingService';
 import { SaveHeart } from '../../components/shared/SaveHeart';
+import { haptic } from '../../lib/haptics';
 
 function RelatedCard({ item }: { item: ProductVO }) {
   const theme = useTheme();
@@ -167,7 +168,10 @@ export function ProductDetailScreen() {
     <View style={{ flex: 1, backgroundColor: theme.colors.background.primary }}>
       {/* Back button - top left with safe area */}
       <Pressable
-        onPress={handleBack}
+        onPress={() => {
+          haptic.tap();
+          handleBack();
+        }}
         style={{
           position: 'absolute',
           top: insets.top + semanticSpacing.md,

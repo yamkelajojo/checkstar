@@ -3,7 +3,7 @@ import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 import { storage, STORAGE_KEYS } from './storage';
 import { isOnline } from './networkStatus';
-import type { ApiAuthResponse, ApiCartSyncResponse, ApiCategory, ApiOrder, ApiPagination, ApiPlaceOrderResponse, ApiProduct, ApiRiderLocation, ApiStore, ApiUser, ApiFulfillmentValidateResponse, ApiNearestStoreResponse, ApiRouteResponse, ApiRouteGeometryResponse, ApiBanner } from './types';
+import type { ApiAuthResponse, ApiCartSyncResponse, ApiCategory, ApiOrder, ApiPagination, ApiPlaceOrderResponse, ApiProduct, ApiRiderLocation, ApiStore, ApiUser, ApiFulfillmentValidateResponse, ApiNearestStoreResponse, ApiRouteResponse, ApiRouteGeometryResponse, ApiBanner, ApiFulfilmentMethod, ApiUserAddress, ApiAddressInput } from './types';
 import Constants from 'expo-constants';
 
 // Default fallback - user MUST configure this for their physical device
@@ -359,14 +359,41 @@ export async function fetchOrder(id: number | string): Promise<ApiOrder> {
 
 export async function placeOrder(input: {
   items: { product_id: number; quantity: number }[];
-  delivery_address: string;
-  delivery_latitude: number;
-  delivery_longitude: number;
+  fulfilment_method?: ApiFulfilmentMethod;
+  store_id?: number;
+  delivery_address?: string;
+  delivery_latitude?: number;
+  delivery_longitude?: number;
   delivery_notes?: string;
   payment_method?: 'cash_on_delivery';
 }): Promise<ApiPlaceOrderResponse> {
   const api = await getApi();
   return api.post<ApiPlaceOrderResponse>('/orders', input, true);
+}
+
+// ---- Address book ----
+
+export async function fetchAddresses(): Promise<ApiUserAddress[]> {
+  const api = await getApi();
+  const res = await api.get<{ data: ApiUserAddress[] }>('/addresses', undefined, true);
+  return res.data;
+}
+
+export async function createAddress(input: ApiAddressInput): Promise<ApiUserAddress> {
+  const api = await getApi();
+  const res = await api.post<{ data: ApiUserAddress }>('/addresses', input, true);
+  return res.data;
+}
+
+export async function updateAddress(id: number, input: Partial<ApiAddressInput>): Promise<ApiUserAddress> {
+  const api = await getApi();
+  const res = await api.put<{ data: ApiUserAddress }>(`/addresses/${id}`, input, true);
+  return res.data;
+}
+
+export async function deleteAddress(id: number): Promise<void> {
+  const api = await getApi();
+  await api.delete(`/addresses/${id}`, true);
 }
 
 export async function syncCart(items: { product_id: number; quantity: number }[]): Promise<ApiCartSyncResponse> {

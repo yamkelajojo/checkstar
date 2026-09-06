@@ -20,6 +20,7 @@ import type { RootStackParamList } from '../../navigation/types';
 import { ORDER_STATUS_LABEL as STATUS_LABEL } from '../../lib/status';
 import { getOrderTotal } from '../../lib/orderTotal';
 import { useTopSafeArea } from '../../components/shared/ScreenHeader';
+import { haptic } from '../../lib/haptics';
 
 export function RiderOrderDetailScreen() {
   const theme = useTheme();
@@ -169,7 +170,9 @@ export function RiderOrderDetailScreen() {
 
           {hasRouteCoords && (
             <TouchableOpacity
-              onPress={() => navigation.navigate('RouteExplorer', {
+              onPress={() => {
+                haptic.tap();
+                navigation.navigate('RouteExplorer', {
                 storeName: order.store?.name ?? 'Checkstar',
                 storeLat: order.store?.latitude ?? undefined,
                 storeLng: order.store?.longitude ?? undefined,
@@ -180,7 +183,8 @@ export function RiderOrderDetailScreen() {
                 durationMinutes: routeGeometry?.duration_minutes ?? 15,
                 source: routeGeometry?.source ?? 'osrm',
                 geometry: routeGeometry?.geometry ?? null,
-              })}
+                });
+              }}
               accessibilityRole="button"
               accessibilityLabel="Open immersive route explorer"
               style={{

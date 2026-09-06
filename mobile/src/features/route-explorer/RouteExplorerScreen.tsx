@@ -7,6 +7,7 @@ import {
   AccessibilityInfo,
 } from 'react-native';
 import MapView, { Marker, Polyline, PROVIDER_DEFAULT } from 'react-native-maps';
+import { StorePin } from '../../components/shared/StorePin';
 import { ArrowLeft, MapPin, Navigation } from 'lucide-react-native';
 import { useTheme } from '../../theme';
 import { brand } from '../../theme/colors';
@@ -15,6 +16,7 @@ import { semanticSpacing, semanticRadius } from '../../theme/spacing';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { decodePolyline, computeBoundingRegion, type LatLng } from '../../lib/polyline';
 import { useReducedMotion } from '../../components/shared/useReducedMotion';
+import { haptic } from '../../lib/haptics';
 
 interface RouteExplorerParams {
   storeName: string;
@@ -135,7 +137,13 @@ export function RouteExplorerScreen() {
     <View style={styles.container} accessible accessibilityRole="image" accessibilityLabel={`${storeName} to delivery route preview. ${distanceKm != null ? `${distanceKm.toFixed(1)} km, ` : ''}${durationMinutes != null ? `${durationMinutes} minutes.` : ''}`}>
       {/* Header */}
       <View style={styles.headerRow}>
-        <TouchableOpacity onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="Go back">
+        <TouchableOpacity
+              onPress={() => {
+                haptic.tap();
+                navigation.goBack();
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Go back">
           <ArrowLeft size={22} color={theme.colors.text.primary} />
         </TouchableOpacity>
         <Text style={[textStyle.h3, styles.headerTitle, { color: theme.colors.text.primary, fontWeight: weights.bold }]}>
@@ -161,10 +169,10 @@ export function RouteExplorerScreen() {
             {/* Store marker */}
             <Marker
               coordinate={{ latitude: storeLat!, longitude: storeLng! }}
-              anchor={{ x: 0.5, y: 0.5 }}
+              anchor={{ x: 0.5, y: 1 }}
               accessibilityLabel={`${storeName} store`}
             >
-              <View style={[styles.markerDot, { backgroundColor: brand.orange }]} />
+              <StorePin size={28} />
             </Marker>
 
             {/* Delivery marker */}

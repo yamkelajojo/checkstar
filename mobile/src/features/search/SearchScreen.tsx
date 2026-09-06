@@ -22,6 +22,7 @@ import type { ProductVO, StoreAvailabilityVO } from '../../lib/product';
 import { findStoreAvailability } from '../../lib/product';
 import { trackSearch, trackCategoryFilterTap } from '../../services/trackingService';
 import { useTopSafeArea } from '../../components/shared/ScreenHeader';
+import { haptic } from '../../lib/haptics';
 
 export function SearchScreen() {
   const theme = useTheme();
@@ -105,7 +106,14 @@ export function SearchScreen() {
         borderBottomWidth: 1,
         borderBottomColor: theme.colors.border.subtle,
       }}>
-        <Pressable onPress={handleBack} accessibilityRole="button" hitSlop={12}>
+        <Pressable
+          onPress={() => {
+            haptic.tap();
+            handleBack();
+          }}
+          accessibilityRole="button"
+          hitSlop={12}
+        >
           <ChevronLeft size={24} color={theme.colors.text.primary} />
         </Pressable>
         <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: theme.colors.surface.primary, borderRadius: 999, paddingHorizontal: 14, height: 44 }}>
@@ -122,6 +130,7 @@ export function SearchScreen() {
           {term.length > 0 ? (
             <Pressable
               onPress={() => {
+                haptic.tap();
                 setTerm('');
                 setDebounced('');
               }}
@@ -141,7 +150,7 @@ export function SearchScreen() {
                 Recent searches
               </Text>
               {recent.map((r) => (
-                <Pressable key={r} onPress={() => setTerm(r)} accessibilityRole="button">
+                <Pressable key={r} onPress={() => { haptic.selection(); setTerm(r); }} accessibilityRole="button">
                   <Text style={{ color: theme.colors.text.primary, fontSize: textStyle.body.size, fontFamily: fontFamily.primary }}>{r}</Text>
                 </Pressable>
               ))}
@@ -202,7 +211,7 @@ export function SearchScreen() {
             ) : null
           }
           ListHeaderComponent={
-            <Pressable onPress={recordSearch} accessibilityRole="button">
+            <Pressable onPress={() => { haptic.tap(); recordSearch(); }} accessibilityRole="button">
               <Text style={{ paddingHorizontal: semanticSpacing.md, paddingBottom: semanticSpacing.xs, color: brand.orange, fontSize: textStyle.caption.size, fontWeight: fontWeight.semibold, fontFamily: fontFamily.primary }}>
                 {results.length} results · save search
               </Text>

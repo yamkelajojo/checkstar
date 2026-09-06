@@ -62,6 +62,7 @@ export interface ApiStore {
   longitude?: number;
   delivery_radius_km: number;
   trading_hours?: Record<string, string> | null;
+  is_active?: boolean;
 }
 
 export interface ApiOrderItem {
@@ -149,6 +150,30 @@ export interface ApiDispatchOutcome {
 export interface ApiPlaceOrderResponse {
   data: ApiOrder;
   dispatch: ApiDispatchOutcome;
+}
+
+export type ApiFulfilmentMethod = 'delivery' | 'pickup';
+
+export interface ApiUserAddress {
+  id: number;
+  user_id: number;
+  label: string;
+  contact_name: string | null;
+  contact_phone: string | null;
+  address: string;
+  latitude: string | number;
+  longitude: string | number;
+  is_default: boolean;
+}
+
+export interface ApiAddressInput {
+  label: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+  contact_name?: string;
+  contact_phone?: string;
+  is_default?: boolean;
 }
 
 export interface ApiCartSyncLine {

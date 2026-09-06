@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { View, Text, TextInput, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
-import { Store, Lock, CheckCircle2, AlertCircle, MapPin } from 'lucide-react-native';
+import { Store, Lock, CheckCircle2, AlertCircle, MapPin, ShoppingBag } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTheme } from '../../theme';
@@ -10,7 +10,8 @@ import { useCart } from '../cart/store';
 import { cartRules } from '../cart/model';
 import { useAllProducts } from '../catalog/hooks';
 import { useSession } from '../../stores/session';
-import { placeOrder, validateFulfillment } from '../../lib/apiClient';
+import { placeOrder, validateFulfillment, fetchStores, fetchAddresses } from '../../lib/apiClient';
+import type { ApiStore, ApiUserAddress } from '../../lib/types';
 import { getDeliveryCoords } from '../../lib/deliveryCoords';
 import { formatZar } from '../../lib/currency';
 import { TactilePressable } from '../../components/shared/TactilePressable';
@@ -55,6 +56,40 @@ export function CheckoutScreen() {
   const [validatingFulfillment, setValidatingFulfillment] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Fulfilment: have it delivered, or collect from a store yourself.
+  const [fulfilment, setFulfilment] = useState<'delivery' | 'pickup'>('delivery');
+  const [stores, setStores] = useState<ApiStore[]>([]);
+  const [selectedStoreId, setSelectedStoreId] = useState<number | null>(null);
+  const [savedAddresses, setSavedAddresses] = useState<ApiUserAddress[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<number | 'new'>('new');
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetchStores()
+      .then((all) => {
+        if (cancelled) return;
+        const active = all.filter((x) => x.is_active);
+        setStores(active);
+        setSelectedStoreId((current) => current ?? active[0]?.id ?? null);
+      })
+      .catch(() => {
+        if (!cancelled) setStores([]);
+      });
+    void fetchAddresses()
+      .then((list) => {
+        if (cancelled) return;
+        setSavedAddresses(list);
+        const preferred = list.find((a) => a.is_default) ?? list[0];
+        if (preferred) setSelectedAddressId((current) => (current === 'new' ? preferred.id : current));
+      })
+      .catch(() => {
+        if (!cancelled) setSavedAddresses([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     void getDeliveryCoords()
@@ -73,20 +108,40 @@ export function CheckoutScreen() {
   const priceOf = (id: string) => products.find((p) => p.id === Number(id))?.effectivePriceCents ?? 0;
   const subtotal = cartRules.subtotalCents(items, priceOf);
   const total = subtotal + EST_DELIVERY_FEE_CENTS;
-  const canSubmitOrder = canSubmit({
-    itemCount: items.length,
-    subtotalCents: subtotal,
-    address,
-    authenticated: status === 'authenticated',
-    storeSelected: fulfillmentStore != null,
-    submitting,
-    validatingFulfillment,
-    fulfillmentValid: fulfillmentStore != null && fulfillmentError == null,
-  });
+  const selectedStore = stores.find((x) => x.id === selectedStoreId) ?? null;
+  const isPickup = fulfilment === 'pickup';
+  const usingSavedAddress = !isPickup && selectedAddressId !== 'new' && savedAddresses.some((a) => a.id === selectedAddressId);
+  const deliveryTotal = subtotal + EST_DELIVERY_FEE_CENTS;
+  const canSubmitOrder = isPickup
+    ? canSubmit({
+        itemCount: items.length,
+        subtotalCents: subtotal,
+        address: selectedStoreId != null ? 'ok' : '',
+        authenticated: status === 'authenticated',
+        storeSelected: true,
+        submitting,
+        validatingFulfillment: false,
+        fulfillmentValid: selectedStoreId != null,
+      })
+    : canSubmit({
+        itemCount: items.length,
+        subtotalCents: subtotal,
+        address,
+        authenticated: status === 'authenticated',
+        storeSelected: fulfillmentStore != null,
+        submitting,
+        validatingFulfillment,
+        fulfillmentValid: fulfillmentStore != null && fulfillmentError == null,
+      });
 
-  // Validate fulfillment when cart or address/coords change (debounced)
+  // Validate fulfillment when cart or address/coords change (debounced).
+  // Pickup skips this entirely — the customer chose the store themselves.
   useEffect(() => {
-    if (items.length === 0) return;
+    if (items.length === 0 || fulfilment === 'pickup') {
+      setFulfillmentError(null);
+      setValidatingFulfillment(false);
+      return;
+    }
 
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
@@ -139,7 +194,7 @@ export function CheckoutScreen() {
       cancelled = true;
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [items, address]); // Re-validate when cart or address changes
+  }, [items, address, fulfilment]); // Re-validate when cart, address or fulfilment mode changes
 
   const submit = async () => {
     if (!canSubmitOrder) {
@@ -152,23 +207,42 @@ export function CheckoutScreen() {
       setError('Please sign in to place an order.');
       return;
     }
-    if (fulfillmentError || !fulfillmentStore) {
+    if (!isPickup && (fulfillmentError || !fulfillmentStore)) {
       setError('Cannot place order: fulfillment validation failed. Please check your address.');
+      return;
+    }
+    if (isPickup && selectedStoreId == null) {
+      setError('Please choose a store to collect from.');
       return;
     }
     setSubmitting(true);
     setError(null);
     try {
-      const coords = await getDeliveryCoords();
-      setUsedFallbackLocation(coords.usedFallback);
-      const res = await placeOrder({
-        items: items.map((i) => ({ product_id: Number(i.productId), quantity: i.quantity })),
-        delivery_address: address.trim(),
-        delivery_latitude: coords.latitude,
-        delivery_longitude: coords.longitude,
-        delivery_notes: notes.trim() || undefined,
-        payment_method: paymentMethod,
-      });
+      let res;
+      if (isPickup) {
+        res = await placeOrder({
+          items: items.map((i) => ({ product_id: Number(i.productId), quantity: i.quantity })),
+          fulfilment_method: 'pickup',
+          store_id: selectedStoreId!,
+          delivery_notes: notes.trim() || undefined,
+          payment_method: paymentMethod,
+        });
+      } else {
+        const saved = savedAddresses.find((a) => a.id === selectedAddressId);
+        const coords = await getDeliveryCoords();
+        setUsedFallbackLocation(coords.usedFallback);
+        res = await placeOrder({
+          items: items.map((i) => ({ product_id: Number(i.productId), quantity: i.quantity })),
+          fulfilment_method: 'delivery',
+          delivery_address: saved
+            ? saved.address
+            : address.trim(),
+          delivery_latitude: saved ? Number(saved.latitude) : coords.latitude,
+          delivery_longitude: saved ? Number(saved.longitude) : coords.longitude,
+          delivery_notes: notes.trim() || undefined,
+          payment_method: paymentMethod,
+        });
+      }
       // Keep cart on retrying/cancelled so customer can re-checkout (OrderCartPolicy #04)
       const shouldClear = res.dispatch?.status !== 'retrying' && res.dispatch?.status !== 'cancelled';
       if (shouldClear) {
@@ -209,6 +283,87 @@ export function CheckoutScreen() {
         <ScreenTitle title={copy.checkout.title} />
 
         <View style={{ padding: 16, gap: 14 }}>
+          {/* How would you like to get your order? */}
+          <View style={{ flexDirection: 'row', backgroundColor: theme.colors.surface.sunken, borderRadius: 14, padding: 4, gap: 4 }} accessibilityRole="tablist">
+            {([
+              { key: 'delivery', label: 'Deliver', icon: <MapPin size={16} color={fulfilment === 'delivery' ? brand.primary : theme.colors.text.secondary} /> },
+              { key: 'pickup', label: 'Pickup', icon: <ShoppingBag size={16} color={isPickup ? brand.primary : theme.colors.text.secondary} /> },
+            ] as const).map((opt) => {
+              const active = fulfilment === opt.key;
+              return (
+                <TactilePressable
+                  key={opt.key}
+                  onPress={() => {
+                    haptic.tap();
+                    setFulfilment(opt.key);
+                  }}
+                  accessibilityRole="tab"
+                  accessibilityState={{ selected: active }}
+                  style={{
+                    flex: 1,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 6,
+                    paddingVertical: 10,
+                    borderRadius: 10,
+                    backgroundColor: active ? theme.colors.surface.primary : 'transparent',
+                  }}
+                >
+                  {opt.icon}
+                  <Text style={{ fontWeight: active ? weights.bold : weights.semibold, color: active ? brand.primary : theme.colors.text.secondary }}>
+                    {opt.label}
+                  </Text>
+                </TactilePressable>
+              );
+            })}
+          </View>
+
+          {isPickup && (
+            <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: 16, padding: 16, gap: 10 }}>
+              <Text style={{ fontWeight: weights.bold, color: theme.colors.text.primary }}>Collect from</Text>
+              {stores.length === 0 ? (
+                <Text style={{ color: theme.colors.text.secondary, fontSize: typeScale.body }}>
+                  No stores are open for collection right now — please try delivery.
+                </Text>
+              ) : (
+                stores.map((storeOpt) => {
+                  const active = storeOpt.id === selectedStoreId;
+                  return (
+                    <TactilePressable
+                      key={storeOpt.id}
+                      onPress={() => {
+                        haptic.tap();
+                        setSelectedStoreId(storeOpt.id);
+                      }}
+                      accessibilityRole="radio"
+                      accessibilityState={{ selected: active }}
+                      accessibilityLabel={`Collect from ${storeOpt.name}`}
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: 10,
+                        padding: 12,
+                        borderRadius: 12,
+                        borderWidth: 1,
+                        borderColor: active ? brand.primary : theme.colors.border.subtle,
+                      }}
+                    >
+                      {active ? <CheckCircle2 size={18} color={brand.primary} /> : <Store size={18} color={theme.colors.text.secondary} />}
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ fontWeight: weights.semibold, color: theme.colors.text.primary }}>{storeOpt.name}</Text>
+                        <Text style={{ color: theme.colors.text.secondary, fontSize: typeScale.caption }}>{storeOpt.address}</Text>
+                      </View>
+                    </TactilePressable>
+                  );
+                })
+              )}
+              <Text style={{ color: theme.colors.text.tertiary, fontSize: typeScale.caption }}>
+                We'll pack your order ready for collection — no delivery fee.
+              </Text>
+            </View>
+          )}
+
           {validatingFulfillment && (
             <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: 16, padding: 16, gap: 8 }}>
               <Text style={{ fontWeight: weights.bold, color: theme.colors.text.primary }}>Finding best fulfillment store...</Text>
@@ -244,14 +399,72 @@ export function CheckoutScreen() {
             </View>
           )}
 
-          {!validatingFulfillment && !fulfillmentStore && !fulfillmentError && (
+          {!isPickup && !validatingFulfillment && !fulfillmentStore && !fulfillmentError && (
             <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: 16, padding: 16, gap: 8 }}>
               <Text style={{ fontWeight: weights.bold, color: theme.colors.text.primary }}>Unable to determine fulfillment store</Text>
               <Text style={{ color: theme.colors.text.secondary, fontSize: typeScale.body }}>Please enter your delivery address to continue</Text>
             </View>
           )}
 
-          <View style={{ gap: 6 }}>
+          {!isPickup && savedAddresses.length > 0 && (
+            <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: 16, padding: 16, gap: 10 }}>
+              <Text style={{ fontWeight: weights.bold, color: theme.colors.text.primary }}>Deliver to</Text>
+              {savedAddresses.map((savedOpt) => {
+                const active = selectedAddressId === savedOpt.id;
+                return (
+                  <TactilePressable
+                    key={savedOpt.id}
+                    onPress={() => {
+                      haptic.tap();
+                      setSelectedAddressId(savedOpt.id);
+                    }}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: active }}
+                    accessibilityLabel={`Deliver to ${savedOpt.label}`}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 10,
+                      padding: 12,
+                      borderRadius: 12,
+                      borderWidth: 1,
+                      borderColor: active ? brand.primary : theme.colors.border.subtle,
+                    }}
+                  >
+                    {active ? <CheckCircle2 size={18} color={brand.primary} /> : <MapPin size={18} color={theme.colors.text.secondary} />}
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontWeight: weights.semibold, color: theme.colors.text.primary }}>
+                        {savedOpt.label}{savedOpt.is_default ? ' · Default' : ''}
+                      </Text>
+                      <Text numberOfLines={1} style={{ color: theme.colors.text.secondary, fontSize: typeScale.caption }}>{savedOpt.address}</Text>
+                    </View>
+                  </TactilePressable>
+                );
+              })}
+              <TactilePressable
+                onPress={() => {
+                  haptic.tap();
+                  setSelectedAddressId('new');
+                }}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: selectedAddressId === 'new' }}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 10,
+                  padding: 12,
+                  borderRadius: 12,
+                  borderWidth: 1,
+                  borderColor: selectedAddressId === 'new' ? brand.primary : theme.colors.border.subtle,
+                }}
+              >
+                <MapPin size={18} color={selectedAddressId === 'new' ? brand.primary : theme.colors.text.secondary} />
+                <Text style={{ fontWeight: weights.semibold, color: theme.colors.text.primary }}>Enter a new address</Text>
+              </TactilePressable>
+            </View>
+          )}
+
+          <View style={{ gap: 6, display: isPickup || usingSavedAddress ? 'none' : 'flex' }}>
             <Text style={{ fontWeight: weights.semibold, color: theme.colors.text.primary }}>{copy.checkout.deliveryAddress}</Text>
             <TextInput
               value={address}
@@ -327,9 +540,11 @@ export function CheckoutScreen() {
           <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: 16, padding: 16, gap: 10 }}>
             <Text style={{ fontWeight: weights.bold, color: theme.colors.text.primary }}>{copy.checkout.summary}</Text>
             {row(`${cartRules.totalQuantity(items)} items`, formatZar(subtotal))}
-            {row(copy.checkout.estimatedDelivery, formatZar(EST_DELIVERY_FEE_CENTS))}
+            {isPickup
+              ? row('Pickup', 'Free')
+              : row(copy.checkout.estimatedDelivery, formatZar(EST_DELIVERY_FEE_CENTS))}
             <View style={{ height: 1, backgroundColor: theme.colors.border.subtle }} />
-            {row(copy.checkout.total, formatZar(total), true)}
+            {row(copy.checkout.total, formatZar(isPickup ? subtotal : total), true)}
           </View>
 
           {status !== 'authenticated' && (
@@ -364,7 +579,7 @@ export function CheckoutScreen() {
           style={{ backgroundColor: canSubmitOrder ? brand.primary : theme.colors.surface.primary, borderRadius: 999, opacity: canSubmitOrder ? 1 : 0.6 }}
         >
           <Text style={{ color: canSubmitOrder ? '#fff' : theme.colors.text.secondary, textAlign: 'center', fontWeight: weights.bold, textTransform: 'uppercase', letterSpacing: letterSpacing.wide }}>
-            {submitting ? copy.checkout.placingOrder : `${copy.checkout.placeOrder} · ${formatZar(total)}`}
+            {submitting ? copy.checkout.placingOrder : `${copy.checkout.placeOrder} · ${formatZar(isPickup ? subtotal : total)}`}
           </Text>
         </TactilePressable>
         {subtotal < MIN_ORDER_CENTS && (
