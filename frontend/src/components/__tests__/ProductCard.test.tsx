@@ -49,6 +49,16 @@ describe('ProductCard', () => {
     expect(screen.queryByText('Special')).toBeNull()
   })
 
+  it('announces the special in the text sections too — Save pill with the rand amount', () => {
+    render(<ProductCard product={product({ sale_price: 29.99, effective_price: 29.99 })} />)
+    expect(screen.getByText('Save R10.00')).toBeTruthy()
+  })
+
+  it('omits the Save pill for non-sale products', () => {
+    render(<ProductCard product={product()} />)
+    expect(screen.queryByText(/^Save R/)).toBeNull()
+  })
+
   it('renders a plain <img> for absolute media URLs so an unconfigured image host can never crash the page', () => {
     const { container } = render(
       <ProductCard product={product({ image: 'http://192.168.99.99:8000/products/beverages/x.jpg' })} />,

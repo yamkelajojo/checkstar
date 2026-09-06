@@ -53,6 +53,8 @@ vi.mock('motion/react', async () => {
     AnimatePresence: ({ children }: { children: React.ReactNode }) =>
       React.createElement(React.Fragment, null, children),
     useReducedMotion: () => false,
+    useSpring: (v: number) => ({ set: () => {}, on: () => () => {}, get: () => v, stop: () => {} }),
+    useTransform: (mv: { get: () => number }, fn: (v: number) => string) => fn(mv.get()),
   }
 })
 

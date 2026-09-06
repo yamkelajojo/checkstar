@@ -13,10 +13,18 @@ interface Props {
   compact?: boolean
 }
 
+/**
+ * Product card — image stage on top, three quiet text sections below:
+ * unit eyebrow, name, price row. Specials are announced twice: the badge
+ * on the image and a "Save R…" pill in the price row. Sizes scale with the
+ * viewport via sm: steps so 2-col phone grids and 4–5-col desktop grids
+ * both stay comfortable.
+ */
 export default function ProductCard({ product, compact = false }: Props) {
   const addItem = useCartStore(s => s.addItem)
   const price = Number(product.effective_price ?? product.sale_price ?? product.price)
   const hasSale = product.effective_price != null && Number(product.effective_price) < Number(product.price)
+  const saveAmount = hasSale ? Number(product.price) - Number(product.effective_price) : 0
 
   return (
     <motion.div
@@ -24,40 +32,45 @@ export default function ProductCard({ product, compact = false }: Props) {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       whileHover={{ y: -4 }}
-      className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+      className="group bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow"
     >
-      <Link href={`/products/${product.slug}`}>
-        <div className={`relative ${compact ? 'aspect-square' : 'aspect-[4/3]'} bg-gray-50 flex items-center justify-center p-3`}>
+      <Link href={`/products/${product.slug}`} className="block">
+        <div className={`relative ${compact ? 'aspect-square' : 'aspect-[4/3]'} bg-gray-50 flex items-center justify-center p-3 overflow-hidden`}>
           {product.image ? (
             <SafeImage
               src={product.image}
               alt={product.name}
               fill
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-              className="object-contain"
+              className="object-contain transition-transform duration-500 group-hover:scale-105"
             />
           ) : (
             <div className="text-gray-300 text-sm">No image</div>
           )}
           {hasSale && (
-            <span className="absolute top-2 left-2 rounded-full bg-gray-900 px-2 py-0.5 text-[11px] font-medium text-white">
+            <span className="absolute top-2 left-2 rounded-full bg-gray-900 px-2 py-0.5 text-[11px] font-medium text-white shadow-sm">
               Special
             </span>
           )}
         </div>
       </Link>
 
-      <div className={compact ? 'p-2' : 'p-3'}>
+      <div className={compact ? 'p-2' : 'p-2.5 sm:p-3'}>
         <Link href={`/products/${product.slug}`}>
-          <h3 className={`font-medium ${compact ? 'text-xs' : 'text-sm'} text-gray-900 line-clamp-2 mb-1`}>{product.name}</h3>
+          {/* Section 1 — unit eyebrow */}
+          {!compact && product.unit && (
+            <p className="text-[10px] sm:text-[11px] uppercase tracking-wider text-gray-500 mb-1 truncate">{product.unit}</p>
+          )}
+          {/* Section 2 — name, two-line clamp with reserved height so rows align */}
+          <h3 className={`font-semibold ${compact ? 'text-xs' : 'text-[13px] sm:text-sm'} text-gray-900 line-clamp-2 leading-snug ${compact ? '' : 'min-h-[2.4em]'}`}>{product.name}</h3>
         </Link>
-        <p className="text-xs text-gray-500 mb-3">{product.unit}</p>
 
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className={`font-semibold ${compact ? 'text-sm' : 'text-base'} text-gray-900`}>R{price.toFixed(2)}</span>
+        {/* Section 3 — price row */}
+        <div className="flex items-end justify-between gap-1 mt-1">
+          <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 min-w-0">
+            <span className={`font-bold ${compact ? 'text-sm' : 'text-sm sm:text-base'} text-gray-900 tabular-nums`}>R{price.toFixed(2)}</span>
             {hasSale && (
-              <span className="text-xs text-gray-500 line-through">R{Number(product.price).toFixed(2)}</span>
+              <span className="text-[11px] sm:text-xs text-gray-400 line-through tabular-nums">R{Number(product.price).toFixed(2)}</span>
             )}
           </div>
 
@@ -69,12 +82,19 @@ export default function ProductCard({ product, compact = false }: Props) {
                 emitCartAdded(product.name)
               }}
               aria-label={`Add ${product.name} to cart`}
-              className="bg-primary text-white w-10 h-10 flex items-center justify-center rounded-lg hover:bg-primary-dark transition-colors"
+              className="bg-primary text-white w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-lg hover:bg-primary-dark transition-colors shrink-0"
             >
               <ShoppingCart size={16} strokeWidth={1.5} />
             </motion.button>
           )}
         </div>
+
+        {/* Save pill lives in the card's text area, not shouting on the image */}
+        {hasSale && !compact && (
+          <span className="inline-block mt-1.5 bg-primary/10 text-primary text-[10px] sm:text-[11px] font-semibold px-1.5 py-0.5 rounded-full tabular-nums">
+            Save R{saveAmount.toFixed(2)}
+          </span>
+        )}
       </div>
     </motion.div>
   )

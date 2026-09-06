@@ -3,10 +3,20 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { motion } from 'motion/react'
-import { Clock, Users, ChefHat, ChevronLeft, ListOrdered, Package } from 'lucide-react'
+import { Clock, Users, ChefHat, ChevronLeft, ListOrdered, Package, Check, ShoppingCart } from 'lucide-react'
+import { useState } from 'react'
 import { useRecipe, useAllProducts } from '@/lib/query'
 import { findIngredientProduct } from '@/lib/ingredientMatch'
 import SafeImage from '@/components/SafeImage'
+import type { Product } from '@/types'
+import { useCartStore } from '@/stores/cart-store'
+import { emitCartAdded } from '@/lib/cart-events'
+import {
+  PopoverRoot,
+  PopoverTrigger,
+  PopoverContent,
+  PopoverFooter,
+} from '@/components/ui/popover'
 
 export default function RecipeDetailClient({ slug }: { slug: string }) {
   const { data: recipe, isLoading: loading, error } = useRecipe(slug)
@@ -159,23 +169,7 @@ export default function RecipeDetailClient({ slug }: { slug: string }) {
                     >
                       <span className="flex flex-wrap items-center gap-x-2 gap-y-1 flex-1 min-w-0 text-gray-700">
                         <span>{ing}</span>
-                        {match && (
-                          <Link
-                            href={`/products/${match.slug}`}
-                            aria-label={`View ${match.name} product page`}
-                            className="inline-flex items-center gap-1.5 bg-primary/5 border border-primary/20 rounded-full pl-1 pr-2.5 py-0.5 text-xs font-medium text-primary hover:bg-primary/10 transition-colors flex-shrink-0 no-underline"
-                          >
-                            {match.image ? (
-                              <SafeImage src={match.image} alt={match.name} width={20} height={20} className="rounded-full object-cover" />
-                            ) : (
-                              <Package size={12} className="flex-shrink-0" />
-                            )}
-                            <span className="truncate max-w-[80px]">{match.name}</span>
-                            <span className="font-semibold">
-                              R{(Number(match.effective_price ?? match.sale_price ?? match.price)).toFixed(2)}
-                            </span>
-                          </Link>
-                        )}
+                        {match && <IngredientProductPopover product={match} />}
                       </span>
                     </li>
                   )
@@ -212,5 +206,93 @@ export default function RecipeDetailClient({ slug }: { slug: string }) {
         </div>
       </div>
     </>
+  )
+}
+
+/**
+ * Ingredient product pill — opens a small popover with the product's details
+ * and a one-tap add-to-cart. Replaces the old behaviour of navigating straight
+ * to the product page: the shopper stays on the recipe.
+ */
+function IngredientProductPopover({ product }: { product: Product }) {
+  const addItem = useCartStore(s => s.addItem)
+  const [open, setOpen] = useState(false)
+  const [added, setAdded] = useState(false)
+  const price = Number(product.effective_price ?? product.sale_price ?? product.price)
+
+  const addToCart = () => {
+    addItem(product)
+    emitCartAdded(product.name)
+    setAdded(true)
+    setTimeout(() => {
+      setOpen(false)
+      setAdded(false)
+    }, 900)
+  }
+
+  return (
+    <PopoverRoot open={open} onOpenChange={setOpen}>
+      <PopoverTrigger
+        aria-label={`About ${product.name}`}
+        className="inline-flex items-center gap-1.5 bg-primary/5 border border-primary/20 rounded-full pl-1 pr-2.5 py-0.5 text-xs font-medium text-primary hover:bg-primary/10 transition-colors flex-shrink-0 no-underline"
+      >
+        {product.image ? (
+          <SafeImage src={product.image} alt={product.name} width={20} height={20} className="rounded-full object-cover" />
+        ) : (
+          <Package size={12} className="flex-shrink-0" />
+        )}
+        <span className="truncate max-w-[80px]">{product.name}</span>
+        <span className="font-semibold">
+          R{price.toFixed(2)}
+        </span>
+      </PopoverTrigger>
+
+      <PopoverContent className="w-72">
+        <div className="flex gap-2.5">
+          <div className="relative w-11 h-11 rounded-lg bg-gray-50 flex items-center justify-center flex-shrink-0 overflow-hidden">
+            {product.image ? (
+              <SafeImage src={product.image} alt={product.name} width={44} height={44} className="object-contain" />
+            ) : (
+              <Package size={18} className="text-gray-300" />
+            )}
+          </div>
+          <div className="min-w-0">
+            <p className="text-[13px] font-semibold text-gray-900 leading-snug line-clamp-2">{product.name}</p>
+            <p className="text-[11px] text-gray-400 mt-0.5">
+              {product.unit}
+              {product.unit && product.category?.name ? ' · ' : ''}
+              {product.category?.name}
+            </p>
+          </div>
+        </div>
+
+        {product.description && (
+          <p className="text-[11px] leading-relaxed text-gray-500 line-clamp-3 mt-2">{product.description}</p>
+        )}
+
+        <PopoverFooter className="mt-2.5">
+          <span className="font-bold text-sm text-gray-900 tabular-nums">R{price.toFixed(2)}</span>
+          <button
+            type="button"
+            onClick={addToCart}
+            aria-label={`Add ${product.name} to cart`}
+            className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold text-white transition-colors ${
+              added ? 'bg-green-600' : 'bg-primary hover:bg-primary-dark'
+            }`}
+          >
+            {added ? <Check size={12} /> : <ShoppingCart size={12} />}
+            {added ? 'Added' : 'Add'}
+          </button>
+        </PopoverFooter>
+
+        <Link
+          href={`/products/${product.slug}`}
+          aria-label={`View ${product.name} product page`}
+          className="mt-2 inline-block text-[11px] text-gray-400 hover:text-primary transition-colors"
+        >
+          View product page →
+        </Link>
+      </PopoverContent>
+    </PopoverRoot>
   )
 }

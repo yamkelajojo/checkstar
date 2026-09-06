@@ -214,7 +214,7 @@ export default function CartClient() {
                         <div className="flex flex-col items-end gap-2 sm:flex-row sm:items-center sm:gap-4">
                           <p className="order-1 text-right text-sm sm:w-20 text-base font-semibold tabular-nums sm:order-2">
                             <span className="tabular-nums">
-                              R<AnimatedNumber value={price * item.quantity} format={(n) => n.toFixed(2)} />
+                              R<AnimatedNumber value={price * item.quantity} precision={2} format={(n) => n.toFixed(2)} />
                             </span>
                           </p>
 
@@ -227,7 +227,8 @@ export default function CartClient() {
                               <Minus size={14} />
                             </button>
                             <span className="w-8 text-center text-sm font-medium tabular-nums">
-                              <AnimatedNumber value={item.quantity} />
+                              {/* Quantity ticks snappier than money — same effect, tighter spring */}
+                              <AnimatedNumber value={item.quantity} precision={0} stiffness={260} damping={26} />
                             </span>
                             <button
                               onClick={() => addItem(item.product, 1)}
@@ -260,7 +261,7 @@ export default function CartClient() {
                     <div className="flex justify-between text-gray-500">
                       <span>Subtotal</span>
                       <span className="tabular-nums">
-                        R<AnimatedNumber value={subtotal} format={(n) => n.toFixed(2)} />
+                        R<AnimatedNumber value={subtotal} precision={2} format={(n) => n.toFixed(2)} />
                       </span>
                     </div>
                     <div className="flex justify-between text-gray-500">
@@ -272,7 +273,7 @@ export default function CartClient() {
                     <div className="border-t border-gray-200 pt-2 mt-2 flex justify-between font-semibold text-base">
                       <span>Total</span>
                       <span className="tabular-nums">
-                        R<AnimatedNumber value={subtotal + deliveryFee} format={(n) => n.toFixed(2)} />
+                        R<AnimatedNumber value={subtotal + deliveryFee} precision={2} format={(n) => n.toFixed(2)} />
                       </span>
                     </div>
                   </div>

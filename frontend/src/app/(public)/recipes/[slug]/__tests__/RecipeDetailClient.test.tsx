@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import React from 'react'
 
@@ -35,65 +35,98 @@ vi.mock('@/lib/query', () => ({
   }),
 }))
 
+const addItem = vi.fn()
+vi.mock('@/stores/cart-store', () => ({
+  useCartStore: (selector: (s: { addItem: () => void }) => unknown) =>
+    selector({ addItem }),
+}))
+
 vi.mock('motion/react', () => ({
   motion: new Proxy({}, { get: (_t, tag) => tag }),
   AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  useReducedMotion: () => false,
 }))
 
 import RecipeDetailClient from '../RecipeDetailClient'
 
-describe('RecipeDetailClient ingredient→product linking', () => {
+describe('RecipeDetailClient ingredient→product popover', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
-  it('renders each ingredient with an inline product pill linking to the product page', () => {
+  it('matches ingredients to product pills (trigger buttons, not links)', () => {
     render(<RecipeDetailClient slug="sugar-toast" />)
 
-    const pill = screen.getByRole('link', { name: /view sugar product page/i })
-    expect(pill).toHaveAttribute('href', '/products/sugar')
-    // The pill sits next to the ingredient text, in the same row.
+    const trigger = screen.getByRole('button', { name: /about sugar/i })
+    expect(trigger).toBeTruthy()
     expect(screen.getByText('1 tsp sugar')).toBeTruthy()
+    // Pills no longer navigate on click — they open a popover.
+    expect(screen.queryByRole('link', { name: /about sugar/i })).toBeNull()
   })
 
   it('does not let short product names hijack ingredients (Milk vs Buttermilk)', () => {
     render(<RecipeDetailClient slug="sugar-toast" />)
 
-    expect(screen.getByRole('link', { name: /view buttermilk product page/i })).toHaveAttribute('href', '/products/buttermilk')
-    expect(screen.queryByRole('link', { name: /view milk product page/i })).toBeNull()
+    expect(screen.getByRole('button', { name: /about buttermilk/i })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /about milk/i })).toBeNull()
   })
 
   it('renders the product thumbnail inside the pill (the reported missing thumbnails)', () => {
     render(<RecipeDetailClient slug="sugar-toast" />)
 
-    const pill = screen.getByRole('link', { name: /view sugar product page/i })
+    const pill = screen.getByRole('button', { name: /about sugar/i })
     const img = pill.querySelector('img')
     expect(img).toBeTruthy()
     expect(img!.getAttribute('src')).toContain('sugar.jpg')
   })
 
-  it('never links pet food into a food recipe', () => {
+  it('never matches pet food into a food recipe', () => {
     render(<RecipeDetailClient slug="sugar-toast" />)
 
-    expect(screen.queryByRole('link', { name: /whiskas/i })).toBeNull()
+    expect(screen.queryByRole('button', { name: /whiskas/i })).toBeNull()
+  })
+
+  it('opens a popover with the product details and a small add-to-cart', () => {
+    render(<RecipeDetailClient slug="sugar-toast" />)
+
+    fireEvent.click(screen.getByRole('button', { name: /about sugar/i }))
+
+    const dialog = screen.getByRole('dialog')
+    expect(dialog.textContent).toContain('Sugar')
+    expect(dialog.textContent).toContain('10.00')
+    const add = within(dialog).getByRole('button', { name: /add sugar to cart/i })
+    expect(add).toBeTruthy()
+    // The popover offers the full product page as an explicit choice.
+    expect(within(dialog).getByRole('link', { name: /view sugar product page/i })).toHaveAttribute('href', '/products/sugar')
+  })
+
+  it('adds the matched product to the cart from the popover without navigating', async () => {
+    render(<RecipeDetailClient slug="sugar-toast" />)
+
+    fireEvent.click(screen.getByRole('button', { name: /about sugar/i }))
+    fireEvent.click(screen.getByRole('button', { name: /add sugar to cart/i }))
+
+    expect(addItem).toHaveBeenCalledTimes(1)
+    expect(addItem.mock.calls[0][0].slug).toBe('sugar')
+    // No navigation — the shopper stays on the recipe.
+    expect(push).not.toHaveBeenCalled()
+    // The popover confirms and closes itself.
+    expect(await screen.findByText('Added')).toBeTruthy()
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull(), { timeout: 2000 })
   })
 
   it('renders unmatched ingredients without a product pill', () => {
     render(<RecipeDetailClient slug="sugar-toast" />)
 
     expect(screen.getByText('a pinch of salt')).toBeTruthy()
-    const saltPills = screen.queryByRole('link', { name: /salt/i })
-    expect(saltPills).toBeNull()
+    expect(screen.queryByRole('button', { name: /about salt/i })).toBeNull()
   })
 
-  it('lists ingredients as plain text with the product pill — no tick boxes', () => {
+  it('lists ingredients as plain text with the pill — no tick boxes', () => {
     render(<RecipeDetailClient slug="sugar-toast" />)
 
     expect(screen.getByText('1 tsp sugar')).toBeTruthy()
-    const pill = screen.getByRole('link', { name: /view sugar product page/i })
-    // The ingredient is not wrapped in any control — checkboxes were
-    // removed from the recipe page by design.
-    expect(pill.closest('button')).toBeNull()
+    // Checkboxes were removed from the recipe page by design.
     expect(screen.queryByRole('button', { name: /bought/i })).toBeNull()
   })
 })

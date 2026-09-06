@@ -86,8 +86,8 @@ export default function AboutClient() {
                 className="mt-4 text-lg text-gray-500 max-w-2xl mx-auto leading-relaxed"
               >
                 From a single store in Durban to a community-driven grocery
-                delivery service — Checkstar has been serving South African
-                families for nearly two decades.
+                delivery service&nbsp;&mdash; Checkstar has been serving South
+                African families for nearly two decades.
               </motion.p>
             </motion.div>
           </div>

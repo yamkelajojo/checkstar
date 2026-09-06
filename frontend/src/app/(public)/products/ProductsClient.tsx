@@ -100,8 +100,8 @@ export default function ProductsClient() {
                         aria-current={isActive ? 'true' : undefined}
                         className={`relative flex w-full items-center px-3 py-2 text-[15px] transition-colors duration-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary/40 ${
                           isActive
-                            ? 'font-bold text-primary'
-                            : 'font-light text-gray-500 hover:text-gray-900'
+                            ? 'font-semibold text-primary'
+                            : 'font-extralight text-gray-500 hover:text-gray-900'
                         }`}
                       >
                         {/* Atmospheric glow — a blurred ellipse that extends
