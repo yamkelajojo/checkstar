@@ -57,6 +57,37 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
     return () => observer.disconnect()
   }, [related])
 
+  const relatedItems = useMemo(
+    () =>
+      (related ?? []).map(item => ({
+        id: item.id,
+        content: (
+          <Link
+            href={`/products/${item.slug}`}
+            className="group flex flex-col h-full bg-white border border-gray-100 rounded-xl overflow-hidden hover:shadow-md transition-shadow"
+          >
+            <div className="relative flex-1 bg-gray-50 flex items-center justify-center min-h-0">
+              {item.image ? (
+                <Image src={mediaUrl(item.image)} alt={item.name} fill sizes="(max-width: 768px) 50vw, 25vw" className="object-contain p-4 group-hover:scale-105 transition-transform" />
+              ) : (
+                <Package size={28} className="text-gray-200" />
+              )}
+              {item.effective_price != null && item.effective_price < item.price && (
+                <span className="absolute top-2 left-2 bg-green-100 text-green-700 text-[10px] font-medium px-2 py-0.5 rounded-full">
+                  Sale
+                </span>
+              )}
+            </div>
+            <div className="p-3 shrink-0">
+              <p className="text-sm font-medium line-clamp-2 mb-1">{item.name}</p>
+              <ProductPrice product={item} />
+            </div>
+          </Link>
+        ),
+      })),
+    [related],
+  )
+
   if (fetchError) {
     return (
       <>
@@ -111,37 +142,6 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
   }
 
   const ctaLabel = added ? 'Added!' : 'Add to Cart'
-
-  const relatedItems = useMemo(
-    () =>
-      (related ?? []).map(item => ({
-        id: item.id,
-        content: (
-          <Link
-            href={`/products/${item.slug}`}
-            className="group flex flex-col h-full bg-white border border-gray-100 rounded-xl overflow-hidden hover:shadow-md transition-shadow"
-          >
-            <div className="relative flex-1 bg-gray-50 flex items-center justify-center min-h-0">
-              {item.image ? (
-                <Image src={mediaUrl(item.image)} alt={item.name} fill sizes="(max-width: 768px) 50vw, 25vw" className="object-contain p-4 group-hover:scale-105 transition-transform" />
-              ) : (
-                <Package size={28} className="text-gray-200" />
-              )}
-              {item.effective_price != null && item.effective_price < item.price && (
-                <span className="absolute top-2 left-2 bg-green-100 text-green-700 text-[10px] font-medium px-2 py-0.5 rounded-full">
-                  Sale
-                </span>
-              )}
-            </div>
-            <div className="p-3 shrink-0">
-              <p className="text-sm font-medium line-clamp-2 mb-1">{item.name}</p>
-              <ProductPrice product={item} />
-            </div>
-          </Link>
-        ),
-      })),
-    [related],
-  )
 
   return (
     <>
