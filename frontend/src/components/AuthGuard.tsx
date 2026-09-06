@@ -18,11 +18,16 @@ export function AuthGuard({ requiredRole, staffRoles, redirectTo = '/auth/login'
   const router = useRouter()
   const { user, isAuthenticated, isLoading, checkAuth } = useAuthStore()
 
+  // Bootstrap the session whenever we are still resolving it. This covers
+  // BOTH cold visits and persisted (zustand/localStorage) sessions — with a
+  // persisted session `isAuthenticated` is already true on mount, so the old
+  // `!isAuthenticated && isLoading` condition never ran checkAuth and the
+  // `isLoading` flag stayed true forever (permanent loading spinner).
   useEffect(() => {
-    if (!isAuthenticated && isLoading) {
+    if (isLoading) {
       checkAuth()
     }
-  }, [isAuthenticated, isLoading, checkAuth])
+  }, [isLoading, checkAuth])
 
   useEffect(() => {
     if (isLoading) return

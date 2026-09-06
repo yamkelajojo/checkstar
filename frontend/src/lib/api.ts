@@ -126,12 +126,14 @@ export const api = {
   dispatchOrder: (orderId: number, riderId: number, storeId?: number) => request<{ data: Order }>(`/store/orders/${orderId}/dispatch`, { method: 'POST', body: JSON.stringify({ rider_id: riderId, ...(storeId ? { store_id: storeId } : {}) }) }),
   reassignOrder: (orderId: number, riderId: number) => request<{ data: Order }>(`/store/orders/${orderId}/reassign`, { method: 'POST', body: JSON.stringify({ rider_id: riderId }) }),
   // Staff management
+  listStaff: (storeId?: number) => request<{ data: Array<{ id: number; user: { id: number; name: string; email: string }; role: string; store_id: number; created_at: string }> }>(`/store/staff${storeId ? `?store_id=${storeId}` : ''}`),
   hireStaff: (userId: number, role: string, storeId?: number) => request<{ data: unknown }>(`/store/staff`, { method: 'POST', body: JSON.stringify({ user_id: userId, role, ...(storeId ? { store_id: storeId } : {}) }) }),
   fireStaff: (staffId: number, storeId?: number) => request<{ message: string }>(`/store/staff/${staffId}${storeId ? `?store_id=${storeId}` : ''}`, { method: 'DELETE' }),
   // Admin messages
   getMessages: () => request<{ data: unknown[] }>('/admin/messages'),
   getMessage: (id: number) => request<{ data: unknown }>(`/admin/messages/${id}`),
   replyToMessage: (id: number, body: string) => request<{ data: unknown }>(`/admin/messages/${id}/reply`, { method: 'POST', body: JSON.stringify({ body }) }),
+  markMessageRead: (id: number, read?: boolean) => request<{ data: unknown }>(`/admin/messages/${id}/read`, { method: 'PATCH', ...(read !== undefined ? { body: JSON.stringify({ read }) } : {}) }),
   // Rider
   getAvailableOrders: () => request<{ data: Order[] }>('/rider/available-orders'),
   // Backend wraps rider mutations in {data} — keep the envelope in the type.

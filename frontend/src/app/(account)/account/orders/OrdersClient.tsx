@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'motion/react'
 import { ChevronRight, Loader2, ShoppingBag, Package } from 'lucide-react'
@@ -10,24 +9,14 @@ import { useOrders } from '@/lib/query'
 import { statusConfig } from '@/lib/motion/variants'
 
 export default function OrdersClient() {
-  const router = useRouter()
-  const { isAuthenticated, isLoading: authLoading, checkAuth } = useAuthStore()
+  // Auth bootstrap + redirect live in the (account) layout AuthGuard.
+  const { isLoading: authLoading } = useAuthStore()
   const [statusFilter, setStatusFilter] = useState<string>('')
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest')
   const queryParams: Record<string, string> = {}
   if (statusFilter) queryParams.status = statusFilter
   if (sortOrder === 'oldest') queryParams.sort = 'oldest'
   const { data: orders = [], isLoading: loading, error } = useOrders(Object.keys(queryParams).length ? queryParams : undefined)
-
-  useEffect(() => {
-    checkAuth()
-  }, [checkAuth])
-
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.push('/auth/login')
-    }
-  }, [authLoading, isAuthenticated, router])
 
   if (authLoading || loading) {
     return (

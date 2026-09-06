@@ -1,57 +1,53 @@
 'use client'
 
+import Link from 'next/link'
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import { motion } from 'motion/react'
-import { Package, Bike, Loader2, AlertCircle, CheckCircle } from 'lucide-react'
+import { Package, Bike, Loader2, AlertCircle, CheckCircle, Lock } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth-store'
 import { api } from '@/lib/api'
 import { usePendingDispatch } from '@/lib/query'
 import { useQueryClient } from '@tanstack/react-query'
 
+const allowedRoles = ['store_manager', 'logistics_officer', 'store_owner', 'developer']
+
 export default function DispatchConsoleClient() {
-  const router = useRouter()
-  const { isAuthenticated, isLoading: authLoading, user, checkAuth } = useAuthStore()
+  const { isLoading: authLoading, user } = useAuthStore()
   const queryClient = useQueryClient()
   const [storeIdInput, setStoreIdInput] = useState('')
   const [riderInputs, setRiderInputs] = useState<Record<number, string>>({})
   const [reassignInputs, setReassignInputs] = useState<Record<number, string>>({})
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
+  // Auth is handled by the (account) layout AuthGuard — no duplicate checkAuth here.
+  const authResolved = !authLoading && !!user
+  const authorized = authResolved && allowedRoles.includes(user!.role)
   const storeId = user?.role === 'developer' && storeIdInput ? Number(storeIdInput) : undefined
-  const { data: pending = [], isLoading, error, refetch } = usePendingDispatch(storeId)
 
+  // Only hit the API once the role is known and allowed (prevents 401 noise on boot).
+  const { data: pending = [], isLoading, error, refetch, isFetching } = usePendingDispatch(storeId, {
+    enabled: authorized,
+  })
+
+  // Success messages self-dismiss; errors persist until the next action.
   useEffect(() => {
-    checkAuth()
-  }, [checkAuth])
-
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) router.push('/auth/login')
-  }, [authLoading, isAuthenticated, router])
-
-  const allowedRoles = ['store_manager', 'logistics_officer', 'store_owner', 'developer']
-  if (!authLoading && user && !allowedRoles.includes(user.role)) {
-    return (
-      <main className="max-w-4xl mx-auto px-4 py-16 text-center">
-        <AlertCircle size={32} className="mx-auto text-accent mb-4" />
-        <h1 className="text-xl font-semibold">Not authorized</h1>
-        <p className="text-sm text-gray-500 mt-2">Logistics console requires Store Manager, Logistics Officer, Store Owner or Developer.</p>
-      </main>
-    )
-  }
+    if (message?.type !== 'success') return
+    const t = setTimeout(() => setMessage(null), 5000)
+    return () => clearTimeout(t)
+  }, [message])
 
   const handleDispatch = async (orderId: number) => {
-    const riderIdStr = riderInputs[orderId]
-    if (!riderIdStr) {
-      setMessage({ type: 'error', text: 'Enter a Rider ID' })
+    const riderIdStr = riderInputs[orderId]?.trim()
+    if (!riderIdStr || !/^\d+$/.test(riderIdStr)) {
+      setMessage({ type: 'error', text: 'Enter a valid numeric Rider ID' })
       return
     }
     try {
       const riderId = Number(riderIdStr)
       await api.dispatchOrder(orderId, riderId, storeId)
       setMessage({ type: 'success', text: `Order #${orderId} dispatched to rider ${riderId}` })
+      setRiderInputs((s) => ({ ...s, [orderId]: '' }))
       queryClient.invalidateQueries({ queryKey: ['pending-dispatch'] })
-      void refetch()
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Dispatch failed'
       const reason = (err as { payload?: { reason?: string } })?.payload?.reason
@@ -60,16 +56,16 @@ export default function DispatchConsoleClient() {
   }
 
   const handleReassign = async (orderId: number) => {
-    const riderIdStr = reassignInputs[orderId]
-    if (!riderIdStr) {
-      setMessage({ type: 'error', text: 'Enter new Rider ID for reassign' })
+    const riderIdStr = reassignInputs[orderId]?.trim()
+    if (!riderIdStr || !/^\d+$/.test(riderIdStr)) {
+      setMessage({ type: 'error', text: 'Enter a valid numeric Rider ID to reassign' })
       return
     }
     try {
       await api.reassignOrder(orderId, Number(riderIdStr))
-      setMessage({ type: 'success', text: `Order #${orderId} reassigned` })
+      setMessage({ type: 'success', text: `Order #${orderId} reassigned to rider ${riderIdStr}` })
+      setReassignInputs((s) => ({ ...s, [orderId]: '' }))
       queryClient.invalidateQueries({ queryKey: ['pending-dispatch'] })
-      void refetch()
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Reassign failed'
       const reason = (err as { payload?: { reason?: string } })?.payload?.reason
@@ -77,7 +73,7 @@ export default function DispatchConsoleClient() {
     }
   }
 
-  if (authLoading || isLoading) {
+  if (authLoading) {
     return (
       <main className="max-w-4xl mx-auto px-4 py-20 text-center">
         <Loader2 size={32} className="animate-spin mx-auto text-primary" />
@@ -85,11 +81,39 @@ export default function DispatchConsoleClient() {
     )
   }
 
+  if (!authorized) {
+    return (
+      <main className="max-w-4xl mx-auto px-4 py-16 text-center">
+        <div className="w-12 h-12 rounded-full bg-rose-100 flex items-center justify-center mx-auto mb-4">
+          <Lock size={20} className="text-rose-500" />
+        </div>
+        <h1 className="text-xl font-semibold">Not authorized</h1>
+        <p className="text-sm text-gray-500 mt-2">
+          The dispatch console requires Store Manager, Logistics Officer, Store Owner or Developer access.
+        </p>
+        <Link href="/account" className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline mt-4">
+          Go to My Account
+        </Link>
+      </main>
+    )
+  }
+
   return (
     <main className="max-w-4xl mx-auto px-4 py-8">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="font-display text-3xl font-bold mb-2">Dispatch Console</h1>
-        <p className="text-gray-500 text-sm mb-6">Confirmed orders awaiting riders at your Store. All assignments flow through the atomic Order Claim path.</p>
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="font-display text-3xl font-bold mb-2">Dispatch Console</h1>
+            <p className="text-gray-500 text-sm">Confirmed orders awaiting riders at your Store. All assignments flow through the atomic Order Claim path.</p>
+          </div>
+          <button
+            onClick={() => refetch()}
+            className="p-2 text-gray-400 hover:text-primary transition-colors"
+            aria-label="Refresh pending orders"
+          >
+            <Loader2 size={16} className={isFetching ? 'animate-spin text-primary' : ''} />
+          </button>
+        </div>
 
         {user?.role === 'developer' && (
           <div className="mb-6 bg-amber-50 border border-amber-200 rounded-lg p-4">
@@ -99,7 +123,7 @@ export default function DispatchConsoleClient() {
         )}
 
         {message && (
-          <div className={`mb-4 px-4 py-3 rounded-lg text-sm flex items-center gap-2 ${message.type === 'success' ? 'bg-green-50 border border-green-200 text-green-700' : 'bg-accent/10 border border-accent/20 text-accent'}`}>
+          <div className={`mb-4 px-4 py-3 rounded-lg text-sm flex items-center gap-2 ${message.type === 'success' ? 'bg-green-50 border border-green-200 text-green-700' : 'bg-accent/10 border border-accent/20 text-accent'}`} role="status">
             {message.type === 'success' ? <CheckCircle size={16} /> : <AlertCircle size={16} />} {message.text}
           </div>
         )}
@@ -108,7 +132,18 @@ export default function DispatchConsoleClient() {
           <div className="bg-accent/10 border border-accent/20 text-accent text-sm rounded-lg px-4 py-3 mb-6">{(error as Error).message}</div>
         )}
 
-        {pending.length === 0 ? (
+        {isLoading ? (
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="bg-white border border-gray-100 rounded-xl p-5">
+                <div className="animate-pulse space-y-2">
+                  <div className="h-4 w-32 bg-gray-100 rounded" />
+                  <div className="h-3 w-48 bg-gray-100 rounded" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : pending.length === 0 ? (
           <div className="text-center py-16 bg-white border border-gray-100 rounded-xl">
             <Package size={48} className="mx-auto text-gray-200 mb-4" />
             <h2 className="font-semibold text-gray-600">No pending dispatch orders</h2>
@@ -123,18 +158,22 @@ export default function DispatchConsoleClient() {
                     <p className="font-mono text-sm font-semibold">#{order.order_number}</p>
                     <p className="text-xs text-gray-400">{new Date(order.created_at).toLocaleString('en-ZA')} · {order.status} · {order.items?.length ?? 0} items</p>
                     <p className="text-xs text-gray-500 mt-1 flex items-center gap-1"><Bike size={12} /> {order.delivery_address ?? 'No address'}</p>
+                    {order.rider_id ? (
+                      <p className="text-xs text-gray-400 mt-0.5">Current rider: #{order.rider_id}</p>
+                    ) : null}
                   </div>
                   <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${order.status === 'retrying' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}`}>{order.status}</span>
                 </div>
                 <div className="mt-4 flex flex-wrap gap-3">
-                  <div className="flex items-center gap-2">
-                    <input value={riderInputs[order.id] ?? ''} onChange={e => setRiderInputs(s => ({ ...s, [order.id]: e.target.value }))} placeholder="Rider ID" className="w-24 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none" />
-                    <button onClick={() => handleDispatch(order.id)} className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors">Dispatch</button>
-                  </div>
-                  {(order.status === 'preparing' && (order as any).rider_id) && (
+                  {order.rider_id ? (
                     <div className="flex items-center gap-2">
-                      <input value={reassignInputs[order.id] ?? ''} onChange={e => setReassignInputs(s => ({ ...s, [order.id]: e.target.value }))} placeholder="New Rider ID (reassign)" className="w-40 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none" />
-                      <button onClick={() => handleReassign(order.id)} className="px-3 py-2 border border-gray-200 rounded-lg text-sm hover:bg-gray-50 transition-colors">Reassign</button>
+                      <input value={reassignInputs[order.id] ?? ''} onChange={e => setReassignInputs(s => ({ ...s, [order.id]: e.target.value }))} inputMode="numeric" placeholder="New Rider ID" className="w-32 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none" />
+                      <button onClick={() => handleReassign(order.id)} className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">Reassign</button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <input value={riderInputs[order.id] ?? ''} onChange={e => setRiderInputs(s => ({ ...s, [order.id]: e.target.value }))} inputMode="numeric" placeholder="Rider ID" className="w-24 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none" />
+                      <button onClick={() => handleDispatch(order.id)} className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors">Dispatch</button>
                     </div>
                   )}
                 </div>

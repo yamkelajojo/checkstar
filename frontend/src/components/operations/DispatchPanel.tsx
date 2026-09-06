@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from '@/lib/motion'
 import { spring } from '@/lib/motion/tokens'
 import { X, Navigation, Clock, User, ChevronRight } from 'lucide-react'
@@ -50,18 +50,24 @@ export default function DispatchPanel({ orderId, onClose, onAssigned }: Dispatch
   const [loading, setLoading] = useState(false)
   const [assigning, setAssigning] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // Monotonic request id: switching orders quickly must never let a stale
+  // response overwrite the suggestion for the currently open order.
+  const requestSeq = useRef(0)
 
   const fetchSuggestion = useCallback(async () => {
     if (!orderId) return
+    const seq = ++requestSeq.current
     setLoading(true)
     setError(null)
     try {
       const data = await api.getDispatchSuggestion(orderId) as unknown as DispatchSuggestion
+      if (seq !== requestSeq.current) return // superseded by a newer selection
       setSuggestion(data)
     } catch {
+      if (seq !== requestSeq.current) return
       setError('Could not load rider suggestions')
     } finally {
-      setLoading(false)
+      if (seq === requestSeq.current) setLoading(false)
     }
   }, [orderId])
 

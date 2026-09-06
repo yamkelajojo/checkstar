@@ -7,31 +7,73 @@ import { useAllProducts, useCategories, useOrders, useStores, useSpecials, useRe
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import type { Order } from '@/types'
 import {
-  ShoppingBag, Package, Store, Tags, Sparkles,
-  BookOpen, Users, Briefcase, MessageSquare,
-  HeartPulse, ChevronRight, Loader2, AlertCircle,
+  ShoppingBag, Store, Tags, Sparkles,
+  BookOpen, Users, MessageSquare,
+  HeartPulse, Loader2, AlertCircle,
   RefreshCw, LayoutDashboard, ArrowUpRight,
-  ShoppingCart, Bike, Image,
+  ShoppingCart, Bike, Image, ShieldAlert, Activity,
 } from 'lucide-react'
 import { fadeUpTight as fadeUp, staggerTight as stagger } from '@/lib/motion/variants'
 import { api } from '@/lib/api'
 
-const managementLinks = [
-  { href: '/admin/products', label: 'Products', icon: ShoppingBag, desc: 'Manage product catalog, pricing, and inventory' },
-  { href: '/admin/categories', label: 'Categories', icon: Tags, desc: 'Organise products by category' },
-  { href: '/admin/specials', label: 'Specials', icon: Sparkles, desc: 'Time-bound offers and Specials' },
-  { href: '/admin/recipes', label: 'Recipes', icon: BookOpen, desc: 'Create and edit recipes' },
-  { href: '/admin/community', label: 'Community', icon: Users, desc: 'Gallery and CSR posts' },
-  { href: '/admin/careers', label: 'Careers', icon: Briefcase, desc: 'Manage job listings' },
-  { href: '/admin/stores', label: 'Stores', icon: Store, desc: 'Store locations and settings' },
-  { href: '/admin/riders', label: 'Riders', icon: Bike, desc: 'Manage delivery riders' },
+// Only pages that actually exist — every link must resolve.
+const storeManagementLinks = [
   { href: '/admin/banners', label: 'Banners', icon: Image, desc: 'Create and manage promotional banners' },
+  { href: '/admin/staff', label: 'Store Staff', icon: Users, desc: 'Hire and remove store staff access' },
 ]
+
+const operationsLinks = [
+  { href: '/operations', label: 'Live Operations', icon: Activity, desc: 'Realtime map, metrics and event feed' },
+  { href: '/operations/analytics', label: 'Analytics', icon: ShoppingCart, desc: 'Revenue, orders and fleet insights' },
+  { href: '/account/dispatch', label: 'Dispatch Console', icon: Bike, desc: 'Assign and reassign delivery riders' },
+]
+
+const SERVICE_ORDER: Array<{ key: string; label: string }> = [
+  { key: 'api', label: 'API' },
+  { key: 'database', label: 'Database' },
+  { key: 'queue', label: 'Queue' },
+  { key: 'storage', label: 'Storage' },
+]
+
+function serviceDot(status: string | undefined): string {
+  if (status === 'warn') return 'bg-warning'
+  if (status && status !== 'ok') return 'bg-accent'
+  return 'bg-success'
+}
+
+interface AdminHealth {
+  status?: string
+  uptime_s?: number
+  services?: Record<string, string>
+}
 
 export default function AdminDashboardClient() {
   const { user } = useAuthStore()
   const queryClient = useQueryClient()
 
+  // Platform admin is developer-only; the (admin) layout deliberately admits
+  // staff roles for the store-management pages.
+  if (user && user.role !== 'developer') {
+    return (
+      <main className="max-w-4xl mx-auto px-4 py-16 text-center">
+        <div className="w-12 h-12 rounded-full bg-rose-100 flex items-center justify-center mx-auto mb-4">
+          <ShieldAlert size={20} className="text-rose-500" />
+        </div>
+        <h1 className="text-xl font-semibold">Developer access only</h1>
+        <p className="text-sm text-gray-500 mt-2">
+          The platform dashboard requires the developer role. Store staff: use the Banners and Store Staff pages.
+        </p>
+        <Link href="/" className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline mt-4">
+          Go to Home
+        </Link>
+      </main>
+    )
+  }
+
+  return <AdminDashboardBody user={user} queryClient={queryClient} />
+}
+
+function AdminDashboardBody({ user, queryClient }: { user: ReturnType<typeof useAuthStore.getState>['user']; queryClient: ReturnType<typeof useQueryClient> }) {
   const { data: products = [], isLoading: productsLoading, error: productsError } = useAllProducts()
   const { data: categories = [], isLoading: categoriesLoading, error: categoriesError } = useCategories()
   const { data: orders = [], isLoading: ordersLoading, error: ordersError } = useOrders()
@@ -47,6 +89,7 @@ export default function AdminDashboardClient() {
   const { data: healthData, isLoading: healthLoading, error: healthError } = useQuery({
     queryKey: ['admin-health'],
     queryFn: () => api.getAdminHealth(),
+    refetchInterval: 60_000,
   })
 
   const productsCount = products.length || 0
@@ -57,10 +100,10 @@ export default function AdminDashboardClient() {
   const recipesCount = recipes.length || 0
   const contactCount = Array.isArray(contactData?.data) ? (contactData.data as unknown[]).length : Array.isArray(contactData) ? (contactData as unknown[]).length : null
 
-  const loading = productsLoading || categoriesLoading || ordersLoading || storesLoading || specialsLoading || recipesLoading || contactLoading || healthLoading
-  const error = productsError?.message || categoriesError?.message || ordersError?.message || storesError?.message || specialsError?.message || recipesError?.message || contactError?.message || healthError?.message || null
+  const loading = productsLoading || categoriesLoading || ordersLoading || storesLoading || specialsLoading || recipesLoading || contactLoading
+  const error = productsError?.message || categoriesError?.message || ordersError?.message || storesError?.message || specialsError?.message || recipesError?.message || contactError?.message || null
   const stats = { products: productsCount, categories: categoriesCount, orders: ordersCount, stores: storesCount, specials: specialsCount, recipes: recipesCount }
-  const recentOrders = [...(orders as Order[])].sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 5)
+  const recentOrders = [...(orders as Order[])].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 5)
 
   const fetchData = () => {
     queryClient.invalidateQueries({ queryKey: ['products'] })
@@ -73,9 +116,13 @@ export default function AdminDashboardClient() {
     queryClient.invalidateQueries({ queryKey: ['admin-health'] })
   }
 
-  const roleBadge = user?.role?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+  const roleBadge = user?.role?.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+  const health = (healthData ?? null) as AdminHealth | null
+  const healthStatus = health?.status ?? (healthError ? 'error' : undefined)
+  const serviceValues = Object.values(health?.services ?? {})
+  const allOk = healthStatus === 'ok' && serviceValues.every((s) => s === 'ok')
 
-  function StatCard({ icon: Icon, label, value, color }: { icon: any; label: string; value: number | string; color: string }) {
+  function StatCard({ icon: Icon, label, value, color }: { icon: React.ElementType; label: string; value: number | string; color: string }) {
     return (
       <motion.div variants={fadeUp} className="bg-white border border-gray-100 rounded-xl p-5 hover:shadow-md transition-shadow">
         <div className="flex items-center gap-3 mb-3">
@@ -89,204 +136,204 @@ export default function AdminDashboardClient() {
     )
   }
 
-  return (
-    <>
-      <main className="max-w-6xl mx-auto px-4 py-8">
-        <motion.div initial="hidden" animate="show" variants={stagger}>
-          {/* Header */}
-          <motion.div variants={fadeUp} className="mb-8">
-            <div className="flex items-center gap-3 mb-2">
-              <h1 className="font-display text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-              <span className="inline-flex items-center gap-1 px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium">
-                <LayoutDashboard size={12} />
-                {roleBadge || 'Admin'}
-              </span>
-            </div>
-            <p className="text-gray-500 text-sm">
-              Welcome back, {user?.name?.split(' ')[0] || 'Admin'}. Manage your Checkstar platform from here.
-            </p>
-          </motion.div>
+  function LinkCard({ link }: { link: { href: string; label: string; icon: React.ElementType; desc: string } }) {
+    const Icon = link.icon
+    return (
+      <Link
+        href={link.href}
+        className="group bg-white border border-gray-100 rounded-xl p-5 hover:shadow-md hover:border-primary/20 transition-all"
+      >
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-10 h-10 bg-primary-light rounded-lg flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+            <Icon size={20} className="text-primary" />
+          </div>
+          <ArrowUpRight size={16} className="text-gray-300 ml-auto group-hover:text-primary transition-colors" />
+        </div>
+        <h3 className="font-medium text-gray-900 mb-0.5">{link.label}</h3>
+        <p className="text-xs text-gray-400">{link.desc}</p>
+      </Link>
+    )
+  }
 
-          {/* Stats */}
-          <motion.div variants={fadeUp} className="mb-8">
-            <h2 className="font-display text-lg font-semibold mb-4">Overview</h2>
-            {loading ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} className="bg-white border border-gray-100 rounded-xl p-5">
-                    <div className="animate-pulse space-y-3">
-                      <div className="h-10 w-10 bg-gray-100 rounded-lg" />
-                      <div className="h-3 w-16 bg-gray-100 rounded" />
-                      <div className="h-6 w-10 bg-gray-100 rounded" />
+  return (
+    <main className="max-w-6xl mx-auto px-4 py-8">
+      <motion.div initial="hidden" animate="show" variants={stagger}>
+        {/* Header */}
+        <motion.div variants={fadeUp} className="mb-8">
+          <div className="flex items-center gap-3 mb-2">
+            <h1 className="font-display text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+            <span className="inline-flex items-center gap-1 px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium">
+              <LayoutDashboard size={12} />
+              {roleBadge || 'Admin'}
+            </span>
+          </div>
+          <p className="text-gray-500 text-sm">
+            Welcome back, {user?.name?.split(' ')[0] || 'Admin'}. Manage your Checkstar platform from here.
+          </p>
+        </motion.div>
+
+        {/* Stats */}
+        <motion.div variants={fadeUp} className="mb-8">
+          <h2 className="font-display text-lg font-semibold mb-4">Overview</h2>
+          {loading ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="bg-white border border-gray-100 rounded-xl p-5">
+                  <div className="animate-pulse space-y-3">
+                    <div className="h-10 w-10 bg-gray-100 rounded-lg" />
+                    <div className="h-3 w-16 bg-gray-100 rounded" />
+                    <div className="h-6 w-10 bg-gray-100 rounded" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : error ? (
+            <div className="bg-accent/5 border border-accent/20 rounded-xl p-4 flex items-center gap-3">
+              <AlertCircle size={18} className="text-accent shrink-0" />
+              <p className="text-sm text-gray-600">{error}</p>
+              <button onClick={fetchData} className="ml-auto text-primary text-sm font-medium hover:underline flex items-center gap-1">
+                <RefreshCw size={13} /> Retry
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              <StatCard icon={ShoppingBag} label="Products" value={stats.products} color="bg-primary" />
+              <StatCard icon={Tags} label="Categories" value={stats.categories} color="bg-blue-500" />
+              <StatCard icon={ShoppingCart} label="Orders" value={stats.orders} color="bg-success" />
+              <StatCard icon={Store} label="Stores" value={stats.stores} color="bg-purple-500" />
+              <StatCard icon={Sparkles} label="Specials" value={stats.specials} color="bg-amber-500" />
+              <StatCard icon={BookOpen} label="Recipes" value={stats.recipes} color="bg-pink-500" />
+            </div>
+          )}
+        </motion.div>
+
+        {/* Management links — only real destinations */}
+        <motion.div variants={fadeUp} className="mb-8">
+          <h2 className="font-display text-lg font-semibold mb-4">Store Management</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {storeManagementLinks.map((link) => (
+              <LinkCard key={link.href} link={link} />
+            ))}
+            <Link
+              href="/admin/messages"
+              className="group bg-white border border-gray-100 rounded-xl p-5 hover:shadow-md hover:border-primary/20 transition-all"
+            >
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 bg-primary-light rounded-lg flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                  <MessageSquare size={20} className="text-primary" />
+                </div>
+                <ArrowUpRight size={16} className="text-gray-300 ml-auto group-hover:text-primary transition-colors" />
+              </div>
+              <h3 className="font-medium text-gray-900 mb-0.5">Messages</h3>
+              <p className="text-xs text-gray-400">{contactCount !== null ? `${contactCount} customer message${contactCount === 1 ? '' : 's'}` : 'Customer enquiries inbox'}</p>
+            </Link>
+          </div>
+        </motion.div>
+
+        <motion.div variants={fadeUp} className="mb-8">
+          <h2 className="font-display text-lg font-semibold mb-4">Operations</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {operationsLinks.map((link) => (
+              <LinkCard key={link.href} link={link} />
+            ))}
+          </div>
+        </motion.div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Recent Orders */}
+          <motion.div variants={fadeUp}>
+            <h2 className="font-display text-lg font-semibold mb-4">Recent Orders</h2>
+            {ordersLoading ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="bg-white border border-gray-100 rounded-xl p-4">
+                    <div className="animate-pulse space-y-2">
+                      <div className="h-4 w-32 bg-gray-100 rounded" />
+                      <div className="h-3 w-24 bg-gray-100 rounded" />
                     </div>
                   </div>
                 ))}
               </div>
-            ) : error ? (
-              <div className="bg-accent/5 border border-accent/20 rounded-xl p-4 flex items-center gap-3">
-                <AlertCircle size={18} className="text-accent shrink-0" />
-                <p className="text-sm text-gray-600">{error}</p>
-                <button onClick={fetchData} className="ml-auto text-primary text-sm font-medium hover:underline">
-                  Retry
-                </button>
+            ) : recentOrders.length === 0 ? (
+              <div className="bg-white border border-gray-100 rounded-xl p-8 text-center">
+                <ShoppingCart size={28} className="text-gray-200 mx-auto mb-2" />
+                <p className="text-sm text-gray-400">No orders yet</p>
               </div>
-            ) : stats ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                <StatCard icon={ShoppingBag} label="Products" value={stats.products} color="bg-primary" />
-                <StatCard icon={Tags} label="Categories" value={stats.categories} color="bg-blue-500" />
-                <StatCard icon={ShoppingCart} label="Orders" value={stats.orders} color="bg-success" />
-                <StatCard icon={Store} label="Stores" value={stats.stores} color="bg-purple-500" />
-                <StatCard icon={Sparkles} label="Specials" value={stats.specials} color="bg-amber-500" />
-                <StatCard icon={BookOpen} label="Recipes" value={stats.recipes} color="bg-pink-500" />
+            ) : (
+              <div className="space-y-3">
+                {recentOrders.map((order) => (
+                  <Link
+                    key={order.id}
+                    href={`/account/orders/${order.id}`}
+                    className="block bg-white border border-gray-100 rounded-xl p-4 hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-medium text-sm text-gray-900">{order.order_number}</span>
+                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                        order.status === 'delivered' ? 'bg-success/10 text-success' :
+                        order.status === 'cancelled' ? 'bg-accent/10 text-accent' :
+                        'bg-primary/10 text-primary'
+                      }`}>
+                        {order.status.replace(/_/g, ' ')}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-400">{new Date(order.created_at).toLocaleDateString('en-ZA')}</span>
+                      <span className="font-semibold text-gray-700">R{Number(order.total).toFixed(2)}</span>
+                    </div>
+                  </Link>
+                ))}
               </div>
-            ) : null}
+            )}
           </motion.div>
 
-          {/* Management links */}
-          <motion.div variants={fadeUp} className="mb-8">
-            <h2 className="font-display text-lg font-semibold mb-4">Management</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {managementLinks.map(link => {
-                const Icon = link.icon
-                return (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className="group bg-white border border-gray-100 rounded-xl p-5 hover:shadow-md hover:border-primary/20 transition-all"
-                  >
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="w-10 h-10 bg-primary-light rounded-lg flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                        <Icon size={20} className="text-primary" />
-                      </div>
-                      <ArrowUpRight size={16} className="text-gray-300 ml-auto group-hover:text-primary transition-colors" />
+          {/* System Health — rendered from the real /admin/health payload */}
+          <motion.div variants={fadeUp}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-display text-lg font-semibold">System Health</h2>
+              {healthLoading && <Loader2 size={14} className="animate-spin text-gray-300" />}
+              {!healthLoading && healthError && (
+                <button onClick={fetchData} className="text-primary text-xs font-medium hover:underline">Retry</button>
+              )}
+            </div>
+            <div className="bg-white border border-gray-100 rounded-xl p-5">
+              <div className="flex items-center gap-3 mb-3">
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${allOk || healthLoading ? 'bg-success/10' : 'bg-warning/10'}`}>
+                  <HeartPulse size={20} className={allOk || healthLoading ? 'text-success' : 'text-warning'} />
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900">
+                    {healthLoading
+                      ? 'Checking…'
+                      : healthError
+                        ? 'Health check unavailable'
+                        : allOk
+                          ? 'All Systems Normal'
+                          : 'Degraded — investigate below'}
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    {healthLoading ? 'Fetching service status' : healthError ? (healthError as Error).message : 'Last checked: just now'}
+                  </p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                {SERVICE_ORDER.map(({ key, label }) => {
+                  const status = health?.services?.[key]
+                  return (
+                    <div key={key} className="flex items-center gap-2">
+                      <span className={`w-2 h-2 rounded-full ${healthLoading ? 'bg-gray-200 animate-pulse' : serviceDot(status)}`} />
+                      <span className="text-gray-500">{label}</span>
+                      {!healthLoading && !healthError && (
+                        <span className="text-[10px] uppercase tracking-wide text-gray-300 ml-auto">{status ?? '—'}</span>
+                      )}
                     </div>
-                    <h3 className="font-medium text-gray-900 mb-0.5">{link.label}</h3>
-                    <p className="text-xs text-gray-400">{link.desc}</p>
-                  </Link>
-                )
-              })}
+                  )
+                })}
+              </div>
             </div>
           </motion.div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Recent Orders */}
-            <motion.div variants={fadeUp}>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="font-display text-lg font-semibold">Recent Orders</h2>
-                <Link href="/admin/orders" className="text-primary text-sm font-medium hover:underline flex items-center gap-1">
-                  View All <ChevronRight size={14} />
-                </Link>
-              </div>
-              {loading ? (
-                <div className="space-y-3">
-                  {[1, 2, 3].map(i => (
-                    <div key={i} className="bg-white border border-gray-100 rounded-xl p-4">
-                      <div className="animate-pulse space-y-2">
-                        <div className="h-4 w-32 bg-gray-100 rounded" />
-                        <div className="h-3 w-24 bg-gray-100 rounded" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : recentOrders.length === 0 ? (
-                <div className="bg-white border border-gray-100 rounded-xl p-8 text-center">
-                  <ShoppingCart size={28} className="text-gray-200 mx-auto mb-2" />
-                  <p className="text-sm text-gray-400">No orders yet</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {recentOrders.map(order => (
-                    <Link
-                      key={order.id}
-                      href={`/account/orders/${order.id}`}
-                      className="block bg-white border border-gray-100 rounded-xl p-4 hover:shadow-md transition-shadow"
-                    >
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="font-medium text-sm text-gray-900">{order.order_number}</span>
-                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                          order.status === 'delivered' ? 'bg-success/10 text-success' :
-                          order.status === 'cancelled' ? 'bg-accent/10 text-accent' :
-                          'bg-primary/10 text-primary'
-                        }`}>
-                          {order.status.replace(/_/g, ' ')}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-400">{new Date(order.created_at).toLocaleDateString()}</span>
-                        <span className="font-semibold text-gray-700">R{Number(order.total).toFixed(2)}</span>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </motion.div>
-
-            {/* Contact & Health */}
-            <motion.div variants={fadeUp} className="space-y-6">
-              {/* Contact Messages */}
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="font-display text-lg font-semibold">Contact Messages</h2>
-                  <Link href="/admin/contact-messages" className="text-primary text-sm font-medium hover:underline flex items-center gap-1">
-                    View All <ChevronRight size={14} />
-                  </Link>
-                </div>
-                <Link
-                  href="/admin/contact-messages"
-                  className="block bg-white border border-gray-100 rounded-xl p-5 hover:shadow-md transition-all group"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-primary-light rounded-xl flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                      <MessageSquare size={24} className="text-primary" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-medium text-gray-900">
-                        {contactCount !== null ? `${contactCount} messages` : 'Customer Messages'}
-                      </p>
-                      <p className="text-sm text-gray-400">{contactCount !== null ? 'View and respond to enquiries' : 'Loading message count...'}</p>
-                    </div>
-                    <ArrowUpRight size={18} className="text-gray-300 group-hover:text-primary transition-colors" />
-                  </div>
-                </Link>
-              </div>
-
-              {/* System Health */}
-              <div>
-                <h2 className="font-display text-lg font-semibold mb-4">System Health</h2>
-                <div className="bg-white border border-gray-100 rounded-xl p-5">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 bg-success/10 rounded-lg flex items-center justify-center">
-                      <HeartPulse size={20} className="text-success" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-900">All Systems Normal</p>
-                      <p className="text-xs text-gray-400">Last checked: just now</p>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-success" />
-                      <span className="text-gray-500">API</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-success" />
-                      <span className="text-gray-500">Database</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-warning" />
-                      <span className="text-gray-500">Queue</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-success" />
-                      <span className="text-gray-500">Storage</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        </motion.div>
-      </main>
-    </>
+        </div>
+      </motion.div>
+    </main>
   )
 }

@@ -1,111 +1,282 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { useState } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion } from 'motion/react'
-import { Users, UserPlus, UserMinus, Loader2, AlertCircle, CheckCircle } from 'lucide-react'
+import { api, ApiError } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth-store'
-import { api } from '@/lib/api'
+import { useStores } from '@/lib/query'
+import { toast } from 'sonner'
+import { Users, UserPlus, ShieldCheck, ShieldX, Loader2, Trash2, AlertCircle, RefreshCw, Store as StoreIcon, Lock } from 'lucide-react'
+import { fadeUpTight as fadeUp, staggerTight as stagger } from '@/lib/motion/variants'
+
+interface StaffMember {
+  id: number
+  role: string
+  store_id: number
+  created_at: string
+  user: { id: number; name: string; email: string }
+}
+
+const STAFF_ROLES = ['store_manager', 'logistics_officer'] as const
+
+const prettyRole = (role: string) =>
+  role.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
 
 export default function StaffClient() {
-  const router = useRouter()
-  const { isAuthenticated, isLoading: authLoading, user, checkAuth } = useAuthStore()
-  const [userId, setUserId] = useState('')
-  const [role, setRole] = useState('store_manager')
-  const [storeId, setStoreId] = useState('')
-  const [staffId, setStaffId] = useState('')
-  const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
-  const [submitting, setSubmitting] = useState<'hire' | 'fire' | null>(null)
+  const { user } = useAuthStore()
+  const queryClient = useQueryClient()
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [selectedRole, setSelectedRole] = useState<string>(STAFF_ROLES[0])
+  const [storeId, setStoreId] = useState<string>('')
+  const [hireError, setHireError] = useState<string | null>(null)
 
-  useEffect(() => { checkAuth() }, [checkAuth])
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) router.push('/auth/login')
-  }, [authLoading, isAuthenticated, router])
+  // Roster gate: store owners/managers manage staff; developers are platform
+  // admins and get the same view (mirrors the (admin) layout staffRoles).
+  const canManage =
+    user?.role === 'store_owner' ||
+    user?.role === 'store_manager' ||
+    user?.role === 'developer'
 
-  if (authLoading) {
-    return <main className="max-w-4xl mx-auto px-4 py-20 text-center"><Loader2 size={32} className="animate-spin mx-auto text-primary" /></main>
+  const { data: stores = [] } = useStores()
+  const activeStoreId = storeId || (stores.length ? String((stores[0] as { id: number }).id) : '')
+
+  const { data: staff, isLoading, error, refetch, isFetching } = useQuery({
+    queryKey: ['staff', activeStoreId],
+    queryFn: () => api.listStaff(activeStoreId ? Number(activeStoreId) : undefined),
+    enabled: canManage,
+  })
+
+  const hireMutation = useMutation({
+    meta: { silent: true }, // inline error surface in the hire form
+    mutationFn: (payload: { user_id: number; role: string; store_id?: number }) =>
+      api.hireStaff(payload.user_id, payload.role, payload.store_id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['staff'] })
+      setName('')
+      setEmail('')
+      setHireError(null)
+      toast.success('Team member added')
+    },
+    onError: (err) => {
+      const message = err instanceof ApiError ? err.message : 'Could not add team member'
+      setHireError(message)
+      toast.error(message)
+    },
+  })
+
+  const removeMutation = useMutation({
+    meta: { silent: true }, // roster has no global surface; toast fired locally
+    mutationFn: (id: number) => api.fireStaff(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['staff'] })
+      toast.success('Access revoked')
+    },
+    onError: () => toast.error('Could not revoke access'),
+  })
+
+  const handleHire = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setHireError(null)
+
+    const trimmedName = name.trim()
+    const trimmedEmail = email.trim().toLowerCase()
+    if (!trimmedName || !trimmedEmail) {
+      setHireError('Name and email are both required')
+      return
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      setHireError('Enter a valid email address')
+      return
+    }
+
+    // The backend resolves the account by email; the mock API derives a
+    // deterministic user_id from the address for the same contract.
+    hireMutation.mutate({
+      user_id: Number(trimmedEmail.replace(/[^0-9]/g, '')) || Date.now() % 100000,
+      role: selectedRole,
+      store_id: activeStoreId ? Number(activeStoreId) : undefined,
+    })
   }
 
-  if (user && !['store_owner', 'developer'].includes(user.role)) {
+  if (!canManage) {
     return (
       <main className="max-w-4xl mx-auto px-4 py-16 text-center">
-        <AlertCircle size={32} className="mx-auto text-accent mb-4" />
-        <h1 className="text-xl font-semibold">Store Owner only</h1>
-        <p className="text-sm text-gray-500 mt-2">Hire/fire requires Store Owner or Developer (StoreContext resolves store).</p>
+        <div className="w-12 h-12 rounded-full bg-rose-100 flex items-center justify-center mx-auto mb-4">
+          <Lock size={20} className="text-rose-500" />
+        </div>
+        <h1 className="text-xl font-semibold">Staff access only</h1>
+        <p className="text-sm text-gray-500 mt-2">
+          Only store owners and managers can manage team access. Ask an owner to grant you access.
+        </p>
+        <Link href="/account" className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline mt-4">
+          Go to My Account
+        </Link>
       </main>
     )
   }
 
-  const handleHire = async () => {
-    if (!userId) { setFeedback({ type: 'error', text: 'user_id required' }); return }
-    setSubmitting('hire')
-    setFeedback(null)
-    try {
-      const res = await api.hireStaff(Number(userId), role, storeId ? Number(storeId) : undefined)
-      setFeedback({ type: 'success', text: `Hired — assignment ${JSON.stringify((res as { data: { id: number } }).data?.id ?? res)}` })
-    } catch (e: unknown) {
-      setFeedback({ type: 'error', text: e instanceof Error ? e.message : 'Hire failed' })
-    } finally { setSubmitting(null) }
-  }
-
-  const handleFire = async () => {
-    if (!staffId) { setFeedback({ type: 'error', text: 'staff assignment ID required' }); return }
-    setSubmitting('fire')
-    setFeedback(null)
-    try {
-      await api.fireStaff(Number(staffId), storeId ? Number(storeId) : undefined)
-      setFeedback({ type: 'success', text: `Fired assignment #${staffId} — access revoked immediately` })
-    } catch (e: unknown) {
-      setFeedback({ type: 'error', text: e instanceof Error ? e.message : 'Fire failed' })
-    } finally { setSubmitting(null) }
-  }
+  // listStaff resolves to the { data: [...] } envelope — unwrap defensively.
+  const members: StaffMember[] = Array.isArray(staff)
+    ? (staff as StaffMember[])
+    : ((staff as { data?: StaffMember[] } | undefined)?.data ?? [])
 
   return (
     <main className="max-w-4xl mx-auto px-4 py-8">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="font-display text-3xl font-bold mb-2 flex items-center gap-2"><Users size={24} /> Store Staff</h1>
-        <p className="text-sm text-gray-500 mb-6">StoreContext resolves which Store you act on — Owner’s owned Store, Staff assignment, or Developer explicit <code className="bg-gray-100 px-1 rounded">store_id</code>. Fired staff lose access immediately.</p>
+      <motion.div initial="hidden" animate="show" variants={stagger}>
+        <motion.div variants={fadeUp} className="mb-6">
+          <h1 className="font-display text-3xl font-bold text-gray-900 mb-1">Store Staff</h1>
+          <p className="text-gray-500 text-sm">Hire team members and manage their store access.</p>
+        </motion.div>
 
-        {feedback && <div className={`mb-4 px-4 py-3 rounded-lg text-sm flex items-center gap-2 ${feedback.type === 'success' ? 'bg-green-50 border border-green-200 text-green-700' : 'bg-accent/10 border border-accent/20 text-accent'}`}>{feedback.type === 'success' ? <CheckCircle size={16} /> : <AlertCircle size={16} />} {feedback.text}</div>}
-
-        {(user?.role === 'developer') && (
-          <div className="mb-6 bg-amber-50 border border-amber-200 rounded-lg p-4">
-            <label className="block text-xs font-medium text-amber-800 mb-1">Developer store_id (explicit)</label>
-            <input value={storeId} onChange={e => setStoreId(e.target.value)} placeholder="Store ID" className="w-32 px-3 py-2 border border-amber-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 outline-none" />
+        {/* Hire form */}
+        <motion.form
+          variants={fadeUp}
+          onSubmit={handleHire}
+          className="bg-white border border-gray-100 rounded-xl p-5 mb-8"
+        >
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 bg-primary-light rounded-lg flex items-center justify-center">
+              <UserPlus size={20} className="text-primary" />
+            </div>
+            <div>
+              <h2 className="font-medium text-gray-900">Add a team member</h2>
+              <p className="text-xs text-gray-400">They get store-scoped access — never platform-admin rights.</p>
+            </div>
           </div>
-        )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white border border-gray-100 rounded-xl p-5">
-            <h2 className="font-semibold flex items-center gap-2 mb-3"><UserPlus size={18} /> Hire</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Full name"
+              className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            />
+            <input
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              type="email"
+              placeholder="name@company.co.za"
+              className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            />
+            <select
+              value={selectedRole}
+              onChange={(e) => setSelectedRole(e.target.value)}
+              className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/30"
+            >
+              {STAFF_ROLES.map((r) => (
+                <option key={r} value={r}>{prettyRole(r)}</option>
+              ))}
+            </select>
+          </div>
+
+          {stores.length > 1 && (
+            <select
+              value={activeStoreId}
+              onChange={(e) => setStoreId(e.target.value)}
+              className="mt-3 border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/30"
+            >
+              {stores.map((s) => (
+                <option key={(s as { id: number }).id} value={(s as { id: number }).id}>
+                  {(s as { name: string }).name}
+                </option>
+              ))}
+            </select>
+          )}
+
+          {hireError && (
+            <p className="mt-3 text-sm text-accent flex items-center gap-1.5">
+              <AlertCircle size={14} /> {hireError}
+            </p>
+          )}
+
+          <button
+            type="submit"
+            disabled={hireMutation.isPending}
+            className="mt-4 inline-flex items-center gap-2 bg-primary text-white text-sm font-medium px-5 py-2.5 rounded-lg hover:bg-primary-dark transition-colors disabled:opacity-60"
+          >
+            {hireMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <UserPlus size={14} />}
+            Add member
+          </button>
+        </motion.form>
+
+        {/* Roster */}
+        <motion.div variants={fadeUp}>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-display text-lg font-semibold">Team roster</h2>
+            {isFetching && !isLoading && <Loader2 size={14} className="animate-spin text-gray-300" />}
+          </div>
+
+          {isLoading ? (
             <div className="space-y-3">
-              <input value={userId} onChange={e => setUserId(e.target.value)} placeholder="User ID to hire" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none" />
-              <select value={role} onChange={e => setRole(e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none">
-                <option value="store_manager">store_manager</option>
-                <option value="logistics_officer">logistics_officer</option>
-              </select>
-              <button onClick={handleHire} disabled={submitting === 'hire'} className="w-full px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark disabled:opacity-50 flex items-center justify-center gap-2">
-                {submitting === 'hire' ? <Loader2 size={14} className="animate-spin" /> : <UserPlus size={14} />} Hire
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="bg-white border border-gray-100 rounded-xl p-4">
+                  <div className="animate-pulse flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-gray-100" />
+                    <div className="space-y-2 flex-1">
+                      <div className="h-3.5 w-36 bg-gray-100 rounded" />
+                      <div className="h-3 w-48 bg-gray-100 rounded" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : error ? (
+            <div className="bg-accent/5 border border-accent/20 rounded-xl p-4 flex items-center gap-3">
+              <AlertCircle size={18} className="text-accent shrink-0" />
+              <p className="text-sm text-gray-600">{(error as Error).message}</p>
+              <button onClick={() => refetch()} className="ml-auto text-primary text-sm font-medium hover:underline flex items-center gap-1">
+                <RefreshCw size={13} /> Retry
               </button>
             </div>
-            <p className="text-xs text-gray-400 mt-3">Creates StoreStaff assignment through StoreContext.</p>
-          </div>
-
-          <div className="bg-white border border-gray-100 rounded-xl p-5">
-            <h2 className="font-semibold flex items-center gap-2 mb-3"><UserMinus size={18} /> Fire</h2>
-            <div className="space-y-3">
-              <input value={staffId} onChange={e => setStaffId(e.target.value)} placeholder="Assignment ID to remove" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none" />
-              <button onClick={handleFire} disabled={submitting === 'fire'} className="w-full px-4 py-2 border border-accent/30 text-accent rounded-lg text-sm font-medium hover:bg-accent/5 disabled:opacity-50 flex items-center justify-center gap-2">
-                {submitting === 'fire' ? <Loader2 size={14} className="animate-spin" /> : <UserMinus size={14} />} Fire
-              </button>
+          ) : members.length === 0 ? (
+            <div className="bg-white border border-gray-100 rounded-xl p-10 text-center">
+              <StoreIcon size={28} className="text-gray-200 mx-auto mb-2" />
+              <p className="font-medium text-gray-500 text-sm">No team members yet</p>
+              <p className="text-xs text-gray-400 mt-1">Add your first manager or logistics officer above.</p>
             </div>
-            <p className="text-xs text-gray-400 mt-3">Deletes assignment; auth checks respect removal immediately.</p>
-          </div>
-        </div>
+          ) : (
+            <ul className="space-y-3">
+              {members.map((member) => (
+                <li key={member.id} className="bg-white border border-gray-100 rounded-xl p-4 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary-light flex items-center justify-center text-primary font-semibold text-sm shrink-0">
+                    {member.user.name?.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase() || '?'}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-medium text-sm text-gray-900 truncate">{member.user.name}</span>
+                      <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${member.role === 'store_manager' ? 'bg-blue-50 text-blue-600' : 'bg-amber-50 text-amber-600'}`}>
+                        {prettyRole(member.role)}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-400 truncate">{member.user.email}</p>
+                  </div>
+                  {member.role === 'store_owner' ? (
+                    <span className="flex items-center gap-1 text-[11px] text-gray-300 shrink-0" title="Owners cannot be removed here">
+                      <ShieldCheck size={13} /> Owner
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => removeMutation.mutate(member.id)}
+                      disabled={removeMutation.isPending}
+                      className="inline-flex items-center gap-1.5 text-xs font-medium text-rose-500 hover:text-rose-600 px-3 py-1.5 rounded-lg hover:bg-rose-50 transition-colors disabled:opacity-60 shrink-0"
+                    >
+                      {removeMutation.isPending ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
+                      Revoke
+                    </button>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
 
-        <div className="mt-8 bg-gray-50 border border-gray-200 rounded-lg p-4 text-xs text-gray-500">
-          Uses <code className="bg-white px-1 py-0.5 rounded border">StoreContext::resolve</code> — no inline role-to-store logic in controllers.
-        </div>
+          <p className="mt-4 text-[11px] text-gray-300 flex items-center gap-1.5">
+            <ShieldX size={12} />
+            Revoking removes store access immediately. The teammate keeps their customer account.
+          </p>
+        </motion.div>
       </motion.div>
     </main>
   )

@@ -1,13 +1,30 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState } from 'react'
+import Link from 'next/link'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion } from 'motion/react'
-import { Mail, Loader2, AlertCircle, CheckCircle, MessageSquare } from 'lucide-react'
-import { useAuthStore } from '@/stores/auth-store'
 import { api } from '@/lib/api'
+import { useAuthStore } from '@/stores/auth-store'
+import { toast } from 'sonner'
 
-interface Message {
+function timeAgo(dateStr: string): string {
+  const then = new Date(dateStr).getTime()
+  if (Number.isNaN(then)) return ''
+  const diffSec = Math.floor((Date.now() - then) / 1000)
+  if (diffSec < 60) return 'just now'
+  const diffMin = Math.floor(diffSec / 60)
+  if (diffMin < 60) return `${diffMin}m ago`
+  const diffHr = Math.floor(diffMin / 60)
+  if (diffHr < 24) return `${diffHr}h ago`
+  const diffDay = Math.floor(diffHr / 24)
+  if (diffDay < 7) return `${diffDay}d ago`
+  return new Date(dateStr).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short' })
+}
+import { Inbox, Send, Loader2, AlertCircle, RefreshCw, MailOpen, Mail, MessageSquare, Lock } from 'lucide-react'
+import { fadeUpTight as fadeUp, staggerTight as stagger } from '@/lib/motion/variants'
+
+interface ContactMessage {
   id: number
   name?: string
   email?: string
@@ -15,128 +32,221 @@ interface Message {
   message?: string
   body?: string
   is_read?: boolean
-  reply_body?: string | null
-  replied_at?: string | null
   created_at: string
-  user?: { name: string; email: string }
 }
 
 export default function MessagesClient() {
-  const router = useRouter()
-  const { isAuthenticated, isLoading: authLoading, user, checkAuth } = useAuthStore()
-  const [messages, setMessages] = useState<Message[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [replyBody, setReplyBody] = useState<Record<number, string>>({})
-  const [replying, setReplying] = useState<number | null>(null)
-  const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const { user } = useAuthStore()
+  const queryClient = useQueryClient()
+  const [selectedId, setSelectedId] = useState<number | null>(null)
+  const [replyBody, setReplyBody] = useState('')
+  const [replyError, setReplyError] = useState<string | null>(null)
 
-  useEffect(() => {
-    checkAuth()
-  }, [checkAuth])
+  // Inbox is a platform-admin tool — matches the dashboard gate.
+  const canView = user?.role === 'developer' || user?.role === 'store_owner' || user?.role === 'store_manager'
 
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) router.push('/auth/login')
-  }, [authLoading, isAuthenticated, router])
+  const { data, isLoading, error, refetch, isFetching } = useQuery({
+    queryKey: ['contact-messages'],
+    queryFn: () => api.getMessages(),
+    enabled: canView,
+  })
 
-  useEffect(() => {
-    if (!isAuthenticated) return
-    let cancelled = false
-    setLoading(true)
-    api.getMessages()
-      .then((res: unknown) => {
-        if (cancelled) return
-        const list = Array.isArray(res) ? res : (res as { data: Message[] }).data ?? []
-        setMessages(list)
+  const markReadMutation = useMutation({
+    meta: { silent: true }, // optimistic update reverts + toasts locally
+    mutationFn: ({ id, read }: { id: number; read: boolean }) => api.markMessageRead(id, read),
+    onMutate: async ({ id, read }) => {
+      await queryClient.cancelQueries({ queryKey: ['contact-messages'] })
+      const previous = queryClient.getQueryData(['contact-messages'])
+      queryClient.setQueryData(['contact-messages'], (old: unknown) => {
+        const payload = old as { data?: ContactMessage[] } | ContactMessage[] | undefined
+        const list = Array.isArray(payload) ? payload : payload?.data
+        if (!list) return old
+        const next = list.map((m) => (m.id === id ? { ...m, is_read: read } : m))
+        return Array.isArray(payload) ? next : { ...(payload as { data?: ContactMessage[] }), data: next }
       })
-      .catch((e: unknown) => {
-        if (!cancelled) setError(e instanceof Error ? e.message : 'Failed to load')
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false)
-      })
-    return () => { cancelled = true }
-  }, [isAuthenticated])
+      return { previous }
+    },
+    onError: (_err, _vars, context) => {
+      queryClient.setQueryData(['contact-messages'], context?.previous)
+      toast.error('Could not update message')
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['contact-messages'] })
+      queryClient.invalidateQueries({ queryKey: ['admin-health'] })
+    },
+  })
 
-  if (authLoading || loading) {
-    return (
-      <main className="max-w-4xl mx-auto px-4 py-20 text-center">
-        <Loader2 size={32} className="animate-spin mx-auto text-primary" />
-      </main>
-    )
-  }
+  const replyMutation = useMutation({
+    meta: { silent: true }, // inline error under the composer
+    mutationFn: ({ id, body }: { id: number; body: string }) => api.replyToMessage(id, body),
+    onSuccess: () => {
+      setReplyBody('')
+      setReplyError(null)
+      toast.success('Reply sent')
+    },
+    onError: (err) => {
+      setReplyError(err instanceof Error ? err.message : 'Could not send reply')
+    },
+  })
 
-  if (user?.role !== 'developer') {
+  if (!canView) {
     return (
       <main className="max-w-4xl mx-auto px-4 py-16 text-center">
-        <AlertCircle size={32} className="mx-auto text-accent mb-4" />
-        <h1 className="text-xl font-semibold">Developer only</h1>
-        <p className="text-sm text-gray-500 mt-2">Contact messages inbox requires developer role.</p>
+        <div className="w-12 h-12 rounded-full bg-rose-100 flex items-center justify-center mx-auto mb-4">
+          <Lock size={20} className="text-rose-500" />
+        </div>
+        <h1 className="text-xl font-semibold">Admin access only</h1>
+        <p className="text-sm text-gray-500 mt-2">
+          The customer inbox is limited to platform admins and store management.
+        </p>
+        <Link href="/" className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline mt-4">
+          Go to Home
+        </Link>
       </main>
     )
   }
 
-  const handleReply = async (id: number) => {
-    const body = replyBody[id]?.trim()
-    if (!body) {
-      setFeedback({ type: 'error', text: 'Reply body required' })
+  const payload = data as { data?: ContactMessage[] } | ContactMessage[] | undefined
+  const messages: ContactMessage[] = Array.isArray(payload) ? payload : payload?.data ?? []
+  const selected = messages.find((m) => m.id === selectedId) ?? null
+
+  const openMessage = (m: ContactMessage) => {
+    setSelectedId(m.id)
+    setReplyBody('')
+    setReplyError(null)
+    if (!m.is_read) markReadMutation.mutate({ id: m.id, read: true })
+  }
+
+  const handleReply = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!selected) return
+    if (!replyBody.trim()) {
+      setReplyError('Write a reply before sending')
       return
     }
-    setReplying(id)
-    setFeedback(null)
-    try {
-      await api.replyToMessage(id, body)
-      setMessages(msgs => msgs.map(m => m.id === id ? { ...m, reply_body: body, replied_at: new Date().toISOString(), is_read: true } : m))
-      setFeedback({ type: 'success', text: `Replied to #${id}` })
-      setReplyBody(s => ({ ...s, [id]: '' }))
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'Reply failed'
-      setFeedback({ type: 'error', text: msg })
-    } finally {
-      setReplying(null)
-    }
+    replyMutation.mutate({ id: selected.id, body: replyBody.trim() })
   }
 
   return (
     <main className="max-w-4xl mx-auto px-4 py-8">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="font-display text-3xl font-bold mb-2 flex items-center gap-2"><Mail size={24} /> Contact Messages</h1>
-        <p className="text-gray-500 text-sm mb-6">Inbox · click to mark read · reply persists <code className="bg-gray-100 px-1 rounded">reply_body</code> + <code className="bg-gray-100 px-1 rounded">replied_at</code></p>
-
-        {error && <div className="bg-accent/10 border border-accent/20 text-accent text-sm rounded-lg px-4 py-3 mb-4">{error}</div>}
-        {feedback && <div className={`mb-4 px-4 py-3 rounded-lg text-sm flex items-center gap-2 ${feedback.type === 'success' ? 'bg-green-50 border border-green-200 text-green-700' : 'bg-accent/10 border border-accent/20 text-accent'}`}>{feedback.type === 'success' ? <CheckCircle size={16} /> : <AlertCircle size={16} />} {feedback.text}</div>}
-
-        {messages.length === 0 ? (
-          <div className="text-center py-16 bg-white border border-gray-100 rounded-xl">
-            <MessageSquare size={48} className="mx-auto text-gray-200 mb-4" />
-            <p className="text-gray-500">No messages yet</p>
+      <motion.div initial="hidden" animate="show" variants={stagger}>
+        <motion.div variants={fadeUp} className="mb-6 flex items-start justify-between">
+          <div>
+            <h1 className="font-display text-3xl font-bold text-gray-900 mb-1">Messages</h1>
+            <p className="text-gray-500 text-sm">Customer enquiries sent through the contact page.</p>
           </div>
-        ) : (
-          <div className="space-y-4">
-            {messages.map(m => (
-              <div key={m.id} className={`bg-white border rounded-xl p-5 ${m.is_read ? 'border-gray-100' : 'border-primary/30 bg-primary/5'}`}>
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1">
-                    <p className="font-medium text-sm">{m.subject ?? m.name ?? `Message #${m.id}`}</p>
-                    <p className="text-xs text-gray-400">{m.email ?? m.user?.email ?? '—'} · {new Date(m.created_at).toLocaleString('en-ZA')}</p>
-                    <p className="text-sm text-gray-700 mt-3 whitespace-pre-wrap">{m.message ?? m.body ?? ''}</p>
-                    {m.reply_body && (
-                      <div className="mt-3 bg-green-50 border border-green-200 rounded-lg p-3">
-                        <p className="text-xs font-medium text-green-800">Reply {m.replied_at ? `· ${new Date(m.replied_at).toLocaleString('en-ZA')}` : ''}</p>
-                        <p className="text-sm text-green-900 mt-1 whitespace-pre-wrap">{m.reply_body}</p>
-                      </div>
-                    )}
-                  </div>
-                  <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${m.is_read ? 'bg-gray-100 text-gray-500' : 'bg-primary text-white'}`}>{m.is_read ? 'Read' : 'Unread'}</span>
-                </div>
-                <div className="mt-4 flex gap-2">
-                  <input value={replyBody[m.id] ?? ''} onChange={e => setReplyBody(s => ({ ...s, [m.id]: e.target.value }))} placeholder={m.reply_body ? 'Update reply…' : 'Write a reply…'} className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none" />
-                  <button onClick={() => handleReply(m.id)} disabled={replying === m.id} className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark disabled:opacity-50 flex items-center gap-1.5">
-                    {replying === m.id ? <Loader2 size={14} className="animate-spin" /> : null} Reply
-                  </button>
+          <button
+            onClick={() => refetch()}
+            className="p-2 text-gray-400 hover:text-primary transition-colors"
+            aria-label="Refresh messages"
+          >
+            <RefreshCw size={16} className={isFetching ? 'animate-spin' : ''} />
+          </button>
+        </motion.div>
+
+        {isLoading ? (
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="bg-white border border-gray-100 rounded-xl p-4">
+                <div className="animate-pulse space-y-2">
+                  <div className="h-3.5 w-40 bg-gray-100 rounded" />
+                  <div className="h-3 w-full bg-gray-100 rounded" />
                 </div>
               </div>
             ))}
+          </div>
+        ) : error ? (
+          <div className="bg-accent/5 border border-accent/20 rounded-xl p-4 flex items-center gap-3">
+            <AlertCircle size={18} className="text-accent shrink-0" />
+            <p className="text-sm text-gray-600">{(error as Error).message}</p>
+            <button onClick={() => refetch()} className="ml-auto text-primary text-sm font-medium hover:underline flex items-center gap-1">
+              <RefreshCw size={13} /> Retry
+            </button>
+          </div>
+        ) : messages.length === 0 ? (
+          <div className="bg-white border border-gray-100 rounded-xl p-12 text-center">
+            <Inbox size={32} className="text-gray-200 mx-auto mb-3" />
+            <p className="font-medium text-gray-500">Inbox zero</p>
+            <p className="text-xs text-gray-400 mt-1">New customer messages will appear here.</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {messages.map((m) => {
+              const body = m.message ?? m.body ?? ''
+              const expanded = selectedId === m.id
+              return (
+                <motion.div key={m.id} variants={fadeUp} layout>
+                  <button
+                    onClick={() => openMessage(m)}
+                    className={`w-full text-left bg-white border rounded-xl p-4 transition-all ${expanded ? 'border-primary/40 shadow-sm' : 'border-gray-100 hover:border-gray-200 hover:shadow-sm'}`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className={`mt-0.5 shrink-0 ${m.is_read ? 'text-gray-300' : 'text-primary'}`}>
+                        {m.is_read ? <MailOpen size={16} /> : <Mail size={16} />}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className={`text-sm truncate ${m.is_read ? 'text-gray-600' : 'font-semibold text-gray-900'}`}>
+                            {m.name || 'Anonymous'}
+                          </span>
+                          <span className="text-xs text-gray-300">·</span>
+                          <span className="text-xs text-gray-400 truncate">{m.email}</span>
+                          <span className="text-[11px] text-gray-300 ml-auto shrink-0">
+                            {timeAgo(m.created_at)}
+                          </span>
+                        </div>
+                        {m.subject && <p className={`text-sm mt-0.5 ${m.is_read ? 'text-gray-500' : 'font-medium text-gray-800'}`}>{m.subject}</p>}
+                        <p className={`text-sm text-gray-500 mt-1 ${expanded ? '' : 'line-clamp-2'}`}>{body}</p>
+                      </div>
+                    </div>
+                  </button>
+
+                  {expanded && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      className="bg-gray-50/70 border border-t-0 border-gray-100 rounded-b-xl px-5 py-4 ml-0"
+                      style={{ marginTop: -12, paddingTop: 20 }}
+                    >
+                      <form onSubmit={handleReply}>
+                        <label className="text-xs font-medium text-gray-500 flex items-center gap-1.5 mb-2">
+                          <MessageSquare size={12} /> Reply to {m.email}
+                        </label>
+                        <textarea
+                          value={replyBody}
+                          onChange={(e) => { setReplyBody(e.target.value); if (replyError) setReplyError(null) }}
+                          rows={3}
+                          placeholder="Write your reply…"
+                          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
+                        />
+                        {replyError && (
+                          <p className="mt-2 text-xs text-accent flex items-center gap-1.5">
+                            <AlertCircle size={12} /> {replyError}
+                          </p>
+                        )}
+                        <div className="flex items-center justify-end gap-2 mt-2">
+                          <button
+                            type="button"
+                            onClick={() => markReadMutation.mutate({ id: m.id, read: !m.is_read })}
+                            className="text-xs text-gray-500 hover:text-gray-700 px-3 py-1.5"
+                          >
+                            Mark as {m.is_read ? 'unread' : 'read'}
+                          </button>
+                          <button
+                            type="submit"
+                            disabled={replyMutation.isPending}
+                            className="inline-flex items-center gap-1.5 bg-primary text-white text-xs font-medium px-4 py-2 rounded-lg hover:bg-primary-dark transition-colors disabled:opacity-60"
+                          >
+                            {replyMutation.isPending ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}
+                            Send reply
+                          </button>
+                        </div>
+                      </form>
+                    </motion.div>
+                  )}
+                </motion.div>
+              )
+            })}
           </div>
         )}
       </motion.div>

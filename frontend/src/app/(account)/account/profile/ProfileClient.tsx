@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import { motion } from 'motion/react'
 import { User, Mail, Phone, Loader2, Save, CheckCircle, MailCheck } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth-store'
@@ -9,8 +8,8 @@ import { api } from '@/lib/api'
 import AddressBookSection from './AddressBookSection'
 
 export default function ProfileClient() {
-  const router = useRouter()
-  const { isAuthenticated, isLoading: authLoading, checkAuth, user, setUser } = useAuthStore()
+  // Auth bootstrap + redirect live in the (account) layout AuthGuard.
+  const { isLoading: authLoading, user, setUser } = useAuthStore()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
@@ -21,21 +20,13 @@ export default function ProfileClient() {
   const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
-    checkAuth()
-  }, [checkAuth])
-
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.push('/auth/login')
-      return
-    }
-    if (!authLoading && isAuthenticated && user && !loaded) {
+    if (!authLoading && user && !loaded) {
       setName(user.name)
       setEmail(user.email)
       setPhone(user.phone || '')
       setLoaded(true)
     }
-  }, [authLoading, isAuthenticated, user, router, loaded])
+  }, [authLoading, user, loaded])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'motion/react'
 import { ArrowLeft, Loader2, MapPin, CreditCard, Star, AlertCircle, XCircle, CheckCircle, User, Package, Bike, Clock } from 'lucide-react'
@@ -57,8 +56,8 @@ function StarRating({ value, onChange }: { value: number; onChange: (v: number) 
 }
 
 export default function OrderDetailClient({ id }: { id: string }) {
-  const router = useRouter()
-  const { isAuthenticated, isLoading: authLoading, checkAuth } = useAuthStore()
+  // Auth bootstrap + redirect live in the (account) layout AuthGuard.
+  const { isLoading: authLoading } = useAuthStore()
   const { data: order, isLoading: loading, error } = useOrder(id)
   const queryClient = useQueryClient()
   const [mutationError, setMutationError] = useState('')
@@ -76,16 +75,6 @@ export default function OrderDetailClient({ id }: { id: string }) {
       setReviewSubmitted(true)
     }
   }, [order])
-
-  useEffect(() => {
-    checkAuth()
-  }, [checkAuth])
-
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.push('/auth/login')
-    }
-  }, [authLoading, isAuthenticated, router])
 
   const handleCancel = async () => {
     if (!confirm('Are you sure you want to cancel this order?')) return

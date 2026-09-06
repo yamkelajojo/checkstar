@@ -7,6 +7,7 @@ import {
   ChevronDown, ChevronUp, Save, X, Loader2, AlertCircle,
 } from 'lucide-react'
 import { useAdminBanners, useCreateBanner, useUpdateBanner, useDeleteBanner } from '@/lib/query'
+import { toast } from 'sonner'
 import { fadeUpTight as fadeUp, staggerTight as stagger } from '@/lib/motion/variants'
 import type { Banner, BannerSlide } from '@/types'
 
@@ -153,6 +154,7 @@ function BannerForm({ banner, onClose }: { banner?: Banner | null; onClose: () =
   const [status, setStatus] = useState<string>(banner?.status ?? 'draft')
   const [startDate, setStartDate] = useState(banner?.start_date?.slice(0, 10) ?? '')
   const [endDate, setEndDate] = useState(banner?.end_date?.slice(0, 10) ?? '')
+  const [formError, setFormError] = useState<string | null>(null)
 
   const createBanner = useCreateBanner()
   const updateBanner = useUpdateBanner()
@@ -161,18 +163,45 @@ function BannerForm({ banner, onClose }: { banner?: Banner | null; onClose: () =
   const isLoading = createBanner.isPending || updateBanner.isPending
 
   const handleSave = () => {
+    setFormError(null)
+
+    const trimmedName = name.trim()
+    if (!trimmedName) {
+      setFormError('Banner name is required')
+      return
+    }
+    const untitled = slides.findIndex((s) => !s.title?.trim())
+    if (untitled !== -1) {
+      setFormError(`Slide ${untitled + 1} needs a title`)
+      return
+    }
+    if (startDate && endDate && endDate < startDate) {
+      setFormError('End date cannot be before the start date')
+      return
+    }
+
     const data = {
-      name,
+      name: trimmedName,
       slides,
       status,
       start_date: startDate || undefined,
       end_date: endDate || undefined,
     }
 
+    const onError = (err: unknown) => {
+      setFormError(err instanceof Error ? err.message : 'Could not save the banner — please try again')
+    }
+
     if (isEditing) {
-      updateBanner.mutate({ id: banner.id, ...data }, { onSuccess: onClose })
+      updateBanner.mutate({ id: banner.id, ...data }, {
+        onSuccess: () => { toast.success('Banner updated'); onClose() },
+        onError,
+      })
     } else {
-      createBanner.mutate(data, { onSuccess: onClose })
+      createBanner.mutate(data, {
+        onSuccess: () => { toast.success('Banner created'); onClose() },
+        onError,
+      })
     }
   }
 
@@ -253,6 +282,14 @@ function BannerForm({ banner, onClose }: { banner?: Banner | null; onClose: () =
           </div>
         </div>
 
+        {formError && (
+          <div className="px-6 pb-2">
+            <p className="text-sm text-accent flex items-center gap-1.5 bg-accent/5 border border-accent/20 rounded-lg px-3 py-2">
+              <AlertCircle size={14} className="shrink-0" /> {formError}
+            </p>
+          </div>
+        )}
+
         <div className="sticky bottom-0 bg-white border-t border-gray-100 px-6 py-4 flex justify-end gap-3">
           <button
             onClick={onClose}
@@ -290,7 +327,7 @@ export default function BannersClient() {
 
   const confirmDelete = () => {
     if (deletingId != null) {
-      deleteBanner.mutate(deletingId, { onSuccess: () => setDeletingId(null) })
+      deleteBanner.mutate(deletingId, { onSuccess: () => { toast.success('Banner deleted'); setDeletingId(null) } })
     }
   }
 

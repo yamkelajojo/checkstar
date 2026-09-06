@@ -22,7 +22,12 @@ test.describe('Product detail', () => {
     // The main buy-box CTA is labelled "Add to Cart" (the aria-labelled
     // variant is the floating CTA that only mounts once the related shelf
     // scrolls into view).
-    await page.getByRole('button', { name: 'Add to Cart', exact: true }).first().click()
+    const cta = page.getByRole('button', { name: 'Add to Cart', exact: true }).first()
+    // Center the CTA before clicking: Playwright's default scroll puts it
+    // flush under the sticky header, which then intercepts the pointer.
+    await cta.waitFor()
+    await cta.evaluate((el) => el.scrollIntoView({ block: 'center' }))
+    await cta.click()
 
     await expect(
       page.getByText(new RegExp(`^Added ${escapeRegExp(product.name)}`))

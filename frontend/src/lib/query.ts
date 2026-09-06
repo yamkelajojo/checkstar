@@ -78,6 +78,7 @@ export function useAdminBanners() {
 export function useCreateBanner() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { silent: true }, // BannersClient renders inline errors — avoid double-toast
     mutationFn: (data: Parameters<typeof api.createBanner>[0]) => api.createBanner(data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin-banners'] })
@@ -89,6 +90,7 @@ export function useCreateBanner() {
 export function useUpdateBanner() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { silent: true }, // BannersClient renders inline errors — avoid double-toast
     mutationFn: ({ id, ...data }: { id: number } & Parameters<typeof api.updateBanner>[1]) => api.updateBanner(id, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin-banners'] })
@@ -100,6 +102,7 @@ export function useUpdateBanner() {
 export function useDeleteBanner() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { silent: true }, // BannersClient renders inline errors — avoid double-toast
     mutationFn: (id: number) => api.deleteBanner(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin-banners'] })
@@ -159,10 +162,11 @@ export function useOrders(params?: Record<string, string>) {
   })
 }
 
-export function usePendingDispatch(storeId?: number) {
+export function usePendingDispatch(storeId?: number, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['pending-dispatch', storeId],
     queryFn: () => api.getPendingDispatch(storeId).then(r => r.data),
+    enabled: options?.enabled,
   })
 }
 

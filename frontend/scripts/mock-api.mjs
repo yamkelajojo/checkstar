@@ -146,10 +146,102 @@ const careers = [
   { id: 2, title: 'Delivery Rider', slug: 'delivery-rider', description: 'Bring orders to doors across Durban.', requirements: 'Own bike/scooter, PDP', location: 'Durban', type: 'Contract', department: 'Logistics', closes_at: '2027-03-31' },
 ]
 
+// ── manager surface state (mutable, in-memory) ──────────────────────────────
+// Auth: login sets a cs_role cookie — dev@→developer, owner@→store_owner,
+// manager@→store_manager, logistics@→logistics_officer, rider@→rider,
+// anything else→customer. /api/auth/user resolves the role from it.
+
+const MOCK_USERS = {
+  developer: { id: 9, name: 'Dev User', email: 'dev@checkstar.co.za', role: 'developer' },
+  store_owner: { id: 2, name: 'Thandi Owner', email: 'owner@checkstar.co.za', role: 'store_owner' },
+  store_manager: { id: 3, name: 'Sipho Manager', email: 'manager@checkstar.co.za', role: 'store_manager' },
+  logistics_officer: { id: 4, name: 'Lerato Logistics', email: 'logistics@checkstar.co.za', role: 'logistics_officer' },
+  rider: { id: 7, name: 'Rider Sipho', email: 'rider@checkstar.co.za', role: 'rider' },
+  customer: { id: 1, name: 'Test Customer', email: 'test@checkstar.co.za', role: 'customer' },
+}
+
+function roleFromEmail(email) {
+  const e = String(email || '').toLowerCase()
+  if (e.startsWith('dev')) return 'developer'
+  if (e.startsWith('owner')) return 'store_owner'
+  if (e.startsWith('manager')) return 'store_manager'
+  if (e.startsWith('logistics')) return 'logistics_officer'
+  if (e.startsWith('rider')) return 'rider'
+  return 'customer'
+}
+
+function parseCookies(req) {
+  const raw = req.headers.cookie || ''
+  return Object.fromEntries(raw.split(';').map((p) => p.trim().split('=').map(decodeURIComponent)).filter((a) => a.length === 2))
+}
+
+const SEED_MESSAGES = [
+  { id: 1, name: 'Nomsa Dlamini', email: 'nomsa@example.com', subject: 'Delivery to Umlazi?', message: 'Do you deliver to Umlazi on weekends?', is_read: false, reply_body: null, replied_at: null, created_at: '2026-09-04T09:12:00Z' },
+  { id: 2, name: 'Pieter van Wyk', email: 'pieter@example.com', subject: 'Bulk pricing', message: 'Looking for bulk pricing on 2L soft drinks for an event.', is_read: true, reply_body: 'Yes — contact our Durban Central branch for bulk rates.', replied_at: '2026-09-05T10:00:00Z', created_at: '2026-09-03T14:30:00Z' },
+]
+let nextMessageId = 3
+let contactMessages = SEED_MESSAGES.map((m) => ({ ...m }))
+
+const SEED_STAFF = [
+  { id: 10, user: { id: 2, name: 'Thandi Owner', email: 'owner@checkstar.co.za' }, role: 'store_owner', store_id: 1, created_at: '2026-07-15T08:00:00Z' },
+  { id: 11, user: { id: 3, name: 'Sipho Manager', email: 'manager@checkstar.co.za' }, role: 'store_manager', store_id: 1, created_at: '2026-08-01T08:00:00Z' },
+  { id: 12, user: { id: 4, name: 'Lerato Logistics', email: 'logistics@checkstar.co.za' }, role: 'logistics_officer', store_id: 1, created_at: '2026-08-09T08:00:00Z' },
+]
+
+let staffAssignments = SEED_STAFF.map((a) => ({ ...a, user: { ...a.user } }))
+
+const riders = [
+  { rider_id: 7, name: 'Sipho R.', delivery_count: 14, avg_delivery_time: 26, total_distance: 61.5, is_available: true },
+  { rider_id: 8, name: 'Ayanda N.', delivery_count: 8, avg_delivery_time: 31, total_distance: 38.2, is_available: true },
+  { rider_id: 9, name: 'Kwame M.', delivery_count: 3, avg_delivery_time: 44, total_distance: 12.9, is_available: false },
+  { rider_id: 10, name: 'Zanele K.', delivery_count: 11, avg_delivery_time: 29, total_distance: 52.0, is_available: true },
+]
+
+const SEED_ORDERS = [
+  { id: 501, order_number: 'CS-1501', status: 'confirmed', payment_status: 'paid', total: 84.97, subtotal: 76.99, delivery_fee: 7.98, fulfilment_method: 'delivery', delivery_latitude: -29.8587, delivery_longitude: 31.0218, delivery_address: '12 Problem Mkhize Rd, Berea', created_at: '2026-09-06T07:41:00Z', can_cancel: true, rider_id: null, items: [{ id: 1, product_id: 3, quantity: 2, unit_price: 12.99, total_price: 25.98, product_snapshot: { name: 'Tropika Pineapple 500ml', image: '/products/mock-3.png', unit: '500ml', slug: 'tropika-pineapple-dairy-fruit-mix-500ml' } }] },
+  { id: 502, order_number: 'CS-1502', status: 'retrying', payment_status: 'paid', total: 45.98, subtotal: 45.98, delivery_fee: 0, fulfilment_method: 'delivery', delivery_latitude: -29.7261, delivery_longitude: 31.0836, delivery_address: '9 Lagoon Drive, Umhlanga', created_at: '2026-09-06T08:03:00Z', can_cancel: true, rider_id: null, items: [] },
+  { id: 503, order_number: 'CS-1503', status: 'preparing', payment_status: 'paid', total: 33.98, subtotal: 33.98, delivery_fee: 0, fulfilment_method: 'delivery', delivery_latitude: -29.9245, delivery_longitude: 30.8836, delivery_address: '45 Chatsworth Main', created_at: '2026-09-06T08:20:00Z', can_cancel: true, rider_id: 8, items: [] },
+]
+
+let pendingOrders = SEED_ORDERS.map((o) => ({ ...o, items: o.items.map((i) => ({ ...i })) }))
+
+let eventSeq = 900
+const seedDay = (n) => new Date(Date.now() - n * 86400000).toISOString().slice(0, 10)
+const analyticsCache = {}
+function analyticsFor(period) {
+  const days = period === '7d' ? 7 : period === '90d' ? 90 : 30
+  if (analyticsCache[days]) return analyticsCache[days]
+  const revenue_over_time = Array.from({ length: days }, (_, i) => ({
+    date: seedDay(days - 1 - i),
+    revenue: Math.round(1800 + 1400 * Math.sin(i / 3.1) + i * 22),
+  }))
+  const total_revenue = revenue_over_time.reduce((s, d) => s + d.revenue, 0)
+  const total_orders = days * 9 + 5
+  const result = {
+    total_revenue,
+    total_orders,
+    avg_order_value: Math.round((total_revenue / total_orders) * 100) / 100,
+    revenue_over_time,
+    orders_by_hour: Array.from({ length: 24 }, (_, h) => ({ hour: h, count: Math.max(0, Math.round(6 * Math.sin(((h - 6) / 24) * Math.PI * 2)) + (h > 15 && h < 19 ? 5 : 1)) })),
+  }
+  analyticsCache[days] = result
+  return result
+}
+
 // ── helpers ─────────────────────────────────────────────────────────────────
 function json(res, code, body) {
   res.writeHead(code, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' })
   res.end(JSON.stringify(body))
+}
+
+function readBody(req) {
+  return new Promise((resolve) => {
+    let data = ''
+    req.on('data', (c) => { data += c })
+    req.on('end', () => {
+      try { resolve(JSON.parse(data || '{}')) } catch { resolve({}) }
+    })
+  })
 }
 
 function paginate(list, url) {
@@ -183,7 +275,7 @@ const orderFor = (id) => ({
 })
 
 // ── server ──────────────────────────────────────────────────────────────────
-const server = http.createServer((req, res) => {
+const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost')
   const path = decodeURIComponent(url.pathname)
 
@@ -204,13 +296,39 @@ const server = http.createServer((req, res) => {
     return res.end(png(480, 480, r, g, b))
   }
 
+  // Test seam: restore every mutable seed to its initial state.
+  if (path === '/api/__admin/reset' && req.method === 'POST') {
+    contactMessages = SEED_MESSAGES.map((m) => ({ ...m }))
+    nextMessageId = SEED_MESSAGES.length + 1
+    staffAssignments = SEED_STAFF.map((a) => ({ ...a, user: { ...a.user } }))
+    pendingOrders = SEED_ORDERS.map((o) => ({ ...o, items: o.items.map((i) => ({ ...i })) }))
+    return json(res, 200, { message: 'reset ok' })
+  }
+
   if (req.method === 'POST' && (path === '/api/auth/login' || path === '/api/auth/register' || path === '/api/auth/register/rider')) {
-    return json(res, 200, { user: { id: 1, name: 'Test Customer', email: 'test@checkstar.co.za' }, token: 'mock-token' })
+    const body = await readBody(req)
+    const role = roleFromEmail(body.email)
+    const user = MOCK_USERS[role]
+    // Two cookies: cs_role drives /api/auth/user; laravel_session satisfies the
+    // Next middleware's protected-route check (mirrors the real Sanctum setup).
+    res.setHeader('Set-Cookie', [
+      `cs_role=${role}; Path=/; SameSite=Lax`,
+      `laravel_session=mock-session-${role}; Path=/; SameSite=Lax`,
+    ])
+    return json(res, 200, { user, token: `mock-token-${role}` })
   }
   if (path === '/api/auth/user' || path === '/api/user') {
-    return json(res, 200, { user: { id: 1, name: 'Test Customer', email: 'test@checkstar.co.za' }, data: { id: 1, name: 'Test Customer', email: 'test@checkstar.co.za' } })
+    const role = parseCookies(req).cs_role || 'customer'
+    const user = MOCK_USERS[role] ?? MOCK_USERS.customer
+    return json(res, 200, { user, data: user })
   }
-  if (req.method === 'POST' && path === '/api/auth/logout') return json(res, 200, { message: 'Logged out' })
+  if (req.method === 'POST' && path === '/api/auth/logout') {
+    res.setHeader('Set-Cookie', [
+      'cs_role=; Path=/; Max-Age=0',
+      'laravel_session=; Path=/; Max-Age=0',
+    ])
+    return json(res, 200, { message: 'Logged out' })
+  }
   if (req.method === 'POST' && path === '/api/auth/forgot-password') return json(res, 200, { message: 'Reset link sent' })
   if (req.method === 'POST' && path === '/api/auth/reset-password') return json(res, 200, { message: 'Password reset' })
   if (path === '/api/sanctum/csrf-cookie' || path === '/sanctum/csrf-cookie') { res.writeHead(204); return res.end() }
@@ -272,6 +390,175 @@ const server = http.createServer((req, res) => {
     return json(res, 200, { data: { store: stores[0], distance_km: 2.4 } })
   }
 
+  // ── Operations dashboard (staff roles; the real backend enforces RBAC) ─────
+  if (path === '/api/operations/metrics') {
+    return json(res, 200, {
+      active_riders: riders.filter((r) => r.is_available).length,
+      total_riders: riders.length,
+      orders_this_hour: 12,
+      pending_orders: pendingOrders.filter((o) => !o.rider_id && o.status !== 'preparing').length,
+      active_deliveries: 5,
+      delivered_today: 38,
+    })
+  }
+  if (path === '/api/operations/alerts') {
+    return json(res, 200, {
+      alerts: [
+        { id: 'alert-pending-1', type: 'order_pending', severity: 'warning', message: '2 orders waiting longer than 10 minutes for dispatch' },
+        { id: 'alert-idle-1', type: 'rider_idle', severity: 'info', message: 'Rider Kwame M. has been idle for 25 minutes' },
+      ],
+    })
+  }
+  if (path === '/api/operations/map-layers') {
+    return json(res, 200, {
+      traffic: [{ lat: -29.8587, lng: 31.0218, count: 7 }, { lat: -29.7261, lng: 31.0836, count: 4 }, { lat: -29.9245, lng: 30.8836, count: 2 }],
+      routes: [{ rider_id: 7, lat: -29.85, lng: 31.02 }, { rider_id: 8, lat: -29.73, lng: 31.08 }],
+      demand: [{ lat: -29.87, lng: 31.03, count: 9 }, { lat: -29.84, lng: 31.01, count: 5 }],
+    })
+  }
+  if (path === '/api/operations/events') {
+    const kinds = [
+      { type: 'order.placed', message: 'New order CS-1504 placed — awaiting confirmation' },
+      { type: 'order.dispatched', message: 'Order CS-1501 assigned to rider Sipho R.' },
+      { type: 'order.delivered', message: 'Order CS-1498 delivered in 24 min' },
+      { type: 'rider.online', message: 'Rider Ayanda N. went online' },
+      { type: 'rider.offline', message: 'Rider Kwame M. went offline' },
+    ]
+    const cursor = Number(url.searchParams.get('cursor') || 0)
+    const limit = Math.min(50, Number(url.searchParams.get('limit') || 50))
+    const minuteBucket = Math.floor(Date.now() / 60000)
+    const maxId = 880 + (minuteBucket % 40) * 5
+    const all = []
+    for (let id = 880; id <= maxId; id++) {
+      const k = kinds[id % kinds.length]
+      all.push({ id: String(id), type: k.type, message: k.message, order_id: id % 3 === 0 ? 1500 + (id % 5) : null, created_at: new Date(Date.now() - (maxId - id) * 45000).toISOString() })
+    }
+    const fresh = all.filter((e) => Number(e.id) > cursor)
+    const page = fresh.slice(0, limit)
+    return json(res, 200, { events: page, next_cursor: page.length ? page[page.length - 1].id : String(cursor) })
+  }
+  if (path.startsWith('/api/operations/dispatch-suggestion/')) {
+    const orderId = Number(path.split('/').pop())
+    return json(res, 200, { order_id: orderId, suggested_rider_id: 7, reason: 'Closest available rider (1.2 km, 14 deliveries today)' })
+  }
+  if (path === '/api/operations/assign-rider' && req.method === 'POST') {
+    const body = await readBody(req)
+    const order = pendingOrders.find((o) => o.id === Number(body.order_id))
+    if (!order) return json(res, 404, { message: 'Order not found' })
+    order.rider_id = Number(body.rider_id)
+    order.status = 'preparing'
+    return json(res, 200, { success: true, order })
+  }
+
+  // ── Operations analytics ───────────────────────────────────────────────────
+  if (path.startsWith('/api/operations/analytics/sales')) {
+    return json(res, 200, analyticsFor(url.searchParams.get('period')))
+  }
+  if (path.startsWith('/api/operations/analytics/products')) {
+    const limit = Number(url.searchParams.get('limit') || 10)
+    return json(res, 200, {
+      top_products: products.slice(0, limit).map((p, i) => ({ id: p.id, name: p.name, order_count: 40 - i * 3, total_quantity: 90 - i * 7, total_revenue: 920 - i * 74 })),
+      search_queries: [{ query: 'tropika', count: 128 }, { query: 'coke 2l', count: 97 }, { query: 'milk', count: 74 }, { query: 'cordial', count: 41 }],
+    })
+  }
+  if (path.startsWith('/api/operations/analytics/riders')) {
+    return json(res, 200, {
+      rider_utilization: riders,
+      fleet_summary: {
+        active_riders: riders.filter((r) => r.is_available).length,
+        total_riders: riders.length,
+        avg_utilization_rate: Math.round((riders.reduce((s, r) => s + r.delivery_count, 0) / (riders.length * 14)) * 100),
+      },
+    })
+  }
+
+  // ── Admin: contact messages (developer) ────────────────────────────────────
+  if (path === '/api/admin/messages' && req.method === 'GET') {
+    return json(res, 200, { data: [...contactMessages].sort((a, b) => b.id - a.id) })
+  }
+  const msgReply = path.match(/^\/api\/admin\/messages\/(\d+)\/reply$/)
+  if (msgReply && req.method === 'POST') {
+    const msg = contactMessages.find((m) => m.id === Number(msgReply[1]))
+    if (!msg) return json(res, 404, { message: 'Message not found' })
+    const body = await readBody(req)
+    if (!body.body || !String(body.body).trim()) return json(res, 422, { message: 'Reply body required' })
+    msg.reply_body = String(body.body)
+    msg.replied_at = new Date().toISOString()
+    msg.is_read = true
+    return json(res, 200, { data: msg })
+  }
+  const msgRead = path.match(/^\/api\/admin\/messages\/(\d+)\/read$/)
+  if (msgRead && req.method === 'PATCH') {
+    const msg = contactMessages.find((m) => m.id === Number(msgRead[1]))
+    if (!msg) return json(res, 404, { message: 'Message not found' })
+    const body = await readBody(req)
+    msg.is_read = typeof body.read === 'boolean' ? body.read : !msg.is_read
+    return json(res, 200, { data: msg })
+  }
+  if (path === '/api/admin/health') {
+    return json(res, 200, { status: 'ok', uptime_s: Math.floor(process.uptime()), services: { api: 'ok', database: 'ok', queue: 'warn', storage: 'ok' } })
+  }
+  if (path === '/api/contact' && req.method === 'POST') {
+    const body = await readBody(req)
+    contactMessages.push({ id: nextMessageId++, name: body.name, email: body.email, subject: body.subject ?? '(no subject)', message: body.message, is_read: false, reply_body: null, replied_at: null, created_at: new Date().toISOString() })
+    return json(res, 201, { message: 'Message received' })
+  }
+
+  // ── Store dispatch (manager/owner/logistics/developer) ─────────────────────
+  if (path === '/api/store/dispatch/pending') {
+    return json(res, 200, { data: [...pendingOrders].sort((a, b) => b.id - a.id) })
+  }
+  const dispatchMatch = path.match(/^\/api\/store\/orders\/(\d+)\/dispatch$/)
+  if (dispatchMatch && req.method === 'POST') {
+    const body = await readBody(req)
+    const riderId = Number(body.rider_id)
+    if (!Number.isInteger(riderId) || riderId <= 0) return json(res, 422, { message: 'rider_id must be a positive integer', reason: 'invalid_rider' })
+    if (!riders.some((r) => r.rider_id === riderId)) return json(res, 422, { message: 'Rider not found', reason: 'rider_missing' })
+    const order = pendingOrders.find((o) => o.id === Number(dispatchMatch[1]))
+    if (!order) return json(res, 404, { message: 'Order not found or already dispatched', reason: 'order_missing' })
+    order.rider_id = riderId
+    order.status = 'preparing'
+    // A dispatched order no longer awaits dispatch — drop it from the queue
+    // (mirrors the real endpoint's confirmed/retrying-and-riderless filter).
+    pendingOrders = pendingOrders.filter((o) => o.id !== order.id)
+    return json(res, 200, { data: order })
+  }
+  const reassignMatch = path.match(/^\/api\/store\/orders\/(\d+)\/reassign$/)
+  if (reassignMatch && req.method === 'POST') {
+    const body = await readBody(req)
+    const riderId = Number(body.rider_id)
+    if (!Number.isInteger(riderId) || riderId <= 0) return json(res, 422, { message: 'rider_id must be a positive integer', reason: 'invalid_rider' })
+    if (!riders.some((r) => r.rider_id === riderId)) return json(res, 422, { message: 'Rider not found', reason: 'rider_missing' })
+    const order = pendingOrders.find((o) => o.id === Number(reassignMatch[1]))
+    if (!order) return json(res, 404, { message: 'Order not found', reason: 'order_missing' })
+    if (!order.rider_id) return json(res, 409, { message: 'Order has no rider to reassign', reason: 'no_rider' })
+    order.rider_id = riderId
+    return json(res, 200, { data: order })
+  }
+
+  // ── Store staff assignments (owner/developer) ──────────────────────────────
+  if (path === '/api/store/staff' && req.method === 'GET') {
+    return json(res, 200, { data: staffAssignments })
+  }
+  if (path === '/api/store/staff' && req.method === 'POST') {
+    const body = await readBody(req)
+    const userId = Number(body.user_id)
+    if (!Number.isInteger(userId) || userId <= 0) return json(res, 422, { message: 'user_id must be a positive integer' })
+    if (staffAssignments.some((s) => s.user.id === userId)) return json(res, 409, { message: 'User already has a store assignment' })
+    const known = Object.values(MOCK_USERS).find((u) => u.id === userId)
+    const assignment = { id: Math.max(...staffAssignments.map((s) => s.id)) + 1, user: { id: userId, name: known?.name ?? `User #${userId}`, email: known?.email ?? `user${userId}@checkstar.co.za` }, role: body.role === 'logistics_officer' ? 'logistics_officer' : 'store_manager', store_id: Number(body.store_id) || 1, created_at: new Date().toISOString() }
+    staffAssignments.push(assignment)
+    return json(res, 201, { data: assignment })
+  }
+  const staffDelete = path.match(/^\/api\/store\/staff\/(\d+)$/)
+  if (staffDelete && req.method === 'DELETE') {
+    const idx = staffAssignments.findIndex((s) => s.id === Number(staffDelete[1]))
+    if (idx === -1) return json(res, 404, { message: 'Assignment not found' })
+    if (staffAssignments[idx].role === 'store_owner') return json(res, 403, { message: 'Store owners cannot be removed' })
+    staffAssignments.splice(idx, 1)
+    return json(res, 200, { message: 'Assignment removed' })
+  }
+
   if (path === '/api/addresses' && req.method === 'GET') return json(res, 200, { data: [] })
   if (path === '/api/addresses' && req.method === 'POST') {
     return json(res, 201, { data: { id: 1, user_id: 1, label: 'Home', contact_name: null, contact_phone: null, address: '123 Test Road', latitude: -29.85, longitude: 31.02, is_default: true } })
@@ -280,7 +567,15 @@ const server = http.createServer((req, res) => {
   if (path === '/api/orders' && req.method === 'POST') {
     return json(res, 201, { data: orderFor(1), dispatch: { status: 'assigned', claim_latency_ms: 120, rider_id: 7, store_id: 1, rider_name: 'Sipho', store_name: stores[0].name } })
   }
-  if (path === '/api/orders' && req.method === 'GET') return json(res, 200, { data: [], current_page: 1, per_page: 10, total: 0, last_page: 1 })
+  if (path === '/api/orders' && req.method === 'GET') {
+    const sample = [
+      { id: 501, order_number: 'CS-1501', status: 'confirmed', payment_status: 'paid', total: 84.97, subtotal: 76.99, delivery_fee: 7.98, fulfilment_method: 'delivery', delivery_latitude: null, delivery_longitude: null, delivery_address: '12 Problem Mkhize Rd, Berea', created_at: '2026-09-06T07:41:00Z', can_cancel: true, items: [] },
+      { id: 490, order_number: 'CS-1490', status: 'delivered', payment_status: 'paid', total: 59.97, subtotal: 51.99, delivery_fee: 7.98, fulfilment_method: 'delivery', delivery_latitude: null, delivery_longitude: null, delivery_address: '3 Silverton Way, Umhlanga Ridge', created_at: '2026-09-05T15:12:00Z', can_cancel: false, items: [] },
+      { id: 487, order_number: 'CS-1487', status: 'cancelled', payment_status: 'refunded', total: 26.99, subtotal: 26.99, delivery_fee: 0, fulfilment_method: 'pickup', delivery_latitude: null, delivery_longitude: null, delivery_address: null, created_at: '2026-09-04T11:05:00Z', can_cancel: false, items: [] },
+      { id: 480, order_number: 'CS-1480', status: 'delivered', payment_status: 'paid', total: 112.45, subtotal: 104.47, delivery_fee: 7.98, fulfilment_method: 'delivery', delivery_latitude: null, delivery_longitude: null, delivery_address: '88 Florida Rd, Morningside', created_at: '2026-09-03T09:47:00Z', can_cancel: false, items: [] },
+    ]
+    return json(res, 200, paginate(sample, url))
+  }
 
   if (path === '/api/cart' && req.method === 'GET') return json(res, 200, { data: [] })
   if (path === '/api/cart/sync' && req.method === 'POST') return json(res, 200, { data: [], dropped: [] })

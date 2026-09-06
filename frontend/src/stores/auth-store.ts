@@ -19,9 +19,12 @@ interface AuthState {
   verifyEmail: (id: string, hash: string, sig?: { expires: string; signature: string }) => Promise<{ message: string }>
 }
 
+// Module-level in-flight handle for checkAuth — shared across all callers.
+let checkAuthInFlight: Promise<void> | null = null
+
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       isAuthenticated: false,
       isLoading: true,
@@ -42,16 +45,33 @@ export const useAuthStore = create<AuthState>()(
         set({ user: res.user, isAuthenticated: true })
       },
       logout: async () => {
-        await api.logout()
+        // Never let a failing server call (expired session, network drop)
+        // leave the user logged in locally — clear state unconditionally.
+        try {
+          await api.logout()
+        } catch {
+          // ignore — local state must clear regardless
+        }
         set({ user: null, isAuthenticated: false })
       },
-      checkAuth: async () => {
-        try {
-          const res = await api.getUser()
-          set({ user: res.user, isAuthenticated: true, isLoading: false })
-        } catch {
-          set({ user: null, isAuthenticated: false, isLoading: false })
-        }
+      checkAuth: () => {
+        // Single-flight: concurrent callers (AuthGuard bootstrap, page-level
+        // effects, React strict-mode double-invoke) share one in-flight
+        // promise, and once resolved the guard short-circuits — session
+        // changes flow through login/logout mutations, never a re-fetch.
+        if (!get().isLoading) return Promise.resolve()
+        if (checkAuthInFlight) return checkAuthInFlight
+        checkAuthInFlight = (async () => {
+          try {
+            const res = await api.getUser()
+            set({ user: res.user, isAuthenticated: true, isLoading: false })
+          } catch {
+            set({ user: null, isAuthenticated: false, isLoading: false })
+          } finally {
+            checkAuthInFlight = null
+          }
+        })()
+        return checkAuthInFlight
       },
       forgotPassword: async (email) => {
         const res = await api.forgotPassword(email)

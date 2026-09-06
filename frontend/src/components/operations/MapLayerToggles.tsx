@@ -71,6 +71,28 @@ export default function MapLayerToggles({ map, data, onToggle }: MapLayerToggles
     }
   }, [map])
 
+  // Late-data sync: layers toggled ON before map data arrives (or map ready)
+  // render nothing — once data lands, (re)build every active layer. Toggling
+  // already handles the immediate add/remove path; this effect covers the
+  // async case and refreshes layers when data updates underneath them.
+  useEffect(() => {
+    if (!map || !data) return
+    active.forEach(layerId => {
+      const existing = layersRef.current.get(layerId)
+      if (existing) {
+        try { map.removeLayer(existing) } catch {}
+        layersRef.current.delete(layerId)
+      }
+      const layer = buildLayer(layerId, data, map)
+      if (layer) {
+        layer.addTo(map)
+        layersRef.current.set(layerId, layer)
+      }
+    })
+    // `active` intentionally excluded: the toggle callback owns that path.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map, data])
+
   return (
     <div className="absolute top-3 left-3 z-20 flex flex-col gap-1">
       {LAYERS.map(layer => {
