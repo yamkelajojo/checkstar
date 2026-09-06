@@ -98,13 +98,32 @@ export default function ProductsClient() {
                       <button
                         onClick={() => selectGroup(group.label)}
                         aria-current={isActive ? 'true' : undefined}
-                        className={`block w-full text-left px-3 py-2 text-[15px] border-l-2 transition-colors ${
+                        className={`relative flex w-full items-center px-3 py-2 text-[15px] transition-colors duration-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary/40 ${
                           isActive
-                            ? 'font-bold text-gray-900 border-primary bg-primary/5'
-                            : 'font-light text-gray-500 border-transparent hover:text-gray-900 hover:bg-gray-50'
+                            ? 'font-bold text-primary'
+                            : 'font-light text-gray-500 hover:text-gray-900'
                         }`}
                       >
-                        {group.label === 'All' ? 'All Products' : group.label}
+                        {/* Atmospheric glow — a blurred ellipse that extends
+                            past the tab and fades with no hard edge. Never
+                            clipped: no overflow-hidden up this tree. */}
+                        {isActive && (
+                          <span
+                            aria-hidden="true"
+                            className="pointer-events-none absolute -inset-x-3 inset-y-0 rounded-full bg-primary/10 blur-xl"
+                          />
+                        )}
+                        {/* Minimal dash indicator — its slot is reserved on
+                            every tab so labels stay aligned; the line scales
+                            in only for the active item. */}
+                        <span aria-hidden="true" className="relative mr-1.5 flex h-3 w-2.5 shrink-0 items-center">
+                          <span
+                            className={`h-[2px] w-full origin-left rounded-full bg-current transition-transform duration-300 ${
+                              isActive ? 'scale-x-100 opacity-70' : 'scale-x-0 opacity-0'
+                            }`}
+                          />
+                        </span>
+                        <span className="relative">{group.label === 'All' ? 'All Products' : group.label}</span>
                       </button>
                     </li>
                   )
