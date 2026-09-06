@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { cn } from '@/lib/cn'
 
@@ -110,9 +110,18 @@ export default function CyclingCarousel({
   const [clock, setClock] = useState(0)
   const [paused, setPaused] = useState(false)
 
+  // Distribute on item-SET changes only. The consumer may pass a new array
+  // identity every render (inline .map); re-shuffling on that would visibly
+  // scramble the shelf whenever the page re-renders (scroll toggles, cart
+  // adds). The id signature gates distribution; itemsRef keeps the payload
+  // current without re-triggering.
+  const signature = useMemo(() => items.map((i) => i.id).join('|'), [items])
+  const itemsRef = useRef(items)
+  itemsRef.current = items
+
   useEffect(() => {
-    setColumns(distribute(items, columnCount))
-  }, [items, columnCount])
+    setColumns(distribute(itemsRef.current, columnCount))
+  }, [signature, columnCount])
 
   const tick = useCallback(() => {
     setClock((t) => t + 100)

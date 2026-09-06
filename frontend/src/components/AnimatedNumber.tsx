@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { motion, useSpring, useTransform } from 'motion/react';
+import { motion, useReducedMotion, useSpring, useTransform } from 'motion/react';
 
 /**
  * AnimatedNumber — vendored from cult-ui (MIT), lightly adapted.
@@ -15,6 +15,7 @@ import { motion, useSpring, useTransform } from 'motion/react';
  */
 interface AnimatedNumberProps {
   value: number;
+  className?: string;
   mass?: number;
   stiffness?: number;
   damping?: number;
@@ -24,12 +25,14 @@ interface AnimatedNumberProps {
 
 export default function AnimatedNumber({
   value,
+  className,
   mass = 0.8,
   stiffness = 75,
   damping = 15,
   precision = 0,
   format,
 }: AnimatedNumberProps) {
+  const shouldReduceMotion = useReducedMotion();
   const spring = useSpring(value, { mass, stiffness, damping });
   const display = useTransform(spring, (current: number) => {
     const n = parseFloat(current.toFixed(precision));
@@ -41,5 +44,12 @@ export default function AnimatedNumber({
     return () => spring.stop();
   }, [spring, value]);
 
-  return <motion.span>{display}</motion.span>;
+  // prefers-reduced-motion: no odometer — show the final value statically
+  // (restores the behaviour the pre-spring implementation had).
+  if (shouldReduceMotion) {
+    const n = parseFloat(value.toFixed(precision));
+    return <span className={className}>{format ? format(n) : n.toLocaleString()}</span>;
+  }
+
+  return <motion.span className={className}>{display}</motion.span>;
 }

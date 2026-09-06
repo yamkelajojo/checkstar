@@ -103,9 +103,25 @@ interface PopoverContentProps {
   align?: 'left' | 'right'
 }
 
-function PopoverContent({ children, className, align = 'left' }: PopoverContentProps) {
+function PopoverContent({ children, className, align: alignProp = 'left' }: PopoverContentProps) {
   const { open, setOpen, contentId } = usePopoverContext()
-  const rootRef = useRef<HTMLSpanElement>(null)
+  const rootRef = useRef<HTMLDivElement>(null)
+  const [alignResolved, setAlignResolved] = useState<'left' | 'right'>(alignProp)
+
+  // Collision check on open: the popover is anchored inside the page flow
+  // (no portal), so if the anchor sits within one content-width of the
+  // viewport's right edge we flip the panel to the trigger's right side.
+  // `align` still acts as an explicit override when passed.
+  useEffect(() => {
+    if (!open) return
+    const anchor = rootRef.current
+    if (!anchor) return
+    const rect = anchor.getBoundingClientRect()
+    const estimatedWidth = 300
+    const overflowsRight = rect.right + estimatedWidth > window.innerWidth - 12
+    const fitsLeft = rect.left - estimatedWidth > 12
+    setAlignResolved(overflowsRight && fitsLeft ? 'right' : alignProp)
+  }, [open, alignProp])
 
   // Escape closes; outside pointerdown closes.
   useEffect(() => {
@@ -129,8 +145,8 @@ function PopoverContent({ children, className, align = 'left' }: PopoverContentP
   return (
     <AnimatePresence>
       {open && (
-        <motion.span
-          ref={rootRef as React.Ref<HTMLElement & HTMLSpanElement>}
+        <motion.div
+          ref={rootRef}
           id={contentId}
           role="dialog"
           aria-modal="false"
@@ -140,12 +156,12 @@ function PopoverContent({ children, className, align = 'left' }: PopoverContentP
           transition={POPOVER_TRANSITION}
           className={cn(
             'absolute top-[calc(100%+8px)] z-50 block w-64 rounded-xl bg-white p-3 text-left shadow-xl ring-1 ring-gray-100 max-w-[calc(100vw-2.5rem)]',
-            align === 'left' ? 'left-0' : 'right-0',
+            alignResolved === 'left' ? 'left-0' : 'right-0',
             className,
           )}
         >
           {children}
-        </motion.span>
+        </motion.div>
       )}
     </AnimatePresence>
   )
