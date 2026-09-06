@@ -24,7 +24,12 @@ export function AirtimeTicker() {
             <GradientHeading size="md">Airtime, data &amp; bill payments</GradientHeading>
           </div>
 
-          <LogoCarousel columnCount={3} />
+          {/* Decorative: the logos repeat the paragraph's information, so
+              screen readers should hear the copy once, not five changing
+              images. */}
+          <div aria-hidden="true">
+            <LogoCarousel columnCount={3} />
+          </div>
 
           <p className="text-sm text-text-muted max-w-xl text-center leading-relaxed">
             Pick up airtime, data, and bill payments at any Checkstar store &mdash; MTN, Vodacom, Cell C, Telkom, and rain.

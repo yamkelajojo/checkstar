@@ -42,6 +42,21 @@ const shuffleArray = <T,>(array: T[]): T[] => {
 // Utility function to distribute logos across multiple columns
 // This ensures each column has a balanced number of logos
 const distributeLogos = (allLogos: Logo[], columnCount: number): Logo[][] => {
+  // Small brand sets (≤ 2× columns): the source's random-subset with
+  // duplicate-backfill would show the SAME brand twice on screen at the
+  // same moment (e.g. 5 brands in 3 columns → "MTN rain MTN"). Instead,
+  // every column cycles the full set, rotated by the column index so the
+  // columns are phase-shifted: at any instant all visible logos are
+  // distinct, and over time every brand still appears in every column.
+  if (allLogos.length <= columnCount * 2) {
+    return Array.from({ length: columnCount }, (_, column) =>
+      Array.from(
+        { length: allLogos.length },
+        (_, offset) => allLogos[(column + offset) % allLogos.length]
+      )
+    )
+  }
+
   const shuffled = shuffleArray(allLogos)
   const columns: Logo[][] = Array.from({ length: columnCount }, () => [])
 
@@ -130,7 +145,7 @@ const LogoColumn: React.FC<LogoColumnProps> = React.memo(
               },
             }}
           >
-            <CurrentLogo className="w-20 h-20 md:w-32 md:h-32 max-w-[80%] max-h-[80%] object-contain" />
+            <CurrentLogo className="w-20 h-20 md:w-32 md:h-32 max-w-[80%] max-h-[80%] object-contain drop-shadow-sm" />
           </motion.div>
         </AnimatePresence>
       </motion.div>
