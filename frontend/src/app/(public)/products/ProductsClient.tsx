@@ -65,66 +65,139 @@ export default function ProductsClient() {
     }
   }, [products.length])
 
+  // Pills and sidebar behave the same: tapping the active group goes back
+  // to All.
+  const selectGroup = (label: string) => {
+    setActiveGroup(current => (current === label && label !== 'All' ? 'All' : label))
+  }
+
+  const grid =
+    'grid grid-cols-2 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 gap-3'
+
   return (
-    <>
-      <div className="max-w-7xl mx-auto px-4 pt-4 pb-6 sm:pt-6 sm:pb-8 lg:py-8">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <h1 className="font-display text-[1.75rem] leading-tight sm:text-4xl font-bold mb-1.5 sm:mb-2">Products</h1>
-          <p className="text-gray-500 text-sm sm:text-base mb-4 sm:mb-6">Browse our full range of groceries and household essentials.</p>
+    <div className="max-w-7xl mx-auto px-4 pt-4 pb-6 sm:pt-6 sm:pb-8 lg:py-8">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="lg:grid lg:grid-cols-[230px_1fr] lg:gap-10"
+      >
+        {/* ── Desktop (lg+): KFC-style sticky category sidebar ──
+              Big blocky menu title and a plain text category list; the
+              active item goes bold with a brand-orange rule. */}
+        <aside className="hidden lg:block">
+          <div className="sticky top-24">
+            <h1 className="font-display text-4xl font-extrabold uppercase tracking-tight mb-1">Menu</h1>
+            <p className="text-gray-500 text-sm mb-8 pr-4">Browse our full range of groceries and household essentials.</p>
 
-          <div className="relative max-w-md mb-4 sm:mb-6">
-            <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Search products..."
-              className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none"
-            />
+            <nav aria-label="Browse categories">
+              <ul className="space-y-0.5">
+                {FILTER_GROUPS.map(group => {
+                  const isActive = activeGroup === group.label
+                  return (
+                    <li key={group.label}>
+                      <button
+                        onClick={() => selectGroup(group.label)}
+                        aria-current={isActive ? 'true' : undefined}
+                        className={`block w-full text-left px-3 py-2 text-[15px] border-l-2 transition-colors ${
+                          isActive
+                            ? 'font-bold text-gray-900 border-primary bg-primary/5'
+                            : 'font-light text-gray-500 border-transparent hover:text-gray-900 hover:bg-gray-50'
+                        }`}
+                      >
+                        {group.label === 'All' ? 'All Products' : group.label}
+                      </button>
+                    </li>
+                  )
+                })}
+              </ul>
+            </nav>
           </div>
+        </aside>
 
-          <div className="relative mb-4 overflow-hidden">
-            <div
-              ref={scrollRef}
-              role="tablist"
-              aria-label="Filter by category"
-              className="scrollbar-none flex w-full max-w-full items-center gap-2 overflow-x-auto flex-nowrap scroll-smooth snap-x snap-mandatory pb-1 pr-1"
-            >
-              <SlidersHorizontal size={16} className="text-gray-400 shrink-0" aria-hidden="true" />
-              {FILTER_GROUPS.map(group => {
-                const isActive = activeGroup === group.label
-                return (
-                  <button
-                    key={group.label}
-                    role="tab"
-                    aria-selected={isActive}
-                    onClick={() => setActiveGroup(isActive && group.label !== 'All' ? 'All' : group.label)}
-                    className={`shrink-0 snap-start whitespace-nowrap px-3 py-1.5 rounded-full text-sm font-light transition-colors ${
-                      isActive ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
-                  >
-                    {group.label}
-                  </button>
-                )
-              })}
+        <section aria-label="Products">
+          {/* ── Mobile / tablet header: title, search and filter pills ── */}
+          <div className="lg:hidden">
+            <h1 className="font-display text-[1.75rem] leading-tight sm:text-4xl font-bold mb-1.5 sm:mb-2">Products</h1>
+            <p className="text-gray-500 text-sm sm:text-base mb-4 sm:mb-6">Browse our full range of groceries and household essentials.</p>
+
+            <div className="relative max-w-md mb-4 sm:mb-6">
+              <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder="Search products..."
+                className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+              />
             </div>
-            <div
-              aria-hidden="true"
-              className={`pointer-events-none absolute left-0 top-0 h-full w-6 bg-gradient-to-r from-white to-transparent transition-opacity duration-200 sm:hidden ${canScrollLeft ? 'opacity-100' : 'opacity-0'}`}
-            />
-            <div
-              aria-hidden="true"
-              className={`pointer-events-none absolute right-0 top-0 h-full w-6 bg-gradient-to-l from-white to-transparent transition-opacity duration-200 sm:hidden ${canScrollRight ? 'opacity-100' : 'opacity-0'}`}
-            />
+
+            <div className="relative mb-4 overflow-hidden">
+              <div
+                ref={scrollRef}
+                role="tablist"
+                aria-label="Filter by category"
+                className="scrollbar-none flex w-full max-w-full items-center gap-2 overflow-x-auto flex-nowrap scroll-smooth snap-x snap-mandatory pb-1 pr-1"
+              >
+                <SlidersHorizontal size={16} className="text-gray-400 shrink-0" aria-hidden="true" />
+                {FILTER_GROUPS.map(group => {
+                  const isActive = activeGroup === group.label
+                  return (
+                    <button
+                      key={group.label}
+                      role="tab"
+                      aria-selected={isActive}
+                      onClick={() => selectGroup(group.label)}
+                      className={`shrink-0 snap-start whitespace-nowrap px-3 py-1.5 rounded-full text-sm font-light transition-colors ${
+                        isActive ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      {group.label}
+                    </button>
+                  )
+                })}
+              </div>
+              <div
+                aria-hidden="true"
+                className={`pointer-events-none absolute left-0 top-0 h-full w-6 bg-gradient-to-r from-white to-transparent transition-opacity duration-200 sm:hidden ${canScrollLeft ? 'opacity-100' : 'opacity-0'}`}
+              />
+              <div
+                aria-hidden="true"
+                className={`pointer-events-none absolute right-0 top-0 h-full w-6 bg-gradient-to-l from-white to-transparent transition-opacity duration-200 sm:hidden ${canScrollRight ? 'opacity-100' : 'opacity-0'}`}
+              />
+            </div>
           </div>
 
+          {/* ── Desktop search + KFC-style section heading ── */}
+          <div className="hidden lg:block">
+            <div className="relative max-w-md mb-6">
+              <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder="Search products..."
+                className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+              />
+            </div>
+
+            <h2 className="font-display text-2xl xl:text-3xl font-bold uppercase tracking-tight mb-5">
+              {activeGroup === 'All' ? 'All Products' : activeGroup}
+              {!loading && !fetchError && (
+                <span className="ml-3 align-middle text-sm font-normal normal-case tracking-normal text-gray-400">
+                  {products.length} {products.length === 1 ? 'item' : 'items'}
+                </span>
+              )}
+            </h2>
+          </div>
+
+          {/* Results render once — the layout around them is what responds. */}
           {fetchError ? (
             <div className="text-center py-16 text-red-500">
               <p className="text-lg font-medium">{fetchError}</p>
               <p className="text-sm mt-1">Please try again later.</p>
             </div>
           ) : loading ? (
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
+            <div className={grid} aria-hidden="true">
               {Array.from({ length: 10 }).map((_, i) => (
                 <div key={i} className="bg-gray-50 rounded-xl aspect-square animate-pulse" />
               ))}
@@ -141,14 +214,14 @@ export default function ProductsClient() {
               <p className="text-sm mt-1">Try adjusting your search or filter.</p>
             </motion.div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
+            <div className={grid}>
               {products.map(product => (
                 <ProductCard key={product.id} product={product} />
               ))}
             </div>
           )}
-        </motion.div>
-      </div>
-    </>
+        </section>
+      </motion.div>
+    </div>
   )
 }

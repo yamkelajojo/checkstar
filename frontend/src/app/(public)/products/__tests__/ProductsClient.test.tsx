@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within, fireEvent } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import React from 'react'
 
@@ -99,5 +99,27 @@ describe('ProductsClient (products page does not crash)', () => {
     renderWithClient(<ProductsClient />)
 
     expect(await screen.findByText('Weird Item')).toBeTruthy()
+  })
+
+  it('desktop sidebar filters by category group and moves the active marker', async () => {
+    mockGetAllProducts.mockResolvedValue([product({ id: 9, name: 'Bananas', slug: 'bananas' })])
+
+    renderWithClient(<ProductsClient />)
+    expect(await screen.findByText('Bananas')).toBeTruthy()
+
+    const nav = screen.getByRole('navigation', { name: /browse categories/i })
+    expect(within(nav).getByRole('button', { name: 'All Products' }).getAttribute('aria-current')).toBe('true')
+
+    fireEvent.click(within(nav).getByRole('button', { name: 'Fresh' }))
+
+    await vi.waitFor(() => {
+      expect(mockGetAllProducts).toHaveBeenLastCalledWith(
+        expect.objectContaining({ categories: 'fruits-vegetables,meat-poultry,bakery,dairy-eggs' })
+      )
+    })
+    // The active marker moved to Fresh and the KFC-style section heading updated.
+    expect(within(nav).getByRole('button', { name: 'Fresh' }).getAttribute('aria-current')).toBe('true')
+    expect(within(nav).getByRole('button', { name: 'All Products' }).getAttribute('aria-current')).toBeNull()
+    expect(screen.getByRole('heading', { level: 2, name: /fresh/i })).toBeTruthy()
   })
 })
