@@ -59,10 +59,18 @@ export default defineConfig({
   // One worker: the sparticuz Chromium build is only stable with a single
   // browser instance on this 2-vCPU sandbox (parallel launches stall).
   workers: 1,
-  webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:3000',
-    reuseExistingServer: true,
-    timeout: 180_000,
-  },
+  webServer: [
+    {
+      command: 'npm run mock-api',
+      url: 'http://localhost:8000/api/products',
+      reuseExistingServer: true,
+      timeout: 60_000,
+    },
+    {
+      command: 'npm run dev',
+      url: 'http://localhost:3000',
+      reuseExistingServer: true,
+      timeout: 180_000,
+    },
+  ],
 })
