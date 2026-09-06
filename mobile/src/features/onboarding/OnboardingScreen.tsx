@@ -109,7 +109,7 @@ export function OnboardingScreen() {
 
   const skipContainerStyle = { position: 'absolute' as const, top: semanticSpacing.screenPadding, right: semanticSpacing.screenPadding, zIndex: 10 };
   const skipButtonStyle = { paddingHorizontal: semanticSpacing.md, paddingVertical: semanticSpacing.xxs };
-  const skipTextStyle = { ...textStyle.caption, fontWeight: fontWeight.semibold, color: theme.colors.border.subtle };
+  const skipTextStyle = { ...textStyle.caption, fontWeight: fontWeight.semibold, color: theme.colors.text.secondary };
   const pagerStyle = { flex: 1 };
   const slideStyle = { flex: 1, paddingHorizontal: semanticSpacing.xl, justifyContent: 'center' as const };
   const imageContainerStyle = {
@@ -126,6 +126,8 @@ export function OnboardingScreen() {
     backgroundColor: theme.name === 'dark' ? theme.colors.surface.primary : brand.orangeSoft,
     borderWidth: 1,
     borderColor: theme.colors.border.subtle,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
   };
   const contentStyle = { alignItems: 'center' as const };
   const badgeStyle = { paddingHorizontal: semanticSpacing.md, paddingVertical: semanticSpacing.xxs, borderRadius: semanticRadius.badge, marginBottom: semanticSpacing.lg };
@@ -190,7 +192,7 @@ export function OnboardingScreen() {
                         width: 120,
                         height: 120,
                         borderRadius: 60,
-                        backgroundColor: theme.name === 'dark' ? theme.colors.surface.primary : brand.orangeSoft,
+                        backgroundColor: theme.colors.surface.primary,
                         alignItems: 'center',
                         justifyContent: 'center',
                       }}

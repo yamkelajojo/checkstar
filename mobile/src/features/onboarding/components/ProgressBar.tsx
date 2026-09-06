@@ -70,7 +70,7 @@ export function ProgressBar({
 
   return (
     <View style={styles.container}>
-      <View style={styles.track} />
+      <View style={[styles.track, { backgroundColor: theme.colors.border.subtle }]} />
       <Animated.View style={[styles.fill, fillStyle, { backgroundColor: accentColor }]} />
 
       <View style={styles.dots}>
@@ -98,7 +98,8 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'transparent',
+    // Track colour applied inline in the component (theme is not in scope
+    // at module level) so the fill reads as a progress bar, not a stray dash.
     borderRadius: semanticRadius.badge,
   },
   fill: { position: 'absolute', height: '100%', borderRadius: semanticRadius.badge },
