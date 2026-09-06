@@ -19,8 +19,8 @@ const CRC_TABLE = (() => {
   const table = new Uint32Array(256)
   for (let n = 0; n < 256; n++) {
     let c = n
-    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 0
-    table[n] = c
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1
+    table[n] = c >>> 0
   }
   return table
 })()
@@ -291,5 +291,14 @@ const server = http.createServer((req, res) => {
 })
 
 server.listen(PORT, '0.0.0.0', () => {
+  // Self-check: the IEND chunk's CRC is a known constant (0xae426082). If the
+  // table-driven CRC above is ever broken again, fail loudly at boot instead
+  // of serving images every browser silently refuses to decode.
+  const iend = pngChunk('IEND', Buffer.alloc(0))
+  // chunk layout: [len:4][type:4][crc:4] → CRC at offset 8
+  if (iend.readUInt32BE(8) !== 0xae426082) {
+    console.error('mock api PNG CRC self-check FAILED — imagery would be undecodable')
+    process.exit(1)
+  }
   console.log(`mock api on :${PORT} — contract mirrors src/lib/api.ts`)
 })
