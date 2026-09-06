@@ -1,10 +1,9 @@
 'use client'
 
-import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { motion } from 'motion/react'
-import { Clock, Users, ChefHat, ChevronLeft, Check, ListOrdered, Package } from 'lucide-react'
+import { Clock, Users, ChefHat, ChevronLeft, ListOrdered, Package } from 'lucide-react'
 import { useRecipe, useAllProducts } from '@/lib/query'
 import { findIngredientProduct } from '@/lib/ingredientMatch'
 import SafeImage from '@/components/SafeImage'
@@ -12,16 +11,6 @@ import SafeImage from '@/components/SafeImage'
 export default function RecipeDetailClient({ slug }: { slug: string }) {
   const { data: recipe, isLoading: loading, error } = useRecipe(slug)
   const fetchError = error ? 'Failed to load recipe' : null
-  const [checked, setChecked] = useState<Set<number>>(new Set())
-
-  const toggleIngredient = (idx: number) => {
-    setChecked(prev => {
-      const next = new Set(prev)
-      next.has(idx) ? next.delete(idx) : next.add(idx)
-      return next
-    })
-  }
-
   const ingredients: string[] = recipe?.ingredients
     ? Array.isArray(recipe.ingredients)
       ? recipe.ingredients
@@ -163,26 +152,12 @@ export default function RecipeDetailClient({ slug }: { slug: string }) {
               <ul className="space-y-1">
                 {ingredients.map((ing, idx) => {
                   const match = findIngredientProduct(ing, allProducts)
-                  const isChecked = checked.has(idx)
                   return (
                     <li
                       key={idx}
-                      className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
-                        isChecked ? 'bg-green-50' : 'hover:bg-gray-50'
-                      }`}
+                      className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors hover:bg-gray-50"
                     >
-                      <button
-                        type="button"
-                        onClick={() => toggleIngredient(idx)}
-                        aria-pressed={isChecked}
-                        aria-label={isChecked ? `Mark ${ing} as not bought` : `Mark ${ing} as bought`}
-                        className={`w-6 h-6 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-colors -my-1 ${
-                          isChecked ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300'
-                        }`}
-                      >
-                        {isChecked && <Check size={14} />}
-                      </button>
-                      <span className={`flex flex-wrap items-center gap-x-2 gap-y-1 flex-1 min-w-0 ${isChecked ? 'text-green-700 line-through' : 'text-gray-700'}`}>
+                      <span className="flex flex-wrap items-center gap-x-2 gap-y-1 flex-1 min-w-0 text-gray-700">
                         <span>{ing}</span>
                         {match && (
                           <Link

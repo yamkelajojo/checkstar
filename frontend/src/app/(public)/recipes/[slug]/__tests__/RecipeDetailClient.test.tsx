@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import React from 'react'
 
@@ -86,17 +86,14 @@ describe('RecipeDetailClient ingredient→product linking', () => {
     expect(saltPills).toBeNull()
   })
 
-  it('keeps the checkbox toggle and product link as siblings, not nested', () => {
+  it('lists ingredients as plain text with the product pill — no tick boxes', () => {
     render(<RecipeDetailClient slug="sugar-toast" />)
 
-    const checkbox = screen.getByRole('button', { name: /mark 1 tsp sugar as bought/i })
+    expect(screen.getByText('1 tsp sugar')).toBeTruthy()
     const pill = screen.getByRole('link', { name: /view sugar product page/i })
-    // Both interactive elements exist independently (the Link is not inside
-    // the button — invalid HTML that broke click handling and a11y).
-    expect(checkbox).toBeTruthy()
+    // The ingredient is not wrapped in any control — checkboxes were
+    // removed from the recipe page by design.
     expect(pill.closest('button')).toBeNull()
-
-    fireEvent.click(checkbox)
-    expect(screen.getByRole('button', { name: /mark 1 tsp sugar as not bought/i })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /bought/i })).toBeNull()
   })
 })
