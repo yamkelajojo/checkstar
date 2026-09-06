@@ -83,18 +83,27 @@ async function getConfiguredApiUrl(): Promise<string> {
     if (stored) return stored;
   } catch {}
 
-  // 2. Auto-detect from Metro host (physical device) — must run before env var
+  // 2. Web: absolute dev-machine URLs (Metro host, localhost, 10.0.2.2) are
+  // meaningless from a remote browser. Default to a same-origin `/api` base —
+  // works behind the device-simulator proxy and any deployment that serves
+  // the API under the same origin. EXPO_PUBLIC_API_URL overrides for
+  // standalone web deployments that host the API elsewhere.
+  if (Platform.OS === 'web') {
+    return process.env.EXPO_PUBLIC_API_URL || '/api';
+  }
+
+  // 3. Auto-detect from Metro host (physical device) — must run before env var
   const metroIp = getMetroHostIp();
   if (metroIp) {
     return `http://${metroIp}:8000/api`;
   }
 
-  // 3. Check env var (fallback if auto-detect failed)
+  // 4. Check env var (fallback if auto-detect failed)
   if (process.env.EXPO_PUBLIC_API_URL) {
     return process.env.EXPO_PUBLIC_API_URL;
   }
 
-  // 4. Platform-specific defaults
+  // 5. Platform-specific defaults
   if (Platform.OS === 'android') {
     return 'http://10.0.2.2:8000/api'; // Android emulator
   }
@@ -102,7 +111,7 @@ async function getConfiguredApiUrl(): Promise<string> {
     return 'http://localhost:8000/api'; // iOS simulator
   }
 
-  // 5. Fallback
+  // 6. Fallback
   return DEFAULT_API_URL;
 }
 

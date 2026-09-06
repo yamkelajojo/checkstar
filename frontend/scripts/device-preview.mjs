@@ -1,23 +1,32 @@
 #!/usr/bin/env node
 /**
- * iOS-style device simulator for the Checkstar web app.
+ * iOS-style device simulator + same-origin app proxy.
  *
- * Serves an iPhone-framed, fully interactive live view of the site running on
- * :3000 so the mobile experience can be checked on demand from any browser —
- * no physical phone needed. (This is a Linux sandbox, so the Xcode Simulator
- * itself cannot run here; this is the faithful browser-based equivalent, and
- * the automated E2E suite additionally emulates real iPhone UA/touch/DPR.)
+ * Serves an iPhone-framed, fully interactive view of BOTH apps:
+ *   • the Checkstar web app (Next.js on :3000)
+ *   • the Checkstar native app (Expo/react-native-web on :8081)
  *
- *   npm run preview:mobile        -> http://localhost:5173
+ * Architecture note (the important bit): the phone iframe loads the app
+ * THROUGH THIS SERVER (same origin) instead of pointing at another
+ * preview host. Everything the app requests resolves same-origin, so
+ * X-Frame-Options, frame-ancestors CSP, cross-origin dev-asset blocks and
+ * mixed-content rules can never blank the screen again.
+ *
+ *   /            simulator UI            (deep-link with ?p=/products)
+ *   /__home      → web app home ("")
+ *   /w/…         → proxied to web app    (strip prefix)
+ *   /n/…         → proxied to native app (strip prefix)
+ *   everything else → routed by Referer, default: web app (so absolute
+ *                      asset paths like /_next/* and /api/* just work)
+ *   websocket upgrades are forwarded the same way (dev HMR keeps working).
+ *
  *   PORT=5173 node scripts/device-preview.mjs
- *   Deep-link the app:  http://localhost:5173/?p=/products
- *
- * Behind the Arena preview proxy the page auto-resolves the app origin from
- * the proxied hostname (…-5173-<sandbox>.e2b.app -> 3000-<sandbox>.e2b.app).
  */
-import { createServer } from 'node:http'
+import { createServer, request as httpRequest } from 'node:http'
 
 const PORT = Number(process.env.PORT || 5173)
+const WEB_TARGET = { host: '127.0.0.1', port: Number(process.env.WEB_PORT || 3000) }
+const NATIVE_TARGET = { host: '127.0.0.1', port: Number(process.env.NATIVE_PORT || 8081) }
 
 const DEVICES = [
   { id: 'se', label: 'SE', name: 'iPhone SE', w: 375, h: 667, notch: false },
@@ -40,7 +49,7 @@ const html = `<!doctype html>
     color: #fafafa; font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
     padding: 18px 12px 28px;
   }
-  header { width: 100%; max-width: 980px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  header { width: 100%; max-width: 1080px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin-bottom: 14px; }
   .brand { font-weight: 700; font-size: 15px; letter-spacing: .2px; }
   .brand em { color: #f97316; font-style: normal; }
   .controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
@@ -76,12 +85,16 @@ const html = `<!doctype html>
   .home { position: absolute; left: 50%; bottom: 7px; transform: translateX(-50%); width: 34%; height: 5px; border-radius: 999px; background: rgba(10,10,10,.85); pointer-events: none; }
   .footer { margin-top: 16px; color: #71717a; font-size: 12px; text-align: center; }
   .url { color: #a1a1aa; }
+  .offline { padding: 40px 24px; text-align: center; color: #52525b; font: 14px ui-sans-serif, system-ui; }
 </style>
 </head>
 <body>
   <header>
     <div class="brand">Checkstar <em>·</em> iOS device simulator</div>
     <div class="controls">
+      <span class="lbl">App</span>
+      <button data-target="web" class="active" title="Next.js web app">Website</button>
+      <button data-target="native" title="React Native app (Expo web)">Native app</button>
       <span class="lbl">Device</span>
       ${DEVICES.map((d) => `<button data-device="${d.id}" title="${d.name}">${d.label}</button>`).join('')}
       <button id="rotate" title="Rotate">⟳ Rotate</button>
@@ -103,13 +116,12 @@ const html = `<!doctype html>
     <iframe id="app" title="Checkstar app"></iframe>
     <div class="home"></div>
   </div></div></div>
-  <div class="footer">Live app in an iPhone shell · Safari-on-iPhone layout · <span class="url" id="url"></span></div>
+  <div class="footer">Same-origin live proxy — the app cannot be blocked from rendering · <span class="url" id="url"></span></div>
 <script>
   var DEVICES = ${JSON.stringify(DEVICES)};
-  var h = location.hostname;
-  var proxied = h.match(/^\\d+-(.+\\.e2b\\.app)$/);
-  var APP = proxied ? (location.protocol + '//3000-' + proxied[1]) : (location.protocol + '//' + h + ':3000');
-  var initialPath = new URLSearchParams(location.search).get('p') || '/';
+  var params = new URLSearchParams(location.search);
+  var path = params.get('p') || '/';
+  var target = params.get('t') === 'native' ? 'native' : 'web';
 
   var device = document.getElementById('device');
   var screen = document.getElementById('screen');
@@ -121,7 +133,10 @@ const html = `<!doctype html>
   var current = DEVICES[1]; // iPhone 14 Pro
   var landscape = false;
 
-  function appUrl() { return APP + (initialPath === '/' ? '/' : initialPath); }
+  function frameSrc() {
+    if (target === 'native') return '/n' + (path === '/' ? '/__home' : path);
+    return path === '/' ? '/__home' : path;
+  }
   function dims() { return landscape ? { w: current.h, hh: current.w } : { w: current.w, hh: current.h }; }
   function fit() {
     var d = dims();
@@ -142,39 +157,190 @@ const html = `<!doctype html>
     for (var i = 0; i < buttons.length; i++) {
       buttons[i].classList.toggle('active', buttons[i].getAttribute('data-device') === current.id);
     }
-    urlLabel.textContent = APP;
-    document.getElementById('direct').href = appUrl();
+    var tabs = document.querySelectorAll('[data-target]');
+    for (var j = 0; j < tabs.length; j++) {
+      tabs[j].classList.toggle('active', tabs[j].getAttribute('data-target') === target);
+    }
+    document.getElementById('direct').href = frameSrc();
+    urlLabel.textContent = target === 'native' ? 'React Native app · Expo web' : 'Web app · same-origin proxy';
     fit();
-    if (!iframe.src) iframe.src = appUrl();
+    iframe.src = frameSrc();
   }
   var deviceButtons = document.querySelectorAll('[data-device]');
-  for (var j = 0; j < deviceButtons.length; j++) {
+  for (var k = 0; k < deviceButtons.length; k++) {
     (function (b) {
       b.addEventListener('click', function () {
         current = DEVICES.filter(function (d) { return d.id === b.getAttribute('data-device'); })[0];
         landscape = false;
         apply();
       });
-    })(deviceButtons[j]);
+    })(deviceButtons[k]);
   }
-  document.getElementById('rotate').addEventListener('click', function () { landscape = !landscape; apply(); });
-  document.getElementById('reload').addEventListener('click', function () { iframe.src = appUrl(); });
+  var tabButtons = document.querySelectorAll('[data-target]');
+  for (var m = 0; m < tabButtons.length; m++) {
+    (function (b) {
+      b.addEventListener('click', function () {
+        target = b.getAttribute('data-target');
+        apply();
+      });
+    })(tabButtons[m]);
+  }
+  document.getElementById('rotate').addEventListener('click', function () { landscape = !landscape; fit(); iframe.style.width = dims().w + 'px'; iframe.style.height = dims().hh + 'px'; });
+  document.getElementById('reload').addEventListener('click', function () { iframe.src = frameSrc(); });
   window.addEventListener('resize', fit);
   apply();
 </script>
 </body>
 </html>`
 
+// ── reverse proxy ──────────────────────────────────────────────────────────
+const HOP_BY_HOP = new Set([
+  'connection', 'keep-alive', 'proxy-authenticate', 'proxy-authorization',
+  'te', 'trailer', 'transfer-encoding', 'upgrade', 'content-length',
+])
+const FRAMING_BLOCKERS = new Set(['x-frame-options', 'content-security-policy'])
+
+function proxy(req, res, target, prefixToStrip) {
+  let path = req.url
+  if (prefixToStrip) {
+    path = path.slice(prefixToStrip.length) || '/'
+  }
+  if (path === '/__home') path = '/'
+
+  const headers = { ...req.headers }
+  headers.host = `${target.host}:${target.port}`
+  const upstream = httpRequest(
+    { host: target.host, port: target.port, method: req.method, path, headers },
+    (upRes) => {
+      const out = {}
+      for (const [key, value] of Object.entries(upRes.headers)) {
+        if (HOP_BY_HOP.has(key) || FRAMING_BLOCKERS.has(key)) continue
+        out[key] = value
+      }
+      res.writeHead(upRes.statusCode || 502, out)
+      upRes.pipe(res)
+    }
+  )
+  upstream.on('error', (error) => {
+    res.writeHead(502, { 'content-type': 'text/html; charset=utf-8' })
+    res.end(
+      `<!doctype html><div class="offline"><h2>⏳ ${target.port === NATIVE_TARGET.port ? 'Native app' : 'Web app'} is starting…</h2><p>Upstream ${target.host}:${target.port} — ${error.message}</p><script>setTimeout(function(){location.reload()},3000)</script></div>`
+    )
+  })
+  req.pipe(upstream)
+}
+
+function route(req) {
+  const url = new URL(req.url, 'http://sim')
+  const pathname = url.pathname
+
+  if (pathname === '/healthz') return { kind: 'health' }
+  // The simulator UI owns "/" — with ANY query string (?t=native, ?p=…).
+  // Falling through would serve the web app in place of the simulator.
+  if (pathname === '/' || pathname === '/__sim') return { kind: 'simulator' }
+
+  if (pathname === '/n' || pathname.startsWith('/n/')) {
+    return { kind: 'proxy', target: NATIVE_TARGET, strip: '/n' }
+  }
+  if (pathname.startsWith('/w/')) {
+    return { kind: 'proxy', target: WEB_TARGET, strip: '/w' }
+  }
+
+  // Referer-based routing: absolute asset paths from the native app
+  // (/assets/..., /node_modules/...) arrive unprefixed.
+  const referer = req.headers.referer
+  if (referer) {
+    try {
+      const refPath = new URL(referer).pathname
+      if (refPath === '/n' || refPath.startsWith('/n/')) {
+        // The native app calls the API same-origin (/api/...) — serve it
+        // straight from the API server rather than Metro (which has no /api).
+        if (pathname.startsWith('/api/')) {
+          return { kind: 'proxy', target: { host: '127.0.0.1', port: 8000 }, strip: null }
+        }
+        return { kind: 'proxy', target: NATIVE_TARGET, strip: null }
+      }
+    } catch { /* malformed referer — fall through */ }
+  }
+
+  // Native client-side routes arrive unprefixed after history pushes
+  // (e.g. /Onboarding). All web routes are lowercase, so a leading
+  // uppercase segment unambiguously belongs to the native app.
+  if (/^\/[A-Z]/.test(pathname)) {
+    return { kind: 'proxy', target: NATIVE_TARGET, strip: null }
+  }
+
+  return { kind: 'proxy', target: WEB_TARGET, strip: null }
+}
+
 const server = createServer((req, res) => {
-  if (req.url === '/healthz') {
+  const route_ = route(req)
+  if (route_.kind === 'health') {
     res.writeHead(200)
     res.end('ok')
     return
   }
-  res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' })
-  res.end(html)
+  if (route_.kind === 'simulator') {
+    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' })
+    res.end(html)
+    return
+  }
+  proxy(req, res, route_.target, route_.strip)
+})
+
+// Dev HMR websockets: forward by the same rules. Every socket gets an
+// error handler — an unhandled 'error' (e.g. ECONNRESET from HMR churn)
+// would otherwise take the whole simulator down.
+server.on('upgrade', (req, socket, head) => {
+  const route_ = route(req)
+  if (route_.kind !== 'proxy') {
+    socket.destroy()
+    return
+  }
+  const target = route_.target
+  let path = req.url
+  if (route_.strip) path = path.slice(route_.strip.length) || '/'
+  socket.on('error', () => socket.destroy())
+  const upstream = httpRequest({
+    host: target.host,
+    port: target.port,
+    method: req.method,
+    path,
+    headers: { ...req.headers, host: `${target.host}:${target.port}` },
+  })
+  upstream.on('upgrade', (upRes, upSocket, upHead) => {
+    upSocket.on('error', () => { upSocket.destroy(); socket.destroy() })
+    socket.on('close', () => upSocket.destroy())
+    upSocket.on('close', () => socket.destroy())
+    // A 101 response MUST carry Upgrade/Connection; everything else
+    // hop-by-hop is dropped.
+    const lines = ['HTTP/1.1 101 Switching Protocols']
+    for (const [key, value] of Object.entries(upRes.headers)) {
+      const k = key.toLowerCase()
+      if (k === 'upgrade' || k === 'connection') {
+        lines.push(`${key}: ${value}`)
+        continue
+      }
+      if (!HOP_BY_HOP.has(key)) lines.push(`${key}: ${value}`)
+    }
+    socket.write(lines.join('\r\n') + '\r\n\r\n')
+    if (upHead && upHead.length) upSocket.write(upHead)
+    upSocket.pipe(socket)
+    socket.pipe(upSocket)
+  })
+  upstream.on('error', () => socket.destroy())
+  upstream.end(head)
+})
+
+// Last-resort guard for a long-lived dev service: log and keep serving
+// rather than dying between turns.
+process.on('uncaughtException', (error) => {
+  console.error('[simulator] uncaught exception (kept alive):', error.message)
+})
+process.on('unhandledRejection', (error) => {
+  console.error('[simulator] unhandled rejection (kept alive):', error)
 })
 
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`iOS device simulator ready on http://localhost:${PORT} (targeting app on :3000)`)
+  console.log(`iOS device simulator on http://localhost:${PORT} · web→${WEB_TARGET.port} · native→${NATIVE_TARGET.port}`)
 })
