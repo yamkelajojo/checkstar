@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'motion/react'
 import { ShoppingCart, ChevronLeft, Tag, Package } from 'lucide-react'
@@ -10,7 +10,6 @@ import { mediaUrl } from '@/lib/media'
 import { useCartStore } from '@/stores/cart-store'
 import { emitCartAdded } from '@/lib/cart-events'
 import { useProduct, useRelatedProducts } from '@/lib/query'
-import CyclingCarousel from '@/components/ui/cycling-carousel'
 
 function ProductPrice({ product }: { product: { effective_price?: number | null; sale_price: number | null; price: number } }) {
   const price = Number(product.effective_price ?? product.sale_price ?? product.price)
@@ -56,37 +55,6 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
     observer.observe(el)
     return () => observer.disconnect()
   }, [related])
-
-  const relatedItems = useMemo(
-    () =>
-      (related ?? []).map(item => ({
-        id: item.id,
-        content: (
-          <Link
-            href={`/products/${item.slug}`}
-            className="group flex flex-col h-full bg-white border border-gray-100 rounded-xl overflow-hidden hover:shadow-md transition-shadow"
-          >
-            <div className="relative flex-1 bg-gray-50 flex items-center justify-center min-h-0">
-              {item.image ? (
-                <Image src={mediaUrl(item.image)} alt={item.name} fill sizes="(max-width: 768px) 50vw, 25vw" className="object-contain p-4 group-hover:scale-105 transition-transform" />
-              ) : (
-                <Package size={28} className="text-gray-200" />
-              )}
-              {item.effective_price != null && item.effective_price < item.price && (
-                <span className="absolute top-2 left-2 bg-green-100 text-green-700 text-[10px] font-medium px-2 py-0.5 rounded-full">
-                  Sale
-                </span>
-              )}
-            </div>
-            <div className="p-3 shrink-0">
-              <p className="text-sm font-medium line-clamp-2 mb-1">{item.name}</p>
-              <ProductPrice product={item} />
-            </div>
-          </Link>
-        ),
-      })),
-    [related],
-  )
 
   if (fetchError) {
     return (
@@ -245,11 +213,37 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
               ))}
             </div>
           ) : related && related.length > 0 ? (
-            <CyclingCarousel
-              columnCount={4}
-              cellClassName="h-52 sm:h-56"
-              items={relatedItems}
-            />
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {related.map(item => {
+                const itemPrice = Number(item.effective_price ?? item.sale_price ?? item.price)
+                const itemOnSale = item.effective_price !== null && item.effective_price !== undefined && item.effective_price < item.price
+                return (
+                  <Link
+                    key={item.id}
+                    href={`/products/${item.slug}`}
+                    className="group bg-white border border-gray-100 rounded-xl overflow-hidden hover:shadow-md transition-shadow"
+                  >
+                    <div className="relative aspect-square bg-gray-50 flex items-center justify-center">
+                      {item.image ? (
+                        <Image src={mediaUrl(item.image)} alt={item.name} fill sizes="(max-width: 768px) 50vw, 25vw" className="object-contain p-4 group-hover:scale-105 transition-transform" />
+                      ) : (
+                        <Package size={28} className="text-gray-200" />
+                      )}
+                      {itemOnSale && (
+                        <span className="absolute top-2 left-2 bg-green-100 text-green-700 text-[10px] font-medium px-2 py-0.5 rounded-full">
+                          Sale
+                        </span>
+                      )}
+                    </div>
+                    <div className="p-3">
+                      <p className="text-sm font-medium line-clamp-2 mb-1">{item.name}</p>
+                      <p className="text-xs text-gray-400 mb-2">{item.unit}</p>
+                      <ProductPrice product={item} />
+                    </div>
+                  </Link>
+                )
+              })}
+            </div>
           ) : null}
         </section>
       </div>
