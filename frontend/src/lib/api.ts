@@ -43,7 +43,22 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const url = isCsrf
     ? (BASE.endsWith('/api') ? BASE.replace(/\/api$/, '') : BASE) + path
     : `${BASE}${path}`
-  const res = await fetch(url, { credentials: 'include', headers, ...init })
+  // Never hang forever: a wedged backend must surface as a retryable error,
+  // not an infinite loading skeleton (the "section is invisible" class of
+  // bug). Composes with any caller-supplied abort signal.
+  const timeoutSignal = AbortSignal.timeout(20_000)
+  const signal = init?.signal
+    ? (typeof AbortSignal.any === 'function' ? AbortSignal.any([init.signal, timeoutSignal]) : timeoutSignal)
+    : timeoutSignal
+  let res: Response
+  try {
+    res = await fetch(url, { credentials: 'include', headers, ...init, signal })
+  } catch (err) {
+    if (err instanceof DOMException && (err.name === 'TimeoutError' || err.name === 'AbortError')) {
+      throw new ApiError('The server took too long to respond — please try again.', 0, { reason: 'timeout' })
+    }
+    throw err
+  }
   if (!res.ok) {
     const payload = await res.json().catch(() => ({ message: res.statusText }))
     const message = (payload as { message?: string } | null)?.message ?? `Request failed: ${res.status}`

@@ -7,9 +7,13 @@ import { brand } from '../../theme/colors';
  * orange checkstar pin used on the web store locator. Pure views, no SVG, so
  * it renders identically in jsdom snapshot and on device.
  */
+/** Locator-badge navy — matches the web map pin (MapContainer.tsx). */
+const PIN_BADGE_NAVY = '#262D3A';
+
 export function StorePin({ size = 30 }: { size?: number }) {
-  const star = Math.round(size * 0.55);
+  const star = Math.round(size * 0.42);
   const tail = Math.round(size * 0.4);
+  const badge = Math.round(size * 0.62);
   return (
     <View
       style={{
@@ -50,7 +54,20 @@ export function StorePin({ size = 30 }: { size?: number }) {
           elevation: 3,
         }}
       >
-        <Star size={star} color="#fff" fill="#fff" />
+        {/* Navy locator badge behind the star — matches the attached mark.
+            A normal flex child so the orange circle's centering holds. */}
+        <View
+          style={{
+            width: badge,
+            height: badge,
+            borderRadius: badge / 2,
+            backgroundColor: PIN_BADGE_NAVY,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Star size={star} color="#fff" fill="#fff" />
+        </View>
       </View>
     </View>
   );

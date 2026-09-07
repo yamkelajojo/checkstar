@@ -5,6 +5,7 @@ import { motion } from 'motion/react'
 import { MapPin, Phone, Clock, ChevronLeft, Navigation, Mail } from 'lucide-react'
 import Link from 'next/link'
 import { useStore } from '@/lib/query'
+import { escapeHtml } from '@/lib/escapeHtml'
 import MapContainer from '@/components/MapContainer'
 import type { MapMarker } from '@/components/MapContainer'
 
@@ -18,7 +19,7 @@ export default function StoreDetailClient({ slug }: { slug: string }) {
         ? [
             {
               position: [store.latitude, store.longitude] as [number, number],
-              popup: `<strong>${store.name}</strong><br/>${store.address}`,
+              popup: `<strong>${escapeHtml(store.name)}</strong><br/>${escapeHtml(store.address)}`,
             },
           ]
         : [],

@@ -6,6 +6,7 @@ import StoreCard from '@/components/StoreCard'
 import MapContainer from '@/components/MapContainer'
 import type { MapMarker } from '@/components/MapContainer'
 import { useStores } from '@/lib/query'
+import { escapeHtml } from '@/lib/escapeHtml'
 
 export default function StoresClient() {
   const { data: stores = [], isLoading: loading, error } = useStores()
@@ -15,7 +16,7 @@ export default function StoresClient() {
     () =>
       stores.map(s => ({
         position: [s.latitude, s.longitude] as [number, number],
-        popup: `<strong>${s.name}</strong><br/>${s.address}, ${s.city}`,
+        popup: `<strong>${escapeHtml(s.name)}</strong><br/>${escapeHtml(s.address)}, ${escapeHtml(s.city)}`,
       })),
     [stores]
   )

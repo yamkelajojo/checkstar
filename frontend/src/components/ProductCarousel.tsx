@@ -35,7 +35,19 @@ export function ProductCarousel({ title, products, href, queryResult }: ProductC
     );
   }
 
-  if (products.length === 0) return null;
+  // Query succeeded but nothing to show: say so instead of vanishing —
+  // a missing section reads as a broken page ("items are there but not
+  // visible" is worse than an honest empty note).
+  if (products.length === 0) {
+    return (
+      <section className="py-6">
+        <h2 className="text-xl font-bold tracking-tight text-foreground font-sans mb-3">{title}</h2>
+        <p className="text-sm text-gray-400 py-8 text-center bg-surface rounded-xl border border-border/40">
+          Nothing here yet — check back soon.
+        </p>
+      </section>
+    );
+  }
 
   return (
     <motion.section

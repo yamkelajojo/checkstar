@@ -26,17 +26,26 @@ const DURBAN_CENTER: [number, number] = [-29.825, 31.00]
 const DEFAULT_ZOOM = 12.5
 
 /**
- * Checkstar-branded store pin: the brand-orange teardrop with the star mark,
- * replacing Leaflet's default blue marker on the store locator.
+ * Locator-badge navy from the Checkstar store-locator mark (the dark disc
+ * behind the star) — shared with the mobile StorePin so both platforms
+ * render the identical pin.
+ */
+export const PIN_BADGE_NAVY = '#262D3A'
+
+/**
+ * Checkstar-branded store pin: the brand-orange teardrop with the navy
+ * locator badge and white star mark, replacing Leaflet's default blue
+ * marker on every map surface.
  */
 function checkstarPinIcon(L: any) {
   return L.divIcon({
     className: 'checkstar-map-pin',
     html: `
-      <svg width="30" height="40" viewBox="0 0 36 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <svg width="30" height="40" viewBox="0 0 36 48" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Checkstar store location">
         <path d="M18 1C8.6 1 1 8.6 1 18c0 5.5 3.2 11.6 6.4 16.4 3.3 5 6.9 9 8.9 11 .9.9 2.5.9 3.4 0 2-2 5.6-6 8.9-11C31.8 29.6 35 23.5 35 18 35 8.6 27.4 1 18 1z"
           fill="#EB6522" stroke="#ffffff" stroke-width="2"/>
-        <g transform="translate(6.6, 5.6) scale(1.0)">
+        <circle cx="18" cy="17" r="9.5" fill="${PIN_BADGE_NAVY}"/>
+        <g transform="translate(12.85, 11.55) scale(0.43)">
           <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
             fill="#ffffff"/>
         </g>
@@ -72,6 +81,11 @@ export default function MapContainer({
   // True when map tiles cannot be fetched (offline / blocked hosts): the map
   // would otherwise be a silent black rectangle with no explanation.
   const [tilesUnavailable, setTilesUnavailable] = useState(false)
+  // Flips once the Leaflet chunk has imported and the map instance exists.
+  // Marker/fitBounds effects depend on it: data that arrives BEFORE the map
+  // is ready would otherwise be dropped forever (the effect bails on a null
+  // map and its props never change again) — pins silently missing.
+  const [mapReady, setMapReady] = useState(false)
 
   useEffect(() => {
     const el = mapRef.current
@@ -123,6 +137,7 @@ export default function MapContainer({
         return
       }
       mapInstance.current = map
+      setMapReady(true)
 
       map!.whenReady(() => {
         setTimeout(() => {
@@ -144,6 +159,7 @@ export default function MapContainer({
         try { mapInstance.current.remove() } catch {}
         mapInstance.current = null
       }
+      setMapReady(false)
       initializedRef.current = false
     }
   }, [])
@@ -162,13 +178,13 @@ export default function MapContainer({
       if (tooltip) marker.bindTooltip(tooltip)
       markersRef.current.push(marker)
     })
-  }, [markers])
+  }, [markers, mapReady])
 
   useEffect(() => {
     const map = mapInstance.current
     if (!map || !fitBounds || fitBounds.length === 0) return
     map.fitBounds(fitBounds, { padding: [50, 50] })
-  }, [fitBounds])
+  }, [fitBounds, mapReady])
 
   return (
     <div
