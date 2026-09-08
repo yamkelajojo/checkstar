@@ -103,8 +103,8 @@ describe('LogoCarousel — small brand sets', () => {
   })
 })
 
-describe('BRAND_LOGOS (mock service set)', () => {
-  it('exposes five unique brands with unique ids and renderable SVGs', () => {
+describe('BRAND_LOGOS (in-store service set)', () => {
+  it('exposes five unique brands with unique ids and renderable images', () => {
     expect(BRAND_LOGOS.map((l) => l.name)).toEqual([
       'MTN',
       'Vodacom',
@@ -115,7 +115,9 @@ describe('BRAND_LOGOS (mock service set)', () => {
     expect(new Set(BRAND_LOGOS.map((l) => l.id)).size).toBe(BRAND_LOGOS.length)
     for (const entry of BRAND_LOGOS) {
       const { container } = render(React.createElement(entry.img))
-      expect(container.querySelector('svg')).not.toBeNull()
+      const img = container.querySelector('img')
+      expect(img).not.toBeNull()
+      expect(img?.getAttribute('alt')).toBe(entry.name)
     }
   })
 })

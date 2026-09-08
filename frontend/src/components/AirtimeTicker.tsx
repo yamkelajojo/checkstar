@@ -1,10 +1,10 @@
 'use client';
 
 /**
- * "Also In-Store" home-page section — now a cult-ui LogoCarousel showing the
- * in-store services (MTN, Vodacom, Cell C, Telkom, rain) as animated brand
- * logos. Mock logos live in components/brand-logos.tsx; drop the real brand
- * SVGs in there when available and this section picks them up automatically.
+ * "Also In-Store" home-page section — a cult-ui LogoCarousel showing the
+ * in-store services (MTN, Vodacom, Cell C, Telkom, rain) as an animated brand
+ * logo carousel. The real carrier logos live in public/images/logos and are
+ * wired up via components/brand-logos.tsx.
  *
  * (Kept the historical export name; the old text-only ticker is gone.)
  */
