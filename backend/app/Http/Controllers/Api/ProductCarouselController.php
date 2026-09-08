@@ -77,26 +77,56 @@ class ProductCarouselController extends Controller
     }
 
     /**
+     * Fallback: most-recently-created active products when order-based
+     * carousels have no data (fresh DB with no delivered orders yet).
+     */
+    private function getRecentProducts(int $limit): array
+    {
+        $products = Product::where('is_active', true)
+            ->with(['category', 'specials'])
+            ->orderBy('created_at', 'desc')
+            ->limit($limit)
+            ->get();
+
+        return $this->enrichProducts($products)->values()->toArray();
+    }
+
+    /**
      * GET /api/products/trending
      * Top 10 products by order count in last 7 days.
+     * Falls back to most-recent products when no delivered orders exist.
      */
     public function trending(): JsonResponse
     {
-        return response()->json(['data' => $this->getProductsByPopularity(7, 10)]);
+        $data = $this->getProductsByPopularity(7, 10);
+
+        if ($data === []) {
+            $data = $this->getRecentProducts(10);
+        }
+
+        return response()->json(['data' => $data]);
     }
 
     /**
      * GET /api/products/popular
      * Top 10 products by order count in last 30 days.
+     * Falls back to most-recent products when no delivered orders exist.
      */
     public function popular(): JsonResponse
     {
-        return response()->json(['data' => $this->getProductsByPopularity(30, 10)]);
+        $data = $this->getProductsByPopularity(30, 10);
+
+        if ($data === []) {
+            $data = $this->getRecentProducts(10);
+        }
+
+        return response()->json(['data' => $data]);
     }
 
     /**
      * GET /api/products/new-arrivals
      * Products created in last 14 days.
+     * Falls back to most-recent products when none are recent enough.
      */
     public function newArrivals(): JsonResponse
     {
@@ -107,8 +137,12 @@ class ProductCarouselController extends Controller
             ->limit(10)
             ->get();
 
-        $products = $this->enrichProducts($products)->values()->toArray();
+        $data = $this->enrichProducts($products)->values()->toArray();
 
-        return response()->json(['data' => $products]);
+        if ($data === []) {
+            $data = $this->getRecentProducts(10);
+        }
+
+        return response()->json(['data' => $data]);
     }
 }

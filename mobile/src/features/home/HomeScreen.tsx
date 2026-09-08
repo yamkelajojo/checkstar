@@ -10,7 +10,7 @@ import { useTheme } from '../../theme';
 import { brand, heroGradient } from '../../theme/colors';
 import { textStyle, fontWeight } from '../../theme/typography';
 import { semanticSpacing, semanticRadius } from '../../theme/spacing';
-import { useCategories, useProducts, useSpecials } from '../catalog/hooks';
+import { useCategories, useProducts, useSpecials, useTrendingProducts, usePopularProducts, useNewArrivals } from '../catalog/hooks';
 import { ProductCard } from '../../components/shared/ProductCard';
 import { CollectionPill } from '../../components/shared/CollectionPill';
 import { TactilePressable } from '../../components/shared/TactilePressable';
@@ -49,14 +49,16 @@ export function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const store = useDeliveryStore((s) => s.fulfillmentStore);
   const { data: categories = [] } = useCategories();
-  const { data: products = [], isLoading } = useProducts({ storeId: store?.id ?? null, featured: true });
+  const { data: trending = [], isLoading: trendingLoading } = useTrendingProducts();
+  const { data: popular = [] } = usePopularProducts();
+  const { data: newArrivals = [] } = useNewArrivals();
   const { data: specials = [] } = useSpecials(store?.id ?? null);
   const { data: banners = [] } = useQuery({
     queryKey: queryKeys.banners,
     queryFn: fetchBanners,
   });
   const cartItems = useCart((s) => s.items);
-  const needsAll = cartItems.length > 0 && cartItems.some((ci) => !products.some((p) => String(p.id) === ci.productId));
+  const needsAll = cartItems.length > 0 && cartItems.some((ci) => !trending.some((p) => String(p.id) === ci.productId));
   const { data: allProducts = [] } = useQuery({
     queryKey: ['products-all', store?.id],
     queryFn: async () => {
@@ -67,7 +69,7 @@ export function HomeScreen() {
     },
     enabled: needsAll,
   });
-  const priceSource = needsAll && allProducts.length > 0 ? allProducts : products;
+  const priceSource = needsAll && allProducts.length > 0 ? allProducts : trending;
   const subtotal = cartSubtotal(cartItems, priceSource);
   const storeName = store?.name ?? 'Choose your store';
 
@@ -167,7 +169,7 @@ export function HomeScreen() {
 
       {/* First-run / unseeded catalogue: one coherent empty state instead of a
           stack of orphan section headers, with pull-to-refresh to re-check. */}
-      {!isLoading && products.length === 0 && specials.length === 0 && categories.length === 0 && banners.length === 0 ? (
+      {!trendingLoading && trending.length === 0 && specials.length === 0 && categories.length === 0 && banners.length === 0 ? (
         <View style={{ marginTop: semanticSpacing.sectionGap }}>
           <EmptyState
             icon={Store}
@@ -221,25 +223,46 @@ export function HomeScreen() {
         </FadeEdgeScroll>
       </View>
 
-      {/* Featured grid — uses FlatList with numColumns=2 for consistent 2-col grid */}
-      <View style={{ marginTop: semanticSpacing.xl }}>
-        <View style={{ paddingHorizontal: semanticSpacing.screenPadding }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: semanticSpacing.inlineGap, marginBottom: semanticSpacing.inlineGap }}>
-            <Text style={{ ...textStyle.h3, fontWeight: fontWeight.bold, color: theme.colors.text.primary }}>Featured</Text>
-          </View>
+      {/* Trending Now — horizontal carousel */}
+      {trending.length > 0 && (
+        <View style={{ marginTop: semanticSpacing.xl }}>
+          <SectionTitle title="Trending Now" icon={<Tag size={16} color={brand.orange} />} />
+          <PhysicsCarousel
+            data={trending}
+            keyExtractor={(p) => String(p.id)}
+            snapInterval={200}
+            contentOffset={semanticSpacing.screenPadding}
+            showsHorizontalScrollIndicator={false}
+            renderItem={({ item }) => <ProductCard product={item} storeProductId={getStoreProductId(item)} source="home" />}
+          />
         </View>
-        {isLoading ? (
-          <View style={{ flexDirection: 'row', gap: semanticSpacing.inlineGap, paddingHorizontal: semanticSpacing.screenPadding }}>
-            <ProductCardSkeleton />
-            <ProductCardSkeleton />
-          </View>
-        ) : products.length === 0 ? (
+      )}
+
+      {/* Popular — horizontal carousel */}
+      {popular.length > 0 && (
+        <View style={{ marginTop: semanticSpacing.xl }}>
+          <SectionTitle title="Popular" icon={<Tag size={16} color={brand.orange} />} />
+          <PhysicsCarousel
+            data={popular}
+            keyExtractor={(p) => String(p.id)}
+            snapInterval={200}
+            contentOffset={semanticSpacing.screenPadding}
+            showsHorizontalScrollIndicator={false}
+            renderItem={({ item }) => <ProductCard product={item} storeProductId={getStoreProductId(item)} source="home" />}
+          />
+        </View>
+      )}
+
+      {/* New Arrivals — 2-col grid */}
+      {newArrivals.length > 0 && (
+        <View style={{ marginTop: semanticSpacing.xl }}>
           <View style={{ paddingHorizontal: semanticSpacing.screenPadding }}>
-            <EmptyState icon={Tag} title="No featured products yet" caption="Check back soon." />
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: semanticSpacing.inlineGap, marginBottom: semanticSpacing.inlineGap }}>
+              <Text style={{ ...textStyle.h3, fontWeight: fontWeight.bold, color: theme.colors.text.primary }}>New Arrivals</Text>
+            </View>
           </View>
-        ) : (
           <FlatList
-            data={products}
+            data={newArrivals}
             keyExtractor={(p) => String(p.id)}
             numColumns={2}
             columnWrapperStyle={{ gap: semanticSpacing.inlineGap, paddingHorizontal: semanticSpacing.screenPadding }}
@@ -251,8 +274,23 @@ export function HomeScreen() {
               </FadeSlideIn>
             )}
           />
-        )}
-      </View>
+        </View>
+      )}
+
+      {/* Featured grid — fallback when trending is loading */}
+      {trendingLoading && (
+        <View style={{ marginTop: semanticSpacing.xl }}>
+          <View style={{ paddingHorizontal: semanticSpacing.screenPadding }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: semanticSpacing.inlineGap, marginBottom: semanticSpacing.inlineGap }}>
+              <Text style={{ ...textStyle.h3, fontWeight: fontWeight.bold, color: theme.colors.text.primary }}>Trending Now</Text>
+            </View>
+          </View>
+          <View style={{ flexDirection: 'row', gap: semanticSpacing.inlineGap, paddingHorizontal: semanticSpacing.screenPadding }}>
+            <ProductCardSkeleton />
+            <ProductCardSkeleton />
+          </View>
+        </View>
+      )}
         </>
       )}
     </ScrollView>

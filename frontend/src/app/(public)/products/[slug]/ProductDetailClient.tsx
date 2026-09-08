@@ -16,7 +16,7 @@ function ProductPrice({ product }: { product: { effective_price?: number | null;
   return (
     <div className="flex items-baseline gap-3">
       <span className="font-bold text-lg text-gray-900">R{price.toFixed(2)}</span>
-      {hasSale && <span className="text-sm text-gray-500 line-through">R{product.price.toFixed(2)}</span>}
+      {hasSale && <span className="text-sm text-gray-500 line-through">R{Number(product.price).toFixed(2)}</span>}
     </div>
   )
 }
@@ -148,7 +148,7 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
               <span className="font-bold text-3xl text-gray-900">R{price.toFixed(2)}</span>
               {hasSale && (
                 <>
-                  <span className="text-lg text-gray-500 line-through">R{product.price.toFixed(2)}</span>
+                  <span className="text-lg text-gray-500 line-through">R{Number(product.price).toFixed(2)}</span>
                   <span className="bg-green-100 text-green-700 text-xs font-medium px-2 py-0.5 rounded-full">
                     Sale
                   </span>

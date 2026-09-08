@@ -26,4 +26,7 @@ export const queryKeys = {
   favorites: ['favorites'] as const,
   recommendations: ['recommendations'] as const,
   banners: ['banners'] as const,
+  trendingProducts: ['products', 'trending'] as const,
+  popularProducts: ['products', 'popular'] as const,
+  newArrivals: ['products', 'new-arrivals'] as const,
 };

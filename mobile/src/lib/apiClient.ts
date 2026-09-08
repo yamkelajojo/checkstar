@@ -593,3 +593,23 @@ export async function fetchBanners(): Promise<ApiBanner[]> {
   const res = await api.get<{ data: ApiBanner[] }>('/banners', undefined, false);
   return res.data;
 }
+
+// ---- Carousel products (trending / popular / new arrivals) ----
+
+export async function fetchTrendingProducts(): Promise<ApiProduct[]> {
+  const api = await getApi();
+  const res = await api.get<{ data: ApiProduct[] }>('/products/trending', undefined, false);
+  return res.data;
+}
+
+export async function fetchPopularProducts(): Promise<ApiProduct[]> {
+  const api = await getApi();
+  const res = await api.get<{ data: ApiProduct[] }>('/products/popular', undefined, false);
+  return res.data;
+}
+
+export async function fetchNewArrivals(): Promise<ApiProduct[]> {
+  const api = await getApi();
+  const res = await api.get<{ data: ApiProduct[] }>('/products/new-arrivals', undefined, false);
+  return res.data;
+}

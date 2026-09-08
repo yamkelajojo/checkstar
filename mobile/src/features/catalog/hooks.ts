@@ -1,5 +1,5 @@
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
-import { fetchCategories, fetchProducts, fetchAllProducts, fetchStores, fetchSpecials, fetchProductBySlug, fetchRelatedProducts } from '../../lib/apiClient';
+import { fetchCategories, fetchProducts, fetchAllProducts, fetchStores, fetchSpecials, fetchProductBySlug, fetchRelatedProducts, fetchTrendingProducts, fetchPopularProducts, fetchNewArrivals } from '../../lib/apiClient';
 import { mapProduct, type ProductVO } from '../../lib/product';
 import { queryKeys } from '../../lib/queryKeys';
 import type { ApiCategory, ApiProduct, ApiStore } from '../../lib/types';
@@ -122,5 +122,38 @@ export function useStores() {
   return useQuery({
     queryKey: queryKeys.stores,
     queryFn: fetchStores,
+  });
+}
+
+export function useTrendingProducts() {
+  return useQuery({
+    queryKey: queryKeys.trendingProducts,
+    queryFn: async (): Promise<ProductVO[]> => {
+      const data = await fetchTrendingProducts();
+      return data.map(mapProduct);
+    },
+    staleTime: 120_000,
+  });
+}
+
+export function usePopularProducts() {
+  return useQuery({
+    queryKey: queryKeys.popularProducts,
+    queryFn: async (): Promise<ProductVO[]> => {
+      const data = await fetchPopularProducts();
+      return data.map(mapProduct);
+    },
+    staleTime: 120_000,
+  });
+}
+
+export function useNewArrivals() {
+  return useQuery({
+    queryKey: queryKeys.newArrivals,
+    queryFn: async (): Promise<ProductVO[]> => {
+      const data = await fetchNewArrivals();
+      return data.map(mapProduct);
+    },
+    staleTime: 120_000,
   });
 }
