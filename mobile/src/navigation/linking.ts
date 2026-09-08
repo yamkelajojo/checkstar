@@ -10,6 +10,7 @@ export const linking: LinkingOptions<RootStackParamList> = {
           Home: 'home',
           Browse: 'browse',
           Cart: 'cart',
+          Favorites: 'favorites',
           Account: 'account',
         },
       },

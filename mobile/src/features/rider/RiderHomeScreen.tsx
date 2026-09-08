@@ -99,7 +99,7 @@ export function RiderHomeScreen() {
         const fresh = await fetchCurrentUser();
         useSession.setState({ user: fresh });
       } catch {}
-      toast.show(isAvailable ? copy.rider.goOffline : copy.rider.goOnline, { tone: isAvailable ? 'default' : 'success' });
+      toast.show(isAvailable ? copy.rider.goOnline : copy.rider.goOffline, { tone: isAvailable ? 'success' : 'default' });
       invalidate();
     } catch {
       toast.show('Could not update availability.');

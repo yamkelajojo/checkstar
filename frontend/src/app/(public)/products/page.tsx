@@ -13,7 +13,7 @@ function ProductsFallback() {
       <div className="h-9 w-44 rounded-lg bg-gray-50 animate-pulse" />
       <div className="mt-3 h-4 w-72 rounded bg-gray-50 animate-pulse" />
       <div className="mt-6 h-11 max-w-md rounded-lg bg-gray-50 animate-pulse" />
-      <div className="mt-6 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
+      <div className="mt-6 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-3 gap-3">
         {Array.from({ length: 10 }).map((_, i) => (
           <div key={i} className="bg-gray-50 rounded-xl aspect-square animate-pulse" />
         ))}

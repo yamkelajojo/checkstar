@@ -159,7 +159,7 @@ class DispatchServiceTest extends TestCase
         $this->assertNull($result['rider_id']);
         $fresh = $order->fresh();
         $this->assertEquals(OrderStatus::Retrying, $fresh->status);
-        $this->assertSame(0, $fresh->dispatch_attempts);
+        $this->assertSame(1, $fresh->dispatch_attempts);
     }
 
     public function test_dispatch_to_retrying_creates_activity_log(): void

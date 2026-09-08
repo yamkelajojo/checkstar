@@ -47,6 +47,32 @@ class DatabaseSeedingTest extends TestCase
         $this->assertNotNull(Store::find($staff->store_id));
         $this->assertSame('store_manager', $staff->role->value);
 
+        // Store owner: resolves its Store via stores.owner_id.
+        $owner = User::where('email', 'owner@checkstar.co.za')->first();
+        $this->assertNotNull($owner);
+        $this->assertSame(UserRole::StoreOwner, $owner->role);
+        $this->assertTrue(Hash::check('password', $owner->password));
+        $this->assertSame(
+            Store::where('slug', 'durban-central')->first()?->id,
+            $owner->store?->id,
+            'Demo owner must own the flagship store'
+        );
+
+        // Logistics officer: resolves a Store via StoreStaff, like the manager.
+        $logistics = User::where('email', 'logistics@checkstar.co.za')->first();
+        $this->assertNotNull($logistics);
+        $this->assertSame(UserRole::LogisticsOfficer, $logistics->role);
+        $logisticsStaff = StoreStaff::where('user_id', $logistics->id)->first();
+        $this->assertNotNull($logisticsStaff);
+        $this->assertNotNull(Store::find($logisticsStaff->store_id));
+        $this->assertSame('logistics_officer', $logisticsStaff->role->value);
+
+        // Mock shopper for the customer app.
+        $mock = User::where('email', 'mock@checkstar.co.za')->first();
+        $this->assertNotNull($mock);
+        $this->assertSame(UserRole::Customer, $mock->role);
+        $this->assertTrue(Hash::check('password', $mock->password));
+
         // Rider app.
         $this->assertTrue(Rider::exists());
         $riderUser = Rider::with('user')->first()->user;
@@ -61,5 +87,18 @@ class DatabaseSeedingTest extends TestCase
         $this->assertSame(1, User::where('email', 'john@example.com')->count());
         $this->assertSame(1, User::where('email', 'dev@checkstar.co.za')->count());
         $this->assertSame(1, User::where('email', 'manager@checkstar.co.za')->count());
+        $this->assertSame(1, User::where('email', 'owner@checkstar.co.za')->count());
+        $this->assertSame(1, User::where('email', 'logistics@checkstar.co.za')->count());
+        $this->assertSame(1, User::where('email', 'mock@checkstar.co.za')->count());
+
+        $owner = User::where('email', 'owner@checkstar.co.za')->first();
+        $flagship = Store::where('slug', 'durban-central')->first();
+        $this->assertNotNull($owner);
+        $this->assertNotNull($flagship);
+        $this->assertSame(
+            (int) $owner->id,
+            (int) $flagship->owner_id,
+            'Re-seeding must keep the demo owner on the flagship store'
+        );
     }
 }

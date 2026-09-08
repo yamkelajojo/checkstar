@@ -198,6 +198,43 @@ class OrderStateMachineTest extends TestCase
         $this->machine->transition($this->order, OrderStatus::Pending);
     }
 
+    public function test_transition_rejects_stale_in_memory_status_snapshot(): void
+    {
+        $this->order->update(['status' => OrderStatus::Confirmed]);
+
+        // The caller cached Confirmed while another worker moved the order on.
+        $stale = Order::find($this->order->id);
+        $this->assertSame(OrderStatus::Confirmed, $stale->status);
+
+        Order::where('id', $this->order->id)->update(['status' => OrderStatus::Retrying]);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('status changed concurrently');
+
+        $this->machine->transition($stale, OrderStatus::Preparing);
+    }
+
+    public function test_lost_transition_race_does_not_overwrite_committed_status_or_log(): void
+    {
+        $this->order->update(['status' => OrderStatus::Confirmed]);
+
+        // Reader cached Confirmed, then the customer cancelled after dispatch.
+        $stale = Order::find($this->order->id);
+        Order::where('id', $this->order->id)->update(['status' => OrderStatus::Cancelled]);
+
+        try {
+            $this->machine->transition($stale, OrderStatus::Preparing);
+            $this->fail('Expected a concurrent-status InvalidArgumentException');
+        } catch (InvalidArgumentException $e) {
+            $this->assertStringContainsString('status changed concurrently', $e->getMessage());
+        }
+
+        // The committed cancellation must survive the losing transition, and
+        // the loser must not write an audit row as if it had won.
+        $this->assertSame(OrderStatus::Cancelled, $this->order->fresh()->status);
+        $this->assertCount(0, OrderActivityLog::where('order_id', $this->order->id)->get());
+    }
+
     public function test_activity_log_contains_correct_data_with_actor_and_metadata(): void
     {
         $actor = User::create([

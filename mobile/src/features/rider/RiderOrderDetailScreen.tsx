@@ -27,7 +27,8 @@ export function RiderOrderDetailScreen() {
   const topInset = useTopSafeArea();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute();
-  const { orderId } = route.params as { orderId: number };
+  const { orderId: rawOrderId } = route.params as { orderId: number | string };
+  const orderId = Number(rawOrderId);
   const queryClient = useQueryClient();
   const toast = useToast();
   const [boughtIds, setBoughtIds] = useState<number[]>([]);

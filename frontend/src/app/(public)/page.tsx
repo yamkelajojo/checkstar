@@ -77,7 +77,7 @@ export default function HomePage() {
           {bannersLoading ? (
             <div className="w-full h-48 md:h-64 rounded-2xl bg-gray-100 animate-pulse" />
           ) : bannersError ? (
-            <ErrorFallback message="Failed to load banners" onRetry={() => refetchBanners()} />
+            <ErrorFallback message="Couldn't load banners" onRetry={() => refetchBanners()} />
           ) : (
             <BannerCarousel banners={banners} />
           )}

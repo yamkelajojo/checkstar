@@ -92,7 +92,7 @@ export default function StaffClient() {
     // The backend resolves the account by email; the mock API derives a
     // deterministic user_id from the address for the same contract.
     hireMutation.mutate({
-      user_id: Number(trimmedEmail.replace(/[^0-9]/g, '')) || Date.now() % 100000,
+      email: trimmedEmail,
       role: selectedRole,
       store_id: activeStoreId ? Number(activeStoreId) : undefined,
     })

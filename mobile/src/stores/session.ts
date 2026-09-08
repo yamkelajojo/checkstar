@@ -42,7 +42,6 @@ export const useSession = create<SessionState>((set) => ({
       const { token, cached } = result;
       if (token) {
         setAuthToken(token);
-        set({ status: 'authenticated', token, user: cached ?? null });
         // Try to refresh token and fetch fresh user in background
         if (!cached) {
           try {
@@ -50,12 +49,20 @@ export const useSession = create<SessionState>((set) => ({
             if (newToken) {
               const { fetchCurrentUser } = await import('../lib/apiClient');
               const user = await fetchCurrentUser();
-              set({ user });
+              set({ status: 'authenticated', token: newToken, user });
               await storage.set(STORAGE_KEYS.session, user);
+            } else {
+              // Refresh failed with no cached user — clear stale token
+              await tokenStorage.clear();
+              set({ status: 'guest', token: null, user: null });
             }
           } catch {
-            // If refresh fails, we'll handle 401 on next API call
+            // Refresh failed with no cached user — clear stale token
+            await tokenStorage.clear();
+            set({ status: 'guest', token: null, user: null });
           }
+        } else {
+          set({ status: 'authenticated', token, user: cached });
         }
       } else {
         set({ status: 'guest', token: null, user: null });

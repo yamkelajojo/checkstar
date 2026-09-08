@@ -12,7 +12,6 @@ export function middleware(request: NextRequest) {
 
   const session = request.cookies.get('laravel_session')?.value
     || request.cookies.get('sanctum_session')?.value
-    || request.cookies.get('XSRF-TOKEN')?.value
 
   if (!session) {
     const loginUrl = new URL('/auth/login', request.url)

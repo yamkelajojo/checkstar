@@ -47,9 +47,19 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   // not an infinite loading skeleton (the "section is invisible" class of
   // bug). Composes with any caller-supplied abort signal.
   const timeoutSignal = AbortSignal.timeout(20_000)
-  const signal = init?.signal
-    ? (typeof AbortSignal.any === 'function' ? AbortSignal.any([init.signal, timeoutSignal]) : timeoutSignal)
-    : timeoutSignal
+  let signal: AbortSignal | undefined
+  if (init?.signal) {
+    if (typeof AbortSignal.any === 'function') {
+      signal = AbortSignal.any([init.signal, timeoutSignal])
+    } else {
+      const ac = new AbortController()
+      init.signal.addEventListener('abort', () => ac.abort(init.signal!.reason), { once: true })
+      timeoutSignal.addEventListener('abort', () => ac.abort(timeoutSignal.reason), { once: true })
+      signal = ac.signal
+    }
+  } else {
+    signal = timeoutSignal
+  }
   let res: Response
   try {
     res = await fetch(url, { credentials: 'include', headers, ...init, signal })
@@ -142,7 +152,7 @@ export const api = {
   reassignOrder: (orderId: number, riderId: number) => request<{ data: Order }>(`/store/orders/${orderId}/reassign`, { method: 'POST', body: JSON.stringify({ rider_id: riderId }) }),
   // Staff management
   listStaff: (storeId?: number) => request<{ data: Array<{ id: number; user: { id: number; name: string; email: string }; role: string; store_id: number; created_at: string }> }>(`/store/staff${storeId ? `?store_id=${storeId}` : ''}`),
-  hireStaff: (userId: number, role: string, storeId?: number) => request<{ data: unknown }>(`/store/staff`, { method: 'POST', body: JSON.stringify({ user_id: userId, role, ...(storeId ? { store_id: storeId } : {}) }) }),
+  hireStaff: (email: string, role: string, storeId?: number) => request<{ data: unknown }>(`/store/staff`, { method: 'POST', body: JSON.stringify({ email, role, ...(storeId ? { store_id: storeId } : {}) }) }),
   fireStaff: (staffId: number, storeId?: number) => request<{ message: string }>(`/store/staff/${staffId}${storeId ? `?store_id=${storeId}` : ''}`, { method: 'DELETE' }),
   // Admin messages
   getMessages: () => request<{ data: unknown[] }>('/admin/messages'),

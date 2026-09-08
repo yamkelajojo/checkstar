@@ -29,6 +29,7 @@ import type { ProductVO, StoreAvailabilityVO } from '../../lib/product';
 import { findStoreAvailability } from '../../lib/product';
 import { ErrorBoundary } from '../../components/shared/ErrorBoundary';
 import { FREE_DELIVERY_THRESHOLD_CENTS } from '../../lib/constants';
+import { formatZar } from '../../lib/currency';
 import { RecommendationsSection } from './RecommendationsSection';
 import { BannerCarousel } from '../../components/shared/BannerCarousel';
 import { fetchBanners } from '../../lib/apiClient';
@@ -158,7 +159,7 @@ export function HomeScreen() {
           </TactilePressable>
           {subtotal < FREE_DELIVERY_THRESHOLD_CENTS && subtotal > 0 && (
             <Text style={{ color: theme.colors.text.secondary, ...textStyle.caption }}>
-              Free delivery over R {FREE_DELIVERY_THRESHOLD_CENTS / 100},00 — add more to qualify.
+              Free delivery over {formatZar(FREE_DELIVERY_THRESHOLD_CENTS)} — add more to qualify.
             </Text>
           )}
         </View>

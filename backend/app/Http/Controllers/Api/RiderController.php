@@ -119,7 +119,12 @@ class RiderController extends Controller
     public function outForDelivery(Request $request, int $orderId): JsonResponse
     {
         $rider = $this->getRider($request);
-        $order = $this->riderOrderService->advanceStatus($rider, $orderId, OrderStatus::OutForDelivery);
+
+        try {
+            $order = $this->riderOrderService->advanceStatus($rider, $orderId, OrderStatus::OutForDelivery);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
 
         return response()->json(['data' => $order]);
     }
@@ -127,7 +132,12 @@ class RiderController extends Controller
     public function delivered(Request $request, int $orderId): JsonResponse
     {
         $rider = $this->getRider($request);
-        $order = $this->riderOrderService->advanceStatus($rider, $orderId, OrderStatus::Delivered);
+
+        try {
+            $order = $this->riderOrderService->advanceStatus($rider, $orderId, OrderStatus::Delivered);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
 
         return response()->json(['data' => $order]);
     }

@@ -105,13 +105,26 @@ class RiderOrderService
         }
 
         $marked = DB::transaction(function () use ($order, $itemsToProcess) {
+            // Lock the order row and require it to still be actively picked.
+            // Stock must never be decremented for a cancelled or already
+            // delivered order. Locking serialises against OrderController::cancel
+            // and DeliveryConfirmation (both lock the order row), and the
+            // status re-check under the lock means a rider's stale screen
+            // cannot poison inventory on a dead order.
+            $freshOrder = Order::whereKey($order->getKey())->lockForUpdate()->firstOrFail();
+            if ($freshOrder->status !== OrderStatus::Preparing) {
+                throw new \InvalidArgumentException(
+                    'Cannot mark items as bought: order is '.$freshOrder->status->value
+                );
+            }
+
             $marked = collect();
             $insufficient = [];
 
             foreach ($itemsToProcess as $item) {
                 // Resolve store_product_id if missing
                 if (! $item->store_product_id) {
-                    $spLookup = StoreProduct::where('store_id', $order->store_id)
+                    $spLookup = StoreProduct::where('store_id', $freshOrder->store_id)
                         ->where('product_id', $item->product_id)
                         ->first();
                     if ($spLookup) {
@@ -168,11 +181,11 @@ class RiderOrderService
             }
 
             if ($marked->isNotEmpty()) {
-                $order->activityLogs()->create([
+                $freshOrder->activityLogs()->create([
                     'event_type' => EventType::ItemsBought->value,
-                    'user_id' => $order->rider->user_id,
-                    'old_status' => $order->status->value,
-                    'new_status' => $order->status->value,
+                    'user_id' => $freshOrder->rider->user_id,
+                    'old_status' => $freshOrder->status->value,
+                    'new_status' => $freshOrder->status->value,
                     'metadata' => [
                         'item_ids' => $marked->pluck('id')->values()->all(),
                     ],

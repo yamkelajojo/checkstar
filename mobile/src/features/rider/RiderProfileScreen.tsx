@@ -17,7 +17,7 @@ export function RiderProfileScreen() {
   const signOut = useSession((s) => s.signOut);
 
   const { data: profile, isLoading } = useQuery({
-    queryKey: queryKeys.riderStats,
+    queryKey: queryKeys.riderProfile,
     queryFn: fetchRiderProfile,
   });
 

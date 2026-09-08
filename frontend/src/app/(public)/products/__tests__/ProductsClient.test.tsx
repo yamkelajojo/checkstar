@@ -80,7 +80,7 @@ describe('ProductsClient (products page does not crash)', () => {
 
     renderWithClient(<ProductsClient />)
 
-    expect(await screen.findByText('No products found')).toBeTruthy()
+    expect(await screen.findByText('Nothing matches your search')).toBeTruthy()
   })
 
   it('renders the error state when the API fails', async () => {
@@ -88,7 +88,7 @@ describe('ProductsClient (products page does not crash)', () => {
 
     renderWithClient(<ProductsClient />)
 
-    expect(await screen.findByText('Failed to load products')).toBeTruthy()
+    expect(await screen.findByText("Couldn't load products")).toBeTruthy()
   })
 
   it('keeps the page mounted with mixed dirty data (nulls everywhere)', async () => {

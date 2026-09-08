@@ -2,7 +2,7 @@ import { performCartSync } from '../cartSync';
 import { applyServerMerge } from '../../features/cart/model';
 import type { CartItem } from '../../features/cart/types';
 
-const line = (productId: string, quantity: number): CartItem => ({ productId, quantity });
+const line = (productId: string, quantity: number): CartItem => ({ productId, quantity, storeProductId: null });
 
 describe('performCartSync', () => {
   it('syncs local draft and replaces with server result', async () => {
@@ -21,7 +21,7 @@ describe('performCartSync', () => {
       },
     });
     expect(syncCart).toHaveBeenCalledWith([{ product_id: 1, quantity: 2 }]);
-    expect(stored).toEqual([{ productId: '1', quantity: 5 }]);
+    expect(stored).toEqual([{ productId: '1', quantity: 5, storeProductId: '10' }]);
     expect(result?.droppedCount).toBe(0);
     expect(hasSynced.current).toBe(true);
   });

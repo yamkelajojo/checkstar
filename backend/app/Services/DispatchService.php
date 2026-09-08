@@ -63,6 +63,15 @@ class DispatchService
 
         if (! $rider instanceof Rider) {
             // No rider available at the assigned store - enter retrying state
+            $order->dispatch_attempts += 1;
+            $order->save();
+
+            if ($order->dispatch_attempts >= $this->policy->maxAttempts()) {
+                $this->cancelOrder($order, 'No available riders after '.$this->policy->maxAttempts().' dispatch attempts');
+
+                return $this->result(null, null, 'cancelled');
+            }
+
             $this->stateMachine->transition($order, OrderStatus::Retrying, null, [
                 'reason' => 'No available riders at assigned store',
                 'source' => 'dispatch',
@@ -77,6 +86,15 @@ class DispatchService
         }
 
         // Claim failed (race condition) - enter retrying
+        $order->dispatch_attempts += 1;
+        $order->save();
+
+        if ($order->dispatch_attempts >= $this->policy->maxAttempts()) {
+            $this->cancelOrder($order, 'No available riders after '.$this->policy->maxAttempts().' dispatch attempts');
+
+            return $this->result(null, null, 'cancelled');
+        }
+
         $this->stateMachine->transition($order, OrderStatus::Retrying, null, [
             'reason' => 'Rider claim failed, retrying',
             'source' => 'dispatch',

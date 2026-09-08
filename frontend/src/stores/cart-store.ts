@@ -64,10 +64,10 @@ export const useCartStore = create<CartState>()(
         const items = get().items
         const existing = items.find(i => i.product.id === product.id)
         if (existing) {
-          const next = items.map(i => i.product.id === product.id ? { ...i, quantity: i.quantity + quantity } : i)
+          const next = items.map(i => i.product.id === product.id ? { ...i, quantity: Math.min(i.quantity + quantity, 8) } : i)
           set({ ...computeDerived(next), items: next })
         } else {
-          const next = [...items, { product, quantity }]
+          const next = [...items, { product, quantity: Math.min(quantity, 8) }]
           set({ ...computeDerived(next), items: next })
         }
       },
@@ -94,6 +94,14 @@ export const useCartStore = create<CartState>()(
         return res
       },
     }),
-    { name: 'cart-storage' }
+    {
+      name: 'cart-storage',
+      partialize: (state) => ({ items: state.items }),
+      merge: (persistedState, currentState) => {
+        const persisted = persistedState as { items: CartItem[] } | undefined
+        const items = persisted?.items ?? currentState.items
+        return { ...currentState, ...computeDerived(items), items }
+      },
+    }
   )
 )

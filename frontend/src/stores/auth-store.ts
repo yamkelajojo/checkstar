@@ -21,6 +21,7 @@ interface AuthState {
 
 // Module-level in-flight handle for checkAuth — shared across all callers.
 let checkAuthInFlight: Promise<void> | null = null
+let checkAuthVersion = 0
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -45,6 +46,9 @@ export const useAuthStore = create<AuthState>()(
         set({ user: res.user, isAuthenticated: true })
       },
       logout: async () => {
+        // Cancel any in-flight checkAuth so it doesn't overwrite cleared state
+        checkAuthVersion++
+        checkAuthInFlight = null
         // Never let a failing server call (expired session, network drop)
         // leave the user logged in locally — clear state unconditionally.
         try {
@@ -61,11 +65,15 @@ export const useAuthStore = create<AuthState>()(
         // changes flow through login/logout mutations, never a re-fetch.
         if (!get().isLoading) return Promise.resolve()
         if (checkAuthInFlight) return checkAuthInFlight
+        const myVersion = checkAuthVersion
         checkAuthInFlight = (async () => {
           try {
             const res = await api.getUser()
+            // If logout was called while we were in-flight, don't overwrite cleared state
+            if (checkAuthVersion !== myVersion) return
             set({ user: res.user, isAuthenticated: true, isLoading: false })
           } catch {
+            if (checkAuthVersion !== myVersion) return
             set({ user: null, isAuthenticated: false, isLoading: false })
           } finally {
             checkAuthInFlight = null

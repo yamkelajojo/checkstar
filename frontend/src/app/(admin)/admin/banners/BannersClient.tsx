@@ -478,7 +478,7 @@ export default function BannersClient() {
                     </button>
                     <button
                       onClick={() => handleDelete(banner.id)}
-                      className="p-2 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors"
+                      className="p-2 text-gray-500 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors"
                       title="Delete"
                     >
                       <Trash2 size={16} />

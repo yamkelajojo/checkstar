@@ -3,9 +3,8 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import Image from 'next/image'
+import SafeImage from '@/components/SafeImage'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { mediaUrl } from '@/lib/media'
 import { motion, AnimatePresence } from 'motion/react'
 import { Minus, Plus, Trash2, ShoppingBag, ArrowRight, Loader2, MapPin, Store as StoreIcon } from 'lucide-react'
 import { useCartStore } from '@/stores/cart-store'
@@ -22,7 +21,7 @@ import OrderConfirmation from './OrderConfirmation'
 export default function CartClient() {
   const router = useRouter()
   const queryClient = useQueryClient()
-  const { items, total, removeItem, updateQuantity, decrementItem, addItem, clearCart } = useCartStore()
+  const { items, total, itemCount, removeItem, updateQuantity, decrementItem, addItem, clearCart } = useCartStore()
   const isAuthenticated = useAuthStore(s => s.isAuthenticated)
   const [deliveryAddress, setDeliveryAddress] = useState('')
   const [showCheckoutForm, setShowCheckoutForm] = useState(false)
@@ -116,12 +115,10 @@ export default function CartClient() {
 
     try {
       const result = await placeOrderMutation.mutateAsync(payload)
-      // Keep-on-cancel decision (#04): OrderCartPolicy keeps cart when dispatch is
-      // cancelled/retrying so Customer can re-checkout. Clear when the order
-      // proceeded (assigned) or was accepted for store pickup.
-      if (result.dispatch?.status === 'assigned' || result.dispatch?.status === 'pickup') {
-        clearCart()
-      }
+      // Always clear the cart after a successful order placement.
+      // The backend handles retry/cancel logic — the customer shouldn't
+      // see a stale cart that implies they need to re-order.
+      clearCart()
       // Optionally keep a newly typed address for next time (non-fatal).
       if (fulfilment === 'delivery' && selectedAddressId === 'new' && saveAddress && payload.delivery_address && payload.delivery_latitude != null) {
         try {
@@ -163,7 +160,7 @@ export default function CartClient() {
           <div className="flex items-center justify-between mb-8">
             <h1 className="font-display text-xl sm:text-3xl font-bold">Your Cart</h1>
             {items.length > 0 && (
-              <span className="text-sm text-gray-500">{items.length} {items.length === 1 ? 'item' : 'items'}</span>
+              <span className="text-sm text-gray-500">{itemCount} {itemCount === 1 ? 'item' : 'items'}</span>
             )}
           </div>
 
@@ -196,7 +193,7 @@ export default function CartClient() {
                       >
                         <div className="relative w-16 h-16 sm:w-20 sm:h-20 bg-gray-50 rounded-lg flex-shrink-0 flex items-center justify-center overflow-hidden">
                           {item.product.image ? (
-                            <Image src={mediaUrl(item.product.image)} alt={item.product.name} fill sizes="64px" className="object-cover" />
+                            <SafeImage src={item.product.image} alt={item.product.name} fill sizes="64px" className="object-cover" />
                           ) : (
                             <ShoppingBag size={20} className="text-gray-300" />
                           )}

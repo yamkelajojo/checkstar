@@ -11,7 +11,7 @@ import type { MapMarker } from '@/components/MapContainer'
 
 export default function StoreDetailClient({ slug }: { slug: string }) {
   const { data: store, isLoading: loading, error } = useStore(slug)
-  const fetchError = error ? 'Failed to load store' : null
+  const fetchError = error ? "Couldn't load store details" : null
 
   const markers: MapMarker[] = useMemo(
     () =>
@@ -50,7 +50,7 @@ export default function StoreDetailClient({ slug }: { slug: string }) {
       <>
         <div className="max-w-4xl mx-auto px-4 py-8 text-center">
           <p className="text-red-500 text-lg font-medium">{fetchError}</p>
-          <p className="text-sm text-gray-400 mt-1">Please try again later.</p>
+          <p className="text-sm text-gray-400 mt-1">Give it another try in a moment.</p>
           <Link href="/stores" className="text-primary hover:underline mt-4 inline-block">Back to stores</Link>
         </div>
       </>

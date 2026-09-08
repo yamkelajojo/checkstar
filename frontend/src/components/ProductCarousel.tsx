@@ -29,7 +29,7 @@ export function ProductCarousel({ title, products, href, queryResult }: ProductC
   if (queryResult?.isError) {
     return (
       <ErrorFallback
-        message={`Failed to load ${title.toLowerCase()}`}
+        message={`Couldn't load ${title.toLowerCase()}`}
         onRetry={() => queryResult.refetch()}
       />
     );

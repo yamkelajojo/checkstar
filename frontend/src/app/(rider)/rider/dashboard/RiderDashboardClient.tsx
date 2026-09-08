@@ -332,7 +332,7 @@ export default function RiderDashboardClient() {
                           >
                             <Award size={18} className="text-primary" />
                             <span className="text-sm font-medium text-gray-700">
-                              {badge.name || badge}
+                              {badge.badge_type?.replace(/_/g, ' ') || 'Badge'}
                             </span>
                           </div>
                         ))}

@@ -153,7 +153,16 @@ export function CheckoutScreen() {
         setFulfillmentError(null);
 
         try {
-          const coords = await getDeliveryCoords();
+          let coords;
+          if (usingSavedAddress) {
+            const saved = savedAddresses.find((a) => a.id === selectedAddressId);
+            if (saved) {
+              coords = { latitude: Number(saved.latitude), longitude: Number(saved.longitude) };
+            }
+          }
+          if (!coords) {
+            coords = await getDeliveryCoords();
+          }
           if (cancelled) return;
 
           const result = await validateFulfillment({
@@ -194,7 +203,7 @@ export function CheckoutScreen() {
       cancelled = true;
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [items, address, fulfilment]); // Re-validate when cart, address or fulfilment mode changes
+  }, [items, address, fulfilment, usingSavedAddress, savedAddresses, selectedAddressId]); // Re-validate when cart, address or fulfilment mode changes
 
   const submit = async () => {
     if (!canSubmitOrder) {

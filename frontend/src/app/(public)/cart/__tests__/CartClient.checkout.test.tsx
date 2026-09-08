@@ -283,7 +283,7 @@ describe('CartClient fulfilment (delivery vs pickup)', () => {
     expect(mutateAsync).not.toHaveBeenCalled()
   })
 
-  it('keeps the cart when a delivery order could not be assigned', async () => {
+  it('clears the cart after a delivery order is placed, even when retrying', async () => {
     mutateAsync.mockResolvedValue({
       data: { id: 3, order_number: 'CS-3', payment_status: 'pending' },
       dispatch: { status: 'retrying' },
@@ -295,7 +295,7 @@ describe('CartClient fulfilment (delivery vs pickup)', () => {
     fireEvent.click(screen.getByRole('button', { name: /place order/i }))
 
     await waitFor(() => expect(mutateAsync).toHaveBeenCalled())
-    expect(useCartStore.getState().items).toHaveLength(1)
+    expect(useCartStore.getState().items).toHaveLength(0)
   })
 
   it('offers to save a newly typed address with the order', async () => {

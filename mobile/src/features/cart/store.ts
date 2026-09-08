@@ -9,7 +9,7 @@ interface CartState {
   items: CartItem[];
   add: (productId: string, quantity?: number, storeProductId?: number | null) => void;
   decrement: (productId: string, storeProductId?: number | null) => void;
-  remove: (productId: string) => void;
+  remove: (productId: string, storeProductId?: string | null) => void;
   syncFromServer: (lines: CartItem[]) => void;
   mergeLocalOntoServer: (local: CartItem[], serverResponse: ApiCartSyncResponse) => ServerMergeResult;
   clear: () => void;
@@ -27,11 +27,11 @@ export const useCart = create<CartState>()(
       },
 
   decrement(productId, storeProductId) {
-    set((state) => ({ items: cartRules.decrementItem(state.items, productId) }));
+    set((state) => ({ items: cartRules.decrementItem(state.items, productId, storeProductId) }));
   },
 
-      remove(productId) {
-        set((state) => ({ items: cartRules.removeItem(state.items, productId) }));
+      remove(productId, storeProductId) {
+        set((state) => ({ items: cartRules.removeItem(state.items, productId, storeProductId) }));
       },
 
       syncFromServer(lines) {

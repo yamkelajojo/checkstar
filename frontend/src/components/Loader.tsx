@@ -2,8 +2,8 @@ const LOADER_CSS = `
 .checkstar-text {
   font-family: var(--font-inter, 'Inter'), system-ui, sans-serif;
   font-size: 24px;
-  fill: rgba(72,138,204,0);
-  stroke: #365FA0;
+  fill: rgba(235,101,34,0);
+  stroke: #EB6522;
   stroke-width: 2;
   stroke-dashoffset: 25%;
   stroke-dasharray: 0 50%;
@@ -11,24 +11,24 @@ const LOADER_CSS = `
 }
 @keyframes checkstar-stroke {
   0% {
-    fill: rgba(72,138,204,0);
-    stroke: rgba(54,95,160,1);
+    fill: rgba(235,101,34,0);
+    stroke: rgba(235,101,34,1);
     stroke-dashoffset: 25%;
     stroke-dasharray: 0 50%;
     stroke-width: 2;
   }
   70% {
-    fill: rgba(72,138,204,0);
-    stroke: rgba(54,95,160,1);
+    fill: rgba(235,101,34,0);
+    stroke: rgba(235,101,34,1);
   }
   80% {
-    fill: rgba(72,138,204,0);
-    stroke: rgba(54,95,160,1);
+    fill: rgba(235,101,34,0);
+    stroke: rgba(235,101,34,1);
     stroke-width: 3;
   }
   100% {
-    fill: rgba(72,138,204,1);
-    stroke: rgba(54,95,160,0);
+    fill: rgba(235,101,34,1);
+    stroke: rgba(235,101,34,0);
     stroke-dashoffset: -25%;
     stroke-dasharray: 50% 0;
     stroke-width: 0;

@@ -7,7 +7,7 @@ import { fadeUp } from '@/lib/motion/variants'
 
 export default function CareersClient() {
   const { data: listings = [], isLoading: loading, error } = useCareers()
-  const fetchError = error ? 'Failed to load career listings' : null
+  const fetchError = error ? "Couldn't load careers" : null
 
   const grouped: Record<string, (typeof listings)[number][]> = {}
   listings.forEach(l => {
@@ -27,7 +27,7 @@ export default function CareersClient() {
         {fetchError ? (
           <div className="text-center py-16 text-red-500">
             <p className="text-lg font-medium">{fetchError}</p>
-            <p className="text-sm mt-1">Please try again later.</p>
+            <p className="text-sm mt-1">Give it another try in a moment.</p>
           </div>
         ) : loading ? (
           <div className="space-y-8">

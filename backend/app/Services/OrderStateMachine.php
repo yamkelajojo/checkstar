@@ -89,6 +89,31 @@ class OrderStateMachine
 
         $eventType = self::toEventType($to, $order);
 
+        // Compare-and-swap: only transition when the persisted row is still in
+        // the status the caller believes it is. A stale caller (rider/store
+        // screen that loaded the order before another worker cancelled it)
+        // must never overwrite the committed status. The single conditional
+        // UPDATE is atomic even outside an explicit transaction, so a losing
+        // transition throws instead of silently "winning".
+        $now = now();
+        $transitioned = Order::whereKey($order->getKey())
+            ->where('status', $from->value)
+            ->update(['status' => $to->value, 'updated_at' => $now]);
+
+        if ($transitioned !== 1) {
+            throw new InvalidArgumentException(
+                "Order status changed concurrently; cannot transition from {$from->value} to {$to->value}"
+            );
+        }
+
+        // Keep the in-memory model consistent with the write so callers see
+        // the transitioned status without a refetch, but stop a later save()
+        // from re-writing an already-committed status.
+        $order->status = $to;
+        $order->updated_at = $now;
+        $order->syncOriginalAttribute('status');
+        $order->syncOriginalAttribute('updated_at');
+
         // Release reserved inventory for items never bought (reclaim reservations).
         // Runs on cancellation AND delivery so reservations can never leak:
         //  - Cancelled: unbought items go back to the sellable pool; bought
@@ -98,9 +123,6 @@ class OrderStateMachine
         if (in_array($to, [OrderStatus::Cancelled, OrderStatus::Delivered], true)) {
             $this->releaseRemainingReservations($order);
         }
-
-        $order->status = $to;
-        $order->save();
 
         OrderStatusChanged::dispatch($order, $from->value, $to->value);
 

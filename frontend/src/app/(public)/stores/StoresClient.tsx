@@ -10,7 +10,7 @@ import { escapeHtml } from '@/lib/escapeHtml'
 
 export default function StoresClient() {
   const { data: stores = [], isLoading: loading, error } = useStores()
-  const fetchError = error ? 'Failed to load stores' : null
+  const fetchError = error ? "Couldn't load stores" : null
 
   const markers: MapMarker[] = useMemo(
     () =>
@@ -51,7 +51,7 @@ export default function StoresClient() {
         {fetchError ? (
           <div className="text-center py-16 text-red-500">
             <p className="text-lg font-medium">{fetchError}</p>
-            <p className="text-sm mt-1">Please try again later.</p>
+            <p className="text-sm mt-1">Give it another try in a moment.</p>
           </div>
         ) : loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

@@ -1,8 +1,7 @@
 'use client'
 
 import { motion } from 'motion/react'
-import Image from 'next/image'
-import { mediaUrl } from '@/lib/media'
+import SafeImage from '@/components/SafeImage'
 import { Calendar, Clock, Tag } from 'lucide-react'
 import ProductCard from '@/components/ProductCard'
 import { useSpecials } from '@/lib/query'
@@ -14,7 +13,7 @@ function formatDate(d: string) {
 
 export default function SpecialsClient() {
   const { data: specials = [], isLoading: loading, error } = useSpecials()
-  const fetchError = error ? 'Failed to load specials' : null
+  const fetchError = error ? "Couldn't load specials" : null
 
   return (
     <>
@@ -27,7 +26,7 @@ export default function SpecialsClient() {
         {fetchError ? (
           <div className="text-center py-16 text-red-500">
             <p className="text-lg font-medium">{fetchError}</p>
-            <p className="text-sm mt-1">Please try again later.</p>
+            <p className="text-sm mt-1">Give it another try in a moment.</p>
           </div>
         ) : loading ? (
           <div className="space-y-12">
@@ -61,7 +60,7 @@ export default function SpecialsClient() {
                 <motion.div key={special.id} variants={fadeUp}>
                   {special.banner_image && (
                     <div className="relative aspect-[3/1] rounded-xl overflow-hidden mb-6">
-                      <Image
+                      <SafeImage
                         src={special.banner_image}
                         alt={special.title}
                         fill

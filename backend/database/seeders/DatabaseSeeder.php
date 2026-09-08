@@ -84,6 +84,57 @@ class DatabaseSeeder extends Seeder
                     ['store_id' => $flagship->id, 'role' => 'store_manager']
                 );
             }
+
+            // Demo store owner: resolves a Store through stores.owner_id
+            // (see StoreContext / User::store). The flagship is only adopted
+            // when unowned — never steal a real owner's store on re-seed.
+            $owner = User::firstOrCreate(
+                ['email' => 'owner@checkstar.co.za'],
+                [
+                    'name' => 'Store Owner',
+                    'password' => Hash::make('password'),
+                    'role' => UserRole::StoreOwner,
+                    'phone' => '+27 82 000 0002',
+                    'is_active' => true,
+                ]
+            );
+
+            if ($flagship !== null && ($flagship->owner_id === null || (int) $flagship->owner_id === (int) $owner->id)) {
+                $flagship->owner_id = $owner->id;
+                $flagship->save();
+            }
+
+            // Demo logistics officer: resolves a Store through StoreStaff,
+            // same as the manager.
+            $logistics = User::firstOrCreate(
+                ['email' => 'logistics@checkstar.co.za'],
+                [
+                    'name' => 'Logistics Officer',
+                    'password' => Hash::make('password'),
+                    'role' => UserRole::LogisticsOfficer,
+                    'phone' => '+27 82 000 0003',
+                    'is_active' => true,
+                ]
+            );
+
+            if ($flagship !== null) {
+                StoreStaff::firstOrCreate(
+                    ['user_id' => $logistics->id],
+                    ['store_id' => $flagship->id, 'role' => 'logistics_officer']
+                );
+            }
+
+            // Demo/mock shopper for trying the customer app (cart, checkout).
+            User::firstOrCreate(
+                ['email' => 'mock@checkstar.co.za'],
+                [
+                    'name' => 'Mock Shopper',
+                    'password' => Hash::make('password'),
+                    'role' => UserRole::Customer,
+                    'phone' => '+27 72 000 0001',
+                    'is_active' => true,
+                ]
+            );
         }
     }
 }

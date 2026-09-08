@@ -108,10 +108,10 @@ export function AuthScreen() {
         res = await register(name.trim(), email.trim(), password, phone.trim() || undefined);
       }
       const token = res.token ?? '';
-      // Keep fallback for mocked responses where token may be missing, but warn: empty token will cause unauthenticated requests
       if (!token) {
-        // Allow empty for backward compat with older mocks, but session will be unauthenticated
-        console.warn('Auth response missing token');
+        setError(copy.auth.badCredentials);
+        shake();
+        return;
       }
       await signIn(token, res.user);
       void queryClient.invalidateQueries({ queryKey: queryKeys.orders });

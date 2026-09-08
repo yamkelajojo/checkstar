@@ -42,7 +42,7 @@ export default function ProductsClient() {
   const { data: products = [], isLoading: productsLoading, error: productsError } = useAllProducts(queryParams)
 
   const loading = productsLoading
-  const fetchError = productsError ? 'Failed to load products' : null
+  const fetchError = productsError ? "Couldn't load products" : null
 
   useEffect(() => {
     const el = scrollRef.current
@@ -213,7 +213,7 @@ export default function ProductsClient() {
           {fetchError ? (
             <div className="text-center py-16 text-red-500">
               <p className="text-lg font-medium">{fetchError}</p>
-              <p className="text-sm mt-1">Please try again later.</p>
+              <p className="text-sm mt-1">Give it another try in a moment.</p>
             </div>
           ) : loading ? (
             <div className={grid} aria-hidden="true">
@@ -229,7 +229,7 @@ export default function ProductsClient() {
               className="text-center py-16 text-gray-400"
             >
               <ShoppingCart size={40} className="mx-auto mb-3 opacity-50" />
-              <p className="text-lg">No products found</p>
+              <p className="text-lg">Nothing matches your search</p>
               <p className="text-sm mt-1">Try adjusting your search or filter.</p>
             </motion.div>
           ) : (

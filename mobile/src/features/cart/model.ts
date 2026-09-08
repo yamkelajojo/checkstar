@@ -15,7 +15,7 @@ export interface ServerMergeResult {
  * dropped lines is surfaced for the toast.
  */
 function toCartItem(line: ApiCartSyncResponse['data'][number]): CartItem {
-  return { productId: String(line.product_id), quantity: cap(line.quantity) };
+  return { productId: String(line.product_id), quantity: cap(line.quantity), storeProductId: line.store_product_id != null ? String(line.store_product_id) : null };
 }
 
 export function applyServerMerge(draft: CartItem[], response: ApiCartSyncResponse): ServerMergeResult {
@@ -49,16 +49,26 @@ export const cartRules = {
     );
   },
 
-  removeItem(items: CartItem[], productId: string): CartItem[] {
-    return items.filter((i) => i.productId !== productId);
+  removeItem(items: CartItem[], productId: string, storeProductId?: string | null): CartItem[] {
+    return items.filter((i) => {
+      if (i.productId !== productId) return true;
+      if (storeProductId != null) return i.storeProductId !== storeProductId;
+      return false;
+    });
   },
 
-  decrementItem(items: CartItem[], productId: string): CartItem[] {
-    const existing = items.find((i) => i.productId === productId);
+  decrementItem(items: CartItem[], productId: string, storeProductId?: string | null): CartItem[] {
+    const existing = items.find((i) => {
+      if (i.productId !== productId) return false;
+      if (storeProductId != null) return i.storeProductId === storeProductId;
+      return true;
+    });
     if (!existing) return items;
     if (existing.quantity <= 1) return cartRules.removeItem(items, productId);
     return items.map((i) =>
-      i.productId === productId ? { ...i, quantity: i.quantity - 1 } : i
+      i.productId === productId && (storeProductId == null || i.storeProductId === storeProductId)
+        ? { ...i, quantity: i.quantity - 1 }
+        : i
     );
   },
 

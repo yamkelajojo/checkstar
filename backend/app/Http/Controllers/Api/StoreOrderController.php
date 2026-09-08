@@ -92,6 +92,11 @@ class StoreOrderController extends Controller
         ]);
 
         if (isset($validated['stock_quantity'])) {
+            if ($validated['stock_quantity'] < $sp->reserved_quantity) {
+                return response()->json([
+                    'message' => "Stock cannot be below reserved quantity ({$sp->reserved_quantity} units are in active orders).",
+                ], 422);
+            }
             $sp->stock_quantity = $validated['stock_quantity'];
         }
         if (isset($validated['is_available'])) {

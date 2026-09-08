@@ -363,6 +363,58 @@ class StockManagementTest extends TestCase
         $this->assertSame(OrderStatus::Preparing->value, $log->new_status);
     }
 
+    // ─── markItemsBought: order liveness guard ──────────────────────
+
+    public function test_mark_items_bought_throws_when_order_is_cancelled(): void
+    {
+        $order = $this->createOrderWithItems(3, 50);
+        $rider = $order->rider;
+
+        (new OrderStateMachine)->transition($order, OrderStatus::Cancelled);
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Cannot mark items as bought');
+
+        $this->riderOrderService->markItemsBought($rider, $order->id);
+    }
+
+    public function test_mark_items_bought_rejects_order_that_is_no_longer_preparing(): void
+    {
+        $order = $this->createOrderWithItems(3, 50);
+        $rider = $order->rider;
+
+        // The rider's screen was loaded before the customer cancelled — the
+        // cancelled state commits in between the load and the buy request.
+        Order::where('id', $order->id)->update(['status' => OrderStatus::Cancelled->value]);
+
+        try {
+            $this->riderOrderService->markItemsBought($rider, $order->id);
+            $this->fail('Expected InvalidArgumentException');
+        } catch (\InvalidArgumentException $e) {
+            $this->assertStringContainsString('Cannot mark items as bought', $e->getMessage());
+        }
+
+        // Stock must not be decremented and reservations not re-released on a
+        // dead order: the cancellation already released them.
+        $this->storeProduct->refresh();
+        $this->assertSame(50, $this->storeProduct->stock_quantity);
+        $this->assertSame(0, $this->storeProduct->reserved_quantity);
+        $this->assertSame(OrderStatus::Cancelled, $order->fresh()->status);
+    }
+
+    public function test_mark_items_bought_rejects_delivered_order(): void
+    {
+        $order = $this->createOrderWithItems(3, 50);
+        $rider = $order->rider;
+
+        Order::where('id', $order->id)->update(['status' => OrderStatus::Delivered->value]);
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Cannot mark items as bought');
+
+        $this->riderOrderService->markItemsBought($rider, $order->id);
+    }
+
     // ─── Order cancellation releases reserved stock ─────────────────
 
     public function test_order_cancellation_releases_reserved_quantity(): void
@@ -387,6 +439,33 @@ class StockManagementTest extends TestCase
 
         $this->storeProduct->refresh();
         $this->assertSame(50, $this->storeProduct->stock_quantity);
+    }
+
+    public function test_lost_cancel_race_does_not_release_reservations(): void
+    {
+        $this->storeProduct->update(['reserved_quantity' => 5]);
+
+        $order = $this->createOrderWithItems(3, 50);
+        $order->status = OrderStatus::OutForDelivery;
+        $order->save();
+
+        // The rider holds a stale OutForDelivery snapshot, but the customer
+        // already confirmed delivery, which moved the order to Delivered.
+        $stale = Order::find($order->id);
+        Order::where('id', $order->id)->update(['status' => OrderStatus::Delivered->value]);
+
+        try {
+            (new OrderStateMachine)->transition($stale, OrderStatus::Cancelled);
+            $this->fail('Expected a concurrent-status InvalidArgumentException');
+        } catch (\InvalidArgumentException $e) {
+            $this->assertStringContainsString('status changed concurrently', $e->getMessage());
+        }
+
+        // The winning Delivered transition is untouched and no reservation —
+        // that belongs to a different order's accounting — was released.
+        $this->storeProduct->refresh();
+        $this->assertSame(5, $this->storeProduct->reserved_quantity);
+        $this->assertSame(OrderStatus::Delivered, $order->fresh()->status);
     }
 
     public function test_order_cancellation_clamps_reserved_quantity_at_zero(): void

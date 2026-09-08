@@ -22,9 +22,9 @@ class PlaceOrderRequest extends FormRequest
             // store the customer will collect from. The coordinates back the
             // address (checkout resolves the fulfilment store from them).
             'store_id' => 'required_if:fulfilment_method,pickup|nullable|integer|exists:stores,id',
-            'delivery_address' => 'required_unless:fulfilment_method,pickup|nullable|string|max:500',
-            'delivery_latitude' => 'required_unless:fulfilment_method,pickup|nullable|numeric|between:-90,90',
-            'delivery_longitude' => 'required_unless:fulfilment_method,pickup|nullable|numeric|between:-180,180',
+            'delivery_address' => 'required_unless:fulfilment_method,pickup|string|max:500',
+            'delivery_latitude' => 'required_unless:fulfilment_method,pickup|numeric|between:-90,90',
+            'delivery_longitude' => 'required_unless:fulfilment_method,pickup|numeric|between:-180,180',
             'delivery_notes' => 'nullable|string|max:1000',
             'payment_method' => 'nullable|in:cash_on_delivery',
         ];

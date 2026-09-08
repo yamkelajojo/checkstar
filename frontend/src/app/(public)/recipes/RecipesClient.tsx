@@ -2,8 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
-import { mediaUrl } from '@/lib/media'
+import SafeImage from '@/components/SafeImage'
 import { motion } from 'motion/react'
 import { Clock, Users, ChefHat, ArrowRight } from 'lucide-react'
 import { useRecipes } from '@/lib/query'
@@ -11,7 +10,7 @@ import { fadeUp } from '@/lib/motion/variants'
 
 export default function RecipesClient() {
   const { data: recipes = [], isLoading: loading, error } = useRecipes()
-  const fetchError = error ? 'Failed to load recipes' : null
+  const fetchError = error ? "Couldn't load recipes" : null
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
 
   const categories = [...new Set(recipes.map(r => r.category).filter(Boolean))] as string[]
@@ -62,7 +61,7 @@ className={`px-3 py-1.5 rounded-full text-sm font-light transition-colors ${
         {fetchError ? (
           <div className="text-center py-16 text-red-500">
             <p className="text-lg font-medium">{fetchError}</p>
-            <p className="text-sm mt-1">Please try again later.</p>
+            <p className="text-sm mt-1">Give it another try in a moment.</p>
           </div>
         ) : loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -93,8 +92,8 @@ className={`px-3 py-1.5 rounded-full text-sm font-light transition-colors ${
                   <div className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
                     <div className="relative aspect-[4/3] bg-gray-50 overflow-hidden">
                       {recipe.image ? (
-                        <Image
-                          src={mediaUrl(recipe.image)}
+                        <SafeImage
+                          src={recipe.image}
                           alt={recipe.title}
                           fill
                           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"

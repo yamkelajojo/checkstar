@@ -18,7 +18,9 @@ class ProfileController extends Controller
         ]);
 
         $user = $request->user();
-        $filtered = array_filter($validated, fn ($v) => $v !== null);
+        // Only exclude keys that were never sent (absent from request).
+        // Explicit nulls should clear the field.
+        $filtered = $validated;
         $emailChanged = isset($filtered['email']) && $filtered['email'] !== $user->email;
         if ($emailChanged) {
             $filtered['email_verified_at'] = null;

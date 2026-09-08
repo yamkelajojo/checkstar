@@ -3,7 +3,7 @@ import { useCart } from '../store';
 import type { CartItem } from '../types';
 import type { ApiCartSyncResponse } from '../../../lib/types';
 
-const line = (productId: string, quantity: number): CartItem => ({ productId, quantity });
+const line = (productId: string, quantity: number): CartItem => ({ productId, quantity, storeProductId: null });
 
 const serverLine = (productId: number, quantity: number): ApiCartSyncResponse['data'][number] => ({
   product_id: productId,
@@ -193,7 +193,7 @@ describe('store integration — mergeLocalOntoServer', () => {
       [{ productId: 'old', quantity: 3 }],
       { data: [serverLine(1, 5)], dropped: [] },
     );
-    expect(useCart.getState().items).toEqual([{ productId: '1', quantity: 5 }]);
+    expect(useCart.getState().items).toEqual([{ productId: '1', quantity: 5, storeProductId: null }]);
   });
 
   it('returns droppedCount from response', () => {
@@ -204,7 +204,7 @@ describe('store integration — mergeLocalOntoServer', () => {
       { data: [serverLine(1, 1)], dropped: [{ product_id: 2, reason: 'unavailable' }] },
     );
     expect(result.droppedCount).toBe(1);
-    expect(useCart.getState().items).toEqual([{ productId: '1', quantity: 1 }]);
+    expect(useCart.getState().items).toEqual([{ productId: '1', quantity: 1, storeProductId: null }]);
   });
 
   it('caps quantities at 8 via store', () => {

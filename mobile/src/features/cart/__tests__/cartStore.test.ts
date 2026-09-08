@@ -84,7 +84,7 @@ describe('mergeLocalOntoServer', () => {
       { data: [{ product_id: 1, quantity: 1, store_product_id: null }], dropped: [] }
     );
     expect(useCart.getState().items).toEqual([
-      { productId: '1', quantity: 1 },
+      { productId: '1', quantity: 1, storeProductId: null },
     ]);
   });
 });

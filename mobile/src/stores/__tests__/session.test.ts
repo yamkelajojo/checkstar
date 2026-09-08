@@ -62,13 +62,13 @@ describe('boot', () => {
     expect(useSession.getState().user).toEqual(user);
   });
 
-  it('boots authenticated even without a cached user profile', async () => {
+  it('falls back to guest when token exists but no cached user and refresh fails', async () => {
     (tokenStorage.get as jest.Mock).mockResolvedValue('tok2');
     (storage.get as jest.Mock).mockResolvedValue(null);
 
     await useSession.getState().boot();
 
-    expect(useSession.getState().status).toBe('authenticated');
+    expect(useSession.getState().status).toBe('guest');
     expect(useSession.getState().user).toBeNull();
   });
 

@@ -1,7 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-import Image from 'next/image'
 import { motion } from 'motion/react'
 import { Clock, Users, ChefHat, ChevronLeft, ListOrdered, Package, Check, ShoppingCart } from 'lucide-react'
 import { useState } from 'react'
@@ -20,7 +19,7 @@ import {
 
 export default function RecipeDetailClient({ slug }: { slug: string }) {
   const { data: recipe, isLoading: loading, error } = useRecipe(slug)
-  const fetchError = error ? 'Failed to load recipe' : null
+  const fetchError = error ? "Couldn't load recipe" : null
   const ingredients: string[] = recipe?.ingredients
     ? Array.isArray(recipe.ingredients)
       ? recipe.ingredients
@@ -49,7 +48,7 @@ export default function RecipeDetailClient({ slug }: { slug: string }) {
       <>
         <div className="max-w-4xl mx-auto px-4 py-8 text-center">
           <p className="text-red-500 text-lg font-medium">{fetchError}</p>
-          <p className="text-sm text-gray-500 mt-1">Please try again later.</p>
+          <p className="text-sm text-gray-500 mt-1">Give it another try in a moment.</p>
           <Link href="/recipes" className="text-primary hover:underline mt-4 inline-block">Back to recipes</Link>
         </div>
       </>

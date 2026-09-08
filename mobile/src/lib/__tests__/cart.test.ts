@@ -1,10 +1,10 @@
 import { cartRules, applyServerMerge } from '../../features/cart/model';
 import type { CartItem } from '../../features/cart/types';
 
-const id = { productId: 'p1' };
+const id = { productId: 'p1', storeProductId: null };
 
 const line = (productId: string, quantity: number): CartItem =>
-  ({ productId, quantity });
+  ({ productId, quantity, storeProductId: null });
 
 describe('addItem', () => {
   it('adds a new item to an empty cart', () => {
@@ -95,7 +95,7 @@ describe('applyServerMerge', () => {
     const result = applyServerMerge(draft, syncResponse([
       { product_id: 1, quantity: 4, store_product_id: 11 },
     ]));
-    expect(result.items).toEqual([{ productId: '1', quantity: 4 }]);
+    expect(result.items).toEqual([{ productId: '1', quantity: 4, storeProductId: '11' }]);
     expect(result.droppedCount).toBe(0);
   });
 

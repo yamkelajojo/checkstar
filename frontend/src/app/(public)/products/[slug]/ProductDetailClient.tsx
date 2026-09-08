@@ -5,8 +5,7 @@ import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'motion/react'
 import { ShoppingCart, ChevronLeft, Tag, Package } from 'lucide-react'
 import Link from 'next/link'
-import Image from 'next/image'
-import { mediaUrl } from '@/lib/media'
+import SafeImage from '@/components/SafeImage'
 import { useCartStore } from '@/stores/cart-store'
 import { emitCartAdded } from '@/lib/cart-events'
 import { useProduct, useRelatedProducts } from '@/lib/query'
@@ -25,7 +24,7 @@ function ProductPrice({ product }: { product: { effective_price?: number | null;
 export default function ProductDetailClient({ slug }: { slug: string }) {
   const { data: product, isLoading: loading, error } = useProduct(slug)
   const { data: related, isLoading: relatedLoading } = useRelatedProducts(slug)
-  const fetchError = error ? 'Failed to load product' : null
+  const fetchError = error ? "Couldn't load product details" : null
   const [added, setAdded] = useState(false)
   const addItem = useCartStore(s => s.addItem)
 
@@ -61,7 +60,7 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
       <>
         <div className="max-w-7xl mx-auto px-4 py-8 text-center">
           <p className="text-red-500 text-lg font-medium">{fetchError}</p>
-          <p className="text-sm text-gray-500 mt-1">Please try again later.</p>
+          <p className="text-sm text-gray-500 mt-1">Give it another try in a moment.</p>
           <Link href="/products" className="text-primary hover:underline mt-4 inline-block">Back to products</Link>
         </div>
       </>
@@ -129,7 +128,7 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
             className="relative aspect-square bg-gray-50 rounded-2xl flex items-center justify-center p-8"
           >
             {product.image ? (
-              <Image src={mediaUrl(product.image)} alt={product.name} fill sizes="(max-width: 768px) 100vw, 50vw" className="object-contain p-8" />
+              <SafeImage src={product.image} alt={product.name} fill sizes="(max-width: 768px) 100vw, 50vw" className="object-contain p-8" />
             ) : (
               <Package size={64} className="text-gray-200" />
             )}
@@ -225,7 +224,7 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
                   >
                     <div className="relative aspect-square bg-gray-50 flex items-center justify-center">
                       {item.image ? (
-                        <Image src={mediaUrl(item.image)} alt={item.name} fill sizes="(max-width: 768px) 50vw, 25vw" className="object-contain p-4 group-hover:scale-105 transition-transform" />
+                        <SafeImage src={item.image} alt={item.name} fill sizes="(max-width: 768px) 50vw, 25vw" className="object-contain p-4 group-hover:scale-105 transition-transform" />
                       ) : (
                         <Package size={28} className="text-gray-200" />
                       )}

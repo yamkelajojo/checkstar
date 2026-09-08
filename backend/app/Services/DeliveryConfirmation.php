@@ -31,27 +31,34 @@ class DeliveryConfirmation
         DB::transaction(function () use ($order, $actor) {
             $fresh = Order::where('id', $order->id)->lockForUpdate()->firstOrFail();
 
-            // Only transition order if not already delivered (rider may have delivered first)
-            if ($fresh->status !== OrderStatus::Delivered) {
-                if (! $this->orderStateMachine->canTransition($fresh->status, OrderStatus::Delivered)) {
-                    throw new \InvalidArgumentException("Cannot confirm delivery from status {$fresh->status->value}");
+            // If already delivered (e.g. rider confirmed first), skip order
+            // transition and only handle payment + customer confirmation.
+            if ($fresh->status === OrderStatus::Delivered) {
+                if ($fresh->payment_status === PaymentStatus::Pending) {
+                    $this->paymentStateMachine->transition($fresh, PaymentStatus::Paid, $actor);
+                    $fresh = $fresh->fresh();
+                    $fresh = Order::where('id', $fresh->id)->lockForUpdate()->firstOrFail();
                 }
-                $this->orderStateMachine->transition($fresh, OrderStatus::Delivered, $actor);
-                $fresh = $fresh->fresh();
-                // Re-lock after transition to keep atomicity for payment
-                $fresh = Order::where('id', $fresh->id)->lockForUpdate()->firstOrFail();
+                if ($fresh->customer_confirmed_at === null) {
+                    $fresh->customer_confirmed_at = now();
+                    $fresh->save();
+                }
+                return;
             }
 
-            // Only transition payment if still pending (idempotent on
-            // re-confirm; a refunded payment must never be resurrected to
-            // Paid — treat the payment phase as resolved).
+            if (! $this->orderStateMachine->canTransition($fresh->status, OrderStatus::Delivered)) {
+                throw new \InvalidArgumentException("Cannot confirm delivery from status {$fresh->status->value}");
+            }
+            $this->orderStateMachine->transition($fresh, OrderStatus::Delivered, $actor);
+            $fresh = $fresh->fresh();
+            $fresh = Order::where('id', $fresh->id)->lockForUpdate()->firstOrFail();
+
             if ($fresh->payment_status === PaymentStatus::Pending) {
                 $this->paymentStateMachine->transition($fresh, PaymentStatus::Paid, $actor);
                 $fresh = $fresh->fresh();
                 $fresh = Order::where('id', $fresh->id)->lockForUpdate()->firstOrFail();
-                $fresh->customer_confirmed_at = now();
-                $fresh->save();
-            } elseif ($fresh->customer_confirmed_at === null) {
+            }
+            if ($fresh->customer_confirmed_at === null) {
                 $fresh->customer_confirmed_at = now();
                 $fresh->save();
             }

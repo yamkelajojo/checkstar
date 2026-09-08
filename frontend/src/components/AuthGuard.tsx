@@ -44,7 +44,8 @@ export function AuthGuard({ requiredRole, staffRoles, redirectTo = '/auth/login'
     }
   }, [isLoading, isAuthenticated, requiredRole, staffRoles, user, router, redirectTo])
 
-  if (isLoading || !isAuthenticated) {
+  if (isLoading) {
+    if (user) return <>{children}</>
     return <Loader />
   }
 
