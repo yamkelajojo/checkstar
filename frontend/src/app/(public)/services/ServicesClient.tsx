@@ -1,8 +1,17 @@
 'use client'
 
 import { motion } from 'motion/react'
-import { Milk, CreditCard, Wifi, Zap, Bike, Store } from 'lucide-react'
+import { Milk, CreditCard, Zap, Bike, Store } from 'lucide-react'
 import { fadeUp, stagger } from '@/lib/motion/variants'
+import Image from 'next/image'
+
+const networks = [
+  { name: 'Vodacom', logo: '/images/logos/vodacom-logo.png' },
+  { name: 'MTN', logo: '/images/logos/mtn-logo.png' },
+  { name: 'Cell C', logo: '/images/logos/cell-c-logo.png' },
+  { name: 'Telkom', logo: '/images/logos/telkom-logo.png' },
+  { name: 'Rain', logo: '/images/logos/rain-logo.png' },
+]
 
 const services = [
   {
@@ -16,9 +25,9 @@ const services = [
     desc: 'Convenient pension payout services at all our stores. Safe, quick, and hassle-free. Visit the customer service desk during trading hours.',
   },
   {
-    icon: Wifi,
+    type: 'airtime' as const,
     title: 'Airtime & Data',
-    desc: 'Top up your airtime, SMS bundles, and mobile data at any Checkstar till point. We support all major South African networks — Vodacom, MTN, Cell C, and Telkom.',
+    desc: 'Top up your airtime, SMS bundles, and mobile data at any Checkstar till point. We support all major South African networks.',
   },
   {
     icon: Zap,
@@ -58,11 +67,27 @@ export default function ServicesClient() {
                 variants={fadeUp}
                 className="bg-white rounded-xl border border-gray-100 p-8 shadow-sm hover:shadow-md transition-shadow"
               >
-                <div className="w-14 h-14 bg-primary-light rounded-2xl flex items-center justify-center mb-5">
-                  <s.icon className="text-primary" size={28} />
-                </div>
-                <h3 className="font-display text-base sm:text-xl font-semibold mb-3">{s.title}</h3>
-                <p className="text-gray-500 leading-relaxed">{s.desc}</p>
+                {'type' in s && s.type === 'airtime' ? (
+                  <>
+                    <div className="flex flex-wrap items-center gap-3 mb-5">
+                      {networks.map((n) => (
+                        <div key={n.name} className="w-16 h-16 bg-white rounded-xl border border-gray-100 flex items-center justify-center p-2">
+                          <Image src={n.logo} alt={n.name} width={48} height={48} className="object-contain" />
+                        </div>
+                      ))}
+                    </div>
+                    <h3 className="font-display text-base sm:text-xl font-semibold mb-3">{s.title}</h3>
+                    <p className="text-gray-500 leading-relaxed">{s.desc}</p>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-14 h-14 bg-primary-light rounded-2xl flex items-center justify-center mb-5">
+                      {'icon' in s && <s.icon className="text-primary" size={28} />}
+                    </div>
+                    <h3 className="font-display text-base sm:text-xl font-semibold mb-3">{s.title}</h3>
+                    <p className="text-gray-500 leading-relaxed">{s.desc}</p>
+                  </>
+                )}
               </motion.div>
             ))}
           </motion.div>
