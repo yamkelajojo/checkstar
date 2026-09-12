@@ -16,6 +16,7 @@ const config: Config = {
         sans: ['var(--font-inter)', 'system-ui', 'sans-serif'],
         display: ['var(--font-handlee)', 'var(--font-inter)', 'system-ui', 'sans-serif'],
         accent: ['var(--font-handlee)', 'system-ui', 'sans-serif'],
+        serif: ['var(--font-fraunces)', 'Georgia', 'serif'],
       },
     },
   },

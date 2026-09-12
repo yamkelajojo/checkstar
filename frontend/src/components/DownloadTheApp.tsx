@@ -7,7 +7,7 @@ export function DownloadTheApp() {
   return (
     <motion.section
       initial="hidden"
-      whileInView="visible"
+      whileInView="show"
       viewport={{ once: true, margin: '-80px' }}
       variants={fadeUp}
       className="py-0 overflow-x-clip"
@@ -17,7 +17,7 @@ export function DownloadTheApp() {
           <div className="grid md:grid-cols-2 gap-12 items-center">
             {/* Left — Copy + Store Buttons */}
             <motion.div variants={fadeUp} className="text-center md:text-left">
-              <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-extrabold text-white leading-[1.1] tracking-tight uppercase">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white leading-[1.1] tracking-tight">
                 Download the{' '}
                 <span className="text-primary">Checkstar</span>{' '}
                 App

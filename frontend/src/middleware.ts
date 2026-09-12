@@ -10,7 +10,8 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  const session = request.cookies.get('laravel_session')?.value
+  const session = request.cookies.get('checkstar_session')?.value
+    || request.cookies.get('laravel_session')?.value
     || request.cookies.get('sanctum_session')?.value
 
   if (!session) {

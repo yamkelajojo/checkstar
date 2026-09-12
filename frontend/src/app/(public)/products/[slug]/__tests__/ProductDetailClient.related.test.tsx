@@ -130,16 +130,16 @@ describe('ProductDetailClient related shelf', () => {
 })
 
 describe('ProductDetailClient scroll-morphing add-to-cart', () => {
-  it('shows the inline CTA at the top and morphs it into a fixed bottom-right button while the shelf is in view', async () => {
+  it('shows the inline CTA at the top and morphs it into a fixed bottom-right button when the inline CTA scrolls out of view', async () => {
     renderDetail()
 
-    // At the top: inline button, no fixed one.
+    // At the top: inline button visible, no fixed one.
     expect(screen.getByRole('button', { name: /add to cart/i })).toBeTruthy()
     expect(screen.queryByRole('button', { name: /add full cream milk 1l to cart/i })).toBeNull()
 
-    // Shelf scrolls into view → inline disappears, fixed pill appears with price.
+    // Inline CTA scrolls out of view → inline disappears, fixed pill appears with price.
     await act(async () => {
-      intersectionCallback?.([{ isIntersecting: true }])
+      intersectionCallback?.([{ isIntersecting: false }])
     })
     await waitFor(() => {
       expect(screen.queryByRole('button', { name: /^add to cart$/i })).toBeNull()
@@ -150,9 +150,9 @@ describe('ProductDetailClient scroll-morphing add-to-cart', () => {
     expect(floating.className).toContain('right-6')
     expect(floating.textContent).toContain('R24.99')
 
-    // Back at the product info → inline returns, floating disappears.
+    // Scroll back to the inline CTA → inline returns, floating disappears.
     await act(async () => {
-      intersectionCallback?.([{ isIntersecting: false }])
+      intersectionCallback?.([{ isIntersecting: true }])
     })
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /^add to cart$/i })).toBeTruthy()

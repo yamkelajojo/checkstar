@@ -52,7 +52,7 @@ export function ProductCarousel({ title, products, href, queryResult }: ProductC
   return (
     <motion.section
       initial="hidden"
-      whileInView="visible"
+      whileInView="show"
       viewport={{ once: true, margin: '-80px' }}
       variants={fadeUp}
       className="py-6"

@@ -28,12 +28,12 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
   const [added, setAdded] = useState(false)
   const addItem = useCartStore(s => s.addItem)
 
-  // Scroll-triggered CTA morph: once the related shelf scrolls into view the
-  // inline "Add to Cart" morphs into a fixed button pinned to the bottom-right
-  // (so it stays reachable while browsing similar items), and morphs back to
-  // the inline button when the related shelf leaves the viewport.
-  const relatedSectionRef = useRef<HTMLElement | null>(null)
-  const [relatedInView, setRelatedInView] = useState(false)
+  // Scroll-triggered CTA morph: the inline "Add to Cart" morphs into a fixed
+  // button pinned to the bottom-right once the inline button scrolls out of
+  // view (so it stays reachable while browsing further down), and morphs back
+  // when the inline button re-enters the viewport.
+  const ctaButtonRef = useRef<HTMLButtonElement | null>(null)
+  const [ctaButtonInView, setCtaButtonInView] = useState(true)
   // Portalled to <body>: the page transition leaves a blur filter on the
   // layout's main element, and any filtered ancestor becomes the containing
   // block for position:fixed — which would pin the button to the page
@@ -45,15 +45,15 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
   }, [])
 
   useEffect(() => {
-    const el = relatedSectionRef.current
+    const el = ctaButtonRef.current
     if (!el || typeof IntersectionObserver === 'undefined') return
     const observer = new IntersectionObserver(
-      ([entry]) => setRelatedInView(entry.isIntersecting),
-      { threshold: 0.15 },
+      ([entry]) => setCtaButtonInView(entry.isIntersecting),
+      { threshold: 0 },
     )
     observer.observe(el)
     return () => observer.disconnect()
-  }, [related])
+  }, [product])
 
   if (fetchError) {
     return (
@@ -175,9 +175,10 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
                 (its fixed twin is visible bottom-right), and morphs back when
                 the shelf scrolls out of view. */}
             <AnimatePresence mode="wait" initial={false}>
-              {!relatedInView && (
+              {ctaButtonInView && (
                 <motion.button
                   key="inline-cta"
+                  ref={ctaButtonRef}
                   initial={{ opacity: 0, y: 8, scale: 0.97 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 8, scale: 0.97 }}
@@ -198,7 +199,6 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
 
         {/* Related / recommended items */}
         <section
-          ref={relatedSectionRef}
           aria-label="Related products"
           className="mt-16"
           data-testid="related-products"
@@ -247,12 +247,12 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
         </section>
       </div>
 
-      {/* Fixed CTA — visible while the related shelf is on screen. Adds the
-          product you are viewing (not the item being scrolled). Portalled to
-          <body> so it is truly viewport-fixed. */}
+      {/* Fixed CTA — visible when the inline button scrolls out of view.
+          Adds the product you are viewing. Portalled to <body> so it is
+          truly viewport-fixed. */}
       {mounted ? createPortal(
       <AnimatePresence>
-        {relatedInView && (
+        {!ctaButtonInView && (
           <motion.button
             key="floating-cta"
             initial={{ opacity: 0, y: 24, scale: 0.9 }}
