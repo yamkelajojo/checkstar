@@ -18,14 +18,14 @@ import { api } from '@/lib/api'
 
 // Only pages that actually exist — every link must resolve.
 const storeManagementLinks = [
-  { href: '/admin/banners', label: 'Banners', icon: Image, desc: 'Create and manage promotional banners' },
-  { href: '/admin/staff', label: 'Store Staff', icon: Users, desc: 'Hire and remove store staff access' },
+  { href: '/admin/banners', label: 'Banners', icon: Image, desc: 'Create and manage promotional banners', roles: ['store_owner', 'developer'] },
+  { href: '/admin/staff', label: 'Store Staff', icon: Users, desc: 'Hire and remove store staff access', roles: ['store_owner', 'developer'] },
 ]
 
 const operationsLinks = [
-  { href: '/operations', label: 'Live Operations', icon: Activity, desc: 'Realtime map, metrics and event feed' },
-  { href: '/operations/analytics', label: 'Analytics', icon: ShoppingCart, desc: 'Revenue, orders and fleet insights' },
-  { href: '/account/dispatch', label: 'Dispatch Console', icon: Bike, desc: 'Assign and reassign delivery riders' },
+  { href: '/operations', label: 'Live Operations', icon: Activity, desc: 'Realtime map, metrics and event feed', roles: ['logistics_officer', 'store_owner', 'developer'] },
+  { href: '/operations/analytics', label: 'Analytics', icon: ShoppingCart, desc: 'Revenue, orders and fleet insights', roles: ['logistics_officer', 'store_owner', 'developer'] },
+  { href: '/account/dispatch', label: 'Dispatch Console', icon: Bike, desc: 'Assign and reassign delivery riders', roles: ['logistics_officer', 'store_manager', 'store_owner', 'developer'] },
 ]
 
 const SERVICE_ORDER: Array<{ key: string; label: string }> = [
@@ -54,6 +54,9 @@ export default function AdminDashboardClient() {
   // Non-developer staff get a focused dashboard with their available tools.
   if (user && user.role !== 'developer') {
     const roleLabel = user.role?.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())
+    const visibleStoreLinks = storeManagementLinks.filter(l => l.roles.includes(user.role))
+    const visibleOpsLinks = operationsLinks.filter(l => l.roles.includes(user.role))
+
     return (
       <main className="max-w-5xl mx-auto px-4 py-8">
         <motion.div initial="hidden" animate="show" variants={stagger}>
@@ -72,7 +75,7 @@ export default function AdminDashboardClient() {
           <motion.div variants={fadeUp} className="mb-8">
             <h2 className="font-display text-lg font-semibold mb-4">Your Tools</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {storeManagementLinks.map((link) => (
+              {visibleStoreLinks.map((link) => (
                 <LinkCard key={link.href} link={link} />
               ))}
               <Link
@@ -88,7 +91,7 @@ export default function AdminDashboardClient() {
                 <h3 className="font-medium text-gray-900 mb-0.5">Messages</h3>
                 <p className="text-xs text-gray-400">Customer enquiries inbox</p>
               </Link>
-              {operationsLinks.map((link) => (
+              {visibleOpsLinks.map((link) => (
                 <LinkCard key={link.href} link={link} />
               ))}
             </div>

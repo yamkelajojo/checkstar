@@ -171,6 +171,15 @@ export function usePendingDispatch(storeId?: number, options?: { enabled?: boole
   })
 }
 
+export function useDispatchRiders(storeId?: number, options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: ['dispatch-riders', storeId],
+    queryFn: () => api.getDispatchRiders(storeId).then(r => r.data),
+    enabled: options?.enabled,
+    staleTime: 30_000,
+  })
+}
+
 export function useOrder(id: number | string) {
   return useQuery({
     queryKey: ['order', id],

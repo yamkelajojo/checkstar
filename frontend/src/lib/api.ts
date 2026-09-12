@@ -148,6 +148,7 @@ export const api = {
   updateProfile: (data: Partial<User>) => request<User>('/profile', { method: 'PUT', body: JSON.stringify(data) }),
   // Store dispatch (Logistics Officer / Store Owner)
   getPendingDispatch: (storeId?: number) => request<{ data: Order[] }>(`/store/dispatch/pending${storeId ? `?store_id=${storeId}` : ''}`),
+  getDispatchRiders: (storeId?: number) => request<{ data: Array<{ id: number; user_id: number; store_id: number | null; is_available: boolean; vehicle_type: string | null; max_radius_km: number; user?: { id: number; name: string; email: string } }> }>(`/store/dispatch/riders${storeId ? `?store_id=${storeId}` : ''}`),
   dispatchOrder: (orderId: number, riderId: number, storeId?: number) => request<{ data: Order }>(`/store/orders/${orderId}/dispatch`, { method: 'POST', body: JSON.stringify({ rider_id: riderId, ...(storeId ? { store_id: storeId } : {}) }) }),
   reassignOrder: (orderId: number, riderId: number) => request<{ data: Order }>(`/store/orders/${orderId}/reassign`, { method: 'POST', body: JSON.stringify({ rider_id: riderId }) }),
   // Staff management

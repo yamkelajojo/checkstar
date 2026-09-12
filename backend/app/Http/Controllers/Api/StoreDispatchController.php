@@ -24,6 +24,21 @@ class StoreDispatchController extends Controller
         return response()->json(['data' => $this->manualDispatch->pendingForStore($store)]);
     }
 
+    public function riders(Request $request): JsonResponse
+    {
+        $store = $this->storeContext->resolve($request->user(), $request->query('store_id') !== null ? (int) $request->query('store_id') : null);
+
+        $riders = Rider::where('store_id', $store->id)
+            ->where('is_available', true)
+            ->whereNull('suspended_at')
+            ->with('user:id,name,email,is_active')
+            ->get()
+            ->filter(fn (Rider $r) => $r->user && $r->user->is_active)
+            ->values();
+
+        return response()->json(['data' => $riders]);
+    }
+
     public function dispatch(Request $request, int $id): JsonResponse
     {
         $validated = $request->validate([

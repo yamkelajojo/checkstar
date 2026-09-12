@@ -105,6 +105,7 @@ Route::post('/auth/email/verification-notification', [AuthController::class, 'se
         Route::get('/store/inventory', [StoreOrderController::class, 'inventory'])->middleware('throttle:30,1');
         Route::patch('/store/inventory/{product}', [StoreOrderController::class, 'updateInventory'])->middleware('throttle:20,1');
         Route::get('/store/dispatch/pending', [StoreDispatchController::class, 'pending'])->middleware('throttle:30,1');
+        Route::get('/store/dispatch/riders', [StoreDispatchController::class, 'riders'])->middleware('throttle:30,1');
         Route::post('/store/orders/{id}/dispatch', [StoreDispatchController::class, 'dispatch'])->middleware('throttle:20,1');
         Route::post('/store/orders/{id}/reassign', [StoreDispatchController::class, 'reassign'])->middleware('throttle:20,1');
     });

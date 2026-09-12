@@ -6,7 +6,7 @@ import { motion } from 'motion/react'
 import { Package, Bike, Loader2, AlertCircle, CheckCircle, Lock } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth-store'
 import { api } from '@/lib/api'
-import { usePendingDispatch } from '@/lib/query'
+import { usePendingDispatch, useDispatchRiders } from '@/lib/query'
 import { useQueryClient } from '@tanstack/react-query'
 
 const allowedRoles = ['store_manager', 'logistics_officer', 'store_owner', 'developer']
@@ -15,21 +15,22 @@ export default function DispatchConsoleClient() {
   const { isLoading: authLoading, user } = useAuthStore()
   const queryClient = useQueryClient()
   const [storeIdInput, setStoreIdInput] = useState('')
-  const [riderInputs, setRiderInputs] = useState<Record<number, string>>({})
-  const [reassignInputs, setReassignInputs] = useState<Record<number, string>>({})
+  const [selectedRider, setSelectedRider] = useState<Record<number, string>>({})
+  const [selectedReassignRider, setSelectedReassignRider] = useState<Record<number, string>>({})
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
-  // Auth is handled by the (account) layout AuthGuard — no duplicate checkAuth here.
   const authResolved = !authLoading && !!user
   const authorized = authResolved && allowedRoles.includes(user!.role)
   const storeId = user?.role === 'developer' && storeIdInput ? Number(storeIdInput) : undefined
 
-  // Only hit the API once the role is known and allowed (prevents 401 noise on boot).
   const { data: pending = [], isLoading, error, refetch, isFetching } = usePendingDispatch(storeId, {
     enabled: authorized,
   })
 
-  // Success messages self-dismiss; errors persist until the next action.
+  const { data: riders = [] } = useDispatchRiders(storeId, {
+    enabled: authorized,
+  })
+
   useEffect(() => {
     if (message?.type !== 'success') return
     const t = setTimeout(() => setMessage(null), 5000)
@@ -37,16 +38,16 @@ export default function DispatchConsoleClient() {
   }, [message])
 
   const handleDispatch = async (orderId: number) => {
-    const riderIdStr = riderInputs[orderId]?.trim()
-    if (!riderIdStr || !/^\d+$/.test(riderIdStr)) {
-      setMessage({ type: 'error', text: 'Enter a valid numeric Rider ID' })
+    const riderIdStr = selectedRider[orderId]
+    if (!riderIdStr) {
+      setMessage({ type: 'error', text: 'Select a rider from the dropdown' })
       return
     }
     try {
       const riderId = Number(riderIdStr)
       await api.dispatchOrder(orderId, riderId, storeId)
       setMessage({ type: 'success', text: `Order #${orderId} dispatched to rider ${riderId}` })
-      setRiderInputs((s) => ({ ...s, [orderId]: '' }))
+      setSelectedRider((s) => ({ ...s, [orderId]: '' }))
       queryClient.invalidateQueries({ queryKey: ['pending-dispatch'] })
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Dispatch failed'
@@ -56,15 +57,15 @@ export default function DispatchConsoleClient() {
   }
 
   const handleReassign = async (orderId: number) => {
-    const riderIdStr = reassignInputs[orderId]?.trim()
-    if (!riderIdStr || !/^\d+$/.test(riderIdStr)) {
-      setMessage({ type: 'error', text: 'Enter a valid numeric Rider ID to reassign' })
+    const riderIdStr = selectedReassignRider[orderId]
+    if (!riderIdStr) {
+      setMessage({ type: 'error', text: 'Select a rider to reassign' })
       return
     }
     try {
       await api.reassignOrder(orderId, Number(riderIdStr))
       setMessage({ type: 'success', text: `Order #${orderId} reassigned to rider ${riderIdStr}` })
-      setReassignInputs((s) => ({ ...s, [orderId]: '' }))
+      setSelectedReassignRider((s) => ({ ...s, [orderId]: '' }))
       queryClient.invalidateQueries({ queryKey: ['pending-dispatch'] })
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Reassign failed'
@@ -167,12 +168,34 @@ export default function DispatchConsoleClient() {
                 <div className="mt-4 flex flex-wrap gap-3">
                   {order.rider_id ? (
                     <div className="flex items-center gap-2">
-                      <input value={reassignInputs[order.id] ?? ''} onChange={e => setReassignInputs(s => ({ ...s, [order.id]: e.target.value }))} inputMode="numeric" placeholder="New Rider ID" className="w-32 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none" />
+                      <select
+                        value={selectedReassignRider[order.id] ?? ''}
+                        onChange={e => setSelectedReassignRider(s => ({ ...s, [order.id]: e.target.value }))}
+                        className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none bg-white"
+                      >
+                        <option value="">Select rider...</option>
+                        {riders.map(r => (
+                          <option key={r.id} value={r.user_id}>
+                            #{r.user_id} — {r.user?.name ?? 'Unknown'} ({r.vehicle_type ?? 'Bike'})
+                          </option>
+                        ))}
+                      </select>
                       <button onClick={() => handleReassign(order.id)} className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">Reassign</button>
                     </div>
                   ) : (
                     <div className="flex items-center gap-2">
-                      <input value={riderInputs[order.id] ?? ''} onChange={e => setRiderInputs(s => ({ ...s, [order.id]: e.target.value }))} inputMode="numeric" placeholder="Rider ID" className="w-24 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none" />
+                      <select
+                        value={selectedRider[order.id] ?? ''}
+                        onChange={e => setSelectedRider(s => ({ ...s, [order.id]: e.target.value }))}
+                        className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none bg-white"
+                      >
+                        <option value="">Select rider...</option>
+                        {riders.map(r => (
+                          <option key={r.id} value={r.user_id}>
+                            #{r.user_id} — {r.user?.name ?? 'Unknown'} ({r.vehicle_type ?? 'Bike'})
+                          </option>
+                        ))}
+                      </select>
                       <button onClick={() => handleDispatch(order.id)} className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors">Dispatch</button>
                     </div>
                   )}

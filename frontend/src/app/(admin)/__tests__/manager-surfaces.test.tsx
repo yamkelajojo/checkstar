@@ -34,10 +34,11 @@ const { authState, setAuth, apiMocks, scratch } = vi.hoisted(() => {
     hireStaff: vi.fn(),
     fireStaff: vi.fn(),
     getPendingDispatch: vi.fn(),
+    getDispatchRiders: vi.fn(),
     dispatchOrder: vi.fn(),
     reassignOrder: vi.fn(),
   },
-    scratch: { pendingDispatch: [] as Array<Record<string, unknown>> },
+    scratch: { pendingDispatch: [] as Array<Record<string, unknown>>, riders: [] as Array<Record<string, unknown>> },
   }
 })
 
@@ -70,6 +71,11 @@ vi.mock('@/lib/query', () => ({
     refetch: vi.fn(),
     isFetching: false,
   }),
+  useDispatchRiders: (_storeId?: number, options?: { enabled?: boolean }) => ({
+    data: options?.enabled === false ? [] : scratch.riders,
+    isLoading: false,
+    error: null,
+  }),
   useAnalyticsSales: () => ({ data: null, isLoading: false }),
   useAnalyticsProducts: () => ({ data: null, isLoading: false }),
   useAnalyticsRiders: () => ({ data: null, isLoading: false }),
@@ -96,10 +102,11 @@ beforeEach(() => {
   vi.clearAllMocks()
   setAuth(null)
   setRows(scratch, [])
+  setRows(scratch, [], 'riders')
 })
 
-function setRows(target: { pendingDispatch: Array<Record<string, unknown>> }, rows: Array<Record<string, unknown>>) {
-  target.pendingDispatch = rows
+function setRows(target: { pendingDispatch: Array<Record<string, unknown>>; riders: Array<Record<string, unknown>> }, rows: Array<Record<string, unknown>>, key: 'pendingDispatch' | 'riders' = 'pendingDispatch') {
+  target[key] = rows
 }
 
 // ================= AdminDashboardClient =================
@@ -342,27 +349,17 @@ describe('DispatchConsoleClient', () => {
     expect(screen.getByText(/Current rider: #8/)).toBeInTheDocument()
   })
 
-  it('blocks non-numeric rider ids before hitting the API', async () => {
+  it('dispatches to a selected rider and confirms', async () => {
     setAuth({ id: 3, name: 'Sipho Manager', email: 'manager@x.co.za', role: 'store_manager' })
     setRows(scratch, [pendingRow()])
-
-    renderWithProviders(<DispatchConsoleClient />)
-    const input = await screen.findByPlaceholderText('Rider ID')
-    fireEvent.change(input, { target: { value: 'abc' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Dispatch' }))
-
-    expect(await screen.findByText('Enter a valid numeric Rider ID')).toBeInTheDocument()
-    expect(apiMocks.dispatchOrder).not.toHaveBeenCalled()
-  })
-
-  it('dispatches to a valid rider and confirms', async () => {
-    setAuth({ id: 3, name: 'Sipho Manager', email: 'manager@x.co.za', role: 'store_manager' })
-    setRows(scratch, [pendingRow()])
+    setRows(scratch, [
+      { id: 1, user_id: 7, store_id: 1, is_available: true, vehicle_type: 'Motorbike', user: { id: 7, name: 'Rider Rita', email: 'rita@x.co.za' } },
+    ], 'riders')
     apiMocks.dispatchOrder.mockResolvedValue({ data: pendingRow({ rider_id: 7, status: 'preparing' }) })
 
     renderWithProviders(<DispatchConsoleClient />)
-    const input = await screen.findByPlaceholderText('Rider ID')
-    fireEvent.change(input, { target: { value: '7' } })
+    const select = await screen.findByDisplayValue('Select rider...')
+    fireEvent.change(select, { target: { value: '7' } })
     fireEvent.click(screen.getByRole('button', { name: 'Dispatch' }))
 
     await waitFor(() => expect(apiMocks.dispatchOrder).toHaveBeenCalledWith(501, 7, undefined))
@@ -372,13 +369,16 @@ describe('DispatchConsoleClient', () => {
   it('shows API error reasons from failed dispatches', async () => {
     setAuth({ id: 3, name: 'Sipho Manager', email: 'manager@x.co.za', role: 'store_manager' })
     setRows(scratch, [pendingRow()])
+    setRows(scratch, [
+      { id: 1, user_id: 7, store_id: 1, is_available: true, vehicle_type: 'Motorbike', user: { id: 7, name: 'Rider Rita', email: 'rita@x.co.za' } },
+    ], 'riders')
     apiMocks.dispatchOrder.mockRejectedValue(
       new (await import('@/lib/api')).ApiError('Invalid rider', 422, { reason: 'invalid_rider' })
     )
 
     renderWithProviders(<DispatchConsoleClient />)
-    const input = await screen.findByPlaceholderText('Rider ID')
-    fireEvent.change(input, { target: { value: '99' } })
+    const select = await screen.findByDisplayValue('Select rider...')
+    fireEvent.change(select, { target: { value: '7' } })
     fireEvent.click(screen.getByRole('button', { name: 'Dispatch' }))
 
     expect(await screen.findByText(/invalid_rider/)).toBeInTheDocument()
