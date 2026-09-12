@@ -84,27 +84,27 @@
   ✓ empty result when no data                                            0.01s  
 
    PASS  Tests\Unit\StockManagementTest
-  ✓ mark items bought decrements stock quantity                          0.04s  
+  ✓ mark items bought decrements stock quantity                          0.03s  
   ✓ mark items bought decrements stock for multiple items                0.04s  
   ✓ mark items bought releases reservation and decrements stock          0.03s  
-  ✓ partial batch can be continued in a later call                       0.04s  
+  ✓ partial batch can be continued in a later call                       0.03s  
   ✓ mark items bought ignores unknown item ids                           0.02s  
   ✓ mark items bought throws when insufficient stock                     0.03s  
   ✓ mark items bought does not decrement stock on failure                0.03s  
   ✓ mark items bought throws when product not available                  0.03s  
   ✓ mark items bought is idempotent                                      0.03s  
   ✓ mark items bought creates activity log                               0.03s  
-  ✓ mark items bought throws when order is cancelled                     0.04s  
+  ✓ mark items bought throws when order is cancelled                     0.03s  
   ✓ mark items bought rejects order that is no longer preparing          0.03s  
-  ✓ mark items bought rejects delivered order                            0.03s  
+  ✓ mark items bought rejects delivered order                            0.02s  
   ✓ order cancellation releases reserved quantity                        0.03s  
   ✓ order cancellation does not affect stock quantity                    0.03s  
-  ✓ lost cancel race does not release reservations                       0.03s  
+  ✓ lost cancel race does not release reservations                       0.02s  
   ✓ order cancellation clamps reserved quantity at zero                  0.03s  
-  ✓ order cancellation does not release reservations for bought items    0.04s  
+  ✓ order cancellation does not release reservations for bought items    0.03s  
   ✓ delivery releases reservations for unbought items                    0.03s  
   ✓ reservation counts against availability during placement             0.02s  
-  ✓ reservation prevents fulfillment when stock is reserved              0.03s  
+  ✓ reservation prevents fulfillment when stock is reserved              0.02s  
   ✓ store product not available prevents order placement                 0.02s  
   ✓ insufficient stock prevents order placement                          0.02s  
   ✓ order placement rejects when stock insufficient                      0.02s  
@@ -118,27 +118,27 @@
   ✓ developer with store id resolves store                               0.01s  
   ✓ store owner resolves their store                                     0.01s  
   ✓ store manager resolves through staff                                 0.02s  
-  ✓ logistics officer resolves through staff                             0.02s  
+  ✓ logistics officer resolves through staff                             0.01s  
   ✓ user without store or staff aborts 403                               0.01s  
   ✓ store owner without store aborts 403                                 0.01s  
   ✓ developer with nonexistent store throws                              0.01s  
 
    PASS  Tests\Feature\AddressBookTest
   ✓ customer can save list update and delete addresses                   0.06s  
-  ✓ exactly one default is kept and reassignment demotes the previous h… 0.04s  
+  ✓ exactly one default is kept and reassignment demotes the previous h… 0.03s  
   ✓ addresses require coordinates because checkout resolves stores from… 0.02s  
-  ✓ addresses are scoped to their owner                                  0.03s  
+  ✓ addresses are scoped to their owner                                  0.02s  
 
    PASS  Tests\Feature\AdminMessageReplyTest
   ✓ developer can reply to contact message                               0.03s  
   ✓ developer can mark message read                                      0.02s  
-  ✓ mark read can mark unread again                                      0.02s  
+  ✓ mark read can mark unread again                                      0.01s  
   ✓ mark read toggles when flag omitted                                  0.02s  
   ✓ customer cannot mark read                                            0.01s  
   ✓ customer cannot reply                                                0.01s  
 
    PASS  Tests\Feature\AdminProductDeletionTest
-  ✓ product with order history is deactivated not deleted                0.03s  
+  ✓ product with order history is deactivated not deleted                0.02s  
   ✓ product without history is deleted                                   0.02s  
 
    PASS  Tests\Feature\AuditLogScopingTest
@@ -157,7 +157,7 @@
   ✓ user can register                                                    0.03s  
   ✓ user can login                                                       0.02s  
   ✓ login fails with invalid credentials                                 0.01s  
-  ✓ authenticated user can access user endpoint                          0.02s  
+  ✓ authenticated user can access user endpoint                          0.01s  
   ✓ unauthenticated user cannot access protected route                   0.01s  
 
    PASS  Tests\Feature\BannerTenantGuardTest
@@ -166,18 +166,18 @@
   ✓ owner cannot touch another stores banner                             0.03s  
 
    PASS  Tests\Feature\CartSyncTest
-  ✓ sync sums quantities for matching products                           0.03s  
+  ✓ sync sums quantities for matching products                           0.02s  
   ✓ sync caps quantity at eight                                          0.02s  
   ✓ sync drops inactive products with feedback                           0.02s  
   ✓ sync returns merged cart so device can replace draft                 0.02s  
 
    PASS  Tests\Feature\DatabaseSeedingTest
-  ✓ seed creates demo logins for every console                           2.80s  
-  ✓ seeding twice is idempotent                                          2.87s  
+  ✓ seed creates demo logins for every console                           2.73s  
+  ✓ seeding twice is idempotent                                          2.75s  
 
    PASS  Tests\Feature\EmailVerificationFlowTest
   ✓ registration sends the verification email with an spa link           0.02s  
-  ✓ verify email marks the user verified                                 0.02s  
+  ✓ verify email marks the user verified                                 0.01s  
   ✓ verify email rejects a wrong hash                                    0.01s  
 
    PASS  Tests\Feature\ExampleTest
@@ -210,26 +210,26 @@
   ✓ operations assign rejects order from another store                   0.03s  
   ✓ operations suggestion hides other stores orders                      0.04s  
   ✓ dispatch rejects rider from another store                            0.03s  
-  ✓ manager can reassign already claimed order                           0.06s  
-  ✓ dispatch rejects rider with deactivated account                      0.04s  
+  ✓ manager can reassign already claimed order                           0.05s  
+  ✓ dispatch rejects rider with deactivated account                      0.03s  
   ✓ reassign rejects rider already at concurrent cap                     0.07s  
-  ✓ pending list applies exact radius within the search box              0.03s  
-  ✓ reassign rejects order from different store                          0.05s  
-  ✓ developer requires explicit store id                                 0.02s  
+  ✓ pending list applies exact radius within the search box              0.05s  
+  ✓ reassign rejects order from different store                          0.08s  
+  ✓ developer requires explicit store id                                 0.16s  
 
    PASS  Tests\Feature\MigrationRollbackTest
-  ✓ nullable store id migration can roll back                            0.25s  
+  ✓ nullable store id migration can roll back                            0.22s  
 
    PASS  Tests\Feature\OrderLifecycleApiTest
-  ✓ customer order journey list show cancel                              3.14s  
-  ✓ customer cannot view another customers order                         0.06s  
-  ✓ cancelling twice is rejected                                         0.06s  
+  ✓ customer order journey list show cancel                              2.77s  
+  ✓ customer cannot view another customers order                         0.05s  
+  ✓ cancelling twice is rejected                                         0.05s  
 
    PASS  Tests\Feature\OrderPlacementTest
-  ✓ customer can place an order                                          0.06s  
+  ✓ customer can place an order                                          0.05s  
   ✓ order with no available rider enters retrying and keeps cart         0.04s  
   ✓ order defaults to cash on delivery                                   0.05s  
-  ✓ placing an order clears the server cart                              0.06s  
+  ✓ placing an order clears the server cart                              0.05s  
   ✓ failed placement leaves server cart intact                           0.03s  
   ✓ order requires delivery coordinates                                  0.02s  
   ✓ customer can view own order                                          0.02s  
@@ -249,10 +249,10 @@
   ✓ ready is rejected for delivery orders and out for delivery for pick… 0.02s  
   ✓ pickup order cannot be manually dispatched to a rider                0.05s  
   ✓ pickup orders do not appear in the store dispatch queue              0.04s  
-  ✓ pickup with stray delivery fields stores nulls                       0.03s  
+  ✓ pickup with stray delivery fields stores nulls                       0.04s  
   ✓ pickup order money cents mirrors are exact                           0.03s  
   ✓ pickup orders never appear in rider available orders                 0.03s  
-  ✓ rider cannot claim a pickup order                                    0.03s  
+  ✓ rider cannot claim a pickup order                                    0.02s  
   ✓ customer can cancel a ready pickup order before collecting           0.02s  
 
    PASS  Tests\Feature\ProductCarouselTest
@@ -263,18 +263,18 @@
 
    PASS  Tests\Feature\ProductIndexTest
   ✓ index respects per page param                                        0.05s  
-  ✓ index filters by multiple category slugs                             0.04s  
-  ✓ index defaults to twenty per page                                    0.05s  
-  ✓ index caps per page at one hundred                                   0.16s  
-  ✓ index ignores non numeric per page                                   0.05s  
+  ✓ index filters by multiple category slugs                             0.03s  
+  ✓ index defaults to twenty per page                                    0.04s  
+  ✓ index caps per page at one hundred                                   0.14s  
+  ✓ index ignores non numeric per page                                   0.04s  
 
    PASS  Tests\Feature\ProfileApiTest
   ✓ customer can update name and phone                                   0.02s  
   ✓ changing email resets verification                                   0.03s  
-  ✓ keeping the same email keeps verification                            0.02s  
-  ✓ email conflicts are 422                                              0.02s  
+  ✓ keeping the same email keeps verification                            0.01s  
+  ✓ email conflicts are 422                                              0.01s  
   ✓ changing email sends a new verification email                        0.02s  
-  ✓ unchanged email sends no verification email                          0.09s  
+  ✓ unchanged email sends no verification email                          0.01s  
   ✓ role is not mass assignable                                          0.01s  
 
    PASS  Tests\Feature\PromotionRedemptionTest
@@ -283,7 +283,7 @@
   ✓ validate rejects orders below the minimum                            0.01s  
   ✓ validate computes percentage discount                                0.01s  
   ✓ validate caps fixed discounts at the subtotal                        0.01s  
-  ✓ apply increments used count                                          0.02s  
+  ✓ apply increments used count                                          0.03s  
   ✓ apply can never overshoot max uses                                   0.02s  
   ✓ apply redeems the final allowed use                                  0.02s  
 
@@ -322,9 +322,9 @@
    PASS  Tests\Feature\RiderLocationTest
   ✓ customer can view rider location for their order                     0.03s  
   ✓ returns null when order has no rider                                 0.02s  
-  ✓ returns null when rider has no location                              0.03s  
-  ✓ cannot view other customers order rider location                     0.03s  
-  ✓ returns most recent location when multiple exist                     0.03s  
+  ✓ returns null when rider has no location                              0.02s  
+  ✓ cannot view other customers order rider location                     0.02s  
+  ✓ returns most recent location when multiple exist                     0.02s  
   ✓ rider can update location                                            0.02s  
   ✓ rider location update sets recorded at                               0.02s  
   ✓ rider location update overwrites previous                            0.02s  
@@ -334,7 +334,7 @@
    FAIL  Tests\Feature\RiderOrderGuardApiTest
   ⨯ mark items bought returns 422 and keeps stock when order cancelled   0.03s  
   ⨯ out for delivery returns 422 and order stays cancelled               0.02s  
-  ⨯ rider cannot advance out for delivery with unbought items            0.02s  
+  ⨯ rider cannot advance out for delivery with unbought items            0.03s  
 
    PASS  Tests\Feature\SpecialsEndpointTest
   ✓ index lists only active specials within their window                 0.02s  
@@ -352,7 +352,7 @@
 
    PASS  Tests\Feature\StoreOrderApiTest
   ✓ orders are scoped to the managers store                              0.03s  
-  ✓ per page is capped                                                   0.03s  
+  ✓ per page is capped                                                   0.02s  
   ✓ status update on another stores order is 404                         0.02s  
   ✓ invalid transition is 409                                            0.02s  
   ✓ valid transition succeeds                                            0.03s  
@@ -364,7 +364,7 @@
   ✓ all tracking endpoints use rate limiting                             0.01s  
   ────────────────────────────────────────────────────────────────────────────  
    FAILED  Tests\Feature\RiderOrderGuardApiTest > mark items…  QueryException   
-  SQLSTATE[22001]: String data, right truncated: 1406 Data too long for column 'order_number' at row 1 (Connection: mysql, SQL: insert into `orders` (`order_number`, `customer_id`, `store_id`, `rider_id`, `status`, `payment_status`, `subtotal`, `delivery_fee`, `total`, `delivery_latitude`, `delivery_longitude`, `updated_at`, `created_at`) values (ORD-GUARD-6A9F9398B6D7D, 93, 56, 16, preparing, pending, 40, 10, 50, -29.85, 31.02, 2026-09-08 04:48:24, 2026-09-08 04:48:24))
+  SQLSTATE[22001]: String data, right truncated: 1406 Data too long for column 'order_number' at row 1 (Connection: mysql, SQL: insert into `orders` (`order_number`, `customer_id`, `store_id`, `rider_id`, `status`, `payment_status`, `subtotal`, `delivery_fee`, `total`, `delivery_latitude`, `delivery_longitude`, `updated_at`, `created_at`) values (ORD-GUARD-6AA4E4C7D81B6, 93, 56, 16, preparing, pending, 40, 10, 50, -29.85, 31.02, 2026-09-12 05:36:07, 2026-09-12 05:36:07))
 
   at vendor/laravel/framework/src/Illuminate/Database/Connection.php:825
     821▕                     $this->getName(), $query, $this->prepareBindings($bindings), $e
@@ -383,7 +383,7 @@
 
   ────────────────────────────────────────────────────────────────────────────  
    FAILED  Tests\Feature\RiderOrderGuardApiTest > out for de…  QueryException   
-  SQLSTATE[22001]: String data, right truncated: 1406 Data too long for column 'order_number' at row 1 (Connection: mysql, SQL: insert into `orders` (`order_number`, `customer_id`, `store_id`, `rider_id`, `status`, `payment_status`, `subtotal`, `delivery_fee`, `total`, `delivery_latitude`, `delivery_longitude`, `updated_at`, `created_at`) values (ORD-GUARD-6A9F9398BC0DF, 95, 57, 17, preparing, pending, 40, 10, 50, -29.85, 31.02, 2026-09-08 04:48:24, 2026-09-08 04:48:24))
+  SQLSTATE[22001]: String data, right truncated: 1406 Data too long for column 'order_number' at row 1 (Connection: mysql, SQL: insert into `orders` (`order_number`, `customer_id`, `store_id`, `rider_id`, `status`, `payment_status`, `subtotal`, `delivery_fee`, `total`, `delivery_latitude`, `delivery_longitude`, `updated_at`, `created_at`) values (ORD-GUARD-6AA4E4C7DD052, 95, 57, 17, preparing, pending, 40, 10, 50, -29.85, 31.02, 2026-09-12 05:36:07, 2026-09-12 05:36:07))
 
   at vendor/laravel/framework/src/Illuminate/Database/Connection.php:825
     821▕                     $this->getName(), $query, $this->prepareBindings($bindings), $e
@@ -402,7 +402,7 @@
 
   ────────────────────────────────────────────────────────────────────────────  
    FAILED  Tests\Feature\RiderOrderGuardApiTest > rider cann…  QueryException   
-  SQLSTATE[22001]: String data, right truncated: 1406 Data too long for column 'order_number' at row 1 (Connection: mysql, SQL: insert into `orders` (`order_number`, `customer_id`, `store_id`, `rider_id`, `status`, `payment_status`, `subtotal`, `delivery_fee`, `total`, `delivery_latitude`, `delivery_longitude`, `updated_at`, `created_at`) values (ORD-GUARD-6A9F9398C0537, 97, 58, 18, preparing, pending, 40, 10, 50, -29.85, 31.02, 2026-09-08 04:48:24, 2026-09-08 04:48:24))
+  SQLSTATE[22001]: String data, right truncated: 1406 Data too long for column 'order_number' at row 1 (Connection: mysql, SQL: insert into `orders` (`order_number`, `customer_id`, `store_id`, `rider_id`, `status`, `payment_status`, `subtotal`, `delivery_fee`, `total`, `delivery_latitude`, `delivery_longitude`, `updated_at`, `created_at`) values (ORD-GUARD-6AA4E4C7E50B7, 97, 58, 18, preparing, pending, 40, 10, 50, -29.85, 31.02, 2026-09-12 05:36:07, 2026-09-12 05:36:07))
 
   at vendor/laravel/framework/src/Illuminate/Database/Connection.php:825
     821▕                     $this->getName(), $query, $this->prepareBindings($bindings), $e
@@ -421,6 +421,6 @@
 
 
   Tests:    3 failed, 436 passed (1142 assertions)
-  Duration: 23.93s
+  Duration: 22.98s
 
 ```
