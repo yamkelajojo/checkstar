@@ -15,6 +15,9 @@ jest.mock('../../catalog/hooks', () => ({
   useCategories: () => ({ data: mockCatalog.categories }),
   useProducts: () => ({ data: mockCatalog.products, isLoading: mockCatalog.isLoading }),
   useSpecials: () => ({ data: mockCatalog.specials }),
+  useTrendingProducts: () => ({ data: mockCatalog.products, isLoading: mockCatalog.isLoading }),
+  usePopularProducts: () => ({ data: mockCatalog.products }),
+  useNewArrivals: () => ({ data: mockCatalog.products }),
 }));
 
 jest.mock('../../../lib/apiClient', () => ({
@@ -48,8 +51,6 @@ describe('HomeScreen with an empty (unseeded) catalogue', () => {
     await screen.findByText('The shelves are being stocked');
     expect(screen.queryByText('Best Deals')).toBeNull();
     expect(screen.queryByText('Shop by category')).toBeNull();
-    expect(screen.queryByText('Featured')).toBeNull();
-    expect(screen.queryByText('No featured products yet')).toBeNull();
   });
 });
 
@@ -86,18 +87,18 @@ describe('HomeScreen with a stocked catalogue', () => {
 
     expect(screen.getByText('Best Deals')).toBeTruthy();
     expect(screen.getByText('Shop by category')).toBeTruthy();
-    expect(screen.getByText('Featured')).toBeTruthy();
-    expect(screen.getByText('Spinach')).toBeTruthy();
+    expect(screen.getByText('Trending Now')).toBeTruthy();
+    expect(screen.getAllByText('Spinach').length).toBeGreaterThan(0);
     expect(screen.queryByText('The shelves are being stocked')).toBeNull();
   });
 
-  it('keeps the featured empty state when only featured products are missing', async () => {
+  it('keeps the specials empty state when only specials are missing', async () => {
     mockCatalog.categories = [{ id: 1, name: 'Fresh', slug: 'fresh' }];
 
     await renderHome();
 
     expect(screen.getByText('Shop by category')).toBeTruthy();
-    expect(screen.getByText('No featured products yet')).toBeTruthy();
+    expect(screen.getByText('No Specials right now — new deals land every week.')).toBeTruthy();
     expect(screen.queryByText('The shelves are being stocked')).toBeNull();
   });
 });
