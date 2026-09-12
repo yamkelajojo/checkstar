@@ -112,12 +112,18 @@ describe('AdminDashboardClient', () => {
     services: { api: 'ok', database: 'ok', queue: 'warn', storage: 'ok' },
   }
 
-  it('blocks non-developers with an explanatory gate', () => {
+  it('shows a staff dashboard with tools for non-developers', () => {
     setAuth({ id: 2, name: 'Thandi Owner', email: 'owner@x.co.za', role: 'store_owner' })
     apiMocks.getAdminHealth.mockResolvedValue(healthPayload)
     apiMocks.getMessages.mockResolvedValue({ data: [] })
     renderWithProviders(<AdminDashboardClient />)
-    expect(screen.getByText('Developer access only')).toBeInTheDocument()
+    expect(screen.getByText('Staff Dashboard')).toBeInTheDocument()
+    expect(screen.getByText('Store Owner')).toBeInTheDocument()
+    // Staff see their available tool links
+    const hrefs = screen.getAllByRole('link').map((a) => a.getAttribute('href'))
+    expect(hrefs).toContain('/admin/banners')
+    expect(hrefs).toContain('/admin/staff')
+    expect(hrefs).toContain('/admin/messages')
   })
 
   it('renders overview stats and the real management links for developers', async () => {

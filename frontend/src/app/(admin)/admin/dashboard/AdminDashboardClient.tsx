@@ -51,21 +51,49 @@ export default function AdminDashboardClient() {
   const { user } = useAuthStore()
   const queryClient = useQueryClient()
 
-  // Platform admin is developer-only; the (admin) layout deliberately admits
-  // staff roles for the store-management pages.
+  // Non-developer staff get a focused dashboard with their available tools.
   if (user && user.role !== 'developer') {
+    const roleLabel = user.role?.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())
     return (
-      <main className="max-w-4xl mx-auto px-4 py-16 text-center">
-        <div className="w-12 h-12 rounded-full bg-rose-100 flex items-center justify-center mx-auto mb-4">
-          <ShieldAlert size={20} className="text-rose-500" />
-        </div>
-        <h1 className="text-xl font-semibold">Developer access only</h1>
-        <p className="text-sm text-gray-500 mt-2">
-          The platform dashboard requires the developer role. Store staff: use the Banners and Store Staff pages.
-        </p>
-        <Link href="/" className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline mt-4">
-          Go to Home
-        </Link>
+      <main className="max-w-5xl mx-auto px-4 py-8">
+        <motion.div initial="hidden" animate="show" variants={stagger}>
+          <motion.div variants={fadeUp} className="mb-8">
+            <div className="flex items-center gap-3 mb-2">
+              <h1 className="font-display text-3xl font-bold text-gray-900">Staff Dashboard</h1>
+              <span className="inline-flex items-center gap-1 px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium">
+                {roleLabel}
+              </span>
+            </div>
+            <p className="text-gray-500 text-sm">
+              Welcome back, {user?.name?.split(' ')[0] || 'Staff'}. Select a tool below to get started.
+            </p>
+          </motion.div>
+
+          <motion.div variants={fadeUp} className="mb-8">
+            <h2 className="font-display text-lg font-semibold mb-4">Your Tools</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {storeManagementLinks.map((link) => (
+                <LinkCard key={link.href} link={link} />
+              ))}
+              <Link
+                href="/admin/messages"
+                className="group bg-white border border-gray-100 rounded-xl p-5 hover:shadow-md hover:border-primary/20 transition-all"
+              >
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-10 h-10 bg-primary-light rounded-lg flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                    <MessageSquare size={20} className="text-primary" />
+                  </div>
+                  <ArrowUpRight size={16} className="text-gray-300 ml-auto group-hover:text-primary transition-colors" />
+                </div>
+                <h3 className="font-medium text-gray-900 mb-0.5">Messages</h3>
+                <p className="text-xs text-gray-400">Customer enquiries inbox</p>
+              </Link>
+              {operationsLinks.map((link) => (
+                <LinkCard key={link.href} link={link} />
+              ))}
+            </div>
+          </motion.div>
+        </motion.div>
       </main>
     )
   }
