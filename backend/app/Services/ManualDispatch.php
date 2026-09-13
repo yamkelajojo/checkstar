@@ -78,7 +78,7 @@ class ManualDispatch
             return ['reason' => 'order_wrong_store'];
         }
 
-        if (! $this->riderEligible($rider) || $rider->store_id !== $contextStore->id) {
+        if (! $this->riderEligible($rider)) {
             return ['reason' => 'rider_not_eligible'];
         }
 
@@ -123,7 +123,7 @@ class ManualDispatch
             return ['reason' => 'order_not_reassignable'];
         }
 
-        if (! $this->riderEligible($newRider) || $newRider->store_id !== $order->store_id) {
+        if (! $this->riderEligible($newRider)) {
             return ['reason' => 'rider_not_eligible'];
         }
 

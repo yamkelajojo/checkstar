@@ -29,8 +29,7 @@ class DispatchPolicy
     {
         $maxConcurrent = (int) Config::get('dispatch.max_concurrent_orders_per_rider', 1);
 
-        return Rider::where('store_id', $store->id)
-            ->where('is_available', true)
+        return Rider::where('is_available', true)
             ->where('max_radius_km', '>=', $distance)
             ->whereNull('suspended_at')
             // A deactivated rider account cannot call any rider endpoint

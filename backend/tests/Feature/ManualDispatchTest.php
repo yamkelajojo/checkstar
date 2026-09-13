@@ -201,7 +201,7 @@ class ManualDispatchTest extends TestCase
         $response->assertStatus(404);
     }
 
-    public function test_dispatch_rejects_rider_from_another_store(): void
+    public function test_dispatch_allows_rider_from_another_store(): void
     {
         $otherStore = Store::create([
             'name' => 'Umhlanga',
@@ -223,8 +223,8 @@ class ManualDispatchTest extends TestCase
 
         $this->actingAs($this->manager)
             ->postJson("/api/store/orders/{$order->id}/dispatch", ['rider_id' => $outsider->id])
-            ->assertStatus(403)
-            ->assertJson(['reason' => 'rider_wrong_store']);
+            ->assertStatus(200)
+            ->assertJsonPath('data.rider_id', $outsider->id);
     }
 
     public function test_manager_can_reassign_already_claimed_order(): void
