@@ -359,11 +359,11 @@ describe('DispatchConsoleClient', () => {
 
     renderWithProviders(<DispatchConsoleClient />)
     const select = await screen.findByDisplayValue('Select rider...')
-    fireEvent.change(select, { target: { value: '7' } })
+    fireEvent.change(select, { target: { value: '1' } })
     fireEvent.click(screen.getByRole('button', { name: 'Dispatch' }))
 
-    await waitFor(() => expect(apiMocks.dispatchOrder).toHaveBeenCalledWith(501, 7, undefined))
-    expect(await screen.findByText(/dispatched to rider 7/)).toBeInTheDocument()
+    await waitFor(() => expect(apiMocks.dispatchOrder).toHaveBeenCalledWith(501, 1, undefined))
+    expect(await screen.findByText(/dispatched to rider 1/)).toBeInTheDocument()
   })
 
   it('shows API error reasons from failed dispatches', async () => {
@@ -378,7 +378,7 @@ describe('DispatchConsoleClient', () => {
 
     renderWithProviders(<DispatchConsoleClient />)
     const select = await screen.findByDisplayValue('Select rider...')
-    fireEvent.change(select, { target: { value: '7' } })
+    fireEvent.change(select, { target: { value: '1' } })
     fireEvent.click(screen.getByRole('button', { name: 'Dispatch' }))
 
     expect(await screen.findByText(/invalid_rider/)).toBeInTheDocument()

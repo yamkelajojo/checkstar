@@ -175,8 +175,8 @@ export default function DispatchConsoleClient() {
                       >
                         <option value="">Select rider...</option>
                         {riders.map(r => (
-                          <option key={r.id} value={r.user_id}>
-                            #{r.user_id} — {r.user?.name ?? 'Unknown'} ({r.vehicle_type ?? 'Bike'})
+                          <option key={r.id} value={r.id}>
+                            {r.user?.name ?? 'Unknown'} ({r.vehicle_type ?? 'Bike'})
                           </option>
                         ))}
                       </select>
@@ -191,8 +191,8 @@ export default function DispatchConsoleClient() {
                       >
                         <option value="">Select rider...</option>
                         {riders.map(r => (
-                          <option key={r.id} value={r.user_id}>
-                            #{r.user_id} — {r.user?.name ?? 'Unknown'} ({r.vehicle_type ?? 'Bike'})
+                          <option key={r.id} value={r.id}>
+                            {r.user?.name ?? 'Unknown'} ({r.vehicle_type ?? 'Bike'})
                           </option>
                         ))}
                       </select>
