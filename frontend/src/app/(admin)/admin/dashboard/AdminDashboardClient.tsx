@@ -78,19 +78,21 @@ export default function AdminDashboardClient() {
               {visibleStoreLinks.map((link) => (
                 <LinkCard key={link.href} link={link} />
               ))}
-              <Link
-                href="/admin/messages"
-                className="group bg-white border border-gray-100 rounded-xl p-5 hover:shadow-md hover:border-primary/20 transition-all"
-              >
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="w-10 h-10 bg-primary-light rounded-lg flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                    <MessageSquare size={20} className="text-primary" />
+              {user.role !== 'logistics_officer' && (
+                <Link
+                  href="/admin/messages"
+                  className="group bg-white border border-gray-100 rounded-xl p-5 hover:shadow-md hover:border-primary/20 transition-all"
+                >
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-10 h-10 bg-primary-light rounded-lg flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                      <MessageSquare size={20} className="text-primary" />
+                    </div>
+                    <ArrowUpRight size={16} className="text-gray-300 ml-auto group-hover:text-primary transition-colors" />
                   </div>
-                  <ArrowUpRight size={16} className="text-gray-300 ml-auto group-hover:text-primary transition-colors" />
-                </div>
-                <h3 className="font-medium text-gray-900 mb-0.5">Messages</h3>
-                <p className="text-xs text-gray-400">Customer enquiries inbox</p>
-              </Link>
+                  <h3 className="font-medium text-gray-900 mb-0.5">Messages</h3>
+                  <p className="text-xs text-gray-400">Customer enquiries inbox</p>
+                </Link>
+              )}
               {visibleOpsLinks.map((link) => (
                 <LinkCard key={link.href} link={link} />
               ))}

@@ -92,7 +92,7 @@ class RiderSeeder extends Seeder
                 ['user_id' => $user->id],
                 [
                     'store_id' => $data['store_id'],
-                    'is_available' => false,
+                    'is_available' => true,
                     'vehicle_type' => $data['vehicle_type'],
                     'total_deliveries' => $data['total_deliveries'],
                     'average_rating' => $data['average_rating'],
