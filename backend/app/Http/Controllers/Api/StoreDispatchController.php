@@ -26,10 +26,7 @@ class StoreDispatchController extends Controller
 
     public function riders(Request $request): JsonResponse
     {
-        $store = $this->storeContext->resolve($request->user(), $request->query('store_id') !== null ? (int) $request->query('store_id') : null);
-
-        $riders = Rider::where('store_id', $store->id)
-            ->where('is_available', true)
+        $riders = Rider::where('is_available', true)
             ->whereNull('suspended_at')
             ->with('user:id,name,email,is_active')
             ->get()
@@ -54,9 +51,6 @@ class StoreDispatchController extends Controller
         }
 
         $rider = Rider::findOrFail($validated['rider_id']);
-        if ((int) $rider->store_id !== (int) $store->id) {
-            return response()->json(['message' => 'Rider does not belong to this store', 'reason' => 'rider_wrong_store'], 403);
-        }
 
         $result = $this->manualDispatch->dispatchToRider($order, $rider, $store);
 
