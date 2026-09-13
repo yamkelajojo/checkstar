@@ -1,4 +1,5 @@
 import { AuthGuard } from '@/components/AuthGuard'
+import DashboardNav from '@/components/DashboardNav'
 
 /**
  * The (admin) group hosts both platform-admin (developer) pages and
@@ -11,6 +12,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <AuthGuard staffRoles={['store_owner', 'store_manager', 'logistics_officer', 'developer']}>
       <div className="min-h-screen bg-surface text-foreground">
+        <DashboardNav />
         {children}
       </div>
     </AuthGuard>
