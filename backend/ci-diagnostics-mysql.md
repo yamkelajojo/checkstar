@@ -25,7 +25,7 @@
 ```
   ✓ submit review success                                                0.04s  
   ✓ submit review updates order rating                                   0.03s  
-  ✓ submit review rejects order without rider                            0.02s  
+  ✓ submit review rejects order without rider                            0.01s  
   ✓ submit review rejects non delivered order                            0.02s  
   ✓ submit review rejects duplicate review                               0.03s  
   ✓ submit review creates review record                                  0.03s  
@@ -37,7 +37,7 @@
   ✓ second review computes weighted average                              0.03s  
   ✓ multiple reviews compute correct average                             0.03s  
   ✓ review count matches database                                        0.03s  
-  ✓ rider must exist to record                                           0.03s  
+  ✓ rider must exist to record                                           0.02s  
   ✓ weighted average is accurate with decimals                           0.03s  
 
    PASS  Tests\Unit\RoutingServiceTest
@@ -55,9 +55,9 @@
    PASS  Tests\Unit\Services\AnalyticsServiceTest
   ✓ sales data returns revenue over time                                 0.02s  
   ✓ sales data respects period                                           0.02s  
-  ✓ products data returns top products                                   0.02s  
+  ✓ products data returns top products                                   0.01s  
   ✓ riders data returns utilization                                      0.02s  
-  ✓ empty store returns zeros                                            0.02s  
+  ✓ empty store returns zeros                                            0.01s  
 
    PASS  Tests\Unit\Services\BehavioralTrackingServiceTest
   ✓ signal taxonomy has explicit intent tier                             0.01s  
@@ -79,7 +79,7 @@
   ✓ returns dispatch events from audit logs                              0.02s  
   ✓ respects cursor pagination                                           0.03s  
   ✓ severity is mapped from order status                                 0.02s  
-  ✓ events are ordered by created at desc                                0.03s  
+  ✓ events are ordered by created at desc                                0.02s  
   ✓ limit is respected                                                   0.05s  
   ✓ empty result when no data                                            0.01s  
 
@@ -97,7 +97,7 @@
   ✓ mark items bought throws when order is cancelled                     0.03s  
   ✓ mark items bought rejects order that is no longer preparing          0.03s  
   ✓ mark items bought rejects delivered order                            0.03s  
-  ✓ order cancellation releases reserved quantity                        0.04s  
+  ✓ order cancellation releases reserved quantity                        0.03s  
   ✓ order cancellation does not affect stock quantity                    0.03s  
   ✓ lost cancel race does not release reservations                       0.03s  
   ✓ order cancellation clamps reserved quantity at zero                  0.03s  
@@ -114,13 +114,13 @@
   ✓ concurrent mark items bought results are consistent                  0.04s  
 
    PASS  Tests\Unit\StoreContextTest
-  ✓ developer requires explicit store id                                 0.05s  
-  ✓ developer with store id resolves store                               0.02s  
+  ✓ developer requires explicit store id                                 0.04s  
+  ✓ developer with store id resolves store                               0.01s  
   ✓ store owner resolves their store                                     0.01s  
   ✓ store manager resolves through staff                                 0.02s  
   ✓ logistics officer resolves through staff                             0.02s  
-  ✓ user without store or staff aborts 403                               0.02s  
-  ✓ store owner without store aborts 403                                 0.02s  
+  ✓ user without store or staff aborts 403                               0.01s  
+  ✓ store owner without store aborts 403                                 0.01s  
   ✓ developer with nonexistent store throws                              0.01s  
 
    PASS  Tests\Feature\AddressBookTest
@@ -132,9 +132,9 @@
    PASS  Tests\Feature\AdminMessageReplyTest
   ✓ developer can reply to contact message                               0.03s  
   ✓ developer can mark message read                                      0.02s  
-  ✓ mark read can mark unread again                                      0.03s  
+  ✓ mark read can mark unread again                                      0.02s  
   ✓ mark read toggles when flag omitted                                  0.02s  
-  ✓ customer cannot mark read                                            0.03s  
+  ✓ customer cannot mark read                                            0.02s  
   ✓ customer cannot reply                                                0.02s  
 
    PASS  Tests\Feature\AdminProductDeletionTest
@@ -147,7 +147,7 @@
   ✓ rider audits are scoped by store                                     0.03s  
 
    PASS  Tests\Feature\AuthSecurityTest
-  ✓ suspended user is rejected with a live token                         0.04s  
+  ✓ suspended user is rejected with a live token                         0.03s  
   ✓ suspended rider cannot claim orders                                  0.02s  
   ✓ forgot password response does not reveal account existence           0.42s  
   ✓ password reset revokes all existing tokens                           0.03s  
@@ -158,7 +158,7 @@
   ✓ user can login                                                       0.02s  
   ✓ login fails with invalid credentials                                 0.01s  
   ✓ authenticated user can access user endpoint                          0.02s  
-  ✓ unauthenticated user cannot access protected route                   0.02s  
+  ✓ unauthenticated user cannot access protected route                   0.01s  
 
    PASS  Tests\Feature\BannerTenantGuardTest
   ✓ owner can create banner scoped to their store                        0.03s  
@@ -167,31 +167,31 @@
 
    PASS  Tests\Feature\CartSyncTest
   ✓ sync sums quantities for matching products                           0.03s  
-  ✓ sync caps quantity at eight                                          0.03s  
-  ✓ sync drops inactive products with feedback                           0.03s  
+  ✓ sync caps quantity at eight                                          0.02s  
+  ✓ sync drops inactive products with feedback                           0.02s  
   ✓ sync returns merged cart so device can replace draft                 0.02s  
 
    PASS  Tests\Feature\DatabaseSeedingTest
-  ✓ seed creates demo logins for every console                           2.38s  
-  ✓ seeding twice is idempotent                                          3.38s  
+  ✓ seed creates demo logins for every console                           2.26s  
+  ✓ seeding twice is idempotent                                          3.30s  
 
    PASS  Tests\Feature\EmailVerificationFlowTest
   ✓ registration sends the verification email with an spa link           0.02s  
   ✓ verify email marks the user verified                                 0.02s  
-  ✓ verify email rejects a wrong hash                                    0.04s  
+  ✓ verify email rejects a wrong hash                                    0.01s  
 
    PASS  Tests\Feature\ExampleTest
-  ✓ the application returns a successful response                        0.02s  
+  ✓ the application returns a successful response                        0.01s  
 
    PASS  Tests\Feature\FavoritesApiTest
   ✓ customer can favorite and list                                       0.03s  
   ✓ duplicate favorite is 409 not 500                                    0.02s  
   ✓ unfavorite is idempotent                                             0.02s  
   ✓ check endpoint reports favorited state                               0.02s  
-  ✓ guest gets 401                                                       0.02s  
+  ✓ guest gets 401                                                       0.01s  
 
    PASS  Tests\Feature\FulfillmentApiTest
-  ✓ validate returns the resolved store for a fulfillable cart           0.02s  
+  ✓ validate returns the resolved store for a fulfillable cart           0.03s  
   ✓ inactive stores are never suggested                                  0.02s  
   ✓ validate rejects malformed payloads                                  0.01s  
   ✓ nearest store endpoint reports a store or null                       0.02s  
@@ -200,29 +200,29 @@
   ✓ category with products cannot be deleted                             0.02s  
   ✓ empty category can be deleted                                        0.02s  
   ✓ store with delivered order history cannot be deleted                 0.02s  
-  ✓ store without history can be deleted                                 0.02s  
+  ✓ store without history can be deleted                                 0.03s  
   ✓ rider with reviews cannot be deleted                                 0.03s  
   ✓ product stock rows are not orphaned by category delete guard         0.02s  
 
    PASS  Tests\Feature\ManualDispatchTest
   ✓ manager can list pending dispatch orders for their store             0.03s  
-  ✓ manager can manually dispatch order to specific rider                0.05s  
+  ✓ manager can manually dispatch order to specific rider                0.04s  
   ✓ operations assign rejects order from another store                   0.03s  
-  ✓ operations suggestion hides other stores orders                      0.03s  
-  ✓ dispatch allows rider from another store                             0.05s  
+  ✓ operations suggestion hides other stores orders                      0.02s  
+  ✓ dispatch allows rider from another store                             0.04s  
   ✓ manager can reassign already claimed order                           0.06s  
   ✓ dispatch rejects rider with deactivated account                      0.03s  
-  ✓ reassign rejects rider already at concurrent cap                     0.08s  
+  ✓ reassign rejects rider already at concurrent cap                     0.07s  
   ✓ pending list applies exact radius within the search box              0.03s  
-  ✓ reassign rejects order from different store                          0.06s  
+  ✓ reassign rejects order from different store                          0.05s  
   ✓ developer requires explicit store id                                 0.02s  
 
    PASS  Tests\Feature\MigrationRollbackTest
-  ✓ nullable store id migration can roll back                            0.27s  
+  ✓ nullable store id migration can roll back                            0.25s  
 
    PASS  Tests\Feature\OrderLifecycleApiTest
-  ✓ customer order journey list show cancel                              3.44s  
-  ✓ customer cannot view another customers order                         0.06s  
+  ✓ customer order journey list show cancel                              3.45s  
+  ✓ customer cannot view another customers order                         0.05s  
   ✓ cancelling twice is rejected                                         0.06s  
 
    PASS  Tests\Feature\OrderPlacementTest
@@ -234,8 +234,8 @@
   ✓ order requires delivery coordinates                                  0.02s  
   ✓ customer can view own order                                          0.02s  
   ✓ customer cannot view others order                                    0.02s  
-  ✓ customer can cancel own order                                        0.03s  
-  ✓ customer cannot cancel others order                                  0.02s  
+  ✓ customer can cancel own order                                        0.02s  
+  ✓ customer cannot cancel others order                                  0.03s  
   ✓ customer cannot cancel out for delivery order                        0.02s  
   ✓ customer can confirm own delivery                                    0.03s  
   ✓ customer cannot confirm others order                                 0.02s  
@@ -248,7 +248,7 @@
   ✓ store moves a pickup order through ready and the customer confirms…  0.06s  
   ✓ ready is rejected for delivery orders and out for delivery for pick… 0.03s  
   ✓ pickup order cannot be manually dispatched to a rider                0.06s  
-  ✓ pickup orders do not appear in the store dispatch queue              0.05s  
+  ✓ pickup orders do not appear in the store dispatch queue              0.04s  
   ✓ pickup with stray delivery fields stores nulls                       0.04s  
   ✓ pickup order money cents mirrors are exact                           0.04s  
   ✓ pickup orders never appear in rider available orders                 0.03s  
@@ -270,7 +270,7 @@
 
    PASS  Tests\Feature\ProfileApiTest
   ✓ customer can update name and phone                                   0.02s  
-  ✓ changing email resets verification                                   0.03s  
+  ✓ changing email resets verification                                   0.02s  
   ✓ keeping the same email keeps verification                            0.02s  
   ✓ email conflicts are 422                                              0.02s  
   ✓ changing email sends a new verification email                        0.02s  
@@ -289,8 +289,8 @@
 
    PASS  Tests\Feature\PublicCatalogueTest
   ✓ guest can list stores and view one by slug                           0.03s  
-  ✓ guest can browse categories and products                             0.03s  
-  ✓ guest can read recipes and unpublished are hidden                    0.03s  
+  ✓ guest can browse categories and products                             0.02s  
+  ✓ guest can read recipes and unpublished are hidden                    0.02s  
   ✓ guest can read careers and community posts                           0.03s  
   ✓ guest can submit a contact message                                   0.02s  
   ✓ contact validation rejects garbage                                   0.02s  
@@ -303,14 +303,14 @@
   ✓ no push without token                                                0.02s  
 
    PASS  Tests\Feature\RecommendationsEndpointTest
-  ✓ cold start returns recommendations for new customer                  0.04s  
-  ✓ inactive products are never recommended                              0.03s  
-  ✓ guest gets 401                                                       0.02s  
+  ✓ cold start returns recommendations for new customer                  0.03s  
+  ✓ inactive products are never recommended                              0.02s  
+  ✓ guest gets 401                                                       0.01s  
 
    PASS  Tests\Feature\ReconcileReservationsTest
   ✓ consistent ledger is left alone                                      0.03s  
   ✓ drift is corrected                                                   0.02s  
-  ✓ oversubscribed stock reconciles to clamped value without failing     0.03s  
+  ✓ oversubscribed stock reconciles to clamped value without failing     0.13s  
   ✓ bought items and terminal orders do not count                        0.02s  
 
    PASS  Tests\Feature\RelatedProductsTest
@@ -320,35 +320,35 @@
   ✓ related returns 404 for unknown or inactive slug                     0.02s  
 
    PASS  Tests\Feature\RiderLocationTest
-  ✓ customer can view rider location for their order                     0.04s  
+  ✓ customer can view rider location for their order                     0.03s  
   ✓ returns null when order has no rider                                 0.02s  
-  ✓ returns null when rider has no location                              0.03s  
+  ✓ returns null when rider has no location                              0.02s  
   ✓ cannot view other customers order rider location                     0.03s  
   ✓ returns most recent location when multiple exist                     0.03s  
   ✓ rider can update location                                            0.02s  
   ✓ rider location update sets recorded at                               0.02s  
-  ✓ rider location update overwrites previous                            0.03s  
+  ✓ rider location update overwrites previous                            0.02s  
   ✓ non rider cannot update location                                     0.02s  
   ✓ location update requires valid coordinates                           0.02s  
 
    FAIL  Tests\Feature\RiderOrderGuardApiTest
   ⨯ mark items bought returns 422 and keeps stock when order cancelled   0.03s  
-  ⨯ out for delivery returns 422 and order stays cancelled               0.03s  
+  ⨯ out for delivery returns 422 and order stays cancelled               0.02s  
   ⨯ rider cannot advance out for delivery with unbought items            0.02s  
 
    PASS  Tests\Feature\SpecialsEndpointTest
   ✓ index lists only active specials within their window                 0.02s  
-  ✓ products carry availability and effective price                      0.03s  
+  ✓ products carry availability and effective price                      0.02s  
   ✓ inactive products are hidden from specials                           0.02s  
 
    PASS  Tests\Feature\StaffManagementTest
   ✓ owner can hire store staff                                           0.03s  
-  ✓ owner can fire store staff                                           0.03s  
-  ✓ owner can list store roster                                          0.03s  
+  ✓ owner can fire store staff                                           0.02s  
+  ✓ owner can list store roster                                          0.02s  
   ✓ developer can list store roster                                      0.02s  
-  ✓ roster is scoped to one store                                        0.02s  
-  ✓ store manager cannot list roster                                     0.02s  
-  ✓ store manager cannot hire staff                                      0.03s  
+  ✓ roster is scoped to one store                                        0.03s  
+  ✓ store manager cannot list roster                                     0.03s  
+  ✓ store manager cannot hire staff                                      0.04s  
 
    PASS  Tests\Feature\StoreOrderApiTest
   ✓ orders are scoped to the managers store                              0.03s  
@@ -364,7 +364,7 @@
   ✓ all tracking endpoints use rate limiting                             0.01s  
   ────────────────────────────────────────────────────────────────────────────  
    FAILED  Tests\Feature\RiderOrderGuardApiTest > mark items…  QueryException   
-  SQLSTATE[22001]: String data, right truncated: 1406 Data too long for column 'order_number' at row 1 (Connection: mysql, SQL: insert into `orders` (`order_number`, `customer_id`, `store_id`, `rider_id`, `status`, `payment_status`, `subtotal`, `delivery_fee`, `total`, `delivery_latitude`, `delivery_longitude`, `updated_at`, `created_at`) values (ORD-GUARD-6AB12C80DA41E, 93, 56, 16, preparing, pending, 40, 10, 50, -29.85, 31.02, 2026-09-21 13:09:20, 2026-09-21 13:09:20))
+  SQLSTATE[22001]: String data, right truncated: 1406 Data too long for column 'order_number' at row 1 (Connection: mysql, SQL: insert into `orders` (`order_number`, `customer_id`, `store_id`, `rider_id`, `status`, `payment_status`, `subtotal`, `delivery_fee`, `total`, `delivery_latitude`, `delivery_longitude`, `updated_at`, `created_at`) values (ORD-GUARD-6AB136D1C8416, 93, 56, 16, preparing, pending, 40, 10, 50, -29.85, 31.02, 2026-09-21 13:53:21, 2026-09-21 13:53:21))
 
   at vendor/laravel/framework/src/Illuminate/Database/Connection.php:825
     821▕                     $this->getName(), $query, $this->prepareBindings($bindings), $e
@@ -383,7 +383,7 @@
 
   ────────────────────────────────────────────────────────────────────────────  
    FAILED  Tests\Feature\RiderOrderGuardApiTest > out for de…  QueryException   
-  SQLSTATE[22001]: String data, right truncated: 1406 Data too long for column 'order_number' at row 1 (Connection: mysql, SQL: insert into `orders` (`order_number`, `customer_id`, `store_id`, `rider_id`, `status`, `payment_status`, `subtotal`, `delivery_fee`, `total`, `delivery_latitude`, `delivery_longitude`, `updated_at`, `created_at`) values (ORD-GUARD-6AB12C80E0121, 95, 57, 17, preparing, pending, 40, 10, 50, -29.85, 31.02, 2026-09-21 13:09:20, 2026-09-21 13:09:20))
+  SQLSTATE[22001]: String data, right truncated: 1406 Data too long for column 'order_number' at row 1 (Connection: mysql, SQL: insert into `orders` (`order_number`, `customer_id`, `store_id`, `rider_id`, `status`, `payment_status`, `subtotal`, `delivery_fee`, `total`, `delivery_latitude`, `delivery_longitude`, `updated_at`, `created_at`) values (ORD-GUARD-6AB136D1CD82B, 95, 57, 17, preparing, pending, 40, 10, 50, -29.85, 31.02, 2026-09-21 13:53:21, 2026-09-21 13:53:21))
 
   at vendor/laravel/framework/src/Illuminate/Database/Connection.php:825
     821▕                     $this->getName(), $query, $this->prepareBindings($bindings), $e
@@ -402,7 +402,7 @@
 
   ────────────────────────────────────────────────────────────────────────────  
    FAILED  Tests\Feature\RiderOrderGuardApiTest > rider cann…  QueryException   
-  SQLSTATE[22001]: String data, right truncated: 1406 Data too long for column 'order_number' at row 1 (Connection: mysql, SQL: insert into `orders` (`order_number`, `customer_id`, `store_id`, `rider_id`, `status`, `payment_status`, `subtotal`, `delivery_fee`, `total`, `delivery_latitude`, `delivery_longitude`, `updated_at`, `created_at`) values (ORD-GUARD-6AB12C80E61E0, 97, 58, 18, preparing, pending, 40, 10, 50, -29.85, 31.02, 2026-09-21 13:09:20, 2026-09-21 13:09:20))
+  SQLSTATE[22001]: String data, right truncated: 1406 Data too long for column 'order_number' at row 1 (Connection: mysql, SQL: insert into `orders` (`order_number`, `customer_id`, `store_id`, `rider_id`, `status`, `payment_status`, `subtotal`, `delivery_fee`, `total`, `delivery_latitude`, `delivery_longitude`, `updated_at`, `created_at`) values (ORD-GUARD-6AB136D1D2DCB, 97, 58, 18, preparing, pending, 40, 10, 50, -29.85, 31.02, 2026-09-21 13:53:21, 2026-09-21 13:53:21))
 
   at vendor/laravel/framework/src/Illuminate/Database/Connection.php:825
     821▕                     $this->getName(), $query, $this->prepareBindings($bindings), $e
@@ -421,6 +421,6 @@
 
 
   Tests:    3 failed, 436 passed (1142 assertions)
-  Duration: 26.16s
+  Duration: 24.46s
 
 ```
