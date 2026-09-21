@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from './api'
-import type { Category, Product, Store, Order, Rider, Special, Recipe, CommunityPost, CareerListing, User, CartItem, Banner } from '@/types'
+import type { Category, Product, Store, Order, Rider, Special, Recipe, CommunityPost, CareerListing, User, CartItem, Banner, Paginated } from '@/types'
 
 export function useTrendingProducts() {
   return useQuery({
@@ -352,5 +352,267 @@ export function useAssignRider() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['operations-metrics'] })
     },
+  })
+}
+
+// ---- Admin CRUD hooks (developer) ----
+function extractPaginatedData<T>(res: { data: T[] } | { data: { data: T[] } } | Paginated<T> | { data: Paginated<T> }): T[] {
+  // Handles both {data: []} and Paginated and {data: Paginated}
+  const anyRes = res as any
+  if (Array.isArray(anyRes.data)) {
+    // Could be {data: []} or {data: Paginated}
+    if (anyRes.data.length > 0 && typeof anyRes.data[0] === 'object' && 'data' in anyRes.data[0]) {
+      // Actually {data: Paginated} where Paginated.data is array
+    }
+    // Check if it's Paginated inside data
+    if (anyRes.data && typeof anyRes.data === 'object' && !Array.isArray(anyRes.data) && 'data' in anyRes.data) {
+      return anyRes.data.data as T[]
+    }
+    // If data is array of T
+    if (anyRes.data.length === 0 || 'id' in anyRes.data[0]) {
+      return anyRes.data as T[]
+    }
+  }
+  if (anyRes.data && Array.isArray(anyRes.data.data)) return anyRes.data.data as T[]
+  if (Array.isArray(anyRes.data)) return anyRes.data as T[]
+  if (anyRes.data && Array.isArray(anyRes.data)) return anyRes.data as T[]
+  return []
+}
+
+function normalizePaginated<T>(res: any): T[] {
+  if (!res) return []
+  if (Array.isArray(res)) return res as T[]
+  if (res.data) {
+    if (Array.isArray(res.data)) return res.data as T[]
+    if (res.data.data && Array.isArray(res.data.data)) return res.data.data as T[]
+  }
+  return []
+}
+
+export function useAdminProducts(params?: Record<string, string>) {
+  return useQuery({
+    queryKey: ['admin-products', params],
+    queryFn: async () => {
+      const res = await api.getAdminProducts(params)
+      return normalizePaginated<Product>(res as any)
+    },
+  })
+}
+export function useCreateAdminProduct() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: Record<string, unknown>) => api.createAdminProduct(data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-products'] }),
+  })
+}
+export function useUpdateAdminProduct() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, ...data }: { id: number } & Record<string, unknown>) => api.updateAdminProduct(id, data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-products'] }),
+  })
+}
+export function useDeleteAdminProduct() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => api.deleteAdminProduct(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-products'] }),
+  })
+}
+
+export function useAdminCategories() {
+  return useQuery({
+    queryKey: ['admin-categories'],
+    queryFn: async () => {
+      const res = await api.getAdminCategories()
+      return normalizePaginated<Category>(res as any)
+    },
+  })
+}
+export function useCreateAdminCategory() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: Record<string, unknown>) => api.createAdminCategory(data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-categories'] })
+      qc.invalidateQueries({ queryKey: ['categories'] })
+    },
+  })
+}
+export function useUpdateAdminCategory() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, ...data }: { id: number } & Record<string, unknown>) => api.updateAdminCategory(id, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-categories'] })
+      qc.invalidateQueries({ queryKey: ['categories'] })
+    },
+  })
+}
+export function useDeleteAdminCategory() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => api.deleteAdminCategory(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-categories'] })
+      qc.invalidateQueries({ queryKey: ['categories'] })
+    },
+  })
+}
+
+export function useAdminSpecials() {
+  return useQuery({
+    queryKey: ['admin-specials'],
+    queryFn: async () => {
+      const res = await api.getAdminSpecials()
+      return normalizePaginated<Special>(res as any)
+    },
+  })
+}
+export function useCreateAdminSpecial() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: Record<string, unknown>) => api.createAdminSpecial(data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-specials'] }),
+  })
+}
+export function useUpdateAdminSpecial() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, ...data }: { id: number } & Record<string, unknown>) => api.updateAdminSpecial(id, data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-specials'] }),
+  })
+}
+export function useDeleteAdminSpecial() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => api.deleteAdminSpecial(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-specials'] }),
+  })
+}
+
+export function useAdminStores() {
+  return useQuery({
+    queryKey: ['admin-stores'],
+    queryFn: async () => {
+      const res = await api.getAdminStores()
+      return normalizePaginated<Store>(res as any)
+    },
+  })
+}
+export function useCreateAdminStore() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: Record<string, unknown>) => api.createAdminStore(data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-stores'] })
+      qc.invalidateQueries({ queryKey: ['stores'] })
+    },
+  })
+}
+export function useUpdateAdminStore() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, ...data }: { id: number } & Record<string, unknown>) => api.updateAdminStore(id, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-stores'] })
+      qc.invalidateQueries({ queryKey: ['stores'] })
+    },
+  })
+}
+export function useDeleteAdminStore() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => api.deleteAdminStore(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-stores'] })
+      qc.invalidateQueries({ queryKey: ['stores'] })
+    },
+  })
+}
+
+export function useAdminUsers() {
+  return useQuery({
+    queryKey: ['admin-users'],
+    queryFn: async () => {
+      const res = await api.getAdminUsers()
+      return normalizePaginated<User>(res as any)
+    },
+  })
+}
+export function useUpdateAdminUser() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, ...data }: { id: number } & Record<string, unknown>) => api.updateAdminUser(id, data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-users'] }),
+  })
+}
+export function useDeleteAdminUser() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => api.deleteAdminUser(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-users'] }),
+  })
+}
+
+export function useAdminRiders() {
+  return useQuery({
+    queryKey: ['admin-riders'],
+    queryFn: async () => {
+      const res = await api.getAdminRiders()
+      return normalizePaginated<Rider>(res as any)
+    },
+  })
+}
+export function useUpdateAdminRider() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, ...data }: { id: number } & Record<string, unknown>) => api.updateAdminRider(id, data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-riders'] }),
+  })
+}
+
+export function useFavorites() {
+  return useQuery({
+    queryKey: ['favorites'],
+    queryFn: async () => {
+      const res = await api.getFavorites()
+      return normalizePaginated<Product>(res as any)
+    },
+  })
+}
+export function useAddFavorite() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (productId: number) => api.addFavorite(productId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['favorites'] }),
+  })
+}
+export function useRemoveFavorite() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (productId: number) => api.removeFavorite(productId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['favorites'] }),
+  })
+}
+
+export function useRecommendations() {
+  return useQuery({
+    queryKey: ['recommendations'],
+    queryFn: async () => {
+      const res = await api.getRecommendations()
+      const anyRes = res as any
+      if (Array.isArray(anyRes)) return anyRes as Product[]
+      if (anyRes.data && Array.isArray(anyRes.data)) return anyRes.data as Product[]
+      return [] as Product[]
+    },
+  })
+}
+
+export function useAuditLogsForEntity(entityType: string, entityId: number | string, enabled = true) {
+  return useQuery({
+    queryKey: ['audit-logs-entity', entityType, entityId],
+    queryFn: () => api.getAuditLogsForEntity(entityType, entityId),
+    enabled: enabled && !!entityType && !!entityId,
   })
 }

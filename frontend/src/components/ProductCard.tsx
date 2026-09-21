@@ -7,6 +7,7 @@ import { ShoppingCart } from 'lucide-react'
 import type { Product } from '@/types'
 import { useCartStore } from '@/stores/cart-store'
 import { emitCartAdded } from '@/lib/cart-events'
+import FavoriteHeart from '@/components/FavoriteHeart'
 
 interface Props {
   product: Product
@@ -52,6 +53,7 @@ export default function ProductCard({ product, compact = false }: Props) {
               Special
             </span>
           )}
+          <FavoriteHeart productId={product.id} />
         </div>
       </Link>
 

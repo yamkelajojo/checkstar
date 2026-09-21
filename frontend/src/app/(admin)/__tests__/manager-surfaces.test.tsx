@@ -153,12 +153,18 @@ describe('AdminDashboardClient', () => {
     expect(hrefs).toContain('/admin/staff')
     expect(hrefs).toContain('/admin/inventory')
     expect(hrefs).toContain('/admin/orders')
+    expect(hrefs).toContain('/admin/products')
+    expect(hrefs).toContain('/admin/categories')
+    expect(hrefs).toContain('/admin/specials')
+    expect(hrefs).toContain('/admin/stores')
+    expect(hrefs).toContain('/admin/users')
+    expect(hrefs).toContain('/admin/riders')
     expect(hrefs).toContain('/admin/messages')
     expect(hrefs).toContain('/operations')
     expect(hrefs).toContain('/operations/analytics')
+    expect(hrefs).toContain('/operations/audit-logs')
     expect(hrefs).toContain('/account/dispatch')
-    // The old placeholder destinations are gone
-    expect(hrefs.some((h) => h?.startsWith('/admin/products'))).toBe(false)
+    // No placeholder # links
     expect(hrefs.some((h) => h === '#')).toBe(false)
   })
 

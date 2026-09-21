@@ -21,8 +21,9 @@ import { api } from '@/lib/api'
 // - banners: developer, store_owner, store_manager
 // - staff: store_owner, developer
 // - inventory/orders: store_manager, logistics_officer, store_owner, developer
-// - operations/analytics: store_owner, store_manager, logistics_officer, developer
+// - operations/analytics/audit-logs: store_owner, store_manager, logistics_officer, developer
 // - dispatch: store_manager, logistics_officer, store_owner, developer
+// - products/categories/specials/stores/users/riders: developer only
 const storeManagementLinks = [
   { href: '/admin/banners', label: 'Banners', icon: Image, desc: 'Create and manage promotional banners', roles: ['store_owner', 'store_manager', 'developer'] },
   { href: '/admin/staff', label: 'Store Staff', icon: Users, desc: 'Hire and remove store staff access', roles: ['store_owner', 'developer'] },
@@ -30,9 +31,19 @@ const storeManagementLinks = [
   { href: '/admin/orders', label: 'Store Orders', icon: ShoppingCart, desc: 'View and update store orders', roles: ['store_manager', 'logistics_officer', 'store_owner', 'developer'] },
 ]
 
+const catalogManagementLinks = [
+  { href: '/admin/products', label: 'Products', icon: ShoppingBag, desc: 'Create and manage product catalogue', roles: ['developer'] },
+  { href: '/admin/categories', label: 'Categories', icon: Tags, desc: 'Manage product categories', roles: ['developer'] },
+  { href: '/admin/specials', label: 'Specials', icon: Sparkles, desc: 'Manage promotional specials', roles: ['developer'] },
+  { href: '/admin/stores', label: 'Stores', icon: Store, desc: 'Manage store locations and settings', roles: ['developer'] },
+  { href: '/admin/users', label: 'Users', icon: Users, desc: 'Manage user accounts and roles', roles: ['developer'] },
+  { href: '/admin/riders', label: 'Riders', icon: Bike, desc: 'Manage rider fleet', roles: ['developer'] },
+]
+
 const operationsLinks = [
   { href: '/operations', label: 'Live Operations', icon: Activity, desc: 'Realtime map, metrics and event feed', roles: ['logistics_officer', 'store_owner', 'store_manager', 'developer'] },
   { href: '/operations/analytics', label: 'Analytics', icon: ShoppingCart, desc: 'Revenue, orders and fleet insights', roles: ['logistics_officer', 'store_owner', 'store_manager', 'developer'] },
+  { href: '/operations/audit-logs', label: 'Audit Logs', icon: ShieldAlert, desc: 'Searchable audit trail', roles: ['logistics_officer', 'store_owner', 'store_manager', 'developer'] },
   { href: '/account/dispatch', label: 'Dispatch Console', icon: Bike, desc: 'Assign and reassign delivery riders', roles: ['logistics_officer', 'store_manager', 'store_owner', 'developer'] },
 ]
 
@@ -255,6 +266,15 @@ function AdminDashboardBody({ user, queryClient }: { user: ReturnType<typeof use
               <h3 className="font-medium text-gray-900 mb-0.5">Messages</h3>
               <p className="text-xs text-gray-400">{contactCount !== null ? `${contactCount} customer message${contactCount === 1 ? '' : 's'}` : 'Customer enquiries inbox'}</p>
             </Link>
+          </div>
+        </motion.div>
+
+        <motion.div variants={fadeUp} className="mb-8">
+          <h2 className="font-display text-lg font-semibold mb-4">Catalog Management</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {catalogManagementLinks.map((link) => (
+              <LinkCard key={link.href} link={link} />
+            ))}
           </div>
         </motion.div>
 

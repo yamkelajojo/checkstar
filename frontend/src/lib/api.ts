@@ -254,4 +254,69 @@ export const api = {
   submitContact: (data: { name: string; email: string; subject?: string; message: string }) => request<unknown>('/contact', { method: 'POST', body: JSON.stringify(data) }),
   // Admin health
   getAdminHealth: () => request<unknown>('/admin/health'),
+  // ---- Admin CRUD (developer only) ----
+  getAdminProducts: (params?: Record<string, string>) => {
+    const qs = params ? `?${new URLSearchParams(params)}` : ''
+    return request<Paginated<Product>>(`/admin/products${qs}`)
+  },
+  createAdminProduct: (data: Record<string, unknown>) => request<{ data: Product }>('/admin/products', { method: 'POST', body: JSON.stringify(data) }),
+  updateAdminProduct: (id: number, data: Record<string, unknown>) => request<{ data: Product }>(`/admin/products/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteAdminProduct: (id: number) => request<{ message: string }>(`/admin/products/${id}`, { method: 'DELETE' }),
+
+  getAdminCategories: (params?: Record<string, string>) => {
+    const qs = params ? `?${new URLSearchParams(params)}` : ''
+    return request<Paginated<Category> | { data: Category[] }>(`/admin/categories${qs}`)
+  },
+  createAdminCategory: (data: Record<string, unknown>) => request<{ data: Category }>('/admin/categories', { method: 'POST', body: JSON.stringify(data) }),
+  updateAdminCategory: (id: number, data: Record<string, unknown>) => request<{ data: Category }>(`/admin/categories/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteAdminCategory: (id: number) => request<{ message: string }>(`/admin/categories/${id}`, { method: 'DELETE' }),
+
+  getAdminSpecials: (params?: Record<string, string>) => {
+    const qs = params ? `?${new URLSearchParams(params)}` : ''
+    return request<Paginated<Special> | { data: Special[] }>(`/admin/specials${qs}`)
+  },
+  createAdminSpecial: (data: Record<string, unknown>) => request<{ data: Special }>('/admin/specials', { method: 'POST', body: JSON.stringify(data) }),
+  updateAdminSpecial: (id: number, data: Record<string, unknown>) => request<{ data: Special }>(`/admin/specials/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteAdminSpecial: (id: number) => request<{ message: string }>(`/admin/specials/${id}`, { method: 'DELETE' }),
+
+  getAdminStores: (params?: Record<string, string>) => {
+    const qs = params ? `?${new URLSearchParams(params)}` : ''
+    return request<Paginated<Store> | { data: Store[] }>(`/admin/stores${qs}`)
+  },
+  createAdminStore: (data: Record<string, unknown>) => request<{ data: Store }>('/admin/stores', { method: 'POST', body: JSON.stringify(data) }),
+  updateAdminStore: (id: number, data: Record<string, unknown>) => request<{ data: Store }>(`/admin/stores/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteAdminStore: (id: number) => request<{ message: string }>(`/admin/stores/${id}`, { method: 'DELETE' }),
+
+  getAdminUsers: (params?: Record<string, string>) => {
+    const qs = params ? `?${new URLSearchParams(params)}` : ''
+    return request<Paginated<User> | { data: User[] }>(`/admin/users${qs}`)
+  },
+  updateAdminUser: (id: number, data: Record<string, unknown>) => request<{ data: User }>(`/admin/users/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteAdminUser: (id: number) => request<{ message: string }>(`/admin/users/${id}`, { method: 'DELETE' }),
+
+  getAdminRiders: (params?: Record<string, string>) => {
+    const qs = params ? `?${new URLSearchParams(params)}` : ''
+    return request<Paginated<Rider> | { data: Rider[] }>(`/admin/riders${qs}`)
+  },
+  updateAdminRider: (id: number, data: Record<string, unknown>) => request<{ data: Rider }>(`/admin/riders/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+
+  // Audit logs
+  getAuditLogsForEntity: (entityType: string, entityId: number | string, params?: Record<string, string>, storeId?: number) => {
+    const qs = new URLSearchParams(params || {})
+    if (storeId) qs.set('store_id', String(storeId))
+    const suffix = qs.toString() ? `?${qs.toString()}` : ''
+    return request<{ audit_logs: unknown[] }>(`/operations/audit-logs/${entityType}/${entityId}${suffix}`)
+  },
+
+  // Favorites (customer)
+  getFavorites: (params?: Record<string, string>) => {
+    const qs = params ? `?${new URLSearchParams(params)}` : ''
+    return request<{ data: Product[] } | Paginated<Product>>(`/favorites${qs}`)
+  },
+  addFavorite: (productId: number) => request<{ data: unknown } | { message: string }>('/favorites', { method: 'POST', body: JSON.stringify({ product_id: productId }) }),
+  removeFavorite: (productId: number) => request<{ message: string }>(`/favorites/${productId}`, { method: 'DELETE' }),
+  checkFavorite: (productId: number) => request<{ isFavorited: boolean }>(`/favorites/${productId}/check`),
+
+  // Recommendations
+  getRecommendations: () => request<{ data: Product[] } | Product[]>('/recommendations'),
 }

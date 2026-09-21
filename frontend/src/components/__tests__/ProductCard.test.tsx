@@ -13,6 +13,32 @@ vi.mock('@/stores/cart-store', () => ({
     selector({ addItem }),
 }))
 
+vi.mock('@/components/FavoriteHeart', () => ({
+  default: () => null,
+}))
+
+vi.mock('@/lib/query', () => ({
+  useAddFavorite: () => ({ mutate: vi.fn(), isPending: false }),
+  useRemoveFavorite: () => ({ mutate: vi.fn(), isPending: false }),
+}))
+
+vi.mock('@tanstack/react-query', () => ({
+  useQuery: () => ({ data: null }),
+  useQueryClient: () => ({ invalidateQueries: vi.fn() }),
+  useMutation: () => ({ mutate: vi.fn(), isPending: false }),
+}))
+
+vi.mock('@/stores/auth-store', () => ({
+  useAuthStore: (selector?: any) => {
+    const state = { isAuthenticated: false, user: null }
+    return selector ? selector(state) : state
+  },
+}))
+
+vi.mock('@/lib/api', () => ({
+  api: { checkFavorite: vi.fn() },
+}))
+
 import ProductCard from '../ProductCard'
 import { onCartAdded } from '@/lib/cart-events'
 import type { Product } from '@/types'

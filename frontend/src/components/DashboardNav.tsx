@@ -12,11 +12,19 @@ const routeLabels: Record<string, string> = {
   messages: 'Messages',
   operations: 'Operations',
   analytics: 'Analytics',
+  'audit-logs': 'Audit Logs',
   account: 'Account',
   dispatch: 'Dispatch',
   orders: 'Orders',
   inventory: 'Inventory',
   profile: 'Profile',
+  products: 'Products',
+  categories: 'Categories',
+  specials: 'Specials',
+  stores: 'Stores',
+  users: 'Users',
+  riders: 'Riders',
+  favorites: 'Favorites',
 }
 
 export default function DashboardNav() {
