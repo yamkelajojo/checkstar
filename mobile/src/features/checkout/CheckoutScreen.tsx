@@ -5,7 +5,8 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTheme } from '../../theme';
 import { brand } from '../../theme/colors';
-import { typeScale, weights, letterSpacing } from '../../theme/typography';
+import { textStyle, fontWeight } from '../../theme/typography';
+import { semanticSpacing, semanticRadius } from '../../theme/spacing';
 import { useCart } from '../cart/store';
 import { cartRules } from '../cart/model';
 import { useAllProducts } from '../catalog/hooks';
@@ -16,6 +17,8 @@ import { getDeliveryCoords } from '../../lib/deliveryCoords';
 import { formatZar } from '../../lib/currency';
 import { TactilePressable } from '../../components/shared/TactilePressable';
 import { EmptyState } from '../../components/shared/EmptyState';
+import { FadeSlideIn } from '../../components/shared/FadeSlideIn';
+import { CrashCascadeIn } from '../../components/shared/CrashCascadeIn';
 import { haptic } from '../../lib/haptics';
 import { copy, formatString } from '../../lib/strings';
 import { queryClient, queryKeys } from '../../lib/queryKeys';
@@ -44,6 +47,7 @@ export function CheckoutScreen() {
   const clearCart = useCart((s) => s.clear);
   const status = useSession((s) => s.status);
   const toast = useToast();
+  const topInset = useTopSafeArea(semanticSpacing.sm);
 
   const [address, setAddress] = useState('');
   const [notes, setNotes] = useState('');
@@ -56,7 +60,6 @@ export function CheckoutScreen() {
   const [validatingFulfillment, setValidatingFulfillment] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Fulfilment: have it delivered, or collect from a store yourself.
   const [fulfilment, setFulfilment] = useState<'delivery' | 'pickup'>('delivery');
   const [stores, setStores] = useState<ApiStore[]>([]);
   const [selectedStoreId, setSelectedStoreId] = useState<number | null>(null);
@@ -113,7 +116,6 @@ export function CheckoutScreen() {
   const usingSavedAddress = !isPickup && selectedAddressId !== 'new' && savedAddresses.some((a) => a.id === selectedAddressId);
   const activeSavedAddress = usingSavedAddress ? savedAddresses.find((a) => a.id === selectedAddressId) ?? null : null;
   const effectiveAddressForValidation = activeSavedAddress?.address ?? address;
-  const deliveryTotal = subtotal + EST_DELIVERY_FEE_CENTS;
   const canSubmitOrder = isPickup
     ? canSubmit({
         itemCount: items.length,
@@ -136,43 +138,31 @@ export function CheckoutScreen() {
         fulfillmentValid: fulfillmentStore != null && fulfillmentError == null,
       });
 
-  // Validate fulfillment when cart or address/coords change (debounced).
-  // Pickup skips this entirely — the customer chose the store themselves.
   useEffect(() => {
     if (items.length === 0 || fulfilment === 'pickup') {
       setFulfillmentError(null);
       setValidatingFulfillment(false);
       return;
     }
-
     if (debounceRef.current) clearTimeout(debounceRef.current);
-
     let cancelled = false;
-
     debounceRef.current = setTimeout(() => {
       const validate = async () => {
         setValidatingFulfillment(true);
         setFulfillmentError(null);
-
         try {
           let coords;
           if (usingSavedAddress) {
             const saved = savedAddresses.find((a) => a.id === selectedAddressId);
-            if (saved) {
-              coords = { latitude: Number(saved.latitude), longitude: Number(saved.longitude) };
-            }
+            if (saved) coords = { latitude: Number(saved.latitude), longitude: Number(saved.longitude) };
           }
-          if (!coords) {
-            coords = await getDeliveryCoords();
-          }
+          if (!coords) coords = await getDeliveryCoords();
           if (cancelled) return;
-
           const result = await validateFulfillment({
             items: items.map((i) => ({ product_id: Number(i.productId), quantity: i.quantity })),
             latitude: coords.latitude,
             longitude: coords.longitude,
           });
-
           if (!cancelled) {
             if (result.success && result.store) {
               setFulfillmentStore({
@@ -197,15 +187,13 @@ export function CheckoutScreen() {
           if (!cancelled) setValidatingFulfillment(false);
         }
       };
-
       void validate();
     }, VALIDATION_DEBOUNCE_MS);
-
     return () => {
       cancelled = true;
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [items, address, fulfilment, usingSavedAddress, savedAddresses, selectedAddressId]); // Re-validate when cart, address or fulfilment mode changes
+  }, [items, address, fulfilment, usingSavedAddress, savedAddresses, selectedAddressId]);
 
   const submit = async () => {
     if (!canSubmitOrder) {
@@ -213,7 +201,6 @@ export function CheckoutScreen() {
       setError('Please complete all fields and ensure fulfillment is valid before placing your order.');
       return;
     }
-    // Safety check - should not be possible due to disabled button, but guard anyway
     if (status !== 'authenticated') {
       setError('Please sign in to place an order.');
       return;
@@ -264,13 +251,9 @@ export function CheckoutScreen() {
           });
         }
       }
-      // Keep cart on retrying/cancelled so customer can re-checkout (OrderCartPolicy #04)
       const shouldClear = res.dispatch?.status !== 'retrying' && res.dispatch?.status !== 'cancelled';
-      if (shouldClear) {
-        clearCart();
-      } else {
-        toast.show('No riders available right now — your cart is kept so you can retry.');
-      }
+      if (shouldClear) clearCart();
+      else toast.show('No riders available right now — your cart is kept so you can retry.');
       void queryClient.invalidateQueries({ queryKey: queryKeys.orders });
       haptic.success();
       trackCheckout(subtotal);
@@ -283,16 +266,18 @@ export function CheckoutScreen() {
   };
 
   const row = (label: string, value: string, strong = false) => (
-    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-      <Text style={{ color: theme.colors.text.secondary, fontSize: typeScale.body }}>{label}</Text>
-      <Text style={{ fontWeight: strong ? weights.bold : weights.semibold, color: theme.colors.text.primary }}>{value}</Text>
+    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+      <Text style={{ color: theme.colors.text.secondary, fontSize: 13 }}>{label}</Text>
+      <Text style={{ fontWeight: strong ? fontWeight.bold : fontWeight.semibold, color: theme.colors.text.primary, fontSize: strong ? 15 : 13, letterSpacing: strong ? -0.2 : 0 }}>{value}</Text>
     </View>
   );
 
   if (items.length === 0) {
     return (
-      <View style={{ flex: 1, backgroundColor: theme.colors.background.primary }}>
-        <ScreenTitle title={copy.checkout.title} />
+      <View style={{ flex: 1, backgroundColor: theme.colors.background.primary, paddingTop: topInset }}>
+        <FadeSlideIn delay={60} distance={12}>
+          <Text style={{ paddingHorizontal: semanticSpacing.screenPadding, fontSize: 28, fontWeight: '800', letterSpacing: -0.5, color: theme.colors.text.primary }}>{copy.checkout.title}</Text>
+        </FadeSlideIn>
         <EmptyState icon={Store} title="Nothing to check out" caption="Your cart is empty." />
       </View>
     );
@@ -300,325 +285,311 @@ export function CheckoutScreen() {
 
   return (
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: theme.colors.background.primary }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={{ paddingBottom: 140 }} keyboardShouldPersistTaps="handled">
-        <ScreenTitle title={copy.checkout.title} />
-
-        <View style={{ padding: 16, gap: 14 }}>
-          {/* How would you like to get your order? */}
-          <View style={{ flexDirection: 'row', backgroundColor: theme.colors.surface.sunken, borderRadius: 14, padding: 4, gap: 4 }} accessibilityRole="tablist">
-            {([
-              { key: 'delivery', label: 'Deliver', icon: <MapPin size={16} color={fulfilment === 'delivery' ? brand.primary : theme.colors.text.secondary} /> },
-              { key: 'pickup', label: 'Pickup', icon: <ShoppingBag size={16} color={isPickup ? brand.primary : theme.colors.text.secondary} /> },
-            ] as const).map((opt) => {
-              const active = fulfilment === opt.key;
-              return (
-                <TactilePressable
-                  key={opt.key}
-                  onPress={() => {
-                    haptic.tap();
-                    setFulfilment(opt.key);
-                  }}
-                  accessibilityRole="tab"
-                  accessibilityState={{ selected: active }}
-                  style={{
-                    flex: 1,
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 6,
-                    paddingVertical: 10,
-                    borderRadius: 10,
-                    backgroundColor: active ? theme.colors.surface.primary : 'transparent',
-                  }}
-                >
-                  {opt.icon}
-                  <Text style={{ fontWeight: active ? weights.bold : weights.semibold, color: active ? brand.primary : theme.colors.text.secondary }}>
-                    {opt.label}
-                  </Text>
-                </TactilePressable>
-              );
-            })}
+      <ScrollView contentContainerStyle={{ paddingBottom: 160 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+        <FadeSlideIn delay={60} distance={12}>
+          <View style={{ paddingTop: topInset, paddingHorizontal: semanticSpacing.screenPadding, paddingBottom: 12 }}>
+            <Text style={{ fontSize: 28, fontWeight: '800', letterSpacing: -0.5, color: theme.colors.text.primary }}>{copy.checkout.title}</Text>
           </View>
+        </FadeSlideIn>
 
-          {isPickup && (
-            <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: 16, padding: 16, gap: 10 }}>
-              <Text style={{ fontWeight: weights.bold, color: theme.colors.text.primary }}>Collect from</Text>
-              {stores.length === 0 ? (
-                <Text style={{ color: theme.colors.text.secondary, fontSize: typeScale.body }}>
-                  No stores are open for collection right now — please try delivery.
-                </Text>
-              ) : (
-                stores.map((storeOpt) => {
-                  const active = storeOpt.id === selectedStoreId;
-                  return (
-                    <TactilePressable
-                      key={storeOpt.id}
-                      onPress={() => {
-                        haptic.tap();
-                        setSelectedStoreId(storeOpt.id);
-                      }}
-                      accessibilityRole="radio"
-                      accessibilityState={{ selected: active }}
-                      accessibilityLabel={`Collect from ${storeOpt.name}`}
-                      style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        gap: 10,
-                        padding: 12,
-                        borderRadius: 12,
-                        borderWidth: 1,
-                        borderColor: active ? brand.primary : theme.colors.border.subtle,
-                      }}
-                    >
-                      {active ? <CheckCircle2 size={18} color={brand.primary} /> : <Store size={18} color={theme.colors.text.secondary} />}
-                      <View style={{ flex: 1 }}>
-                        <Text style={{ fontWeight: weights.semibold, color: theme.colors.text.primary }}>{storeOpt.name}</Text>
-                        <Text style={{ color: theme.colors.text.secondary, fontSize: typeScale.caption }}>{storeOpt.address}</Text>
-                      </View>
-                    </TactilePressable>
-                  );
-                })
-              )}
-              <Text style={{ color: theme.colors.text.tertiary, fontSize: typeScale.caption }}>
-                We'll pack your order ready for collection — no delivery fee.
-              </Text>
-            </View>
-          )}
-
-          {validatingFulfillment && (
-            <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: 16, padding: 16, gap: 8 }}>
-              <Text style={{ fontWeight: weights.bold, color: theme.colors.text.primary }}>Finding best fulfillment store...</Text>
-              <Text style={{ color: theme.colors.text.secondary, fontSize: typeScale.body }}>We're checking which store can fulfill your complete order</Text>
-            </View>
-          )}
-
-          {fulfillmentError && (
-            <View style={{ backgroundColor: theme.colors.status.error.soft, borderRadius: 16, padding: 16, gap: 8, borderWidth: 1, borderColor: theme.colors.status.error.primary }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <AlertCircle size={20} color={theme.colors.status.error.strong} />
-                <Text style={{ color: theme.colors.status.error.strong, fontWeight: weights.semibold, fontSize: typeScale.body }}>
-                  Cannot fulfill order
-                </Text>
-              </View>
-              <Text style={{ color: theme.colors.status.error.strong, fontSize: typeScale.body }}>
-                {fulfillmentError}
-              </Text>
-            </View>
-          )}
-
-          {fulfillmentStore && !fulfillmentError && (
-            <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: 16, padding: 16, gap: 8 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                <MapPin size={18} color={brand.primary} />
-                <Text style={{ color: theme.colors.text.secondary, fontSize: typeScale.body }}>
-                  Your full order will be fulfilled from <Text style={{ fontWeight: weights.bold, color: theme.colors.text.primary }}>{fulfillmentStore.name}</Text>
-                </Text>
-              </View>
-              <Text style={{ color: theme.colors.text.tertiary, fontSize: typeScale.caption }}>
-                This store has all selected items available and is within delivery range
-              </Text>
-            </View>
-          )}
-
-          {!isPickup && !validatingFulfillment && !fulfillmentStore && !fulfillmentError && (
-            <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: 16, padding: 16, gap: 8 }}>
-              <Text style={{ fontWeight: weights.bold, color: theme.colors.text.primary }}>Unable to determine fulfillment store</Text>
-              <Text style={{ color: theme.colors.text.secondary, fontSize: typeScale.body }}>Please enter your delivery address to continue</Text>
-            </View>
-          )}
-
-          {!isPickup && savedAddresses.length > 0 && (
-            <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: 16, padding: 16, gap: 10 }}>
-              <Text style={{ fontWeight: weights.bold, color: theme.colors.text.primary }}>Deliver to</Text>
-              {savedAddresses.map((savedOpt) => {
-                const active = selectedAddressId === savedOpt.id;
+        <View style={{ paddingHorizontal: semanticSpacing.screenPadding, gap: 14 }}>
+          <FadeSlideIn delay={100} distance={10}>
+            <View style={{ flexDirection: 'row', backgroundColor: theme.colors.surface.elevated, borderRadius: 999, padding: 3, gap: 3, borderWidth: 1, borderColor: theme.colors.border.subtle }}>
+              {([
+                { key: 'delivery', label: 'Deliver', icon: MapPin },
+                { key: 'pickup', label: 'Pickup', icon: ShoppingBag },
+              ] as const).map((opt) => {
+                const active = fulfilment === opt.key;
+                const Icon = opt.icon;
                 return (
                   <TactilePressable
-                    key={savedOpt.id}
+                    key={opt.key}
                     onPress={() => {
-                      haptic.tap();
-                      setSelectedAddressId(savedOpt.id);
+                      haptic.selection();
+                      setFulfilment(opt.key);
                     }}
-                    accessibilityRole="radio"
-                    accessibilityState={{ selected: active }}
-                    accessibilityLabel={`Deliver to ${savedOpt.label}`}
                     style={{
+                      flex: 1,
                       flexDirection: 'row',
                       alignItems: 'center',
-                      gap: 10,
-                      padding: 12,
-                      borderRadius: 12,
+                      justifyContent: 'center',
+                      gap: 6,
+                      paddingVertical: 10,
+                      borderRadius: 999,
+                      backgroundColor: active ? theme.colors.surface.primary : 'transparent',
                       borderWidth: 1,
-                      borderColor: active ? brand.primary : theme.colors.border.subtle,
+                      borderColor: active ? theme.colors.border.subtle : 'transparent',
+                      shadowColor: active ? '#000' : 'transparent',
+                      shadowOffset: { width: 0, height: 1 },
+                      shadowOpacity: active ? 0.06 : 0,
+                      shadowRadius: 3,
                     }}
                   >
-                    {active ? <CheckCircle2 size={18} color={brand.primary} /> : <MapPin size={18} color={theme.colors.text.secondary} />}
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ fontWeight: weights.semibold, color: theme.colors.text.primary }}>
-                        {savedOpt.label}{savedOpt.is_default ? ' · Default' : ''}
-                      </Text>
-                      <Text numberOfLines={1} style={{ color: theme.colors.text.secondary, fontSize: typeScale.caption }}>{savedOpt.address}</Text>
-                    </View>
+                    <Icon size={14} color={active ? brand.orange : theme.colors.text.secondary} strokeWidth={active ? 2.2 : 1.8} />
+                    <Text style={{ fontWeight: active ? fontWeight.bold : fontWeight.semibold, fontSize: 12, letterSpacing: 0.2, color: active ? theme.colors.text.primary : theme.colors.text.secondary }}>{opt.label}</Text>
                   </TactilePressable>
                 );
               })}
-              <TactilePressable
-                onPress={() => {
-                  haptic.tap();
-                  setSelectedAddressId('new');
-                }}
-                accessibilityRole="radio"
-                accessibilityState={{ selected: selectedAddressId === 'new' }}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: 10,
-                  padding: 12,
-                  borderRadius: 12,
-                  borderWidth: 1,
-                  borderColor: selectedAddressId === 'new' ? brand.primary : theme.colors.border.subtle,
-                }}
-              >
-                <MapPin size={18} color={selectedAddressId === 'new' ? brand.primary : theme.colors.text.secondary} />
-                <Text style={{ fontWeight: weights.semibold, color: theme.colors.text.primary }}>Enter a new address</Text>
-              </TactilePressable>
             </View>
+          </FadeSlideIn>
+
+          {isPickup && (
+            <FadeSlideIn delay={140} distance={10}>
+              <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: semanticRadius.card, padding: 14, gap: 10, borderWidth: 1, borderColor: theme.colors.border.subtle, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 1 }}>
+                <Text style={{ fontWeight: fontWeight.bold, color: theme.colors.text.primary, letterSpacing: -0.2, fontSize: 13 }}>Collect from</Text>
+                {stores.length === 0 ? (
+                  <Text style={{ color: theme.colors.text.secondary, fontSize: 12, lineHeight: 16 }}>No stores are open for collection right now — please try delivery.</Text>
+                ) : (
+                  stores.map((storeOpt, idx) => {
+                    const active = storeOpt.id === selectedStoreId;
+                    return (
+                      <CrashCascadeIn key={storeOpt.id} index={idx}>
+                        <TactilePressable
+                          onPress={() => {
+                            haptic.selection();
+                            setSelectedStoreId(storeOpt.id);
+                          }}
+                          style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            gap: 10,
+                            padding: 12,
+                            borderRadius: 12,
+                            borderWidth: 1,
+                            borderColor: active ? brand.orange : theme.colors.border.subtle,
+                            backgroundColor: active ? brand.orange + '08' : theme.colors.surface.primary,
+                          }}
+                        >
+                          {active ? <CheckCircle2 size={16} color={brand.orange} strokeWidth={2.2} /> : <Store size={16} color={theme.colors.text.secondary} />}
+                          <View style={{ flex: 1 }}>
+                            <Text style={{ fontWeight: fontWeight.semibold, color: theme.colors.text.primary, fontSize: 13, letterSpacing: -0.1 }}>{storeOpt.name}</Text>
+                            <Text style={{ color: theme.colors.text.secondary, fontSize: 11, marginTop: 2 }}>{storeOpt.address}</Text>
+                          </View>
+                        </TactilePressable>
+                      </CrashCascadeIn>
+                    );
+                  })
+                )}
+                <Text style={{ color: theme.colors.text.tertiary, fontSize: 10, lineHeight: 13 }}>We&apos;ll pack your order ready for collection — no delivery fee.</Text>
+              </View>
+            </FadeSlideIn>
           )}
 
-          <View style={{ gap: 6, display: isPickup || usingSavedAddress ? 'none' : 'flex' }}>
-            <Text style={{ fontWeight: weights.semibold, color: theme.colors.text.primary }}>{copy.checkout.deliveryAddress}</Text>
-            <TextInput
-              value={address}
-              onChangeText={setAddress}
-              placeholder={copy.checkout.deliveryAddressPlaceholder}
-              placeholderTextColor={theme.colors.text.tertiary}
-              multiline
-              numberOfLines={2}
-              style={{
-                backgroundColor: theme.colors.surface.sunken,
-                borderRadius: 14,
-                paddingHorizontal: 16,
-                paddingVertical: 14,
-                color: theme.colors.text.primary,
-                fontSize: typeScale.body,
-                minHeight: 64,
-                textAlignVertical: 'top',
-              }}
-            />
-          </View>
+          {validatingFulfillment && (
+            <FadeSlideIn delay={160} distance={8}>
+              <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: semanticRadius.card, padding: 14, gap: 6, borderWidth: 1, borderColor: theme.colors.border.subtle }}>
+                <Text style={{ fontWeight: fontWeight.bold, color: theme.colors.text.primary, fontSize: 13 }}>Finding best store...</Text>
+                <Text style={{ color: theme.colors.text.secondary, fontSize: 12 }}>Checking which store can fulfill your order</Text>
+              </View>
+            </FadeSlideIn>
+          )}
 
-          <View style={{ gap: 6 }}>
-            <Text style={{ fontWeight: weights.semibold, color: theme.colors.text.primary }}>{copy.checkout.deliveryNotes}</Text>
-            <TextInput
-              value={notes}
-              onChangeText={setNotes}
-              placeholder={copy.checkout.deliveryNotesPlaceholder}
-              placeholderTextColor={theme.colors.text.tertiary}
-              multiline
-              numberOfLines={2}
-              style={{
-                backgroundColor: theme.colors.surface.sunken,
-                borderRadius: 14,
-                paddingHorizontal: 16,
-                paddingVertical: 14,
-                color: theme.colors.text.primary,
-                fontSize: typeScale.body,
-                minHeight: 64,
-                textAlignVertical: 'top',
-              }}
-            />
-            {usedFallbackLocation && (
-              <Text style={{ color: theme.colors.text.secondary, fontSize: typeScale.caption }}>
-                {copy.checkout.locationFallback}
-              </Text>
-            )}
-          </View>
+          {fulfillmentError && (
+            <FadeSlideIn delay={160} distance={8}>
+              <View style={{ backgroundColor: '#FEF2F2', borderRadius: semanticRadius.card, padding: 14, gap: 8, borderWidth: 1, borderColor: '#FECACA' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <AlertCircle size={16} color="#DC2626" />
+                  <Text style={{ color: '#DC2626', fontWeight: '600', fontSize: 12 }}>Cannot fulfill order</Text>
+                </View>
+                <Text style={{ color: '#991B1B', fontSize: 12, lineHeight: 16 }}>{fulfillmentError}</Text>
+              </View>
+            </FadeSlideIn>
+          )}
 
-          <View style={{ gap: 6 }}>
-            <Text style={{ fontWeight: weights.semibold, color: theme.colors.text.primary }}>{copy.checkout.paymentMethod}</Text>
-            <View
-              accessibilityRole="radio"
-              accessibilityState={{ selected: true }}
-              style={{
-                backgroundColor: theme.colors.surface.primary,
-                borderRadius: 14,
-                padding: 14,
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: 10,
-                borderWidth: 1,
-                borderColor: brand.primary,
-              }}
-            >
-              <CheckCircle2 size={20} color={brand.primary} />
-              <View style={{ flex: 1, gap: 2 }}>
-                <Text style={{ fontWeight: weights.semibold, color: theme.colors.text.primary }}>{copy.checkout.cashOnDelivery}</Text>
-                <Text style={{ color: theme.colors.text.secondary, fontSize: typeScale.caption }}>{copy.checkout.cashOnDeliveryNote}</Text>
+          {fulfillmentStore && !fulfillmentError && (
+            <FadeSlideIn delay={160} distance={8}>
+              <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: semanticRadius.card, padding: 14, gap: 8, borderWidth: 1, borderColor: theme.colors.border.subtle, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.03, shadowRadius: 4 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: brand.orange + '15', alignItems: 'center', justifyContent: 'center' }}>
+                    <MapPin size={12} color={brand.orange} strokeWidth={2.2} />
+                  </View>
+                  <Text style={{ color: theme.colors.text.secondary, fontSize: 12, flex: 1, lineHeight: 16 }}>
+                    Fulfilled from <Text style={{ fontWeight: '700', color: theme.colors.text.primary }}>{fulfillmentStore.name}</Text>
+                  </Text>
+                </View>
+              </View>
+            </FadeSlideIn>
+          )}
+
+          {!isPickup && savedAddresses.length > 0 && (
+            <FadeSlideIn delay={180} distance={10}>
+              <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: semanticRadius.card, padding: 14, gap: 10, borderWidth: 1, borderColor: theme.colors.border.subtle }}>
+                <Text style={{ fontWeight: fontWeight.bold, color: theme.colors.text.primary, fontSize: 13, letterSpacing: -0.2 }}>Deliver to</Text>
+                {savedAddresses.map((savedOpt, idx) => {
+                  const active = selectedAddressId === savedOpt.id;
+                  return (
+                    <CrashCascadeIn key={savedOpt.id} index={idx}>
+                      <TactilePressable
+                        onPress={() => {
+                          haptic.selection();
+                          setSelectedAddressId(savedOpt.id);
+                        }}
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          gap: 10,
+                          padding: 12,
+                          borderRadius: 12,
+                          borderWidth: 1,
+                          borderColor: active ? brand.orange : theme.colors.border.subtle,
+                          backgroundColor: active ? brand.orange + '08' : 'transparent',
+                        }}
+                      >
+                        {active ? <CheckCircle2 size={16} color={brand.orange} /> : <MapPin size={16} color={theme.colors.text.secondary} />}
+                        <View style={{ flex: 1 }}>
+                          <Text style={{ fontWeight: '600', color: theme.colors.text.primary, fontSize: 12 }}>{savedOpt.label}{savedOpt.is_default ? ' · Default' : ''}</Text>
+                          <Text numberOfLines={1} style={{ color: theme.colors.text.secondary, fontSize: 11, marginTop: 2 }}>{savedOpt.address}</Text>
+                        </View>
+                      </TactilePressable>
+                    </CrashCascadeIn>
+                  );
+                })}
+                <TactilePressable
+                  onPress={() => {
+                    haptic.selection();
+                    setSelectedAddressId('new');
+                  }}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 10,
+                    padding: 12,
+                    borderRadius: 12,
+                    borderWidth: 1,
+                    borderColor: selectedAddressId === 'new' ? brand.orange : theme.colors.border.subtle,
+                  }}
+                >
+                  <MapPin size={16} color={selectedAddressId === 'new' ? brand.orange : theme.colors.text.secondary} />
+                  <Text style={{ fontWeight: '600', color: theme.colors.text.primary, fontSize: 12 }}>Enter a new address</Text>
+                </TactilePressable>
+              </View>
+            </FadeSlideIn>
+          )}
+
+          <FadeSlideIn delay={200} distance={8} style={{ display: isPickup || usingSavedAddress ? 'none' : 'flex' } as any}>
+            <View style={{ gap: 8 }}>
+              <Text style={{ fontWeight: '600', color: theme.colors.text.primary, fontSize: 11, letterSpacing: 0.5, textTransform: 'uppercase' }}>{copy.checkout.deliveryAddress}</Text>
+              <TextInput
+                value={address}
+                onChangeText={setAddress}
+                placeholder={copy.checkout.deliveryAddressPlaceholder}
+                placeholderTextColor={theme.colors.text.tertiary}
+                multiline
+                style={{
+                  backgroundColor: theme.colors.surface.primary,
+                  borderRadius: 12,
+                  paddingHorizontal: 14,
+                  paddingVertical: 12,
+                  color: theme.colors.text.primary,
+                  fontSize: 13,
+                  minHeight: 56,
+                  borderWidth: 1,
+                  borderColor: theme.colors.border.subtle,
+                  textAlignVertical: 'top',
+                }}
+              />
+            </View>
+          </FadeSlideIn>
+
+          <FadeSlideIn delay={220} distance={8}>
+            <View style={{ gap: 8 }}>
+              <Text style={{ fontWeight: '600', color: theme.colors.text.primary, fontSize: 11, letterSpacing: 0.5, textTransform: 'uppercase' }}>{copy.checkout.deliveryNotes}</Text>
+              <TextInput
+                value={notes}
+                onChangeText={setNotes}
+                placeholder={copy.checkout.deliveryNotesPlaceholder}
+                placeholderTextColor={theme.colors.text.tertiary}
+                multiline
+                style={{
+                  backgroundColor: theme.colors.surface.primary,
+                  borderRadius: 12,
+                  paddingHorizontal: 14,
+                  paddingVertical: 12,
+                  color: theme.colors.text.primary,
+                  fontSize: 13,
+                  minHeight: 56,
+                  borderWidth: 1,
+                  borderColor: theme.colors.border.subtle,
+                  textAlignVertical: 'top',
+                }}
+              />
+              {usedFallbackLocation ? <Text style={{ color: theme.colors.text.tertiary, fontSize: 10, lineHeight: 13 }}>{copy.checkout.locationFallback}</Text> : null}
+            </View>
+          </FadeSlideIn>
+
+          <FadeSlideIn delay={240} distance={8}>
+            <View style={{ gap: 8 }}>
+              <Text style={{ fontWeight: '600', color: theme.colors.text.primary, fontSize: 11, letterSpacing: 0.5, textTransform: 'uppercase' }}>{copy.checkout.paymentMethod}</Text>
+              <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: 12, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1, borderColor: brand.orange, shadowColor: brand.orange, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 6 }}>
+                <CheckCircle2 size={18} color={brand.orange} strokeWidth={2.2} />
+                <View style={{ flex: 1, gap: 2 }}>
+                  <Text style={{ fontWeight: '600', color: theme.colors.text.primary, fontSize: 13 }}>{copy.checkout.cashOnDelivery}</Text>
+                  <Text style={{ color: theme.colors.text.secondary, fontSize: 11 }}>{copy.checkout.cashOnDeliveryNote}</Text>
+                </View>
               </View>
             </View>
-          </View>
+          </FadeSlideIn>
 
-          <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: 16, padding: 16, gap: 10 }}>
-            <Text style={{ fontWeight: weights.bold, color: theme.colors.text.primary }}>{copy.checkout.summary}</Text>
-            {row(`${cartRules.totalQuantity(items)} items`, formatZar(subtotal))}
-            {isPickup
-              ? row('Pickup', 'Free')
-              : row(copy.checkout.estimatedDelivery, formatZar(EST_DELIVERY_FEE_CENTS))}
-            <View style={{ height: 1, backgroundColor: theme.colors.border.subtle }} />
-            {row(copy.checkout.total, formatZar(isPickup ? subtotal : total), true)}
-          </View>
+          <FadeSlideIn delay={260} distance={10}>
+            <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: semanticRadius.card, padding: 14, gap: 10, borderWidth: 1, borderColor: theme.colors.border.subtle }}>
+              <Text style={{ fontWeight: '700', color: theme.colors.text.primary, fontSize: 13, letterSpacing: -0.2 }}>{copy.checkout.summary}</Text>
+              {row(`${cartRules.totalQuantity(items)} items`, formatZar(subtotal))}
+              {isPickup ? row('Pickup', 'Free') : row(copy.checkout.estimatedDelivery, formatZar(EST_DELIVERY_FEE_CENTS))}
+              <View style={{ height: 1, backgroundColor: theme.colors.border.subtle, marginVertical: 2 }} />
+              {row(copy.checkout.total, formatZar(isPickup ? subtotal : total), true)}
+            </View>
+          </FadeSlideIn>
 
           {status !== 'authenticated' && (
-            <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: 16, padding: 16, gap: 8, alignItems: 'center' }}>
-              <Lock size={20} color={theme.colors.text.secondary} />
-              <Text style={{ color: theme.colors.text.secondary, fontSize: typeScale.body, textAlign: 'center' }}>
-                {copy.checkout.signInPrompt}
-              </Text>
-              <TactilePressable
-                onPress={() => navigation.navigate('Auth', { intent: 'checkout' })}
-                haptic="commit"
-                style={{ backgroundColor: brand.primary, borderRadius: 999, alignSelf: 'stretch' }}
-              >
-                <Text style={{ color: '#fff', textAlign: 'center', fontWeight: weights.bold }}>{copy.checkout.signInToContinue}</Text>
-              </TactilePressable>
-            </View>
+            <FadeSlideIn delay={280} distance={8}>
+              <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: semanticRadius.card, padding: 14, gap: 10, alignItems: 'center', borderWidth: 1, borderColor: theme.colors.border.subtle }}>
+                <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: theme.colors.surface.elevated, alignItems: 'center', justifyContent: 'center' }}>
+                  <Lock size={16} color={theme.colors.text.secondary} />
+                </View>
+                <Text style={{ color: theme.colors.text.secondary, fontSize: 12, textAlign: 'center', lineHeight: 16 }}>{copy.checkout.signInPrompt}</Text>
+                <TactilePressable onPress={() => navigation.navigate('Auth', { intent: 'checkout' } as any)} haptic="commit" style={{ backgroundColor: theme.colors.text.primary, borderRadius: 999, alignSelf: 'stretch', paddingVertical: 12, alignItems: 'center' }}>
+                  <Text style={{ color: theme.colors.text.inverse, fontWeight: '700', fontSize: 12, letterSpacing: 0.3, textTransform: 'uppercase' }}>{copy.checkout.signInToContinue}</Text>
+                </TactilePressable>
+              </View>
+            </FadeSlideIn>
           )}
 
           {error != null && (
-            <Text style={{ color: theme.colors.status.error.strong, fontSize: typeScale.body }}>{error}</Text>
+            <FadeSlideIn delay={0} distance={6}>
+              <View style={{ backgroundColor: '#FEF2F2', borderRadius: 10, padding: 12, borderWidth: 1, borderColor: '#FECACA' }}>
+                <Text style={{ color: '#DC2626', fontSize: 12, lineHeight: 16 }}>{error}</Text>
+              </View>
+            </FadeSlideIn>
           )}
         </View>
       </ScrollView>
 
-      <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: 16, borderTopWidth: 1, borderTopColor: theme.colors.border.subtle, backgroundColor: theme.colors.background.primary }}>
+      <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: semanticSpacing.screenPadding, borderTopWidth: 1, borderTopColor: theme.colors.border.subtle, backgroundColor: theme.colors.background.primary, gap: 8, shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.06, shadowRadius: 12, elevation: 8 }}>
         <TactilePressable
           onPress={submit}
           haptic="commit"
           disabled={!canSubmitOrder}
-          accessibilityRole="button"
-          accessibilityState={{ disabled: !canSubmitOrder }}
-          style={{ backgroundColor: canSubmitOrder ? brand.primary : theme.colors.surface.primary, borderRadius: 999, opacity: canSubmitOrder ? 1 : 0.6 }}
+          style={{
+            backgroundColor: canSubmitOrder ? theme.colors.text.primary : theme.colors.surface.elevated,
+            borderRadius: 999,
+            paddingVertical: 14,
+            opacity: canSubmitOrder ? 1 : 0.6,
+            shadowColor: canSubmitOrder ? '#000' : 'transparent',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.15,
+            shadowRadius: 8,
+            elevation: canSubmitOrder ? 3 : 0,
+            alignItems: 'center',
+          }}
         >
-          <Text style={{ color: canSubmitOrder ? '#fff' : theme.colors.text.secondary, textAlign: 'center', fontWeight: weights.bold, textTransform: 'uppercase', letterSpacing: letterSpacing.wide }}>
+          <Text style={{ color: canSubmitOrder ? theme.colors.text.inverse : theme.colors.text.secondary, fontWeight: '700', fontSize: 12, letterSpacing: 0.3, textTransform: 'uppercase' }}>
             {submitting ? copy.checkout.placingOrder : `${copy.checkout.placeOrder} · ${formatZar(isPickup ? subtotal : total)}`}
           </Text>
         </TactilePressable>
         {subtotal < MIN_ORDER_CENTS && (
-          <Text style={{ textAlign: 'center', marginTop: 8, color: theme.colors.status.error.strong, fontSize: typeScale.caption }}>
-            {formatString(copy.cart.minOrder, { minCents: formatZar(MIN_ORDER_CENTS) })}
-          </Text>
+          <Text style={{ textAlign: 'center', color: '#DC2626', fontSize: 10, lineHeight: 12 }}>{formatString(copy.cart.minOrder, { minCents: formatZar(MIN_ORDER_CENTS) })}</Text>
         )}
       </View>
     </KeyboardAvoidingView>
-  );
-}
-
-function ScreenTitle({ title }: { title: string }) {
-  const theme = useTheme();
-  const topInset = useTopSafeArea();
-  return (
-    <Text style={{ paddingTop: topInset, paddingHorizontal: 16, fontSize: typeScale.title, fontWeight: weights.extrabold, color: theme.colors.text.primary }}>
-      {title}
-    </Text>
   );
 }

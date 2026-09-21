@@ -1,39 +1,33 @@
-import React from 'react';
-import { View, Text, StyleSheet, FlatList } from 'react-native';
+import { View, Text, FlatList } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '../../lib/queryKeys';
 import { fetchRecommendations } from '../../lib/apiClient';
 import { ProductCard } from '../../components/shared/ProductCard';
 import { ProductCardSkeleton } from '../../components/shared/ProductCardSkeleton';
 import { FadeSlideIn } from '../../components/shared/FadeSlideIn';
-import { textStyle } from '../../theme/typography';
+import { CrashCascadeIn } from '../../components/shared/CrashCascadeIn';
+import { textStyle, fontWeight } from '../../theme/typography';
 import { semanticSpacing } from '../../theme/spacing';
 import { useTheme } from '../../theme';
+import { brand } from '../../theme/colors';
 import type { ProductVO } from '../../lib/product';
 
 export function RecommendationsSection() {
   const theme = useTheme();
-  const { data, isLoading } = useQuery({
-    queryKey: queryKeys.recommendations,
-    queryFn: fetchRecommendations,
-    staleTime: 5 * 60 * 1000,
-  });
-
+  const { data, isLoading } = useQuery({ queryKey: queryKeys.recommendations, queryFn: fetchRecommendations, staleTime: 5 * 60 * 1000 });
   const recommendations = (data?.recommendations ?? []) as ProductVO[];
-  const isPersonalised = data?.isPersonalised ?? false;
+  const isPersonalised = (data as any)?.isPersonalised ?? false;
 
   if (isLoading) {
     return (
-      <View style={styles.container}>
-        <Text style={[styles.title, { color: theme.colors.text.primary }]}>Picked for You</Text>
-        <FlatList
-          horizontal
-          data={[1, 2, 3, 4]}
-          renderItem={() => <ProductCardSkeleton />}
-          keyExtractor={(_, i) => String(i)}
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.list}
-        />
+      <View style={{ marginBottom: semanticSpacing.sectionGap }}>
+        <FadeSlideIn delay={60} distance={8}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: semanticSpacing.screenPadding, marginBottom: 10 }}>
+            <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: theme.colors.surface.elevated, borderWidth: 1, borderColor: theme.colors.border.subtle }} />
+            <Text style={{ ...textStyle.h3, color: theme.colors.text.primary, letterSpacing: -0.2, fontWeight: fontWeight.bold }}>Picked for You</Text>
+          </View>
+        </FadeSlideIn>
+        <FlatList horizontal data={[1, 2, 3, 4]} renderItem={({ index }) => <ProductCardSkeleton index={index} />} keyExtractor={(_, i) => String(i)} showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: semanticSpacing.screenPadding, gap: semanticSpacing.sm }} />
       </View>
     );
   }
@@ -41,34 +35,31 @@ export function RecommendationsSection() {
   if (recommendations.length === 0) return null;
 
   return (
-    <FadeSlideIn>
-      <View style={styles.container}>
-        <Text style={[styles.title, { color: theme.colors.text.primary }]}>
-          {isPersonalised ? 'Picked for You' : 'Popular near you'}
-        </Text>
-        {isPersonalised && (
-          <Text style={[styles.subtitle, { color: theme.colors.text.secondary }]}>
-            Based on your browsing
-          </Text>
-        )}
+    <FadeSlideIn delay={80} distance={12}>
+      <View style={{ marginBottom: semanticSpacing.sectionGap }}>
+        <View style={{ paddingHorizontal: semanticSpacing.screenPadding, marginBottom: 10, gap: 4 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: theme.colors.surface.elevated, borderWidth: 1, borderColor: theme.colors.border.subtle, alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ fontSize: 10 }}>✨</Text>
+            </View>
+            <Text style={{ ...textStyle.h3, color: theme.colors.text.primary, letterSpacing: -0.3, fontWeight: fontWeight.bold }}>{isPersonalised ? 'Picked for You' : 'Popular near you'}</Text>
+            {isPersonalised ? <View style={{ backgroundColor: brand.orange + '15', borderRadius: 8, paddingHorizontal: 6, paddingVertical: 2 }}><Text style={{ fontSize: 9, fontWeight: '700', color: brand.orange, letterSpacing: 0.3, textTransform: 'uppercase' }}>For you</Text></View> : null}
+          </View>
+          {isPersonalised ? <Text style={{ fontSize: 11, color: theme.colors.text.secondary, letterSpacing: -0.1, marginLeft: 28 }}>Based on your browsing</Text> : null}
+        </View>
         <FlatList
           horizontal
           data={recommendations}
-          renderItem={({ item }) => (
-            <ProductCard product={item} source="recommendation" />
+          renderItem={({ item, index }) => (
+            <CrashCascadeIn index={index}>
+              <ProductCard product={item} source="recommendation" />
+            </CrashCascadeIn>
           )}
           keyExtractor={(item) => String(item.id)}
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.list}
+          contentContainerStyle={{ paddingHorizontal: semanticSpacing.screenPadding, gap: semanticSpacing.sm }}
         />
       </View>
     </FadeSlideIn>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { marginBottom: semanticSpacing.sectionGap },
-  title: { ...textStyle.h3, paddingHorizontal: semanticSpacing.screenPadding, marginBottom: semanticSpacing.xs },
-  subtitle: { ...textStyle.bodySmall, paddingHorizontal: semanticSpacing.screenPadding, marginBottom: semanticSpacing.sm },
-  list: { paddingHorizontal: semanticSpacing.screenPadding, gap: semanticSpacing.sm },
-});

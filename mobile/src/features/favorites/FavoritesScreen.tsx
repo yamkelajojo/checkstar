@@ -9,9 +9,10 @@ import { ProductCardSkeleton } from '../../components/shared/ProductCardSkeleton
 import { EmptyState } from '../../components/shared/EmptyState';
 import { ScreenHeader } from '../../components/shared/ScreenHeader';
 import { TactilePressable } from '../../components/shared/TactilePressable';
+import { FadeSlideIn } from '../../components/shared/FadeSlideIn';
+import { CrashCascadeIn } from '../../components/shared/CrashCascadeIn';
 import { textStyle, fontWeight } from '../../theme/typography';
-import { semanticSpacing } from '../../theme/spacing';
-import { semanticRadius } from '../../theme/spacing';
+import { semanticSpacing, semanticRadius } from '../../theme/spacing';
 import { useTheme } from '../../theme';
 import { brand } from '../../theme/colors';
 import { useDeliveryStore } from '../../stores/deliveryStore';
@@ -19,9 +20,9 @@ import { findStoreAvailability } from '../../lib/product';
 import type { ProductVO } from '../../lib/product';
 
 /**
- * Saved products. Shares the exact header, grid gutter and card spec as
- * Browse/Cart (ScreenHeader + 2-col grid, inlineGap gutters, screenPadding
- * edges) so every catalogue surface reads as one design system.
+ * Saved products — Apple-polished
+ * Shares exact header, grid gutter and card spec as Browse/Cart
+ * Now with y+scale+blur entrance, tab-coordinated stagger, border subtle
  */
 export function FavoritesScreen() {
   const theme = useTheme();
@@ -33,7 +34,7 @@ export function FavoritesScreen() {
     queryFn: () => fetchFavorites(),
   });
 
-  const items = data?.data ?? data ?? [];
+  const items = (data as any)?.data ?? data ?? [];
 
   const storeProductIdOf = (product: ProductVO): number | null => {
     if (!store) return null;
@@ -42,36 +43,47 @@ export function FavoritesScreen() {
 
   if (isError) {
     return (
-      <View style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
+      <View style={{ flex: 1, backgroundColor: theme.colors.background.primary }}>
         <ScreenHeader title="Favorites" />
-        <EmptyState
-          icon={WifiOff}
-          title="Couldn't load your favorites"
-          caption="Check your connection and try again."
-          action={
-            <TactilePressable
-              onPress={() => refetch()}
-              haptic="tap"
-              accessibilityRole="button"
-              accessibilityLabel="Retry loading favorites"
-              style={[styles.retryButton, { backgroundColor: theme.colors.surface.primary, borderColor: theme.colors.border.subtle }]}
-            >
-              <RefreshCw size={16} color={theme.colors.text.secondary} />
-              <Text style={{ color: theme.colors.text.secondary, fontWeight: fontWeight.semibold, ...textStyle.caption }}>Retry</Text>
-            </TactilePressable>
-          }
-        />
+        <FadeSlideIn delay={100} distance={12}>
+          <EmptyState
+            icon={WifiOff}
+            title="Couldn't load your favorites"
+            caption="Check your connection and try again."
+            action={
+              <TactilePressable
+                onPress={() => refetch()}
+                haptic="tap"
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 6,
+                  backgroundColor: theme.colors.surface.primary,
+                  borderColor: theme.colors.border.subtle,
+                  borderWidth: 1,
+                  borderRadius: semanticRadius.buttonPill,
+                  paddingHorizontal: 20,
+                  paddingVertical: 10,
+                  marginTop: semanticSpacing.sm,
+                }}
+              >
+                <RefreshCw size={14} color={theme.colors.text.secondary} strokeWidth={2} />
+                <Text style={{ color: theme.colors.text.secondary, fontWeight: fontWeight.semibold, fontSize: 12, letterSpacing: 0.2 }}>Retry</Text>
+              </TactilePressable>
+            }
+          />
+        </FadeSlideIn>
       </View>
     );
   }
 
   if (isLoading) {
     return (
-      <View style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
+      <View style={{ flex: 1, backgroundColor: theme.colors.background.primary }}>
         <ScreenHeader title="Favorites" />
-        <View style={styles.grid}>
-          <ProductCardSkeleton />
-          <ProductCardSkeleton />
+        <View style={{ flexDirection: 'row', gap: semanticSpacing.inlineGap, paddingHorizontal: semanticSpacing.screenPadding, marginTop: semanticSpacing.md }}>
+          <ProductCardSkeleton index={0} />
+          <ProductCardSkeleton index={1} />
         </View>
       </View>
     );
@@ -79,48 +91,68 @@ export function FavoritesScreen() {
 
   if (items.length === 0) {
     return (
-      <View style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
+      <View style={{ flex: 1, backgroundColor: theme.colors.background.primary }}>
         <ScreenHeader title="Favorites" />
-        <EmptyState
-          icon={Heart}
-          title="No favorites yet"
-          caption="Tap the heart on any product to save it here"
-          action={
-            <TactilePressable
-              onPress={() => navigation.navigate('Browse' as never)}
-              haptic="commit"
-              style={[styles.browseButton, { backgroundColor: theme.colors.action.primary.background }]}
-            >
-              <Text style={{ color: theme.colors.action.primary.foreground, ...textStyle.buttonPrimary }}>
-                Browse Products
-              </Text>
-            </TactilePressable>
-          }
-        />
+        <FadeSlideIn delay={100} distance={12}>
+          <EmptyState
+            icon={Heart}
+            title="No favorites yet"
+            caption="Tap the heart on any product to save it here — fresh picks every day"
+            action={
+              <TactilePressable
+                onPress={() => navigation.navigate('Browse' as never)}
+                haptic="commit"
+                style={{
+                  backgroundColor: theme.colors.text.primary,
+                  borderRadius: 999,
+                  paddingHorizontal: 24,
+                  paddingVertical: 12,
+                  marginTop: semanticSpacing.md,
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.15,
+                  shadowRadius: 8,
+                  elevation: 2,
+                }}
+              >
+                <Text style={{ color: theme.colors.text.inverse, fontWeight: fontWeight.bold, fontSize: 12, letterSpacing: 0.3, textTransform: 'uppercase' }}>
+                  Browse Products
+                </Text>
+              </TactilePressable>
+            }
+          />
+        </FadeSlideIn>
       </View>
     );
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
+    <View style={{ flex: 1, backgroundColor: theme.colors.background.primary }}>
       <ScreenHeader title="Favorites" />
       {items.length > 0 && (
-        <Text style={[styles.count, { color: theme.colors.text.secondary }]}>
-          {items.length} saved {items.length === 1 ? 'item' : 'items'}
-        </Text>
+        <FadeSlideIn delay={80} distance={8}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: semanticSpacing.screenPadding, marginBottom: semanticSpacing.xs }}>
+            <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: brand.orange }} />
+            <Text style={{ ...textStyle.caption, color: theme.colors.text.secondary, fontSize: 11, letterSpacing: 0.2 }}>
+              {items.length} saved {items.length === 1 ? 'item' : 'items'}
+            </Text>
+          </View>
+        </FadeSlideIn>
       )}
       <FlatList
         data={items}
         numColumns={2}
-        renderItem={({ item }) => {
+        renderItem={({ item, index }) => {
           const product: ProductVO = item.product ?? item;
           return (
-            <ProductCard product={product} storeProductId={storeProductIdOf(product)} source="saved" />
+            <CrashCascadeIn index={index}>
+              <ProductCard product={product} storeProductId={storeProductIdOf(product)} source="saved" />
+            </CrashCascadeIn>
           );
         }}
-        keyExtractor={(item) => String(item.product_id ?? item.id)}
-        columnWrapperStyle={styles.columnWrapper}
-        contentContainerStyle={styles.gridContent}
+        keyExtractor={(item: any) => String(item.product_id ?? item.id)}
+        columnWrapperStyle={{ gap: semanticSpacing.inlineGap, paddingHorizontal: semanticSpacing.screenPadding }}
+        contentContainerStyle={{ gap: semanticSpacing.inlineGap, paddingVertical: semanticSpacing.xs, paddingBottom: semanticSpacing.xl }}
         onRefresh={refetch}
         refreshing={false}
         showsVerticalScrollIndicator={false}
@@ -128,18 +160,3 @@ export function FavoritesScreen() {
     </View>
   );
 }
-
-const styles = {
-  container: { flex: 1 },
-  count: {
-    ...textStyle.caption,
-    paddingHorizontal: semanticSpacing.screenPadding,
-    marginBottom: semanticSpacing.xs,
-  },
-  // Identical grid spec to Browse: 2 columns, inlineGap gutter, screenPadding edges.
-  columnWrapper: { gap: semanticSpacing.inlineGap, paddingHorizontal: semanticSpacing.screenPadding },
-  gridContent: { gap: semanticSpacing.inlineGap, paddingVertical: semanticSpacing.xs, paddingBottom: semanticSpacing.xl },
-  grid: { flexDirection: 'row', gap: semanticSpacing.inlineGap, paddingHorizontal: semanticSpacing.screenPadding },
-  browseButton: { borderRadius: 999, paddingHorizontal: 24, paddingVertical: 12, marginTop: semanticSpacing.md },
-  retryButton: { flexDirection: 'row', alignItems: 'center', gap: semanticSpacing.xxs, borderRadius: semanticRadius.buttonPill, paddingHorizontal: 20, paddingVertical: 10, borderWidth: 1, marginTop: semanticSpacing.md },
-} as const;

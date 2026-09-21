@@ -1,17 +1,12 @@
-import { Text } from 'react-native';
+import { Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../theme';
-import { textStyle } from '../../theme/typography';
+import { textStyle, fontWeight } from '../../theme/typography';
 import { semanticSpacing } from '../../theme/spacing';
+import { FadeSlideIn } from './FadeSlideIn';
 
 /**
  * Safe-area-aware top offset for hand-rolled headers.
- *
- * Screens with custom hero/header content (Home, Account, Order detail,
- * rider screens, search, store picker) call `useTopSafeArea(base)` instead
- * of hardcoding `paddingTop: 56`, which let content slide under the
- * Dynamic Island / status bar on modern iPhones (insets.top is 59pt there)
- * and left an awkward void on notched-free devices.
  */
 export function useTopSafeArea(base = 0): number {
   const insets = useSafeAreaInsets();
@@ -19,24 +14,34 @@ export function useTopSafeArea(base = 0): number {
 }
 
 /**
- * The canonical large-title header for top-level screens (Browse, Cart,
- * Favorites, Checkout). Every tab screen renders the same typography,
- * padding and safe-area offset so the app reads as one design system.
+ * Canonical large-title header — Apple-polished
+ * Every tab screen renders same typography, padding, safe-area offset
+ * Now with y12 blur4 entrance, tracking -0.3, coordinated with tab transition
  */
-export function ScreenHeader({ title }: { title: string }) {
+export function ScreenHeader({ title, subtitle }: { title: string; subtitle?: string }) {
   const theme = useTheme();
   const top = useTopSafeArea(semanticSpacing.sm);
+
   return (
-    <Text
-      accessibilityRole="header"
-      style={{
-        paddingTop: top,
-        paddingHorizontal: semanticSpacing.screenPadding,
-        ...textStyle.h1,
-        color: theme.colors.text.primary,
-      }}
-    >
-      {title}
-    </Text>
+    <FadeSlideIn delay={60} distance={12} initialScale={0.98}>
+      <View style={{ paddingTop: top, paddingHorizontal: semanticSpacing.screenPadding, gap: 2 }}>
+        <Text
+          accessibilityRole="header"
+          style={{
+            ...textStyle.h1,
+            color: theme.colors.text.primary,
+            letterSpacing: -0.3,
+            fontWeight: fontWeight.bold,
+          }}
+        >
+          {title}
+        </Text>
+        {subtitle ? (
+          <Text style={{ ...textStyle.body, color: theme.colors.text.secondary, letterSpacing: -0.1 }}>
+            {subtitle}
+          </Text>
+        ) : null}
+      </View>
+    </FadeSlideIn>
   );
 }

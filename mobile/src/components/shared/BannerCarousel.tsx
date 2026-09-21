@@ -1,11 +1,20 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { View, Text, Pressable, Dimensions, FlatList, type ViewToken } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  interpolate,
+  withDelay,
+} from 'react-native-reanimated';
 import { useTheme } from '../../theme';
 import { textStyle, fontWeight } from '../../theme/typography';
-import { semanticSpacing } from '../../theme/spacing';
+import { semanticSpacing, semanticRadius } from '../../theme/spacing';
 import type { ApiBanner, ApiBannerSlide } from '../../lib/types';
 import { haptic } from '../../lib/haptics';
+import { FadeSlideIn } from './FadeSlideIn';
+import { springs } from '../../theme/motion';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const AUTO_ADVANCE_MS = 5000;
@@ -71,198 +80,174 @@ export function BannerCarousel({ banners, onSlidePress }: BannerCarouselProps) {
 
   if (totalSlides === 0) return null;
 
-  const renderSlide = ({ item }: { item: (typeof activeSlides)[number] }) => {
+  const renderSlide = ({ item, index }: { item: (typeof activeSlides)[number]; index: number }) => {
     const colors = item.colors?.length ? item.colors : ['#EB6522', '#CC4400'];
     const isGradient = item.bgType === 'gradient' || item.bgType === 'radial';
 
-    const slideContent = (
-      <View
-        style={[
-          {
-            marginHorizontal: semanticSpacing.screenPadding,
-            borderRadius: 16,
-            padding: semanticSpacing.xl,
-            minHeight: 140,
-            justifyContent: 'center',
-            overflow: 'hidden',
-          },
-          !isGradient ? { backgroundColor: colors[0] } : undefined,
-        ]}
-      >
-        {item.pattern === 'dots' && <PatternOverlay type="dots" />}
-        {item.pattern === 'lines' && <PatternOverlay type="lines" />}
-        {item.pattern === 'circles' && <PatternOverlay type="circles" />}
-
-        <View style={{ zIndex: 1 }}>
-          {item.subtitle ? (
-            <Text
-              style={{
-                ...textStyle.caption,
-                color: 'rgba(255,255,255,0.8)',
-                marginBottom: 4,
-              }}
-              numberOfLines={1}
-            >
-              {item.subtitle}
-            </Text>
-          ) : null}
-          <Text
-            style={{
-              ...textStyle.h2,
-              fontWeight: fontWeight.bold,
-              color: '#FFFFFF',
-              marginBottom: item.ctaLabel ? semanticSpacing.sm : 0,
-            }}
-            numberOfLines={2}
-          >
-            {item.title}
+    const slideInner = (
+      <View style={{ zIndex: 1, gap: 4 }}>
+        {item.subtitle ? (
+          <Text style={{ ...textStyle.caption, color: 'rgba(255,255,255,0.85)', letterSpacing: 0.3, fontWeight: '500' }} numberOfLines={1}>
+            {item.subtitle}
           </Text>
-          {item.ctaLabel ? (
-            <View
-              style={{
-                alignSelf: 'flex-start',
-                backgroundColor: 'rgba(255,255,255,0.2)',
-                borderRadius: 8,
-                paddingHorizontal: semanticSpacing.md,
-                paddingVertical: semanticSpacing.xs,
-                marginTop: semanticSpacing.xs,
-              }}
-            >
-              <Text style={{ ...textStyle.labelStrong, color: '#FFFFFF' }}>
-                {item.ctaLabel}
-              </Text>
-            </View>
-          ) : null}
-        </View>
+        ) : null}
+        <Text
+          style={{
+            ...textStyle.h2,
+            fontWeight: fontWeight.bold,
+            color: '#FFFFFF',
+            letterSpacing: -0.3,
+            lineHeight: 26,
+            marginBottom: item.ctaLabel ? 8 : 0,
+          }}
+          numberOfLines={2}
+        >
+          {item.title}
+        </Text>
+        {item.ctaLabel ? (
+          <View
+            style={{
+              alignSelf: 'flex-start',
+              backgroundColor: 'rgba(255,255,255,0.18)',
+              borderWidth: 1,
+              borderColor: 'rgba(255,255,255,0.2)',
+              borderRadius: semanticRadius.buttonPill,
+              paddingHorizontal: 14,
+              paddingVertical: 6,
+              marginTop: 4,
+            }}
+          >
+            <Text style={{ ...textStyle.labelStrong, color: '#FFFFFF', fontSize: 11, letterSpacing: 0.4 }}>{item.ctaLabel}</Text>
+          </View>
+        ) : null}
       </View>
     );
 
+    const containerStyle = {
+      marginHorizontal: semanticSpacing.screenPadding,
+      borderRadius: 16,
+      minHeight: 148,
+      justifyContent: 'center' as const,
+      overflow: 'hidden' as const,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.12,
+      shadowRadius: 12,
+      elevation: 4,
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.1)',
+    };
+
     return (
-      <Pressable
-        onPress={() => {
-          haptic.tap();
-          handleSlidePress(item);
-        }}
-        accessibilityRole="button"
-        accessibilityLabel={`${item.title}. ${item.subtitle ?? ''}`}
-        style={{ width: SCREEN_WIDTH }}
-      >
-        {isGradient ? (
-          <LinearGradient
-            colors={[colors[0], colors[1] ?? colors[0]] as readonly [string, string, ...string[]]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={{
-              marginHorizontal: semanticSpacing.screenPadding,
-              borderRadius: 16,
-            }}
-          >
-            <View style={{ padding: semanticSpacing.xl, minHeight: 140, justifyContent: 'center', overflow: 'hidden' }}>
+      <FadeSlideIn delay={index * 60} distance={12} initialScale={0.98}>
+        <Pressable
+          onPress={() => {
+            haptic.tap();
+            handleSlidePress(item);
+          }}
+          accessibilityRole="button"
+          accessibilityLabel={`${item.title}. ${item.subtitle ?? ''}`}
+          style={{ width: SCREEN_WIDTH }}
+        >
+          {isGradient ? (
+            <LinearGradient
+              colors={[colors[0], colors[1] ?? colors[0]] as readonly [string, string, ...string[]]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={containerStyle}
+            >
+              <View style={{ padding: semanticSpacing.xl, minHeight: 148, justifyContent: 'center' }}>
+                {item.pattern === 'dots' && <PatternOverlay type="dots" />}
+                {item.pattern === 'lines' && <PatternOverlay type="lines" />}
+                {item.pattern === 'circles' && <PatternOverlay type="circles" />}
+                <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.04)' }} />
+                {slideInner}
+              </View>
+            </LinearGradient>
+          ) : (
+            <View style={[containerStyle, { backgroundColor: colors[0], padding: semanticSpacing.xl }]}>
               {item.pattern === 'dots' && <PatternOverlay type="dots" />}
               {item.pattern === 'lines' && <PatternOverlay type="lines" />}
               {item.pattern === 'circles' && <PatternOverlay type="circles" />}
-              <View style={{ zIndex: 1 }}>
-                {item.subtitle ? (
-                  <Text style={{ ...textStyle.caption, color: 'rgba(255,255,255,0.8)', marginBottom: 4 }} numberOfLines={1}>
-                    {item.subtitle}
-                  </Text>
-                ) : null}
-                <Text
-                  style={{ ...textStyle.h2, fontWeight: fontWeight.bold, color: '#FFFFFF', marginBottom: item.ctaLabel ? semanticSpacing.sm : 0 }}
-                  numberOfLines={2}
-                >
-                  {item.title}
-                </Text>
-                {item.ctaLabel ? (
-                  <View style={{ alignSelf: 'flex-start', backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 8, paddingHorizontal: semanticSpacing.md, paddingVertical: semanticSpacing.xs, marginTop: semanticSpacing.xs }}>
-                    <Text style={{ ...textStyle.labelStrong, color: '#FFFFFF' }}>{item.ctaLabel}</Text>
-                  </View>
-                ) : null}
-              </View>
+              {slideInner}
             </View>
-          </LinearGradient>
-        ) : (
-          slideContent
-        )}
-      </Pressable>
+          )}
+        </Pressable>
+      </FadeSlideIn>
     );
   };
 
   return (
-    <View style={{ marginTop: semanticSpacing.lg }}>
-      <FlatList
-        ref={flatListRef}
-        data={activeSlides}
-        keyExtractor={(item, index) => `${item.bannerId}-${index}`}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        snapToInterval={SCREEN_WIDTH}
-        decelerationRate="fast"
-        onViewableItemsChanged={onViewableItemsChanged}
-        viewabilityConfig={viewabilityConfig}
-        getItemLayout={(_, index) => ({
-          length: SCREEN_WIDTH,
-          offset: SCREEN_WIDTH * index,
-          index,
-        })}
-        renderItem={renderSlide}
-      />
-
-      {/* Dot indicators — Apple: scale+width spring */}
-      {totalSlides > 1 ? (
-        <View
-          style={{
-            flexDirection: 'row',
-            justifyContent: 'center',
-            gap: 8,
-            marginTop: semanticSpacing.md,
-          }}
-          accessibilityRole="tablist"
-          accessibilityLabel="Banner slides"
-        >
-          {activeSlides.map((_, index) => {
-            const isActive = index === currentIndex
-            return (
-              <View
-                key={index}
-                accessibilityRole="tab"
-                accessibilityState={{ selected: isActive }}
-                accessibilityLabel={`Slide ${index + 1}`}
-                style={{
-                  width: isActive ? 20 : 6,
-                  height: 6,
-                  borderRadius: 3,
-                  backgroundColor: isActive
-                    ? theme.colors.action.primary.background
-                    : theme.colors.border.default,
-                  opacity: isActive ? 1 : 0.5,
-                }}
-              />
-            )
+    <FadeSlideIn delay={80} distance={12}>
+      <View style={{ marginTop: semanticSpacing.lg }}>
+        <FlatList
+          ref={flatListRef}
+          data={activeSlides}
+          keyExtractor={(item, index) => `${item.bannerId}-${index}`}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          snapToInterval={SCREEN_WIDTH}
+          decelerationRate="fast"
+          onViewableItemsChanged={onViewableItemsChanged}
+          viewabilityConfig={viewabilityConfig}
+          getItemLayout={(_, index) => ({
+            length: SCREEN_WIDTH,
+            offset: SCREEN_WIDTH * index,
+            index,
           })}
-        </View>
-      ) : null}
-    </View>
+          renderItem={renderSlide}
+        />
+
+        {totalSlides > 1 ? (
+          <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 8, marginTop: semanticSpacing.md }} accessibilityRole="tablist">
+            {activeSlides.map((_, index) => {
+              const isActive = index === currentIndex;
+              return (
+                <AnimatedDot key={index} isActive={isActive} index={index} theme={theme} />
+              );
+            })}
+          </View>
+        ) : null}
+      </View>
+    </FadeSlideIn>
+  );
+}
+
+function AnimatedDot({ isActive, index, theme }: { isActive: boolean; index: number; theme: any }) {
+  const scale = useSharedValue(isActive ? 1 : 0.8);
+  const width = useSharedValue(isActive ? 20 : 6);
+
+  useEffect(() => {
+    scale.value = withSpring(isActive ? 1 : 0.8, springs.apple);
+    width.value = withSpring(isActive ? 20 : 6, springs.apple);
+  }, [isActive]);
+
+  const style = useAnimatedStyle(() => ({
+    width: width.value,
+    transform: [{ scale: scale.value }],
+  }));
+
+  return (
+    <Animated.View
+      style={[
+        {
+          height: 6,
+          borderRadius: 3,
+          backgroundColor: isActive ? theme.colors.action.primary.background : theme.colors.border.default,
+          opacity: isActive ? 1 : 0.45,
+        },
+        style,
+      ]}
+    />
   );
 }
 
 function PatternOverlay({ type }: { type: 'dots' | 'lines' | 'circles' }) {
   const opacity = 0.08;
-
   if (type === 'dots') {
     return (
-      <View
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          opacity,
-        }}
-        pointerEvents="none"
-      >
+      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity }} pointerEvents="none">
         {Array.from({ length: 12 }).map((_, i) => (
           <View
             key={i}
@@ -280,54 +265,13 @@ function PatternOverlay({ type }: { type: 'dots' | 'lines' | 'circles' }) {
       </View>
     );
   }
-
   if (type === 'lines') {
-    return (
-      <View
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          opacity,
-          borderWidth: 0,
-          borderColor: 'transparent',
-          borderBottomWidth: 1,
-          borderBottomColor: 'rgba(255,255,255,0.3)',
-          borderStyle: 'dashed',
-        }}
-        pointerEvents="none"
-      />
-    );
+    return <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.3)', borderStyle: 'dashed' }} pointerEvents="none" />;
   }
-
   return (
-    <View
-      style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        opacity: opacity * 0.5,
-      }}
-      pointerEvents="none"
-    >
+    <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: opacity * 0.5 }} pointerEvents="none">
       {[0, 1, 2].map((i) => (
-        <View
-          key={i}
-          style={{
-            position: 'absolute',
-            width: 60,
-            height: 60,
-            borderRadius: 30,
-            borderWidth: 1,
-            borderColor: 'rgba(255,255,255,0.4)',
-            top: 20 + i * 30,
-            left: 30 + i * 50,
-          }}
-        />
+        <View key={i} style={{ position: 'absolute', width: 60, height: 60, borderRadius: 30, borderWidth: 1, borderColor: 'rgba(255,255,255,0.4)', top: 20 + i * 30, left: 30 + i * 50 }} />
       ))}
     </View>
   );

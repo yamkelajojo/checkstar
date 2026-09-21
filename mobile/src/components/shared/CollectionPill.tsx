@@ -11,57 +11,59 @@ interface CollectionPillProps {
   label: string;
   active?: boolean;
   onPress?: () => void;
+  index?: number;
 }
 
-/** Signature collection pill: active = primary fill, inactive = tinted surface. */
-export function CollectionPill({ label, active = false, onPress }: CollectionPillProps) {
+/**
+ * Signature collection pill — Apple-polished
+ * Active = primary fill with shadow, inactive = surface elevated with border subtle
+ * Scale 0.96 →1 with snap spring, hover 1.05
+ */
+export function CollectionPill({ label, active = false, onPress, index = 0 }: CollectionPillProps) {
   const theme = useTheme();
   const reduceMotion = useReducedMotion();
+
   const content = (
     <TamaguiText
-      fontSize={textStyle.micro.size}
-      fontWeight={fontWeight.medium}
-      letterSpacing={letterSpacing.wide}
+      fontSize={11}
+      fontWeight={active ? '700' : '600'}
+      letterSpacing={0.4}
       textTransform="uppercase"
-      color={active ? theme.colors.text.inverse : theme.colors.text.brand}
-      paddingHorizontal={semanticSpacing.inlineGap}
+      color={active ? '#fff' : theme.colors.text.secondary}
+      paddingHorizontal={12}
     >
       {label}
     </TamaguiText>
   );
-  // Compact filter pill: 28px height, lighter visual weight
+
   const pillStyle = {
-    borderRadius: semanticRadius.chip,
-    backgroundColor: active ? brand.orange : theme.colors.surface.elevated,
+    borderRadius: 999,
+    backgroundColor: active ? theme.colors.text.primary : theme.colors.surface.primary,
     minWidth: 48,
-    height: 28,
-    minHeight: 28 as const,
+    height: 32,
+    minHeight: 32 as const,
     justifyContent: 'center' as const,
+    alignItems: 'center' as const,
     borderWidth: 1,
-    borderColor: active ? brand.orange : theme.colors.border.subtle,
+    borderColor: active ? theme.colors.text.primary : theme.colors.border.subtle,
+    shadowColor: active ? '#000' : 'transparent',
+    shadowOffset: { width: 0, height: active ? 2 : 0 },
+    shadowOpacity: active ? 0.12 : 0,
+    shadowRadius: active ? 6 : 0,
+    elevation: active ? 2 : 0,
   };
+
   if (reduceMotion) {
     return (
-      <TactilePressable
-        onPress={onPress}
-        haptic={undefined}
-        accessibilityRole="button"
-        accessibilityState={{ selected: active }}
-        style={pillStyle}
-      >
+      <TactilePressable onPress={onPress} haptic={undefined} accessibilityRole="button" accessibilityState={{ selected: active }} style={pillStyle}>
         {content}
       </TactilePressable>
     );
   }
+
   return (
-    <FadeSlideIn>
-      <TactilePressable
-        onPress={onPress}
-        haptic="tap"
-        accessibilityRole="button"
-        accessibilityState={{ selected: active }}
-        style={pillStyle}
-      >
+    <FadeSlideIn delay={index * 20} distance={8} initialScale={0.92}>
+      <TactilePressable onPress={onPress} haptic="selection" accessibilityRole="button" accessibilityState={{ selected: active }} style={pillStyle}>
         {content}
       </TactilePressable>
     </FadeSlideIn>
