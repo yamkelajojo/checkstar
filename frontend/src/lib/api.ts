@@ -300,6 +300,30 @@ export const api = {
   },
   updateAdminRider: (id: number, data: Record<string, unknown>) => request<{ data: Rider }>(`/admin/riders/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
 
+  getAdminRecipes: (params?: Record<string, string>) => {
+    const qs = params ? `?${new URLSearchParams(params)}` : ''
+    return request<Paginated<Recipe> | { data: Recipe[] }>(`/admin/recipes${qs}`)
+  },
+  createAdminRecipe: (data: Record<string, unknown>) => request<{ data: Recipe }>('/admin/recipes', { method: 'POST', body: JSON.stringify(data) }),
+  updateAdminRecipe: (id: number, data: Record<string, unknown>) => request<{ data: Recipe }>(`/admin/recipes/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteAdminRecipe: (id: number) => request<{ message: string }>(`/admin/recipes/${id}`, { method: 'DELETE' }),
+
+  getAdminCommunityPosts: (params?: Record<string, string>) => {
+    const qs = params ? `?${new URLSearchParams(params)}` : ''
+    return request<Paginated<CommunityPost> | { data: CommunityPost[] }>(`/admin/community-posts${qs}`)
+  },
+  createAdminCommunityPost: (data: Record<string, unknown>) => request<{ data: CommunityPost }>('/admin/community-posts', { method: 'POST', body: JSON.stringify(data) }),
+  updateAdminCommunityPost: (id: number, data: Record<string, unknown>) => request<{ data: CommunityPost }>(`/admin/community-posts/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteAdminCommunityPost: (id: number) => request<{ message: string }>(`/admin/community-posts/${id}`, { method: 'DELETE' }),
+
+  getAdminCareers: (params?: Record<string, string>) => {
+    const qs = params ? `?${new URLSearchParams(params)}` : ''
+    return request<Paginated<CareerListing> | { data: CareerListing[] }>(`/admin/careers${qs}`)
+  },
+  createAdminCareer: (data: Record<string, unknown>) => request<{ data: CareerListing }>('/admin/careers', { method: 'POST', body: JSON.stringify(data) }),
+  updateAdminCareer: (id: number, data: Record<string, unknown>) => request<{ data: CareerListing }>(`/admin/careers/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteAdminCareer: (id: number) => request<{ message: string }>(`/admin/careers/${id}`, { method: 'DELETE' }),
+
   // Audit logs
   getAuditLogsForEntity: (entityType: string, entityId: number | string, params?: Record<string, string>, storeId?: number) => {
     const qs = new URLSearchParams(params || {})

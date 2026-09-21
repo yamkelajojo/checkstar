@@ -572,6 +572,106 @@ export function useUpdateAdminRider() {
   })
 }
 
+export function useAdminRecipes() {
+  return useQuery({
+    queryKey: ['admin-recipes'],
+    queryFn: async () => {
+      const res = await api.getAdminRecipes()
+      return normalizePaginated<Recipe>(res as any)
+    },
+  })
+}
+export function useCreateAdminRecipe() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: Record<string, unknown>) => api.createAdminRecipe(data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-recipes'] }),
+  })
+}
+export function useUpdateAdminRecipe() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, ...data }: { id: number } & Record<string, unknown>) => api.updateAdminRecipe(id, data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-recipes'] }),
+  })
+}
+export function useDeleteAdminRecipe() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => api.deleteAdminRecipe(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-recipes'] }),
+  })
+}
+
+export function useAdminCommunityPosts() {
+  return useQuery({
+    queryKey: ['admin-community-posts'],
+    queryFn: async () => {
+      const res = await api.getAdminCommunityPosts()
+      return normalizePaginated<CommunityPost>(res as any)
+    },
+  })
+}
+export function useCreateAdminCommunityPost() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: Record<string, unknown>) => api.createAdminCommunityPost(data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-community-posts'] }),
+  })
+}
+export function useUpdateAdminCommunityPost() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, ...data }: { id: number } & Record<string, unknown>) => api.updateAdminCommunityPost(id, data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-community-posts'] }),
+  })
+}
+export function useDeleteAdminCommunityPost() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => api.deleteAdminCommunityPost(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-community-posts'] }),
+  })
+}
+
+export function useAdminCareers() {
+  return useQuery({
+    queryKey: ['admin-careers'],
+    queryFn: async () => {
+      const res = await api.getAdminCareers()
+      return normalizePaginated<CareerListing>(res as any)
+    },
+  })
+}
+export function useCreateAdminCareer() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: Record<string, unknown>) => api.createAdminCareer(data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-careers'] }),
+  })
+}
+export function useUpdateAdminCareer() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, ...data }: { id: number } & Record<string, unknown>) => api.updateAdminCareer(id, data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-careers'] }),
+  })
+}
+export function useDeleteAdminCareer() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => api.deleteAdminCareer(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-careers'] }),
+  })
+}
+
+export function useAdminHealth() {
+  return useQuery({
+    queryKey: ['admin-health'],
+    queryFn: () => api.getAdminHealth(),
+  })
+}
+
 export function useFavorites() {
   return useQuery({
     queryKey: ['favorites'],

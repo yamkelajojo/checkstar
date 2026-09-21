@@ -38,6 +38,9 @@ const catalogManagementLinks = [
   { href: '/admin/stores', label: 'Stores', icon: Store, desc: 'Manage store locations and settings', roles: ['developer'] },
   { href: '/admin/users', label: 'Users', icon: Users, desc: 'Manage user accounts and roles', roles: ['developer'] },
   { href: '/admin/riders', label: 'Riders', icon: Bike, desc: 'Manage rider fleet', roles: ['developer'] },
+  { href: '/admin/recipes', label: 'Recipes', icon: BookOpen, desc: 'Create and manage recipes', roles: ['developer'] },
+  { href: '/admin/community', label: 'Community', icon: Users, desc: 'Manage community posts', roles: ['developer'] },
+  { href: '/admin/careers', label: 'Careers', icon: Tags, desc: 'Manage career listings', roles: ['developer'] },
 ]
 
 const operationsLinks = [
@@ -45,6 +48,7 @@ const operationsLinks = [
   { href: '/operations/analytics', label: 'Analytics', icon: ShoppingCart, desc: 'Revenue, orders and fleet insights', roles: ['logistics_officer', 'store_owner', 'store_manager', 'developer'] },
   { href: '/operations/audit-logs', label: 'Audit Logs', icon: ShieldAlert, desc: 'Searchable audit trail', roles: ['logistics_officer', 'store_owner', 'store_manager', 'developer'] },
   { href: '/account/dispatch', label: 'Dispatch Console', icon: Bike, desc: 'Assign and reassign delivery riders', roles: ['logistics_officer', 'store_manager', 'store_owner', 'developer'] },
+  { href: '/admin/health', label: 'System Health', icon: HeartPulse, desc: 'Service status and uptime', roles: ['developer'] },
 ]
 
 const SERVICE_ORDER: Array<{ key: string; label: string }> = [

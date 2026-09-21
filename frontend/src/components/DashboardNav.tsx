@@ -25,6 +25,10 @@ const routeLabels: Record<string, string> = {
   users: 'Users',
   riders: 'Riders',
   favorites: 'Favorites',
+  recipes: 'Recipes',
+  community: 'Community',
+  careers: 'Careers',
+  health: 'Health',
 }
 
 export default function DashboardNav() {
