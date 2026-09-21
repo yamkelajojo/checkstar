@@ -341,6 +341,13 @@ export const api = {
   removeFavorite: (productId: number) => request<{ message: string }>(`/favorites/${productId}`, { method: 'DELETE' }),
   checkFavorite: (productId: number) => request<{ isFavorited: boolean }>(`/favorites/${productId}/check`),
 
+  // Rider location tracking for customer order
+  getOrderRiderLocation: (orderId: number | string) => request<{ data: { latitude: number; longitude: number; recorded_at: string } | null }>(`/orders/${orderId}/rider-location`),
+
+  // Routing
+  getRoute: (fromLat: number, fromLng: number, toLat: number, toLng: number) => request<{ distance_km: number; duration_minutes: number; geometry: string | null; source: string }>(`/routing/route?from_lat=${fromLat}&from_lng=${fromLng}&to_lat=${toLat}&to_lng=${toLng}`),
+  getRouteGeometry: (fromLat: number, fromLng: number, toLat: number, toLng: number) => request<{ geometry: string | null }>(`/routing/geometry?from_lat=${fromLat}&from_lng=${fromLng}&to_lat=${toLat}&to_lng=${toLng}`),
+
   // Recommendations
   getRecommendations: () => request<{ data: Product[] } | Product[]>('/recommendations'),
 }

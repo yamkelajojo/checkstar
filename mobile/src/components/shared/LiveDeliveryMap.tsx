@@ -19,7 +19,7 @@ import { brand } from '../../theme/colors';
 import { textStyle, fontWeight, weights } from '../../theme/typography';
 import { semanticSpacing, semanticRadius } from '../../theme/spacing';
 import { springs } from '../../theme/motion';
-import { fetchOrderRiderLocation } from '../../lib/apiClient';
+import { fetchOrderRiderLocation, fetchRouteGeometry } from '../../lib/apiClient';
 import { queryKeys } from '../../lib/queryKeys';
 import { decodePolyline, computeBoundingRegion, type LatLng } from '../../lib/polyline';
 import { useReducedMotion } from './useReducedMotion';
@@ -73,6 +73,24 @@ export function LiveDeliveryMap({
     refetchIntervalInBackground: false,
   });
 
+  // Fetch route geometry if not provided — store -> delivery
+  const { data: fetchedGeometry } = useQuery({
+    queryKey: [...queryKeys.order(orderId), 'route-geometry', storeLat, storeLng, deliveryLat, deliveryLng],
+    queryFn: async () => {
+      if (storeLat == null || storeLng == null || deliveryLat == null || deliveryLng == null) return null
+      try {
+        const res = await fetchRouteGeometry(storeLat, storeLng, deliveryLat, deliveryLng)
+        return res.geometry || null
+      } catch {
+        return null
+      }
+    },
+    enabled: !geometry && storeLat != null && storeLng != null && deliveryLat != null && deliveryLng != null,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const effectiveGeometry = geometry || fetchedGeometry || null
+
   // Compute staleness from recorded_at
   const isStale = useMemo(() => {
     if (!riderLocation?.recorded_at) return false;
@@ -125,13 +143,13 @@ export function LiveDeliveryMap({
 
   // Decode route geometry
   const routePoints = useMemo<LatLng[]>(() => {
-    if (!geometry) return [];
+    if (!effectiveGeometry) return [];
     try {
-      return decodePolyline(geometry);
+      return decodePolyline(effectiveGeometry);
     } catch {
       return [];
     }
-  }, [geometry]);
+  }, [effectiveGeometry]);
 
   // All points for bounding region
   const allPoints = useMemo<LatLng[]>(() => {

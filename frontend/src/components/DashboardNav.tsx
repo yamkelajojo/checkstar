@@ -29,6 +29,7 @@ const routeLabels: Record<string, string> = {
   community: 'Community',
   careers: 'Careers',
   health: 'Health',
+  tracking: 'Tracking',
 }
 
 export default function DashboardNav() {

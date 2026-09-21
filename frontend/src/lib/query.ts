@@ -716,3 +716,31 @@ export function useAuditLogsForEntity(entityType: string, entityId: number | str
     enabled: enabled && !!entityType && !!entityId,
   })
 }
+
+export function useOrderRiderLocation(orderId: number | string, enabled = true) {
+  return useQuery({
+    queryKey: ['order-rider-location', orderId],
+    queryFn: () => api.getOrderRiderLocation(orderId).then(r => r.data),
+    enabled: enabled && !!orderId,
+    refetchInterval: 5000,
+    refetchIntervalInBackground: false,
+  })
+}
+
+export function useRoute(fromLat?: number, fromLng?: number, toLat?: number, toLng?: number, enabled = true) {
+  return useQuery({
+    queryKey: ['route', fromLat, fromLng, toLat, toLng],
+    queryFn: () => api.getRoute(fromLat!, fromLng!, toLat!, toLng!),
+    enabled: enabled && fromLat != null && fromLng != null && toLat != null && toLng != null,
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+export function useRouteGeometry(fromLat?: number, fromLng?: number, toLat?: number, toLng?: number, enabled = true) {
+  return useQuery({
+    queryKey: ['route-geometry', fromLat, fromLng, toLat, toLng],
+    queryFn: () => api.getRouteGeometry(fromLat!, fromLng!, toLat!, toLng!).then(r => r.geometry),
+    enabled: enabled && fromLat != null && fromLng != null && toLat != null && toLng != null,
+    staleTime: 5 * 60 * 1000,
+  })
+}

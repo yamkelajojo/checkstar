@@ -3,13 +3,14 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { motion } from 'motion/react'
-import { ArrowLeft, Loader2, MapPin, CreditCard, Star, AlertCircle, XCircle, CheckCircle, User, Package, Bike, Clock } from 'lucide-react'
+import { ArrowLeft, Loader2, MapPin, CreditCard, Star, AlertCircle, XCircle, CheckCircle, User, Package, Bike, Clock, Navigation } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth-store'
 import { api, apiErrorReason } from '@/lib/api'
 import { useOrder } from '@/lib/query'
 import { useQueryClient } from '@tanstack/react-query'
 import type { Order, OrderActivityLog } from '@/types'
 import { statusConfig, paymentStatusConfig } from '@/lib/motion/variants'
+import OrderTrackingMap from '@/components/OrderTrackingMap'
 
 function cancelReasonLabel(reason: string | null): string {
   if (reason === 'order_not_cancellable') return "Can't cancel — order already out for delivery"
@@ -268,6 +269,30 @@ export default function OrderDetailClient({ id }: { id: string }) {
               </div>
             )}
           </div>
+
+          {/* Live tracking — mandatory for delivery orders, real-time rider location */}
+          {!isPickup && ['confirmed', 'preparing', 'out_for_delivery', 'retrying'].includes(order.status) && (
+            <div className="mt-6 space-y-3">
+              <div className="flex items-center justify-between">
+                <h2 className="font-display text-sm font-semibold text-gray-500 uppercase tracking-wider">Live Tracking</h2>
+                <Link href={`/account/orders/${order.id}/tracking`} className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
+                  <Navigation size={12} /> Full tracking
+                </Link>
+              </div>
+              <OrderTrackingMap
+                orderId={order.id}
+                orderStatus={order.status}
+                storeName={order.store?.name || 'Store'}
+                storeLat={order.store?.latitude != null ? Number(order.store.latitude) : undefined}
+                storeLng={order.store?.longitude != null ? Number(order.store.longitude) : undefined}
+                deliveryLat={order.delivery_latitude != null ? Number(order.delivery_latitude) : undefined}
+                deliveryLng={order.delivery_longitude != null ? Number(order.delivery_longitude) : undefined}
+                deliveryAddress={order.delivery_address}
+                riderName={order.rider?.user?.name || null}
+                height={380}
+              />
+            </div>
+          )}
 
           {order.activity_logs && order.activity_logs.length > 0 && (
             <div className="bg-white border border-gray-100 rounded-xl p-5 mt-6">
