@@ -1,7 +1,7 @@
 import { View, Text, Pressable } from 'react-native';
 import { useTheme } from '../theme';
 import { brand } from '../theme/colors';
-import { semanticRadius, semanticSpacing } from '../theme/spacing';
+import { semanticRadius } from '../theme/spacing';
 import { Home, LayoutGrid, Heart, ShoppingCart, User } from 'lucide-react-native';
 import Animated, {
   useSharedValue,
@@ -10,10 +10,11 @@ import Animated, {
   useDerivedValue,
   interpolate,
   withDelay,
+  type SharedValue,
 } from 'react-native-reanimated';
 import { useEffect } from 'react';
 import { springs } from '../theme/motion';
-import { TAB_ORDER, getTabIndex } from './tabTransitions';
+import { TAB_ORDER } from './tabTransitions';
 import { haptic } from '../lib/haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -35,8 +36,8 @@ const TABS: TabConfig[] = [
 
 interface AnimatedTabBarProps {
   activeIndex: number;
-  scrollPosition: Animated.SharedValue<number>;
-  scrollOffset: Animated.SharedValue<number>;
+  scrollPosition: SharedValue<number>;
+  scrollOffset: SharedValue<number>;
   onTabPress: (index: number) => void;
   cartCount: number;
   tabBarHeight: number;
@@ -85,8 +86,8 @@ interface TabItemProps {
   index: number;
   isActive: boolean;
   activeIndex: number;
-  scrollPosition: Animated.SharedValue<number>;
-  scrollOffset: Animated.SharedValue<number>;
+  scrollPosition: SharedValue<number>;
+  scrollOffset: SharedValue<number>;
   onPress: () => void;
   cartCount?: number;
 }

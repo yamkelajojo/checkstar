@@ -7,6 +7,7 @@ import Animated, {
   useDerivedValue,
   interpolate,
   withDelay,
+  type SharedValue,
 } from 'react-native-reanimated';
 import { useReducedMotion } from '../components/shared/useReducedMotion';
 import { springs } from '../theme/motion';
@@ -15,9 +16,9 @@ import { getMotionBlurStyle, getMotionBlurIntensity } from './tabTransitions';
 interface TabScreenWrapperProps {
   children: ReactNode;
   isActive: boolean;
-  direction: Animated.SharedValue<number>;
-  scrollPosition: Animated.SharedValue<number>;
-  scrollOffset: Animated.SharedValue<number>;
+  direction: SharedValue<number>;
+  scrollPosition: SharedValue<number>;
+  scrollOffset: SharedValue<number>;
   index: number;
   activeIndex: number;
 }

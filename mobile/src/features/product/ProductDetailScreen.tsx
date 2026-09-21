@@ -24,7 +24,7 @@ import { useToast } from '../../components/shared/GlassToast';
 import { trackProductView } from '../../services/trackingService';
 import { SaveHeart } from '../../components/shared/SaveHeart';
 import { haptic } from '../../lib/haptics';
-import Animated from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, interpolate } from 'react-native-reanimated';
 
 function RelatedCard({ item, index }: { item: ProductVO; index: number }) {
   const theme = useTheme();
@@ -92,7 +92,7 @@ export function ProductDetailScreen() {
   const [scrollY, setScrollY] = useState(0);
   const relatedLayout = useRef<{ y: number; height: number } | null>(null);
   const [relatedInView, setRelatedInView] = useState(false);
-  const morph = useRef(new Animated.Value(0)).current;
+  const morph = useSharedValue(0);
   const { height: windowHeight } = useWindowDimensions();
 
   useEffect(() => {
@@ -107,8 +107,26 @@ export function ProductDetailScreen() {
   }, [scrollY, relatedProducts, windowHeight]);
 
   useEffect(() => {
-    Animated.timing(morph, { toValue: relatedInView ? 1 : 0, duration: 260, useNativeDriver: true }).start();
+    morph.value = withTiming(relatedInView ? 1 : 0, { duration: 260 });
   }, [relatedInView]);
+
+  const bottomBarStyle = useAnimatedStyle(() => {
+    const opacity = morph.value;
+    const translateY = interpolate(morph.value, [0, 1], [24, 0]);
+    return {
+      opacity,
+      transform: [{ translateY }],
+    };
+  });
+
+  const fabStyle = useAnimatedStyle(() => {
+    const opacity = morph.value;
+    const scale = interpolate(morph.value, [0, 1], [0.6, 1]);
+    return {
+      opacity,
+      transform: [{ scale }],
+    };
+  });
 
   if (isLoading || !product) {
     return (
@@ -223,7 +241,7 @@ export function ProductDetailScreen() {
           </FadeSlideIn>
 
           <FadeSlideIn delay={160} distance={8}>
-            <Text style={{ ...textStyle.h2, color: theme.colors.text.primary, letterSpacing: -0.3, lineHeight: 26 }}>{product.name}</Text>
+            <Text style={[textStyle.h2, { color: theme.colors.text.primary, letterSpacing: -0.3, lineHeight: 26 }]}>{product.name}</Text>
           </FadeSlideIn>
 
           <FadeSlideIn delay={180} distance={8}>
@@ -326,25 +344,26 @@ export function ProductDetailScreen() {
 
       {!relatedInView ? (
         <Animated.View
-          style={{
-            position: 'absolute',
-            left: 0,
-            right: 0,
-            bottom: 0,
-            paddingHorizontal: semanticSpacing.screenPadding,
-            paddingVertical: 14,
-            paddingBottom: 14 + insets.bottom,
-            borderTopWidth: 1,
-            borderTopColor: theme.colors.border.subtle,
-            backgroundColor: theme.colors.background.primary,
-            opacity: morph as any,
-            transform: [{ translateY: (morph as any).interpolate ? (morph as any).interpolate({ inputRange: [0, 1], outputRange: [24, 0] }) : 0 }],
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: -4 },
-            shadowOpacity: 0.06,
-            shadowRadius: 12,
-            elevation: 8,
-          }}
+          style={[
+            {
+              position: 'absolute',
+              left: 0,
+              right: 0,
+              bottom: 0,
+              paddingHorizontal: semanticSpacing.screenPadding,
+              paddingVertical: 14,
+              paddingBottom: 14 + insets.bottom,
+              borderTopWidth: 1,
+              borderTopColor: theme.colors.border.subtle,
+              backgroundColor: theme.colors.background.primary,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: -4 },
+              shadowOpacity: 0.06,
+              shadowRadius: 12,
+              elevation: 8,
+            },
+            bottomBarStyle,
+          ]}
         >
           {isOutOfStockEverywhere ? (
             <View style={{ alignItems: 'center', width: '80%', alignSelf: 'center' }}>
@@ -364,13 +383,14 @@ export function ProductDetailScreen() {
 
       {relatedInView ? (
         <Animated.View
-          style={{
-            position: 'absolute',
-            right: semanticSpacing.screenPadding,
-            bottom: 16 + insets.bottom,
-            opacity: morph as any,
-            transform: [{ scale: (morph as any).interpolate ? (morph as any).interpolate({ inputRange: [0, 1], outputRange: [0.6, 1] }) : 1 }],
-          }}
+          style={[
+            {
+              position: 'absolute',
+              right: semanticSpacing.screenPadding,
+              bottom: 16 + insets.bottom,
+            },
+            fabStyle,
+          ]}
         >
           {isOutOfStockEverywhere ? null : quantity === 0 ? (
             <TactilePressable onPress={handleAddToCart} haptic="commit" style={{ backgroundColor: theme.colors.text.primary, borderRadius: 28, paddingHorizontal: 18, paddingVertical: 14, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 8, elevation: 6 }}>

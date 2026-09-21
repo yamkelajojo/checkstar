@@ -36,7 +36,7 @@ import {
 import { useAdaptivePoll, createAdaptiveRefetchInterval } from '../../lib/adaptivePoll';
 import { CUSTOMER_STATUS_LABEL as STATUS_LABEL } from '../../lib/status';
 import { useTopSafeArea } from '../../components/shared/ScreenHeader';
-import { FadeSlideIn } from '../../components/motion/FadeSlideIn';
+import { FadeSlideIn } from '../../components/shared/FadeSlideIn';
 
 const PAYMENT_LABEL: Record<string, string> = {
   pending: 'Pending',
@@ -174,10 +174,10 @@ export function OrderDetailScreen() {
         <View style={{ paddingTop: topInset, paddingHorizontal: semanticSpacing.screenPadding, gap: semanticSpacing.lg }}>
           <FadeSlideIn delay={60} distance={12}>
             <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' }}>
-              <Text style={{ ...textStyle.h2, color: theme.colors.text.primary, letterSpacing: -0.3 }}>
+              <Text style={[textStyle.h2, { color: theme.colors.text.primary, letterSpacing: -0.3 }]}>
                 Order #{order.id}
               </Text>
-              <Text style={{ color: theme.colors.text.secondary, ...textStyle.caption }}>
+              <Text style={[textStyle.caption, { color: theme.colors.text.secondary }]}>
                 {new Date(order.created_at).toLocaleDateString()}
               </Text>
             </View>
@@ -186,7 +186,7 @@ export function OrderDetailScreen() {
           <FadeSlideIn delay={100} distance={10}>
             <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: semanticRadius.card, padding: semanticSpacing.md, gap: 14, borderWidth: 1, borderColor: theme.colors.border.subtle, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 1 }}>
               {cancelled ? (
-                <Text style={{ color: brand.error, fontWeight: fontWeight.bold, textAlign: 'center', ...textStyle.body }}>{copy.orders.cancelled}</Text>
+                <Text style={[textStyle.body, { color: brand.error, fontWeight: fontWeight.bold, textAlign: 'center' }]}>{copy.orders.cancelled}</Text>
               ) : (
                 STATUS_STEPS.map((step, i) => {
                   const done = i <= statusIndex;
@@ -210,12 +210,14 @@ export function OrderDetailScreen() {
                           {done && <Check size={14} color="#fff" strokeWidth={3} />}
                         </View>
                         <Text
-                          style={{
-                            color: done ? theme.colors.text.primary : theme.colors.text.tertiary,
-                            fontWeight: done ? fontWeight.semibold : fontWeight.regular,
-                            letterSpacing: done ? -0.2 : 0,
-                            ...textStyle.body,
-                          }}
+                          style={[
+                            textStyle.body,
+                            {
+                              color: done ? theme.colors.text.primary : theme.colors.text.tertiary,
+                              fontWeight: done ? fontWeight.semibold : fontWeight.regular,
+                              letterSpacing: done ? -0.2 : 0,
+                            },
+                          ]}
                         >
                           {STATUS_LABEL[step]}
                         </Text>
@@ -248,12 +250,12 @@ export function OrderDetailScreen() {
 
           <FadeSlideIn delay={200} distance={10}>
             <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: semanticRadius.card, padding: semanticSpacing.md, gap: semanticSpacing.xxs, borderWidth: 1, borderColor: theme.colors.border.subtle }}>
-              <Text style={{ fontWeight: fontWeight.bold, color: theme.colors.text.primary, letterSpacing: -0.2, ...textStyle.body }}>{copy.orders.delivery}</Text>
-              <Text style={{ color: theme.colors.text.secondary, ...textStyle.body }}>
+              <Text style={[textStyle.body, { fontWeight: fontWeight.bold, color: theme.colors.text.primary, letterSpacing: -0.2 }]}>{copy.orders.delivery}</Text>
+              <Text style={[textStyle.body, { color: theme.colors.text.secondary }]}>
                 {order.delivery_address ?? '\u2014'}
               </Text>
               {order.rider?.user?.name != null && (
-                <Text style={{ color: theme.colors.text.secondary, ...textStyle.body }}>
+                <Text style={[textStyle.body, { color: theme.colors.text.secondary }]}>
                   Rider: <Text style={{ fontWeight: fontWeight.semibold, color: theme.colors.text.primary }}>{order.rider.user.name}</Text>
                 </Text>
               )}
@@ -262,18 +264,18 @@ export function OrderDetailScreen() {
 
           <FadeSlideIn delay={240} distance={10}>
             <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: semanticRadius.card, padding: semanticSpacing.md, gap: semanticSpacing.xs, borderWidth: 1, borderColor: theme.colors.border.subtle }}>
-              <Text style={{ fontWeight: fontWeight.bold, color: theme.colors.text.primary, letterSpacing: -0.2, ...textStyle.body }}>{copy.orders.items}</Text>
+              <Text style={[textStyle.body, { fontWeight: fontWeight.bold, color: theme.colors.text.primary, letterSpacing: -0.2 }]}>{copy.orders.items}</Text>
               {order.items.map((item, idx) => {
                 const name = (item.product_snapshot as { name?: string } | null)?.name ?? `Item ${item.product_id}`;
                 const unit = (item.product_snapshot as { unit?: string } | null)?.unit ?? '';
                 return (
                   <FadeSlideIn key={item.id} delay={260 + idx * 20} distance={6} initialScale={0.99}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                      <Text style={{ flex: 1, color: theme.colors.text.primary, ...textStyle.body }}>
-                        {item.quantity} \u00D7 {name}
+                      <Text style={[textStyle.body, { flex: 1, color: theme.colors.text.primary }]}>
+                        {item.quantity} {'\u00D7'} {name}
                         {unit ? ` (${unit})` : ''}
                       </Text>
-                      <Text style={{ color: theme.colors.text.secondary, ...textStyle.body }}>
+                      <Text style={[textStyle.body, { color: theme.colors.text.secondary }]}>
                         {item.unit_price_cents != null ? formatZar(item.unit_price_cents * item.quantity) : ''}
                       </Text>
                     </View>
@@ -282,8 +284,8 @@ export function OrderDetailScreen() {
               })}
               <View style={{ height: 1, backgroundColor: theme.colors.border.subtle, marginVertical: 4 }} />
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <Text style={{ color: theme.colors.text.secondary, ...textStyle.body }}>{copy.checkout.total}</Text>
-                <Text style={{ fontWeight: fontWeight.bold, color: theme.colors.text.primary, letterSpacing: -0.2, ...textStyle.body }}>{formatZar(order.total_cents ?? 0)}</Text>
+                <Text style={[textStyle.body, { color: theme.colors.text.secondary }]}>{copy.checkout.total}</Text>
+                <Text style={[textStyle.body, { fontWeight: fontWeight.bold, color: theme.colors.text.primary, letterSpacing: -0.2 }]}>{formatZar(order.total_cents ?? 0)}</Text>
               </View>
             </View>
           </FadeSlideIn>
@@ -297,7 +299,7 @@ export function OrderDetailScreen() {
                 style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: semanticSpacing.xxs, backgroundColor: theme.colors.surface.primary, borderRadius: semanticRadius.buttonPill, paddingVertical: semanticSpacing.sm, borderWidth: 1, borderColor: brand.orange }}
               >
                 <RefreshCw size={16} color={brand.orange} />
-                <Text style={{ color: brand.orange, fontWeight: fontWeight.semibold, letterSpacing: 0.2, ...textStyle.bodySmall }}>
+                <Text style={[textStyle.bodySmall, { color: brand.orange, fontWeight: fontWeight.semibold, letterSpacing: 0.2 }]}>
                   Reorder
                 </Text>
               </TactilePressable>
@@ -306,8 +308,8 @@ export function OrderDetailScreen() {
 
           <FadeSlideIn delay={300} distance={8}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', backgroundColor: theme.colors.surface.primary, borderRadius: semanticRadius.card, padding: semanticSpacing.md, borderWidth: 1, borderColor: theme.colors.border.subtle }}>
-              <Text style={{ color: theme.colors.text.secondary, ...textStyle.body }}>{copy.orders.payment}</Text>
-              <Text style={{ fontWeight: fontWeight.semibold, color: theme.colors.text.primary, ...textStyle.body }}>
+              <Text style={[textStyle.body, { color: theme.colors.text.secondary }]}>{copy.orders.payment}</Text>
+              <Text style={[textStyle.body, { fontWeight: fontWeight.semibold, color: theme.colors.text.primary }]}>
                 {order.payment_method != null ? `${order.payment_method} \u00B7 ` : ''}
                 {PAYMENT_LABEL[order.payment_status] ?? order.payment_status}
               </Text>
@@ -317,14 +319,14 @@ export function OrderDetailScreen() {
           {order.activity_logs != null && order.activity_logs.length > 0 && (
             <FadeSlideIn delay={340} distance={10}>
               <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: semanticRadius.card, padding: semanticSpacing.md, gap: semanticSpacing.xs, borderWidth: 1, borderColor: theme.colors.border.subtle }}>
-                <Text style={{ fontWeight: fontWeight.bold, color: theme.colors.text.primary, letterSpacing: -0.2, ...textStyle.body }}>{copy.orders.activity}</Text>
+                <Text style={[textStyle.body, { fontWeight: fontWeight.bold, color: theme.colors.text.primary, letterSpacing: -0.2 }]}>{copy.orders.activity}</Text>
                 {order.activity_logs.map((log, idx) => (
                   <FadeSlideIn key={log.id} delay={360 + idx * 20} distance={6}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: semanticSpacing.inlineGap }}>
-                      <Text style={{ flex: 1, color: theme.colors.text.secondary, ...textStyle.body }}>
+                      <Text style={[textStyle.body, { flex: 1, color: theme.colors.text.secondary }]}>
                         {log.status.replace(/_/g, ' ')}
                       </Text>
-                      <Text style={{ color: theme.colors.text.tertiary, ...textStyle.caption }}>
+                      <Text style={[textStyle.caption, { color: theme.colors.text.tertiary }]}>
                         {new Date(log.created_at).toLocaleString()}
                       </Text>
                     </View>
@@ -355,7 +357,7 @@ export function OrderDetailScreen() {
                   alignSelf: 'flex-start',
                 }}
               >
-                <Text style={{ color: brand.error, ...textStyle.caption, fontWeight: fontWeight.semibold }}>
+                <Text style={[textStyle.caption, { color: brand.error, fontWeight: fontWeight.semibold }]}>
                   {cancelConflictLabel(cancelConflict)}
                 </Text>
               </View>
@@ -369,20 +371,20 @@ export function OrderDetailScreen() {
             accessibilityRole="button"
             style={{ backgroundColor: brand.success, borderRadius: semanticRadius.buttonPill, shadowColor: brand.success, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 8, elevation: 3 }}
           >
-            <Text style={{ color: theme.colors.text.inverse, textAlign: 'center', fontWeight: fontWeight.bold, textTransform: 'uppercase', letterSpacing: 0.3, ...textStyle.buttonPrimary }}>
+            <Text style={[textStyle.buttonPrimary, { color: theme.colors.text.inverse, textAlign: 'center', fontWeight: fontWeight.bold, textTransform: 'uppercase', letterSpacing: 0.3 }]}>
               {copy.orders.confirmReceived}
             </Text>
           </TactilePressable>
         )}
         {cancellableNow && (
           <TactilePressable onPress={onCancel} haptic="warning" accessibilityRole="button">
-            <Text style={{ textAlign: 'center', color: brand.error, fontWeight: fontWeight.semibold, ...textStyle.bodySmall }}>
+            <Text style={[textStyle.bodySmall, { textAlign: 'center', color: brand.error, fontWeight: fontWeight.semibold }]}>
               {copy.orders.cancel}
             </Text>
           </TactilePressable>
         )}
         <TactilePressable onPress={() => navigation.goBack()} haptic="selection" accessibilityRole="button">
-          <Text style={{ textAlign: 'center', color: theme.colors.text.secondary, fontWeight: fontWeight.medium, ...textStyle.bodySmall }}>
+          <Text style={[textStyle.bodySmall, { textAlign: 'center', color: theme.colors.text.secondary, fontWeight: fontWeight.medium }]}>
             {copy.orders.done}
           </Text>
         </TactilePressable>
@@ -414,7 +416,7 @@ function ReviewCard({ orderId, onDone }: { orderId: number; onDone: () => void }
 
   return (
     <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: semanticRadius.card, padding: semanticSpacing.md, gap: semanticSpacing.inlineGap, borderWidth: 1, borderColor: theme.colors.border.subtle }}>
-      <Text style={{ fontWeight: fontWeight.bold, color: theme.colors.text.primary, letterSpacing: -0.2, ...textStyle.body }}>{copy.review.title}</Text>
+      <Text style={[textStyle.body, { fontWeight: fontWeight.bold, color: theme.colors.text.primary, letterSpacing: -0.2 }]}>{copy.review.title}</Text>
       <View style={{ flexDirection: 'row', gap: semanticSpacing.inlineGap }}>
         {[1, 2, 3, 4, 5].map((n) => (
           <Pressable key={n} onPress={() => { haptic.selection(); setRating(n); }} accessibilityRole="button" accessibilityLabel={`${n} stars`} hitSlop={6}>
@@ -427,16 +429,18 @@ function ReviewCard({ orderId, onDone }: { orderId: number; onDone: () => void }
         onChangeText={setComment}
         placeholder="How was your Rider?"
         placeholderTextColor={theme.colors.text.tertiary}
-        style={{
-          backgroundColor: theme.colors.background.secondary,
-          borderRadius: semanticRadius.input,
-          paddingHorizontal: semanticSpacing.md,
-          paddingVertical: semanticSpacing.xs,
-          color: theme.colors.text.primary,
-          borderWidth: 1,
-          borderColor: theme.colors.border.subtle,
-          ...textStyle.body,
-        }}
+        style={[
+          textStyle.body,
+          {
+            backgroundColor: theme.colors.background.secondary,
+            borderRadius: semanticRadius.input,
+            paddingHorizontal: semanticSpacing.md,
+            paddingVertical: semanticSpacing.xs,
+            color: theme.colors.text.primary,
+            borderWidth: 1,
+            borderColor: theme.colors.border.subtle,
+          },
+        ]}
       />
       <TactilePressable
         onPress={submit}
@@ -445,7 +449,7 @@ function ReviewCard({ orderId, onDone }: { orderId: number; onDone: () => void }
         accessibilityRole="button"
         style={{ backgroundColor: rating > 0 ? brand.orange : theme.colors.border.subtle, borderRadius: semanticRadius.buttonPill, opacity: rating > 0 ? 1 : 0.6, shadowColor: rating > 0 ? brand.orange : 'transparent', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 6 }}
       >
-        <Text style={{ color: rating > 0 ? theme.colors.text.inverse : theme.colors.text.secondary, textAlign: 'center', fontWeight: fontWeight.bold, textTransform: 'uppercase', letterSpacing: 0.3, ...textStyle.buttonPrimary }}>
+        <Text style={[textStyle.buttonPrimary, { color: rating > 0 ? theme.colors.text.inverse : theme.colors.text.secondary, textAlign: 'center', fontWeight: fontWeight.bold, textTransform: 'uppercase', letterSpacing: 0.3 }]}>
           {submitting ? '\u2026' : copy.review.cta}
         </Text>
       </TactilePressable>

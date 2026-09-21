@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { Easing } from 'react-native';
 import { useSession } from '../stores/session';
 import { useNavigationSignal } from '../stores/navigationSignal';
 import { storage, STORAGE_KEYS } from '../lib/storage';
@@ -21,6 +22,13 @@ import { CustomerTabs } from './CustomerTabs';
 import type { RootStackParamList } from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
+
+/**
+ * Apple iOS 18 polish — EASE_APPLE [0.16,1,0.3,1] / 280ms
+ * Same curve used in tabTransitions.ts for 1:1 cohesion.
+ * Slide from right for pushes, slide from bottom for modals, fade for onboarding.
+ */
+const EASE_APPLE = Easing.bezier(0.16, 1, 0.3, 1) as any;
 
 export function RootNavigator() {
   const status = useSession((s) => s.status);
@@ -53,31 +61,110 @@ export function RootNavigator() {
   prevBranch.current = branch;
 
   return (
-    <Stack.Navigator key={navigatorKey} screenOptions={{ headerShown: false }}>
+    <Stack.Navigator
+      key={navigatorKey}
+      screenOptions={{
+        headerShown: false,
+        animation: 'slide_from_right',
+        animationDuration: 280,
+        animationTypeForReplace: 'push',
+        gestureEnabled: true,
+        fullScreenGestureEnabled: true,
+        contentStyle: { backgroundColor: '#FFFEFB' },
+        // Apple spring easing — same as tabTransitions
+        // @ts-ignore — Easing prop exists in native-stack
+        easing: EASE_APPLE,
+      }}
+    >
       {showOnboarding ? (
         <>
-          <Stack.Screen name="Onboarding" component={OnboardingScreen} />
-          <Stack.Screen name="Auth" component={AuthScreen} options={{ presentation: 'modal' }} />
+          <Stack.Screen
+            name="Onboarding"
+            component={OnboardingScreen}
+            options={{
+              animation: 'fade',
+              animationDuration: 320,
+              gestureEnabled: false,
+            }}
+          />
+          <Stack.Screen
+            name="Auth"
+            component={AuthScreen}
+            options={{
+              presentation: 'modal',
+              animation: 'slide_from_bottom',
+              animationDuration: 340,
+              gestureEnabled: true,
+            }}
+          />
         </>
       ) : isRider ? (
         <>
-          <Stack.Screen name="RiderHome" component={RiderHomeScreen} />
+          <Stack.Screen name="RiderHome" component={RiderHomeScreen} options={{ animation: 'fade', animationDuration: 280 }} />
           <Stack.Screen name="RiderOrderDetail" component={RiderOrderDetailScreen} />
           <Stack.Screen name="RiderProfile" component={RiderProfileScreen} />
           <Stack.Screen name="RiderHistory" component={RiderHistoryScreen} />
-          <Stack.Screen name="RouteExplorer" component={RouteExplorerScreen} />
+          <Stack.Screen
+            name="RouteExplorer"
+            component={RouteExplorerScreen}
+            options={{
+              animation: 'slide_from_bottom',
+              animationDuration: 320,
+              presentation: 'modal',
+            }}
+          />
         </>
       ) : (
         <>
-          <Stack.Screen name="Tabs" component={CustomerTabs} />
+          <Stack.Screen name="Tabs" component={CustomerTabs} options={{ animation: 'fade', animationDuration: 260 }} />
           <Stack.Screen name="ProductDetail" component={ProductDetailScreen} />
-          <Stack.Screen name="Search" component={SearchScreen} />
-          <Stack.Screen name="Auth" component={AuthScreen} options={{ presentation: 'modal' }} />
-          <Stack.Screen name="StorePicker" component={StorePickerScreen} options={{ presentation: 'modal' }} />
-          <Stack.Screen name="Checkout" component={CheckoutScreen} options={{ presentation: 'modal' }} />
-          <Stack.Screen name="OrderPlaced" component={OrderPlacedScreen} options={{ gestureEnabled: false }} />
+          <Stack.Screen name="Search" component={SearchScreen} options={{ animation: 'fade_from_bottom', animationDuration: 280 }} />
+          <Stack.Screen
+            name="Auth"
+            component={AuthScreen}
+            options={{
+              presentation: 'modal',
+              animation: 'slide_from_bottom',
+              animationDuration: 340,
+            }}
+          />
+          <Stack.Screen
+            name="StorePicker"
+            component={StorePickerScreen}
+            options={{
+              presentation: 'modal',
+              animation: 'slide_from_bottom',
+              animationDuration: 340,
+            }}
+          />
+          <Stack.Screen
+            name="Checkout"
+            component={CheckoutScreen}
+            options={{
+              presentation: 'modal',
+              animation: 'slide_from_bottom',
+              animationDuration: 340,
+            }}
+          />
+          <Stack.Screen
+            name="OrderPlaced"
+            component={OrderPlacedScreen}
+            options={{
+              gestureEnabled: false,
+              animation: 'fade',
+              animationDuration: 400,
+            }}
+          />
           <Stack.Screen name="OrderDetail" component={OrderDetailScreen} />
-          <Stack.Screen name="RouteExplorer" component={RouteExplorerScreen} />
+          <Stack.Screen
+            name="RouteExplorer"
+            component={RouteExplorerScreen}
+            options={{
+              animation: 'slide_from_bottom',
+              animationDuration: 320,
+              presentation: 'modal',
+            }}
+          />
         </>
       )}
     </Stack.Navigator>

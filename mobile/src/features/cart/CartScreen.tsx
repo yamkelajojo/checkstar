@@ -59,7 +59,7 @@ export function CartScreen() {
                   elevation: 2,
                 }}
               >
-                <Text style={{ color: theme.colors.text.inverse, fontWeight: fontWeight.bold, letterSpacing: 0.3, ...textStyle.buttonPrimary }}>
+                <Text style={[textStyle.buttonPrimary, { color: theme.colors.text.inverse, fontWeight: fontWeight.bold, letterSpacing: 0.3 }]}>
                   {copy.cart.browseSpecials}
                 </Text>
               </TactilePressable>
@@ -88,7 +88,7 @@ export function CartScreen() {
           ListHeaderComponent={
             <FadeSlideIn delay={80} distance={8}>
               <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: semanticRadius.card, padding: 12, borderWidth: 1, borderColor: theme.colors.border.subtle, marginBottom: 4 }}>
-                <Text style={{ ...textStyle.caption, color: theme.colors.text.secondary, lineHeight: 16, letterSpacing: 0.1 }}>{copy.cart.trustNote}</Text>
+                <Text style={[textStyle.caption, { color: theme.colors.text.secondary, lineHeight: 16, letterSpacing: 0.1 }]}>{copy.cart.trustNote}</Text>
               </View>
             </FadeSlideIn>
           }
