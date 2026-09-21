@@ -463,18 +463,16 @@ export function ProductDetailScreen() {
             haptic="commit"
             accessibilityRole="button"
             accessibilityLabel={`Add ${product.name} to cart`}
-            disabled={showAvailabilityAlert}
             style={{ 
-              backgroundColor: showAvailabilityAlert ? theme.colors.action.secondary.background : brand.orange, 
+              backgroundColor: brand.orange, 
               borderRadius: semanticRadius.buttonPill, 
               width: '80%',
               alignSelf: 'center',
               paddingVertical: 14,
-              opacity: showAvailabilityAlert ? 0.7 : 1,
             }}
           >
             <Text style={{ color: theme.colors.text.inverse, textAlign: 'center', fontWeight: fontWeight.bold, textTransform: 'uppercase', ...textStyle.buttonPrimary }}>
-              {showAvailabilityAlert ? 'Choose store first' : `Add to cart \u00B7 ${formatZar(product.effectivePriceCents)} / ${product.unit}`}
+              {`Add to cart \u00B7 ${formatZar(product.effectivePriceCents)} / ${product.unit}`}
             </Text>
           </TactilePressable>
         ) : (
@@ -505,13 +503,11 @@ export function ProductDetailScreen() {
             haptic="commit"
             accessibilityRole="button"
             accessibilityLabel={`Add ${product.name} to cart`}
-            disabled={showAvailabilityAlert}
             style={{
-              backgroundColor: showAvailabilityAlert ? theme.colors.action.secondary.background : brand.orange,
+              backgroundColor: brand.orange,
               borderRadius: 28,
               paddingHorizontal: 18,
               paddingVertical: 14,
-              opacity: showAvailabilityAlert ? 0.7 : 1,
               shadowColor: '#000',
               shadowOffset: { width: 0, height: 4 },
               shadowOpacity: 0.25,
@@ -520,7 +516,7 @@ export function ProductDetailScreen() {
             }}
           >
             <Text style={{ color: theme.colors.text.inverse, fontWeight: fontWeight.bold, ...textStyle.buttonPrimary }}>
-              {showAvailabilityAlert ? 'No store' : `Add \u00B7 ${formatZar(product.effectivePriceCents)}`}
+              {`Add \u00B7 ${formatZar(product.effectivePriceCents)}`}
             </Text>
           </TactilePressable>
         ) : (

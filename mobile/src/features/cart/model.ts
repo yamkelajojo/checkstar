@@ -33,40 +33,52 @@ export function applyServerMerge(draft: CartItem[], response: ApiCartSyncRespons
   return { items, droppedCount: response.dropped.length };
 }
 
+function normalizeId(id: string | number | null | undefined): string | null {
+  if (id == null) return null;
+  return String(id);
+}
+
+function sameStoreId(a: string | number | null | undefined, b: string | number | null | undefined): boolean {
+  return normalizeId(a) === normalizeId(b);
+}
+
 export const cartRules = {
   addItem(items: CartItem[], target: CartAddTarget, quantity: number): CartItem[] {
-    // Match by productId, and if storeProductId is provided, also match by that
+    const targetStoreId = normalizeId(target.storeProductId);
+    // Match by productId, and if storeProductId is provided, also match by that (normalized)
     const existingIdx = items.findIndex((i) => {
       if (i.productId !== target.productId) return false;
-      if (target.storeProductId != null) return i.storeProductId === target.storeProductId;
+      if (targetStoreId != null) return sameStoreId(i.storeProductId, targetStoreId);
       return true;
     });
     if (existingIdx === -1) {
-      return [...items, { productId: target.productId, quantity: cap(quantity), storeProductId: target.storeProductId }];
+      return [...items, { productId: target.productId, quantity: cap(quantity), storeProductId: targetStoreId }];
     }
     return items.map((item, idx) =>
       idx === existingIdx ? { ...item, quantity: cap(item.quantity + quantity) } : item,
     );
   },
 
-  removeItem(items: CartItem[], productId: string, storeProductId?: string | null): CartItem[] {
+  removeItem(items: CartItem[], productId: string, storeProductId?: string | number | null): CartItem[] {
+    const targetStoreId = normalizeId(storeProductId);
     return items.filter((i) => {
       if (i.productId !== productId) return true;
-      if (storeProductId != null) return i.storeProductId !== storeProductId;
+      if (targetStoreId != null) return !sameStoreId(i.storeProductId, targetStoreId);
       return false;
     });
   },
 
-  decrementItem(items: CartItem[], productId: string, storeProductId?: string | null): CartItem[] {
+  decrementItem(items: CartItem[], productId: string, storeProductId?: string | number | null): CartItem[] {
+    const targetStoreId = normalizeId(storeProductId);
     const existing = items.find((i) => {
       if (i.productId !== productId) return false;
-      if (storeProductId != null) return i.storeProductId === storeProductId;
+      if (targetStoreId != null) return sameStoreId(i.storeProductId, targetStoreId);
       return true;
     });
     if (!existing) return items;
-    if (existing.quantity <= 1) return cartRules.removeItem(items, productId);
+    if (existing.quantity <= 1) return cartRules.removeItem(items, productId, targetStoreId);
     return items.map((i) =>
-      i.productId === productId && (storeProductId == null || i.storeProductId === storeProductId)
+      i.productId === productId && (targetStoreId == null || sameStoreId(i.storeProductId, targetStoreId))
         ? { ...i, quantity: i.quantity - 1 }
         : i
     );

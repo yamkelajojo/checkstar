@@ -111,6 +111,8 @@ export function CheckoutScreen() {
   const selectedStore = stores.find((x) => x.id === selectedStoreId) ?? null;
   const isPickup = fulfilment === 'pickup';
   const usingSavedAddress = !isPickup && selectedAddressId !== 'new' && savedAddresses.some((a) => a.id === selectedAddressId);
+  const activeSavedAddress = usingSavedAddress ? savedAddresses.find((a) => a.id === selectedAddressId) ?? null : null;
+  const effectiveAddressForValidation = activeSavedAddress?.address ?? address;
   const deliveryTotal = subtotal + EST_DELIVERY_FEE_CENTS;
   const canSubmitOrder = isPickup
     ? canSubmit({
@@ -126,7 +128,7 @@ export function CheckoutScreen() {
     : canSubmit({
         itemCount: items.length,
         subtotalCents: subtotal,
-        address,
+        address: effectiveAddressForValidation,
         authenticated: status === 'authenticated',
         storeSelected: fulfillmentStore != null,
         submitting,
@@ -238,19 +240,29 @@ export function CheckoutScreen() {
         });
       } else {
         const saved = savedAddresses.find((a) => a.id === selectedAddressId);
-        const coords = await getDeliveryCoords();
-        setUsedFallbackLocation(coords.usedFallback);
-        res = await placeOrder({
-          items: items.map((i) => ({ product_id: Number(i.productId), quantity: i.quantity })),
-          fulfilment_method: 'delivery',
-          delivery_address: saved
-            ? saved.address
-            : address.trim(),
-          delivery_latitude: saved ? Number(saved.latitude) : coords.latitude,
-          delivery_longitude: saved ? Number(saved.longitude) : coords.longitude,
-          delivery_notes: notes.trim() || undefined,
-          payment_method: paymentMethod,
-        });
+        if (saved) {
+          res = await placeOrder({
+            items: items.map((i) => ({ product_id: Number(i.productId), quantity: i.quantity })),
+            fulfilment_method: 'delivery',
+            delivery_address: saved.address,
+            delivery_latitude: Number(saved.latitude),
+            delivery_longitude: Number(saved.longitude),
+            delivery_notes: notes.trim() || undefined,
+            payment_method: paymentMethod,
+          });
+        } else {
+          const coords = await getDeliveryCoords();
+          setUsedFallbackLocation(coords.usedFallback);
+          res = await placeOrder({
+            items: items.map((i) => ({ product_id: Number(i.productId), quantity: i.quantity })),
+            fulfilment_method: 'delivery',
+            delivery_address: address.trim(),
+            delivery_latitude: coords.latitude,
+            delivery_longitude: coords.longitude,
+            delivery_notes: notes.trim() || undefined,
+            payment_method: paymentMethod,
+          });
+        }
       }
       // Keep cart on retrying/cancelled so customer can re-checkout (OrderCartPolicy #04)
       const shouldClear = res.dispatch?.status !== 'retrying' && res.dispatch?.status !== 'cancelled';

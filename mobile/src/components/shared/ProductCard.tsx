@@ -28,7 +28,7 @@ export interface BadgeRect {
 
 interface ProductCardProps {
   product: ProductVO;
-  storeProductId?: number | null;
+  storeProductId?: number | string | null;
   style?: StyleProp<ViewStyle>;
   /** Opens a quick summary popup; when absent the price row is not pressable. */
   onRequestSummary?: (product: ProductVO, rect: BadgeRect | null) => void;
@@ -45,8 +45,9 @@ export function ProductCard({ product, storeProductId = null, style, onRequestSu
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const quantity = useCart((s) => {
     const pid = String(product.id);
-    if (storeProductId != null) {
-      return s.items.find((i) => i.productId === pid && i.storeProductId === storeProductId)?.quantity
+    const normalizedStoreId = storeProductId != null ? String(storeProductId) : null;
+    if (normalizedStoreId != null) {
+      return s.items.find((i) => i.productId === pid && String(i.storeProductId ?? '') === normalizedStoreId)?.quantity
         ?? s.items.find((i) => i.productId === pid)?.quantity ?? 0;
     }
     return s.items.find((i) => i.productId === pid)?.quantity ?? 0;

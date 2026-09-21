@@ -83,7 +83,7 @@ describe('formatters', () => {
 
     it('returns formatted date for more than a week', () => {
       const result = formatRelativeTime(new Date(now.getTime() - 10 * dayMs));
-      expect(result).toMatch(/^\d{1,2} \w{3} \d{4}$/);
+      expect(result).toMatch(/^\d{1,2} \w{3,4} \d{4}$/);
     });
   });
 

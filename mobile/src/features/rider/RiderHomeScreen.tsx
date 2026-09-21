@@ -99,7 +99,8 @@ export function RiderHomeScreen() {
         const fresh = await fetchCurrentUser();
         useSession.setState({ user: fresh });
       } catch {}
-      toast.show(isAvailable ? copy.rider.goOnline : copy.rider.goOffline, { tone: isAvailable ? 'success' : 'default' });
+      // isAvailable is the state BEFORE toggle, so invert for the new state message
+      toast.show(isAvailable ? copy.rider.goOffline : copy.rider.goOnline, { tone: isAvailable ? 'default' : 'success' });
       invalidate();
     } catch {
       toast.show('Could not update availability.');
