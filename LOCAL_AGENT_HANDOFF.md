@@ -11,12 +11,33 @@
 
 ### Latest commits on this branch (top = newest)
 ```
+6bfcd75 feat: mandatory live order tracking + real-time rider location + recipe matching improvements
+a9d5b06 ci: backend diagnostics [skip ci]
+b32d147 docs: handoff guide for local Windows agent
 3819346 feat: complete remaining admin CRUD — recipes, community, careers, health
 549975a feat: add account sub-nav for profile/orders/favorites/dispatch
 af20ab6 fix: dispatch policy must filter riders by store_id
 2cafb20 feat: complete MVP admin gaps — products, categories, specials, stores, users, riders, audit logs, favorites
 a98153a fix: mobile hand-in-hand polish — checkout saved-address gate, rider toast, cart storeProductId normalization, product detail availability, formatter test
-649cbf5 fix: make manager/logistics dashboards just work
+```
+
+### New in 6bfcd75 (your requested 3 features)
+- **Order tracking page with live map (web + mobile) — MANDATORY**
+  - `frontend/src/lib/polyline.ts` — decoder shared with mobile
+  - `frontend/src/lib/api.ts`: `getOrderRiderLocation`, `getRoute`, `getRouteGeometry`
+  - `frontend/src/lib/query.ts`: `useOrderRiderLocation` (5s poll), `useRoute`, `useRouteGeometry`
+  - `frontend/src/components/OrderTrackingMap.tsx`: leaflet map, polls rider location 5s, stale 90s, LIVE/STALE badge, OSRM geometry polyline with dashed fallback, fitBounds, metrics overlay
+  - `frontend/src/app/(account)/account/orders/[id]/OrderDetailClient.tsx`: embeds tracking when status in [confirmed, preparing, out_for_delivery, retrying] and delivery method
+  - `frontend/src/app/(account)/account/orders/[id]/tracking/page.tsx` + `TrackingClient.tsx`: full-height tracking page with store/rider/delivery cards + how-it-works explainer
+  - Mobile: `LiveDeliveryMap` already had 5s polling, pulse animation, stale detection; now also fetches `fetchRouteGeometry` if geometry prop missing, so map shows OSRM route even when OrderDetailScreen doesn't pass geometry
+- **Rider location tracking real-time**
+  - Mobile rider: `useRiderLocationUpdates` sends GPS every 30s while active deliveries (`expo-location` Balanced accuracy)
+  - Backend: `POST /rider/location` stores in `rider_locations`, `GET /orders/{id}/rider-location` returns latest with `recorded_at`
+  - Customer polling 5s gives near real-time; WebSocket upgrade path documented (Laravel Reverb/Pusher can replace polling, API ready)
+- **Recipe ingredient matching improvements**
+  - `frontend/src/lib/ingredientMatch.ts`: expanded STOPWORDS (tbsp, tsp, cup, softened, halved, peeled, etc.), phrase synonyms (baby marrow→zucchini, brinjal/aubergine→eggplant, mielie→corn, naartjie→mandarin, bell pepper/capsicum→pepper, coriander↔cilantro, chilli↔chili, yoghurt↔yogurt, chickpea↔garbanzo), token synonyms canonical map, Levenshtein fuzzy (≤1 for ≥4 chars, ≤2 for ≥7), improved ranking (matched count, coverage, positional, ingredient coverage, shorter canonical, fuzzy penalty)
+  - New tests: `ingredientMatch.improved.test.ts` 9 tests covering SA synonyms + fuzzy
+  - Existing tests still pass: seed regression 5 tests + 11 unit tests
 ```
 
 ### What changed (summarized)
@@ -51,9 +72,10 @@ a98153a fix: mobile hand-in-hand polish — checkout saved-address gate, rider t
 
 **Verification**
 - `frontend: npx tsc --noEmit` clean
-- `frontend: npm run test -- --run` → 32 files 231 tests
+- `frontend: npm run test -- --run` → 33 files 240 tests (231 + 9 new synonym/fuzzy)
 - `mobile: npm test` → 64 suites 611 tests
 - `backend: php artisan test` → 439 passed (was 1 fail)
+- New tracking: `OrderTrackingMap` uses `MapContainer` (leaflet), `useOrderRiderLocation` polls 5s, `useRouteGeometry` fetches OSRM polyline
 
 ## 2. How to pull on Windows
 
@@ -161,9 +183,15 @@ npm run dev -- --port 3000 --hostname 0.0.0.0
    - Or add new address with map
    - Fulfillment: backend finds nearest store that can fulfill full cart (StoreFulfillmentService)
    - Place order → `OrderPlacementResult`
-4. `/account/orders` → history, click order → confirm delivery, rate rider (review)
-5. `/account/favorites` → should list favorited products, add to cart, remove
-6. Check `SaveHeart` on product detail as well
+4. `/account/orders` → history, click order → **Live Tracking map** should appear when status is confirmed/preparing/out_for_delivery (delivery only, not pickup)
+   - Map shows store pin (Checkstar orange teardrop), delivery pin (green dot), rider pin (orange with LIVE badge, pulse animation on mobile, static on web)
+   - Polls every 5s, shows STALE if no update 90s, shows last updated time
+   - Route polyline from OSRM if available, else dashed straight line store→rider→delivery
+   - Click "Full tracking" → `/account/orders/[id]/tracking` → full-height map 520px + info cards + how-it-works explainer
+5. Confirm delivery when out_for_delivery, rate rider (review)
+6. `/account/favorites` → should list favorited products, add to cart, remove
+7. Check `SaveHeart` on product detail as well
+8. **Recipe ingredient matching**: go to `/recipes/classic-sa-braai` — each ingredient should show product thumbnail that links to product page (e.g., "4 chicken thighs" → Grain Field Chickens, "2 tbsp butter" → Butter, "white bread" → SASKO, "red apples" → Top Red Apples, etc.). Test SA synonyms: create a test recipe with "baby marrow" should link to zucchini, "brinjal" to eggplant, "mielie" to corn, "naartjie" to mandarin, "capsicum" to pepper, typo "mozzarela" should still link to mozzarella via fuzzy.
 
 **Rider (thabo@checkstar.co.za / password):**
 - Login → rider dashboard (mobile or frontend if you have rider UI, but primarily mobile)
@@ -220,11 +248,12 @@ npx expo start --tunnel
 # Test same customer flow: browse, cart, checkout (saved-address gate), place, orders, rider flow
 ```
 
-**Mobile specific checks (from a98153a polish):**
+**Mobile specific checks (from a98153a polish + 6bfcd75 tracking):**
 - Checkout saved-address gate: if user has addresses, shows them; must select one before placing
 - Rider toast: after claim, shows toast
 - Cart storeProductId normalization: cart items keep storeProductId
 - Product detail availability: shows if out of stock at nearest store
+- **Live tracking mandatory**: in `OrderDetailScreen`, when order status is confirmed/preparing/out_for_delivery, `LiveDeliveryMap` appears (store pin, delivery dot, rider orange dot with LIVE badge, pulse animation, stale detection). Polls `fetchOrderRiderLocation` every 5s, fetches `fetchRouteGeometry` if geometry not provided, so OSRM route shows even without prop. Test by placing order as customer, then as rider `thabo@...` claim it and keep app open — rider location updates every 30s via `useRiderLocationUpdates`, customer map should move.
 
 ## 4. Troubleshooting for local agent
 
@@ -239,10 +268,14 @@ npx expo start --tunnel
 
 1. Pull branch as above
 2. Run backend tests: `cd backend && php artisan test --filter=DispatchPolicyTest` — should pass now (store_id fix)
-3. Run frontend tests: `cd frontend && npm run test -- --run` — expect 231 pass
+3. Run frontend tests: `cd frontend && npm run test -- --run` — expect 240 pass (33 files, includes 9 new synonym/fuzzy tests)
 4. Run mobile tests: `cd mobile && npm test` — expect 611 pass
-5. Start 3 terminals and run manual E2E checklist above
+5. Start 3 terminals and run manual E2E checklist above, **especially**:
+   - Customer order → tracking map appears in `/account/orders/[id]` + full page `/account/orders/[id]/tracking`
+   - Rider app open with active delivery → customer map rider dot moves (poll 5s, rider sends 30s)
+   - Recipe page `/recipes/classic-sa-braai` thumbnails + test SA synonyms
 6. If any new admin page missing or 403, check `AdminDashboardClient.tsx` roles and backend `role:developer` middleware
+7. For WebSocket real-time upgrade (optional future): backend needs `laravel/reverb` or Pusher, `broadcasting.php`, `RiderLocationUpdated` event, frontend `laravel-echo` + `pusher-js` subscribing to `order.{id}.rider-location` — current polling is production-ready and works without extra infra
 
 ---
 
