@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from 'react'
 import { motion, AnimatePresence, LayoutGroup } from '@/lib/motion'
 import { orchestratedLayout } from '@/lib/motion/variants'
 import { spring } from '@/lib/motion/tokens'
-import { Maximize2, Minimize2 } from 'lucide-react'
+import { Maximize2, Minimize2, Store as StoreIcon } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import MetricsHud from '@/components/operations/MetricsHud'
 
@@ -16,9 +16,16 @@ import { getDispatchChime } from '@/lib/audio/dispatch-chime'
 import { useHotkeys } from '@/lib/hooks/useHotkeys'
 import { api } from '@/lib/api'
 import { useOperationsMetrics } from '@/lib/query'
+import { useAuthStore } from '@/stores/auth-store'
+import { useStores } from '@/lib/query'
 
 export default function OperationsPage() {
-  const { data: metrics, isLoading: metricsLoading } = useOperationsMetrics()
+  const { user } = useAuthStore()
+  const { data: stores = [] } = useStores()
+  const [storeIdInput, setStoreIdInput] = useState('')
+  const activeStoreId = user?.role === 'developer' && storeIdInput ? Number(storeIdInput) : undefined
+
+  const { data: metrics, isLoading: metricsLoading } = useOperationsMetrics(activeStoreId)
   const [expanded, setExpanded] = useState(false)
   const [mapInstance, setMapInstance] = useState<import('leaflet').Map | null>(null)
   const [mapLayerData, setMapLayerData] = useState<MapLayerData | null>(null)
@@ -26,8 +33,8 @@ export default function OperationsPage() {
   const prevPendingRef = useRef(0)
 
   useEffect(() => {
-    api.getOperationsMapLayers().then(setMapLayerData).catch(() => {})
-  }, [])
+    api.getOperationsMapLayers(activeStoreId).then(setMapLayerData).catch(() => {})
+  }, [activeStoreId])
 
   useEffect(() => {
     if (metrics) {
@@ -82,6 +89,26 @@ export default function OperationsPage() {
             <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
           </div>
         </motion.header>
+
+        {/* Developer store selector */}
+        {user?.role === 'developer' && (
+          <div className="px-4 md:px-6 pb-3">
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-center gap-3">
+              <StoreIcon size={14} className="text-amber-700" />
+              <label className="text-xs font-medium text-amber-800">Store ID:</label>
+              <input value={storeIdInput} onChange={e => setStoreIdInput(e.target.value)} placeholder="e.g. 1" className="w-24 px-2 py-1 border border-amber-300 rounded-lg text-xs bg-white focus:ring-2 focus:ring-amber-500 outline-none" />
+              {stores.length > 0 && (
+                <select value={storeIdInput} onChange={e => setStoreIdInput(e.target.value)} className="px-2 py-1 border border-amber-300 rounded-lg text-xs bg-white">
+                  <option value="">Select…</option>
+                  {stores.map(s => (
+                    <option key={(s as { id: number }).id} value={(s as { id: number }).id}>{(s as { name: string }).name}</option>
+                  ))}
+                </select>
+              )}
+              {!activeStoreId && <span className="text-[11px] text-amber-700">Required for developer view</span>}
+            </div>
+          </div>
+        )}
 
         {/* Main grid */}
         <motion.div layout transition={sharedSpring} className="px-4 md:px-6 pb-6">
@@ -146,7 +173,7 @@ export default function OperationsPage() {
                   exit={orchestratedLayout.panelExit}
                   transition={sharedSpring}
                 >
-                  <EventFeed />
+                  <EventFeed storeId={activeStoreId} />
                 </motion.div>
               )}
             </AnimatePresence>
@@ -154,7 +181,7 @@ export default function OperationsPage() {
         </motion.div>
 
         {/* Alerts */}
-        <AlertBanner />
+        <AlertBanner storeId={activeStoreId} />
       </div>
     </LayoutGroup>
   )

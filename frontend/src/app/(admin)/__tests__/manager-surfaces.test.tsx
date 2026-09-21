@@ -126,11 +126,15 @@ describe('AdminDashboardClient', () => {
     renderWithProviders(<AdminDashboardClient />)
     expect(screen.getByText('Staff Dashboard')).toBeInTheDocument()
     expect(screen.getByText('Store Owner')).toBeInTheDocument()
-    // Staff see their available tool links
+    // Staff see their available tool links — messages is developer-only, owner sees inventory/orders
     const hrefs = screen.getAllByRole('link').map((a) => a.getAttribute('href'))
     expect(hrefs).toContain('/admin/banners')
     expect(hrefs).toContain('/admin/staff')
-    expect(hrefs).toContain('/admin/messages')
+    expect(hrefs).toContain('/admin/inventory')
+    expect(hrefs).toContain('/admin/orders')
+    expect(hrefs).toContain('/operations')
+    expect(hrefs).toContain('/account/dispatch')
+    expect(hrefs).not.toContain('/admin/messages')
   })
 
   it('renders overview stats and the real management links for developers', async () => {
@@ -147,6 +151,8 @@ describe('AdminDashboardClient', () => {
     const hrefs = screen.getAllByRole('link').map((a) => a.getAttribute('href'))
     expect(hrefs).toContain('/admin/banners')
     expect(hrefs).toContain('/admin/staff')
+    expect(hrefs).toContain('/admin/inventory')
+    expect(hrefs).toContain('/admin/orders')
     expect(hrefs).toContain('/admin/messages')
     expect(hrefs).toContain('/operations')
     expect(hrefs).toContain('/operations/analytics')

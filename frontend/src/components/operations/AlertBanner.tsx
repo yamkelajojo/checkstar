@@ -18,17 +18,17 @@ const ALERT_ICONS = {
   delivery_slow: AlertTriangle,
 }
 
-export default function AlertBanner() {
+export default function AlertBanner({ storeId }: { storeId?: number }) {
   const [alerts, setAlerts] = useState<Alert[]>([])
 
   const checkAlerts = useCallback(async () => {
     try {
-      const data = await api.getOperationsAlerts()
+      const data = await api.getOperationsAlerts(storeId)
       setAlerts((data.alerts ?? []) as Alert[])
     } catch {
       // Silent fail
     }
-  }, [])
+  }, [storeId])
 
   useEffect(() => {
     checkAlerts()

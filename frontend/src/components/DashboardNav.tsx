@@ -15,6 +15,7 @@ const routeLabels: Record<string, string> = {
   account: 'Account',
   dispatch: 'Dispatch',
   orders: 'Orders',
+  inventory: 'Inventory',
   profile: 'Profile',
 }
 
@@ -22,7 +23,6 @@ export default function DashboardNav() {
   const pathname = usePathname()
   const segments = pathname.split('/').filter(Boolean)
 
-  // Build breadcrumb items (skip the first segment if it's "admin" or "account")
   const crumbs: Array<{ label: string; href: string }> = []
   let accumulated = ''
 
@@ -30,26 +30,33 @@ export default function DashboardNav() {
     const seg = segments[i]
     accumulated += `/${seg}`
 
-    // Skip "admin" and "account" as root labels — the dashboard link covers them
-    if (seg === 'admin' || seg === 'account') {
-      // First segment: link back to dashboard
+    if (seg === 'admin') {
       if (crumbs.length === 0) {
         crumbs.push({ label: 'Dashboard', href: '/admin/dashboard' })
       }
       continue
     }
 
-    // Skip numeric IDs (e.g. order detail pages)
+    if (seg === 'account') {
+      if (crumbs.length === 0) {
+        if (segments.includes('dispatch')) {
+          crumbs.push({ label: 'Dashboard', href: '/admin/dashboard' })
+        } else {
+          crumbs.push({ label: 'Account', href: '/account/profile' })
+        }
+      }
+      continue
+    }
+
     if (/^\d+$/.test(seg)) continue
 
     const label = routeLabels[seg] ?? seg.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
     crumbs.push({ label, href: accumulated })
   }
 
-  // Only show nav if we're deeper than the dashboard itself
   if (crumbs.length <= 1) return null
 
-  const backHref = crumbs.length > 1 ? crumbs[crumbs.length - 2].href : '/admin/dashboard'
+  const backHref = crumbs.length > 1 ? crumbs[crumbs.length - 2].href : crumbs[0].href
 
   return (
     <nav className="max-w-6xl mx-auto px-4 pt-4 pb-2 flex items-center gap-1.5 text-xs text-gray-400" aria-label="Breadcrumb">

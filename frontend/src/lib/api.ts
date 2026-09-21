@@ -146,14 +146,39 @@ export const api = {
   getCart: () => request<{ data: CartItem[] }>('/cart').then(r => r.data),
   syncCart: (items: { product_id: number; quantity: number }[]) => request<{ data: CartItem[]; dropped: { product_id: number; reason: string }[] }>('/cart/sync', { method: 'POST', body: JSON.stringify({ items }) }),
   updateProfile: (data: Partial<User>) => request<User>('/profile', { method: 'PUT', body: JSON.stringify(data) }),
+  // Store management (Manager / Logistics / Owner / Developer)
+  getStoreOrders: (storeId?: number, params?: Record<string, string>) => {
+    const qs = new URLSearchParams()
+    if (storeId) qs.set('store_id', String(storeId))
+    if (params) Object.entries(params).forEach(([k, v]) => qs.set(k, v))
+    const suffix = qs.toString() ? `?${qs.toString()}` : ''
+    return request<{ data: { data: Order[]; current_page: number; last_page: number; total: number } | Order[] }>(`/store/orders${suffix}`)
+  },
+  updateStoreOrderStatus: (orderId: number, status: string, storeId?: number) =>
+    request<{ data: Order }>(`/store/orders/${orderId}/status`, { method: 'PATCH', body: JSON.stringify({ status, ...(storeId ? { store_id: storeId } : {}) }) }),
+  getStoreInventory: (storeId?: number) =>
+    request<{ data: Array<{ id: number; store_id: number; product_id: number; stock_quantity: number; reserved_quantity: number; is_available: boolean; product?: Product }> }>(
+      `/store/inventory${storeId ? `?store_id=${storeId}` : ''}`
+    ),
+  updateStoreInventory: (productId: number, data: { stock_quantity?: number; is_available?: boolean }, storeId?: number) =>
+    request<{ data: { id: number; store_id: number; product_id: number; stock_quantity: number; is_available: boolean; product?: Product } }>(
+      `/store/inventory/${productId}`,
+      { method: 'PATCH', body: JSON.stringify({ ...data, ...(storeId ? { store_id: storeId } : {}) }) }
+    ),
   // Store dispatch (Logistics Officer / Store Owner)
   getPendingDispatch: (storeId?: number) => request<{ data: Order[] }>(`/store/dispatch/pending${storeId ? `?store_id=${storeId}` : ''}`),
   getDispatchRiders: (storeId?: number) => request<{ data: Array<{ id: number; user_id: number; store_id: number | null; is_available: boolean; vehicle_type: string | null; max_radius_km: number; user?: { id: number; name: string; email: string } }> }>(`/store/dispatch/riders${storeId ? `?store_id=${storeId}` : ''}`),
   dispatchOrder: (orderId: number, riderId: number, storeId?: number) => request<{ data: Order }>(`/store/orders/${orderId}/dispatch`, { method: 'POST', body: JSON.stringify({ rider_id: riderId, ...(storeId ? { store_id: storeId } : {}) }) }),
-  reassignOrder: (orderId: number, riderId: number) => request<{ data: Order }>(`/store/orders/${orderId}/reassign`, { method: 'POST', body: JSON.stringify({ rider_id: riderId }) }),
+  reassignOrder: (orderId: number, riderId: number, storeId?: number) => request<{ data: Order }>(`/store/orders/${orderId}/reassign`, { method: 'POST', body: JSON.stringify({ rider_id: riderId, ...(storeId ? { store_id: storeId } : {}) }) }),
   // Staff management
   listStaff: (storeId?: number) => request<{ data: Array<{ id: number; user: { id: number; name: string; email: string }; role: string; store_id: number; created_at: string }> }>(`/store/staff${storeId ? `?store_id=${storeId}` : ''}`),
-  hireStaff: (email: string, role: string, storeId?: number) => request<{ data: unknown }>(`/store/staff`, { method: 'POST', body: JSON.stringify({ email, role, ...(storeId ? { store_id: storeId } : {}) }) }),
+  hireStaff: (emailOrUserId: string | number, role: string, storeId?: number) => {
+    const payload: Record<string, unknown> = { role, ...(storeId ? { store_id: storeId } : {}) }
+    if (typeof emailOrUserId === 'number') payload.user_id = emailOrUserId
+    else if (/^\d+$/.test(String(emailOrUserId))) payload.user_id = Number(emailOrUserId)
+    else payload.email = emailOrUserId
+    return request<{ data: unknown }>(`/store/staff`, { method: 'POST', body: JSON.stringify(payload) })
+  },
   fireStaff: (staffId: number, storeId?: number) => request<{ message: string }>(`/store/staff/${staffId}${storeId ? `?store_id=${storeId}` : ''}`, { method: 'DELETE' }),
   // Admin messages
   getMessages: () => request<{ data: unknown[] }>('/admin/messages'),
@@ -174,29 +199,57 @@ export const api = {
   getActiveDeliveries: () => request<{ data: Order[] }>('/rider/active-deliveries'),
   getRiderProfile: () => request<{ data: Rider }>('/rider/profile'),
   // Operations dashboard
-  getOperationsMetrics: () => request<{ active_riders: number; total_riders: number; orders_this_hour: number; pending_orders: number; active_deliveries: number; delivered_today: number }>('/operations/metrics'),
-  getOperationsAlerts: () => request<{ alerts: Array<{ id: string; type: string; severity: string; message: string }> }>('/operations/alerts'),
-  getOperationsMapLayers: () => request<MapLayerData>('/operations/map-layers'),
-  getOperationsEvents: (params?: Record<string, string>) => request<{ events: unknown[]; next_cursor: string | null }>(`/operations/events${params ? `?${new URLSearchParams(params)}` : ''}`),
-  getOperationsAuditLogs: (params?: Record<string, string>) => request<{ audit_logs: unknown[] }>(`/operations/audit-logs${params ? `?${new URLSearchParams(params)}` : ''}`),
-  getDispatchSuggestion: (orderId: number) => request<unknown>(`/operations/dispatch-suggestion/${orderId}`),
+  getOperationsMetrics: (storeId?: number) => request<{ active_riders: number; total_riders: number; orders_this_hour: number; pending_orders: number; active_deliveries: number; delivered_today: number }>(`/operations/metrics${storeId ? `?store_id=${storeId}` : ''}`),
+  getOperationsAlerts: (storeId?: number) => request<{ alerts: Array<{ id: string; type: string; severity: string; message: string }> }>(`/operations/alerts${storeId ? `?store_id=${storeId}` : ''}`),
+  getOperationsMapLayers: (storeId?: number) => request<MapLayerData>(`/operations/map-layers${storeId ? `?store_id=${storeId}` : ''}`),
+  getOperationsEvents: (params?: Record<string, string>, storeId?: number) => {
+    const qs = new URLSearchParams(params || {})
+    if (storeId) qs.set('store_id', String(storeId))
+    const suffix = qs.toString() ? `?${qs.toString()}` : ''
+    return request<{ events: unknown[]; next_cursor: string | null }>(`/operations/events${suffix}`)
+  },
+  getOperationsAuditLogs: (params?: Record<string, string>, storeId?: number) => {
+    const qs = new URLSearchParams(params || {})
+    if (storeId) qs.set('store_id', String(storeId))
+    const suffix = qs.toString() ? `?${qs.toString()}` : ''
+    return request<{ audit_logs: unknown[] }>(`/operations/audit-logs${suffix}`)
+  },
+  getDispatchSuggestion: (orderId: number, storeId?: number) => request<unknown>(`/operations/dispatch-suggestion/${orderId}${storeId ? `?store_id=${storeId}` : ''}`),
   assignRider: (orderId: number, riderId: number, storeId?: number) => request<{ success: boolean; order: Order }>('/operations/assign-rider', { method: 'POST', body: JSON.stringify({ order_id: orderId, rider_id: riderId, ...(storeId ? { store_id: storeId } : {}) }) }),
   // Operations analytics
-  getAnalyticsSales: (period?: string) => request<{
-    total_revenue: number
-    total_orders: number
-    avg_order_value: number
-    revenue_over_time: Array<{ date: string; revenue: number }>
-    orders_by_hour: Array<{ hour: number; count: number }>
-  }>(`/operations/analytics/sales${period ? `?period=${period}` : ''}`),
-  getAnalyticsProducts: (limit?: number) => request<{
-    top_products: Array<{ id: number; name: string; order_count: number; total_quantity: number; total_revenue: number }>
-    search_queries: Array<{ query: string; count: number }>
-  }>(`/operations/analytics/products${limit ? `?limit=${limit}` : ''}`),
-  getAnalyticsRiders: (period?: string) => request<{
-    rider_utilization: Array<{ rider_id: number; name: string; delivery_count: number; avg_delivery_time: number | null; total_distance: number; is_available: boolean }>
-    fleet_summary: { active_riders: number; total_riders: number; avg_utilization_rate: number }
-  }>(`/operations/analytics/riders${period ? `?period=${period}` : ''}`),
+  getAnalyticsSales: (period?: string, storeId?: number) => {
+    const qs = new URLSearchParams()
+    if (period) qs.set('period', period)
+    if (storeId) qs.set('store_id', String(storeId))
+    const suffix = qs.toString() ? `?${qs.toString()}` : ''
+    return request<{
+      total_revenue: number
+      total_orders: number
+      avg_order_value: number
+      revenue_over_time: Array<{ date: string; revenue: number }>
+      orders_by_hour: Array<{ hour: number; count: number }>
+    }>(`/operations/analytics/sales${suffix}`)
+  },
+  getAnalyticsProducts: (limit?: number, storeId?: number) => {
+    const qs = new URLSearchParams()
+    if (limit) qs.set('limit', String(limit))
+    if (storeId) qs.set('store_id', String(storeId))
+    const suffix = qs.toString() ? `?${qs.toString()}` : ''
+    return request<{
+      top_products: Array<{ id: number; name: string; order_count: number; total_quantity: number; total_revenue: number }>
+      search_queries: Array<{ query: string; count: number }>
+    }>(`/operations/analytics/products${suffix}`)
+  },
+  getAnalyticsRiders: (period?: string, storeId?: number) => {
+    const qs = new URLSearchParams()
+    if (period) qs.set('period', period)
+    if (storeId) qs.set('store_id', String(storeId))
+    const suffix = qs.toString() ? `?${qs.toString()}` : ''
+    return request<{
+      rider_utilization: Array<{ rider_id: number; name: string; delivery_count: number; avg_delivery_time: number | null; total_distance: number; is_available: boolean }>
+      fleet_summary: { active_riders: number; total_riders: number; avg_utilization_rate: number }
+    }>(`/operations/analytics/riders${suffix}`)
+  },
   // Contact
   submitContact: (data: { name: string; email: string; subject?: string; message: string }) => request<unknown>('/contact', { method: 'POST', body: JSON.stringify(data) }),
   // Admin health

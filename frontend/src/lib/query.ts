@@ -163,6 +163,31 @@ export function useOrders(params?: Record<string, string>) {
   })
 }
 
+export function useStoreOrders(storeId?: number, params?: Record<string, string>, options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: ['store-orders', storeId, params],
+    queryFn: async () => {
+      const res = await api.getStoreOrders(storeId, params)
+      const data = res.data
+      // Backend returns {data: paginated} where paginated has {data: Order[]}
+      if (Array.isArray(data)) return data as unknown as Order[]
+      if (data && typeof data === 'object' && 'data' in data && Array.isArray((data as { data: unknown }).data)) {
+        return (data as { data: Order[] }).data
+      }
+      return [] as Order[]
+    },
+    enabled: options?.enabled,
+  })
+}
+
+export function useStoreInventory(storeId?: number, options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: ['store-inventory', storeId],
+    queryFn: () => api.getStoreInventory(storeId).then(r => r.data),
+    enabled: options?.enabled,
+  })
+}
+
 export function usePendingDispatch(storeId?: number, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['pending-dispatch', storeId],
@@ -260,61 +285,61 @@ export function useAdvanceOrder() {
   })
 }
 
-export function useOperationsMetrics() {
+export function useOperationsMetrics(storeId?: number) {
   return useQuery({
-    queryKey: ['operations-metrics'],
-    queryFn: () => api.getOperationsMetrics(),
+    queryKey: ['operations-metrics', storeId],
+    queryFn: () => api.getOperationsMetrics(storeId),
     refetchInterval: 30000,
   })
 }
 
-export function useOperationsAlerts() {
+export function useOperationsAlerts(storeId?: number) {
   return useQuery({
-    queryKey: ['operations-alerts'],
-    queryFn: () => api.getOperationsAlerts(),
+    queryKey: ['operations-alerts', storeId],
+    queryFn: () => api.getOperationsAlerts(storeId),
     refetchInterval: 60000,
   })
 }
 
-export function useOperationsEvents(params?: Record<string, string>) {
+export function useOperationsEvents(params?: Record<string, string>, storeId?: number) {
   return useQuery({
-    queryKey: ['operations-events', params],
-    queryFn: () => api.getOperationsEvents(params),
+    queryKey: ['operations-events', params, storeId],
+    queryFn: () => api.getOperationsEvents(params, storeId),
   })
 }
 
-export function useOperationsAuditLogs(params?: Record<string, string>) {
+export function useOperationsAuditLogs(params?: Record<string, string>, storeId?: number) {
   return useQuery({
-    queryKey: ['operations-audit-logs', params],
-    queryFn: () => api.getOperationsAuditLogs(params),
+    queryKey: ['operations-audit-logs', params, storeId],
+    queryFn: () => api.getOperationsAuditLogs(params, storeId),
   })
 }
 
-export function useAnalyticsSales(period?: string) {
+export function useAnalyticsSales(period?: string, storeId?: number) {
   return useQuery({
-    queryKey: ['analytics-sales', period],
-    queryFn: () => api.getAnalyticsSales(period),
+    queryKey: ['analytics-sales', period, storeId],
+    queryFn: () => api.getAnalyticsSales(period, storeId),
   })
 }
 
-export function useAnalyticsProducts(limit?: number) {
+export function useAnalyticsProducts(limit?: number, storeId?: number) {
   return useQuery({
-    queryKey: ['analytics-products', limit],
-    queryFn: () => api.getAnalyticsProducts(limit),
+    queryKey: ['analytics-products', limit, storeId],
+    queryFn: () => api.getAnalyticsProducts(limit, storeId),
   })
 }
 
-export function useAnalyticsRiders(period?: string) {
+export function useAnalyticsRiders(period?: string, storeId?: number) {
   return useQuery({
-    queryKey: ['analytics-riders', period],
-    queryFn: () => api.getAnalyticsRiders(period),
+    queryKey: ['analytics-riders', period, storeId],
+    queryFn: () => api.getAnalyticsRiders(period, storeId),
   })
 }
 
-export function useDispatchSuggestion(orderId: number) {
+export function useDispatchSuggestion(orderId: number, storeId?: number) {
   return useQuery({
-    queryKey: ['dispatch-suggestion', orderId],
-    queryFn: () => api.getDispatchSuggestion(orderId),
+    queryKey: ['dispatch-suggestion', orderId, storeId],
+    queryFn: () => api.getDispatchSuggestion(orderId, storeId),
     enabled: !!orderId,
   })
 }

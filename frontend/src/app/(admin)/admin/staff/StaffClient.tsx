@@ -48,8 +48,8 @@ export default function StaffClient() {
 
   const hireMutation = useMutation({
     meta: { silent: true }, // inline error surface in the hire form
-    mutationFn: (payload: { user_id: number; role: string; store_id?: number }) =>
-      api.hireStaff(payload.user_id, payload.role, payload.store_id),
+    mutationFn: (payload: { email: string; role: string; store_id?: number }) =>
+      api.hireStaff(payload.email, payload.role, payload.store_id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff'] })
       setName('')
@@ -106,7 +106,7 @@ export default function StaffClient() {
         </div>
         <h1 className="text-xl font-semibold">Staff access only</h1>
         <p className="text-sm text-gray-500 mt-2">
-          Only store owners and managers can manage team access. Ask an owner to grant you access.
+          Only store owners and platform developers can manage team access. Ask an owner to grant you access.
         </p>
         <Link href="/account" className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline mt-4">
           Go to My Account

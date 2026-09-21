@@ -3,11 +3,12 @@
 import { useState } from 'react'
 import { motion } from '@/lib/motion'
 import { staggerContainer, item as itemVariant } from '@/lib/motion/variants'
-import { ArrowLeft, TrendingUp, ShoppingBag, DollarSign, Users } from 'lucide-react'
+import { ArrowLeft, TrendingUp, ShoppingBag, DollarSign, Users, Store as StoreIcon } from 'lucide-react'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
 import ChartCard from '@/components/operations/charts/ChartCard'
-import { useAnalyticsSales, useAnalyticsProducts, useAnalyticsRiders } from '@/lib/query'
+import { useAnalyticsSales, useAnalyticsProducts, useAnalyticsRiders, useStores } from '@/lib/query'
+import { useAuthStore } from '@/stores/auth-store'
 
 const RevenueChart = dynamic(() => import('@/components/operations/charts/RevenueChart'), { ssr: false, loading: () => <div className="h-64 bg-gray-100 rounded animate-pulse" /> })
 const OrdersByHourChart = dynamic(() => import('@/components/operations/charts/OrdersByHourChart'), { ssr: false, loading: () => <div className="h-64 bg-gray-100 rounded animate-pulse" /> })
@@ -18,9 +19,14 @@ type Period = '7d' | '30d' | '90d'
 
 export default function AnalyticsPage() {
   const [period, setPeriod] = useState<Period>('30d')
-  const { data: sales, isLoading: salesLoading } = useAnalyticsSales(period)
-  const { data: products, isLoading: productsLoading } = useAnalyticsProducts(10)
-  const { data: riders, isLoading: ridersLoading } = useAnalyticsRiders(period)
+  const { user } = useAuthStore()
+  const { data: stores = [] } = useStores()
+  const [storeIdInput, setStoreIdInput] = useState('')
+  const activeStoreId = user?.role === 'developer' && storeIdInput ? Number(storeIdInput) : undefined
+
+  const { data: sales, isLoading: salesLoading } = useAnalyticsSales(period, activeStoreId)
+  const { data: products, isLoading: productsLoading } = useAnalyticsProducts(10, activeStoreId)
+  const { data: riders, isLoading: ridersLoading } = useAnalyticsRiders(period, activeStoreId)
   const loading = salesLoading || productsLoading || ridersLoading
 
   const kpis = [
@@ -63,6 +69,25 @@ export default function AnalyticsPage() {
           </div>
         </div>
       </div>
+
+      {user?.role === 'developer' && (
+        <div className="bg-amber-50 border-b border-amber-200 px-6 py-3">
+          <div className="max-w-7xl mx-auto flex items-center gap-3">
+            <StoreIcon size={14} className="text-amber-700" />
+            <label className="text-xs font-medium text-amber-800">Store ID:</label>
+            <input value={storeIdInput} onChange={e => setStoreIdInput(e.target.value)} placeholder="e.g. 1" className="w-24 px-2 py-1 border border-amber-300 rounded-lg text-xs bg-white focus:ring-2 focus:ring-amber-500 outline-none" />
+            {stores.length > 0 && (
+              <select value={storeIdInput} onChange={e => setStoreIdInput(e.target.value)} className="px-2 py-1 border border-amber-300 rounded-lg text-xs bg-white">
+                <option value="">Select…</option>
+                {stores.map(s => (
+                  <option key={(s as { id: number }).id} value={(s as { id: number }).id}>{(s as { name: string }).name}</option>
+                ))}
+              </select>
+            )}
+            {!activeStoreId && <span className="text-[11px] text-amber-700">Required for developer view</span>}
+          </div>
+        </div>
+      )}
 
       <div className="max-w-7xl mx-auto px-6 py-6 space-y-6">
         {/* KPI Cards */}

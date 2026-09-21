@@ -29,28 +29,43 @@ class StaffController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'user_id' => 'required|exists:users,id',
+            'user_id' => 'nullable|exists:users,id',
+            'email' => 'nullable|email',
             'role' => 'required|in:'.implode(',', array_column(StaffRole::cases(), 'value')),
             'store_id' => 'nullable|integer|exists:stores,id',
         ]);
 
+        // Resolve user_id from email if provided (UI-friendly path)
+        $userId = $validated['user_id'] ?? null;
+        if (! $userId && ! empty($validated['email'])) {
+            $lookup = \App\Models\User::where('email', strtolower(trim($validated['email'])))->first();
+            if (! $lookup) {
+                return response()->json(['message' => 'No account found for that email', 'reason' => 'user_not_found'], 404);
+            }
+            $userId = $lookup->id;
+        }
+
+        if (! $userId) {
+            return response()->json(['message' => 'Provide user_id or email', 'reason' => 'missing_user'], 422);
+        }
+
         $store = $this->storeContext->resolve($request->user(), $validated['store_id'] ?? null);
 
         // Validate duplicate assignment gracefully (avoid 500 on unique violation)
-        $existing = StoreStaff::where('user_id', $validated['user_id'])
+        $existing = StoreStaff::where('user_id', $userId)
             ->where('store_id', $store->id)
             ->first();
         if ($existing) {
             return response()->json(['message' => 'User already assigned to this store', 'reason' => 'duplicate_assignment'], 409);
         }
-        $global = StoreStaff::where('user_id', $validated['user_id'])->first();
+        $global = StoreStaff::where('user_id', $userId)->first();
         if ($global) {
             return response()->json(['message' => 'User already assigned to another store', 'reason' => 'already_assigned'], 409);
         }
 
         try {
             $assignment = StoreStaff::create([
-                'user_id' => $validated['user_id'],
+                'user_id' => $userId,
                 'store_id' => $store->id,
                 'role' => $validated['role'],
             ]);

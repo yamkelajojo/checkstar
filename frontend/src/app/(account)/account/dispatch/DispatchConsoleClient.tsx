@@ -22,13 +22,14 @@ export default function DispatchConsoleClient() {
   const authResolved = !authLoading && !!user
   const authorized = authResolved && allowedRoles.includes(user!.role)
   const storeId = user?.role === 'developer' && storeIdInput ? Number(storeIdInput) : undefined
+  const canQuery = authorized && (user?.role !== 'developer' || !!storeId)
 
   const { data: pending = [], isLoading, error, refetch, isFetching } = usePendingDispatch(storeId, {
-    enabled: authorized,
+    enabled: canQuery,
   })
 
   const { data: riders = [] } = useDispatchRiders(storeId, {
-    enabled: authorized,
+    enabled: canQuery,
   })
 
   useEffect(() => {
@@ -63,7 +64,7 @@ export default function DispatchConsoleClient() {
       return
     }
     try {
-      await api.reassignOrder(orderId, Number(riderIdStr))
+      await api.reassignOrder(orderId, Number(riderIdStr), storeId)
       setMessage({ type: 'success', text: `Order #${orderId} reassigned to rider ${riderIdStr}` })
       setSelectedReassignRider((s) => ({ ...s, [orderId]: '' }))
       queryClient.invalidateQueries({ queryKey: ['pending-dispatch'] })
@@ -117,11 +118,20 @@ export default function DispatchConsoleClient() {
         </div>
 
         {user?.role === 'developer' && (
-          <div className="mb-6 bg-amber-50 border border-amber-200 rounded-lg p-4">
+          <div className="mb-6 bg-amber-50 border border-amber-200 rounded-xl p-4">
             <label className="block text-xs font-medium text-amber-800 mb-1">Developer: explicit store_id required (StoreContext)</label>
-            <input value={storeIdInput} onChange={e => setStoreIdInput(e.target.value)} placeholder="Store ID (e.g. 1)" className="w-32 px-3 py-2 border border-amber-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 outline-none" />
+            <input value={storeIdInput} onChange={e => setStoreIdInput(e.target.value)} placeholder="Store ID (e.g. 1)" className="w-32 px-3 py-2 border border-amber-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 outline-none bg-white" />
+            {!storeId && <p className="text-xs text-amber-700 mt-2">Enter a Store ID to load dispatch data.</p>}
           </div>
         )}
+
+        {user?.role === 'developer' && !storeId ? (
+          <div className="text-center py-16 bg-white border border-gray-100 rounded-xl">
+            <Package size={48} className="mx-auto text-gray-200 mb-4" />
+            <h2 className="font-semibold text-gray-600">Select a store</h2>
+            <p className="text-sm text-gray-400 mt-1">Developers must specify a store ID to view dispatch orders.</p>
+          </div>
+        ) : null}
 
         {message && (
           <div className={`mb-4 px-4 py-3 rounded-lg text-sm flex items-center gap-2 ${message.type === 'success' ? 'bg-green-50 border border-green-200 text-green-700' : 'bg-accent/10 border border-accent/20 text-accent'}`} role="status">

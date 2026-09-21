@@ -10,7 +10,7 @@ import { api } from '@/lib/api'
 const POLL_INTERVAL = 5000
 const MAX_EVENTS = 200
 
-export default function EventFeed() {
+export default function EventFeed({ storeId }: { storeId?: number }) {
   const [events, setEvents] = useState<FeedEvent[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -24,7 +24,7 @@ export default function EventFeed() {
         params.cursor = cursorRef.current
       }
 
-      const data = await api.getOperationsEvents(params) as unknown as EventFeedResponse
+      const data = await api.getOperationsEvents(params, storeId) as unknown as EventFeedResponse
 
       setEvents(prev => {
         const existingIds = new Set(prev.map(e => e.id))
@@ -43,7 +43,7 @@ export default function EventFeed() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [storeId])
 
   useEffect(() => {
     fetchEvents()

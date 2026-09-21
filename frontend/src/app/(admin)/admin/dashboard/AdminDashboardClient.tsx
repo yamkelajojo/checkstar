@@ -17,14 +17,22 @@ import { fadeUpTight as fadeUp, staggerTight as stagger } from '@/lib/motion/var
 import { api } from '@/lib/api'
 
 // Only pages that actually exist — every link must resolve.
+// Roles aligned with backend route middleware:
+// - banners: developer, store_owner, store_manager
+// - staff: store_owner, developer
+// - inventory/orders: store_manager, logistics_officer, store_owner, developer
+// - operations/analytics: store_owner, store_manager, logistics_officer, developer
+// - dispatch: store_manager, logistics_officer, store_owner, developer
 const storeManagementLinks = [
-  { href: '/admin/banners', label: 'Banners', icon: Image, desc: 'Create and manage promotional banners', roles: ['store_owner', 'developer'] },
+  { href: '/admin/banners', label: 'Banners', icon: Image, desc: 'Create and manage promotional banners', roles: ['store_owner', 'store_manager', 'developer'] },
   { href: '/admin/staff', label: 'Store Staff', icon: Users, desc: 'Hire and remove store staff access', roles: ['store_owner', 'developer'] },
+  { href: '/admin/inventory', label: 'Inventory', icon: ShoppingBag, desc: 'Manage stock levels and availability', roles: ['store_manager', 'logistics_officer', 'store_owner', 'developer'] },
+  { href: '/admin/orders', label: 'Store Orders', icon: ShoppingCart, desc: 'View and update store orders', roles: ['store_manager', 'logistics_officer', 'store_owner', 'developer'] },
 ]
 
 const operationsLinks = [
-  { href: '/operations', label: 'Live Operations', icon: Activity, desc: 'Realtime map, metrics and event feed', roles: ['logistics_officer', 'store_owner', 'developer'] },
-  { href: '/operations/analytics', label: 'Analytics', icon: ShoppingCart, desc: 'Revenue, orders and fleet insights', roles: ['logistics_officer', 'store_owner', 'developer'] },
+  { href: '/operations', label: 'Live Operations', icon: Activity, desc: 'Realtime map, metrics and event feed', roles: ['logistics_officer', 'store_owner', 'store_manager', 'developer'] },
+  { href: '/operations/analytics', label: 'Analytics', icon: ShoppingCart, desc: 'Revenue, orders and fleet insights', roles: ['logistics_officer', 'store_owner', 'store_manager', 'developer'] },
   { href: '/account/dispatch', label: 'Dispatch Console', icon: Bike, desc: 'Assign and reassign delivery riders', roles: ['logistics_officer', 'store_manager', 'store_owner', 'developer'] },
 ]
 
@@ -78,21 +86,6 @@ export default function AdminDashboardClient() {
               {visibleStoreLinks.map((link) => (
                 <LinkCard key={link.href} link={link} />
               ))}
-              {user.role !== 'logistics_officer' && (
-                <Link
-                  href="/admin/messages"
-                  className="group bg-white border border-gray-100 rounded-xl p-5 hover:shadow-md hover:border-primary/20 transition-all"
-                >
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-10 h-10 bg-primary-light rounded-lg flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                      <MessageSquare size={20} className="text-primary" />
-                    </div>
-                    <ArrowUpRight size={16} className="text-gray-300 ml-auto group-hover:text-primary transition-colors" />
-                  </div>
-                  <h3 className="font-medium text-gray-900 mb-0.5">Messages</h3>
-                  <p className="text-xs text-gray-400">Customer enquiries inbox</p>
-                </Link>
-              )}
               {visibleOpsLinks.map((link) => (
                 <LinkCard key={link.href} link={link} />
               ))}
