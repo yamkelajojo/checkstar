@@ -51,7 +51,7 @@ Zend Engine v4.4.25, Copyright (c) Zend Technologies
   ✓ negative signals have negative weights                               0.01s  
 
    PASS  Tests\Unit\Services\DispatchSuggestionServiceTest
-  ✓ returns nearest rider by distance                                    0.02s  
+  ✓ returns nearest rider by distance                                    0.01s  
   ✓ excludes unavailable riders                                          0.01s  
   ✓ excludes riders with insufficient radius                             0.01s  
   ✓ returns alternative riders                                           0.01s  
@@ -76,8 +76,8 @@ Zend Engine v4.4.25, Copyright (c) Zend Technologies
   ✓ partial batch can be continued in a later call                       0.02s  
   ✓ mark items bought ignores unknown item ids                           0.01s  
   ✓ mark items bought throws when insufficient stock                     0.01s  
-  ✓ mark items bought does not decrement stock on failure                0.02s  
-  ✓ mark items bought throws when product not available                  0.02s  
+  ✓ mark items bought does not decrement stock on failure                0.01s  
+  ✓ mark items bought throws when product not available                  0.01s  
   ✓ mark items bought is idempotent                                      0.02s  
   ✓ mark items bought creates activity log                               0.02s  
   ✓ mark items bought throws when order is cancelled                     0.02s  
@@ -89,12 +89,12 @@ Zend Engine v4.4.25, Copyright (c) Zend Technologies
   ✓ order cancellation clamps reserved quantity at zero                  0.02s  
   ✓ order cancellation does not release reservations for bought items    0.02s  
   ✓ delivery releases reservations for unbought items                    0.02s  
-  ✓ reservation counts against availability during placement             0.01s  
-  ✓ reservation prevents fulfillment when stock is reserved              0.01s  
-  ✓ store product not available prevents order placement                 0.01s  
-  ✓ insufficient stock prevents order placement                          0.01s  
-  ✓ order placement rejects when stock insufficient                      0.01s  
-  ✓ multiple orders decrement stock independently                        0.02s  
+  ✓ reservation counts against availability during placement             0.02s  
+  ✓ reservation prevents fulfillment when stock is reserved              0.02s  
+  ✓ store product not available prevents order placement                 0.02s  
+  ✓ insufficient stock prevents order placement                          0.02s  
+  ✓ order placement rejects when stock insufficient                      0.02s  
+  ✓ multiple orders decrement stock independently                        0.03s  
   ✓ second order fails when stock depleted by first                      0.02s  
   ✓ mark items bought uses lock for update                               0.02s  
   ✓ concurrent mark items bought results are consistent                  0.02s  
@@ -158,8 +158,8 @@ Zend Engine v4.4.25, Copyright (c) Zend Technologies
   ✓ sync returns merged cart so device can replace draft                 0.01s  
 
    PASS  Tests\Feature\DatabaseSeedingTest
-  ✓ seed creates demo logins for every console                           0.79s  
-  ✓ seeding twice is idempotent                                          0.91s  
+  ✓ seed creates demo logins for every console                           0.84s  
+  ✓ seeding twice is idempotent                                          0.95s  
 
    PASS  Tests\Feature\EmailVerificationFlowTest
   ✓ registration sends the verification email with an spa link           0.02s  
@@ -167,7 +167,7 @@ Zend Engine v4.4.25, Copyright (c) Zend Technologies
   ✓ verify email rejects a wrong hash                                    0.01s  
 
    PASS  Tests\Feature\ExampleTest
-  ✓ the application returns a successful response                        0.01s  
+  ✓ the application returns a successful response                        0.02s  
 
    PASS  Tests\Feature\FavoritesApiTest
   ✓ customer can favorite and list                                       0.02s  
@@ -183,18 +183,18 @@ Zend Engine v4.4.25, Copyright (c) Zend Technologies
   ✓ nearest store endpoint reports a store or null                       0.01s  
 
    PASS  Tests\Feature\HistoryCascadeGuardsTest
-  ✓ category with products cannot be deleted                             0.01s  
+  ✓ category with products cannot be deleted                             0.02s  
   ✓ empty category can be deleted                                        0.01s  
-  ✓ store with delivered order history cannot be deleted                 0.01s  
+  ✓ store with delivered order history cannot be deleted                 0.11s  
   ✓ store without history can be deleted                                 0.01s  
-  ✓ rider with reviews cannot be deleted                                 0.01s  
+  ✓ rider with reviews cannot be deleted                                 0.02s  
   ✓ product stock rows are not orphaned by category delete guard         0.01s  
 
    PASS  Tests\Feature\ManualDispatchTest
   ✓ manager can list pending dispatch orders for their store             0.02s  
   ✓ manager can manually dispatch order to specific rider                0.02s  
   ✓ operations assign rejects order from another store                   0.02s  
-  ✓ operations suggestion hides other stores orders                      0.01s  
+  ✓ operations suggestion hides other stores orders                      0.02s  
   ✓ dispatch allows rider from another store                             0.02s  
   ✓ manager can reassign already claimed order                           0.03s  
   ✓ dispatch rejects rider with deactivated account                      0.02s  
@@ -207,23 +207,23 @@ Zend Engine v4.4.25, Copyright (c) Zend Technologies
   ✓ nullable store id migration can roll back                            0.04s  
 
    PASS  Tests\Feature\OrderLifecycleApiTest
-  ✓ customer order journey list show cancel                              0.05s  
-  ✓ customer cannot view another customers order                         0.02s  
+  ✓ customer order journey list show cancel                              0.06s  
+  ✓ customer cannot view another customers order                         0.03s  
   ✓ cancelling twice is rejected                                         0.03s  
 
    PASS  Tests\Feature\OrderPlacementTest
   ✓ customer can place an order                                          0.03s  
   ✓ order with no available rider enters retrying and keeps cart         0.02s  
-  ✓ order defaults to cash on delivery                                   0.02s  
+  ✓ order defaults to cash on delivery                                   0.03s  
   ✓ placing an order clears the server cart                              0.03s  
   ✓ failed placement leaves server cart intact                           0.02s  
   ✓ order requires delivery coordinates                                  0.01s  
   ✓ customer can view own order                                          0.01s  
-  ✓ customer cannot view others order                                    0.01s  
-  ✓ customer can cancel own order                                        0.01s  
+  ✓ customer cannot view others order                                    0.02s  
+  ✓ customer can cancel own order                                        0.02s  
   ✓ customer cannot cancel others order                                  0.01s  
   ✓ customer cannot cancel out for delivery order                        0.01s  
-  ✓ customer can confirm own delivery                                    0.01s  
+  ✓ customer can confirm own delivery                                    0.02s  
   ✓ customer cannot confirm others order                                 0.01s  
 
    PASS  Tests\Feature\PickupOrderTest
@@ -232,23 +232,23 @@ Zend Engine v4.4.25, Copyright (c) Zend Technologies
   ✓ pickup requires a store                                              0.01s  
   ✓ pickup from a store that cannot fulfil the cart is rejected          0.02s  
   ✓ store moves a pickup order through ready and the customer confirms…  0.03s  
-  ✓ ready is rejected for delivery orders and out for delivery for pick… 0.01s  
-  ✓ pickup order cannot be manually dispatched to a rider                0.02s  
-  ✓ pickup orders do not appear in the store dispatch queue              0.03s  
+  ✓ ready is rejected for delivery orders and out for delivery for pick… 0.02s  
+  ✓ pickup order cannot be manually dispatched to a rider                0.03s  
+  ✓ pickup orders do not appear in the store dispatch queue              0.04s  
   ✓ pickup with stray delivery fields stores nulls                       0.02s  
   ✓ pickup order money cents mirrors are exact                           0.02s  
   ✓ pickup orders never appear in rider available orders                 0.02s  
   ✓ rider cannot claim a pickup order                                    0.02s  
-  ✓ customer can cancel a ready pickup order before collecting           0.01s  
+  ✓ customer can cancel a ready pickup order before collecting           0.02s  
 
    PASS  Tests\Feature\ProductCarouselTest
   ✓ trending endpoint is not shadowed by slug route                      0.02s  
-  ✓ popular returns delivered order products                             0.01s  
+  ✓ popular returns delivered order products                             0.02s  
   ✓ new arrivals returns recent products without error                   0.01s  
   ✓ trending returns empty array when no orders                          0.01s  
 
    PASS  Tests\Feature\ProductIndexTest
-  ✓ index respects per page param                                        0.03s  
+  ✓ index respects per page param                                        0.04s  
   ✓ index filters by multiple category slugs                             0.02s  
   ✓ index defaults to twenty per page                                    0.02s  
   ✓ index caps per page at one hundred                                   0.07s  
@@ -260,7 +260,7 @@ Zend Engine v4.4.25, Copyright (c) Zend Technologies
   ✓ keeping the same email keeps verification                            0.01s  
   ✓ email conflicts are 422                                              0.01s  
   ✓ changing email sends a new verification email                        0.01s  
-  ✓ unchanged email sends no verification email                          0.01s  
+  ✓ unchanged email sends no verification email                          0.02s  
   ✓ role is not mass assignable                                          0.01s  
 
    PASS  Tests\Feature\PromotionRedemptionTest
@@ -277,7 +277,7 @@ Zend Engine v4.4.25, Copyright (c) Zend Technologies
   ✓ guest can list stores and view one by slug                           0.02s  
   ✓ guest can browse categories and products                             0.02s  
   ✓ guest can read recipes and unpublished are hidden                    0.01s  
-  ✓ guest can read careers and community posts                           0.01s  
+  ✓ guest can read careers and community posts                           0.02s  
   ✓ guest can submit a contact message                                   0.01s  
   ✓ contact validation rejects garbage                                   0.01s  
 
@@ -290,8 +290,8 @@ Zend Engine v4.4.25, Copyright (c) Zend Technologies
 
    PASS  Tests\Feature\RecommendationsEndpointTest
   ✓ cold start returns recommendations for new customer                  0.02s  
-  ✓ inactive products are never recommended                              0.08s  
-  ✓ guest gets 401                                                       0.01s  
+  ✓ inactive products are never recommended                              0.01s  
+  ✓ guest gets 401                                                       0.02s  
 
    PASS  Tests\Feature\ReconcileReservationsTest
   ✓ consistent ledger is left alone                                      0.02s  
@@ -302,36 +302,36 @@ Zend Engine v4.4.25, Copyright (c) Zend Technologies
    PASS  Tests\Feature\RelatedProductsTest
   ✓ related endpoint returns same category first and excludes self       0.03s  
   ✓ bought together beats plain category siblings                        0.02s  
-  ✓ sparse results are backfilled with popular products                  0.02s  
-  ✓ related returns 404 for unknown or inactive slug                     0.01s  
+  ✓ sparse results are backfilled with popular products                  0.03s  
+  ✓ related returns 404 for unknown or inactive slug                     0.02s  
 
    PASS  Tests\Feature\RiderLocationTest
-  ✓ customer can view rider location for their order                     0.02s  
-  ✓ returns null when order has no rider                                 0.02s  
-  ✓ returns null when rider has no location                              0.01s  
+  ✓ customer can view rider location for their order                     0.03s  
+  ✓ returns null when order has no rider                                 0.03s  
+  ✓ returns null when rider has no location                              0.02s  
   ✓ cannot view other customers order rider location                     0.02s  
   ✓ returns most recent location when multiple exist                     0.02s  
-  ✓ rider can update location                                            0.01s  
-  ✓ rider location update sets recorded at                               0.01s  
+  ✓ rider can update location                                            0.02s  
+  ✓ rider location update sets recorded at                               0.02s  
   ✓ rider location update overwrites previous                            0.02s  
-  ✓ non rider cannot update location                                     0.01s  
-  ✓ location update requires valid coordinates                           0.01s  
+  ✓ non rider cannot update location                                     0.02s  
+  ✓ location update requires valid coordinates                           0.02s  
 
    PASS  Tests\Feature\RiderOrderGuardApiTest
-  ✓ mark items bought returns 422 and keeps stock when order cancelled   0.03s  
-  ✓ out for delivery returns 422 and order stays cancelled               0.02s  
-  ✓ rider cannot advance out for delivery with unbought items            0.02s  
+  ✓ mark items bought returns 422 and keeps stock when order cancelled   0.04s  
+  ✓ out for delivery returns 422 and order stays cancelled               0.03s  
+  ✓ rider cannot advance out for delivery with unbought items            0.03s  
 
    PASS  Tests\Feature\SpecialsEndpointTest
-  ✓ index lists only active specials within their window                 0.01s  
+  ✓ index lists only active specials within their window                 0.02s  
   ✓ products carry availability and effective price                      0.02s  
-  ✓ inactive products are hidden from specials                           0.01s  
+  ✓ inactive products are hidden from specials                           0.02s  
 
    PASS  Tests\Feature\StaffManagementTest
   ✓ owner can hire store staff                                           0.02s  
   ✓ owner can fire store staff                                           0.01s  
-  ✓ owner can list store roster                                          0.01s  
-  ✓ developer can list store roster                                      0.01s  
+  ✓ owner can list store roster                                          0.02s  
+  ✓ developer can list store roster                                      0.02s  
   ✓ roster is scoped to one store                                        0.01s  
   ✓ store manager cannot list roster                                     0.01s  
   ✓ store manager cannot hire staff                                      0.02s  
@@ -378,8 +378,8 @@ Zend Engine v4.4.25, Copyright (c) Zend Technologies
         'xp' => 0,
         'level' => 1,
         'suspended_at' => null,
-        'created_at' => '2026-09-21 12:10:58',
-        'updated_at' => '2026-09-21 12:10:58',
+        'created_at' => '2026-09-21 12:21:45',
+        'updated_at' => '2026-09-21 12:21:45',
     ],
     'original' => Array &3 [
         'id' => 1,
@@ -396,8 +396,8 @@ Zend Engine v4.4.25, Copyright (c) Zend Technologies
         'xp' => 0,
         'level' => 1,
         'suspended_at' => null,
-        'created_at' => '2026-09-21 12:10:58',
-        'updated_at' => '2026-09-21 12:10:58',
+        'created_at' => '2026-09-21 12:21:45',
+        'updated_at' => '2026-09-21 12:21:45',
     ],
     'changes' => Array &4 [],
     'casts' => Array &5 [
@@ -445,15 +445,15 @@ Zend Engine v4.4.25, Copyright (c) Zend Technologies
 
 
   Tests:    1 failed, 438 passed (1154 assertions)
-  Duration: 9.21s
+  Duration: 9.72s
 
 ```
 ### bootstrap/cache
 ```
 total 40
-drwxr-xr-x 2 runner runner  4096 Sep 21 12:10 .
-drwxr-xr-x 3 runner runner  4096 Sep 21 12:10 ..
--rw-r--r-- 1 runner runner    14 Sep 21 12:10 .gitignore
--rwxr-xr-x 1 runner runner   960 Sep 21 12:10 packages.php
--rwxr-xr-x 1 runner runner 21492 Sep 21 12:10 services.php
+drwxr-xr-x 2 runner runner  4096 Sep 21 12:21 .
+drwxr-xr-x 3 runner runner  4096 Sep 21 12:21 ..
+-rw-r--r-- 1 runner runner    14 Sep 21 12:21 .gitignore
+-rwxr-xr-x 1 runner runner   960 Sep 21 12:21 packages.php
+-rwxr-xr-x 1 runner runner 21492 Sep 21 12:21 services.php
 ```
