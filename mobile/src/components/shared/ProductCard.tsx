@@ -78,12 +78,12 @@ export function ProductCard({ product, storeProductId = null, style, onRequestSu
       onPress={() => navigation.navigate('ProductDetail', { slug: product.slug, source })}
       accessibilityRole="button"
       accessibilityLabel={product.name}
-      style={[{ borderRadius: semanticRadius.card }, style]}
+      style={[{ borderRadius: semanticRadius.card, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 }, style]}
     >
-      <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: semanticRadius.card, padding: semanticSpacing.cardPadding, gap: semanticSpacing.elementGap, minHeight: 235 }}>
+      <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: semanticRadius.card, padding: semanticSpacing.cardPadding, gap: semanticSpacing.elementGap, minHeight: 238, borderWidth: 1, borderColor: theme.colors.border.subtle }}>
         <View
           style={{
-            height: 130,
+            height: 132,
             borderRadius: semanticRadius.imageFrame,
             backgroundColor: imageTint,
             alignItems: 'center',
@@ -94,9 +94,9 @@ export function ProductCard({ product, storeProductId = null, style, onRequestSu
           <SaveHeart productId={product.id} />
           <View
             style={{
-              width: 92,
-              height: 92,
-              borderRadius: 46,
+              width: 94,
+              height: 94,
+              borderRadius: 47,
               backgroundColor: theme.name === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(27,24,22,0.04)',
               alignItems: 'center',
               justifyContent: 'center',
@@ -105,7 +105,7 @@ export function ProductCard({ product, storeProductId = null, style, onRequestSu
             {imageSource ? (
               <Image
                 source={imageSource}
-                style={{ width: 84, height: 84, transform: [{ rotate: '-14deg' }] }}
+                style={{ width: 86, height: 86, transform: [{ rotate: '-12deg' }] }}
                 resizeMode="contain"
                 cachePolicy="memory-disk"
                 onError={() => setImageSource(null)}
@@ -122,11 +122,15 @@ export function ProductCard({ product, storeProductId = null, style, onRequestSu
                 right: semanticSpacing.tightGap,
                 backgroundColor: brand.orange,
                 borderRadius: semanticRadius.badge,
-                paddingHorizontal: semanticSpacing.inlineGap,
-                paddingVertical: 3,
+                paddingHorizontal: semanticSpacing.inlineGap + 2,
+                paddingVertical: 4,
+                shadowColor: brand.orange,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.3,
+                shadowRadius: 4,
               }}
             >
-              <Text style={{ color: theme.colors.text.inverse, fontSize: 11, fontWeight: fontWeight.bold }}>{pctOff}% OFF</Text>
+              <Text style={{ color: theme.colors.text.inverse, fontSize: 11, fontWeight: fontWeight.bold, letterSpacing: 0.3 }}>{pctOff}% OFF</Text>
             </View>
           )}
         </View>

@@ -1,60 +1,130 @@
+'use client'
+
 import Link from 'next/link'
+import { motion, useReducedMotion } from 'motion/react'
 import { Facebook, Instagram, Linkedin } from 'lucide-react'
+import { spring, ease } from '@/lib/motion/tokens'
+import { Logo } from '@/components/Logo'
 
 export default function Footer() {
+  const shouldReduce = useReducedMotion()
+
   return (
-    <footer className="bg-foreground text-gray-300">
-      <div className="max-w-7xl mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          <div>
-            <h3 className="font-display text-base sm:text-xl font-bold text-white mb-4">Checkstar</h3>
-            <p className="text-sm leading-relaxed">
-              Durban-based supermarket chain serving fresh groceries with free delivery across the city.
+    <motion.footer
+      initial={shouldReduce ? { opacity: 0 } : { opacity: 0, y: 16, filter: 'blur(6px)' }}
+      whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+      viewport={{ once: true, margin: '-80px' }}
+      transition={{ duration: 0.6, ease: ease.apple }}
+      className="bg-[#0F0D0B] text-gray-300 border-t border-white/[0.06]"
+    >
+      <div className="max-w-7xl mx-auto px-4 py-14 sm:py-16">
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          variants={{
+            hidden: {},
+            visible: { transition: { staggerChildren: 0.06, delayChildren: 0.1 } },
+          }}
+          className="grid grid-cols-1 md:grid-cols-4 gap-10 sm:gap-8"
+        >
+          <motion.div variants={{ hidden: shouldReduce ? { opacity: 0 } : { opacity: 0, y: 12, filter: 'blur(4px)' }, visible: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { ease: ease.apple } } }}>
+            <div className="flex items-center gap-2 mb-4">
+              <Logo variant="lockup" size={18} tone="light" />
+            </div>
+            <p className="text-[13px] leading-relaxed text-gray-400 max-w-[32ch]">
+              Durban-based supermarket chain serving fresh groceries with free delivery across the city. Authentic SA flavours, daily fresh.
             </p>
+          </motion.div>
+
+          {[
+            {
+              title: 'Quick Links',
+              links: [
+                { href: '/about', label: 'About' },
+                { href: '/products', label: 'Products' },
+                { href: '/recipes', label: 'Recipes' },
+                { href: '/specials', label: 'Specials' },
+                { href: '/stores', label: 'Our Stores' },
+              ],
+            },
+            {
+              title: 'Customer Service',
+              links: [
+                { href: '/contact', label: 'Contact Us' },
+                { href: '/services', label: 'Services' },
+                { href: '/careers', label: 'Careers' },
+                { href: '/community', label: 'Community' },
+              ],
+            },
+            {
+              title: 'Contact',
+              static: ['Durban, South Africa', 'Tel: (031) 000-0000', 'info@checkstar.co.za'],
+            },
+          ].map((col, colIdx) => (
+            <motion.div
+              key={col.title}
+              variants={{
+                hidden: shouldReduce ? { opacity: 0 } : { opacity: 0, y: 12, filter: 'blur(4px)' },
+                visible: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { ease: ease.apple, delay: colIdx * 0.04 } },
+              }}
+            >
+              <h4 className="font-semibold text-white text-[13px] tracking-wide mb-4">{col.title}</h4>
+              {col.links ? (
+                <div className="flex flex-col gap-2.5 text-[13px]">
+                  {col.links.map(link => (
+                    <Link key={link.href} href={link.href} className="text-gray-400 hover:text-white transition-colors w-fit hover:translate-x-0.5 duration-200">
+                      {link.label}
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2 text-[13px] text-gray-400">
+                  {col.static!.map(s => (
+                    <span key={s} className="leading-relaxed">{s}</span>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          ))}
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.3, duration: 0.4 }}
+          className="border-t border-white/[0.06] mt-12 pt-8 flex flex-col md:flex-row items-center justify-between gap-4"
+        >
+          <div className="flex items-center gap-3">
+            {[
+              { href: 'https://facebook.com/search/222005974816586/local_search', icon: Facebook, label: 'Facebook' },
+              { href: 'https://instagram.com/checkstar_supermarket/', icon: Instagram, label: 'Instagram' },
+              { href: 'https://linkedin.com/company/checkstar-sa', icon: Linkedin, label: 'LinkedIn' },
+            ].map((social, i) => (
+              <motion.a
+                key={social.label}
+                initial={shouldReduce ? undefined : { opacity: 0, scale: 0.8 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.35 + i * 0.04, type: 'spring', ...spring.snap }}
+                whileHover={{ scale: 1.1, y: -1 }}
+                whileTap={{ scale: 0.9 }}
+                href={social.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`Checkstar on ${social.label}`}
+                className="w-9 h-9 rounded-full bg-white/[0.06] border border-white/[0.08] flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/[0.1] transition-all"
+              >
+                <social.icon size={16} strokeWidth={2} />
+              </motion.a>
+            ))}
           </div>
-          <div>
-            <h4 className="font-medium text-white mb-4">Quick Links</h4>
-            <div className="flex flex-col gap-2 text-sm">
-              <Link href="/about" className="hover:text-primary transition-colors">About</Link>
-              <Link href="/products" className="hover:text-primary transition-colors">Products</Link>
-              <Link href="/specials" className="hover:text-primary transition-colors">Specials</Link>
-              <Link href="/stores" className="hover:text-primary transition-colors">Our Stores</Link>
-            </div>
+          <div className="text-[11px] text-gray-500 font-medium tracking-wide">
+            © {new Date().getFullYear()} Checkstar. All rights reserved. Crafted with care in Durban.
           </div>
-          <div>
-            <h4 className="font-medium text-white mb-4">Customer Service</h4>
-            <div className="flex flex-col gap-2 text-sm">
-              <Link href="/contact" className="hover:text-primary transition-colors">Contact Us</Link>
-              <Link href="/services" className="hover:text-primary transition-colors">Services</Link>
-              <Link href="/careers" className="hover:text-primary transition-colors">Careers</Link>
-            </div>
-          </div>
-          <div>
-            <h4 className="font-medium text-white mb-4">Contact</h4>
-            <div className="flex flex-col gap-2 text-sm">
-              <span>Durban, South Africa</span>
-              <span>Tel: (031) 000-0000</span>
-              <span>info@checkstar.co.za</span>
-            </div>
-          </div>
-        </div>
-      <div className="border-t border-gray-700 mt-8 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <a href="https://facebook.com/search/222005974816586/local_search" target="_blank" rel="noopener noreferrer" aria-label="Checkstar on Facebook" className="p-1.5 -m-1.5 text-gray-400 hover:text-white transition-colors">
-            <Facebook size={20} />
-          </a>
-          <a href="https://instagram.com/checkstar_supermarket/" target="_blank" rel="noopener noreferrer" aria-label="Checkstar on Instagram" className="p-1.5 -m-1.5 text-gray-400 hover:text-white transition-colors">
-            <Instagram size={20} />
-          </a>
-          <a href="https://linkedin.com/company/checkstar-sa" target="_blank" rel="noopener noreferrer" aria-label="Checkstar on LinkedIn" className="p-1.5 -m-1.5 text-gray-400 hover:text-white transition-colors">
-            <Linkedin size={20} />
-          </a>
-        </div>
-        <div className="text-xs text-gray-500">
-          &copy; {new Date().getFullYear()} Checkstar. All rights reserved.
-        </div>
+        </motion.div>
       </div>
-      </div>
-    </footer>
+    </motion.footer>
   )
 }

@@ -1,11 +1,10 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import SafeImage from '@/components/SafeImage'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { motion, AnimatePresence } from 'motion/react'
+import { motion, AnimatePresence, useReducedMotion } from 'motion/react'
 import { Minus, Plus, Trash2, ShoppingBag, ArrowRight, Loader2, MapPin, Store as StoreIcon } from 'lucide-react'
 import { useCartStore } from '@/stores/cart-store'
 import { useAuthStore } from '@/stores/auth-store'
@@ -17,9 +16,9 @@ import { getDeliveryCoords, type DeliveryCoords } from '@/lib/delivery-coords'
 import LocationFallbackNotice from '@/components/LocationFallbackNotice'
 import type { Dispatch, FulfilmentMethod, Store as StoreType, UserAddress } from '@/types'
 import OrderConfirmation from './OrderConfirmation'
+import { spring, ease } from '@/lib/motion/tokens'
 
 export default function CartClient() {
-  const router = useRouter()
   const queryClient = useQueryClient()
   const { items, total, itemCount, removeItem, updateQuantity, decrementItem, addItem, clearCart } = useCartStore()
   const isAuthenticated = useAuthStore(s => s.isAuthenticated)
@@ -35,10 +34,10 @@ export default function CartClient() {
   const [selectedStoreId, setSelectedStoreId] = useState<number | ''>('')
   const [saveAddress, setSaveAddress] = useState(false)
   const [addressLabel, setAddressLabel] = useState('Home')
+  const shouldReduce = useReducedMotion()
 
   const placeOrderMutation = usePlaceOrder()
 
-  // Address book + store list are only needed once checkout opens.
   const { data: addressesData, isLoading: addressesLoading } = useQuery({
     queryKey: ['addresses'],
     queryFn: api.getAddresses,
@@ -49,12 +48,9 @@ export default function CartClient() {
     queryFn: api.getStores,
     enabled: showCheckoutForm && fulfilment === 'pickup',
   })
-  // useMemo keeps these referentially stable across renders — the selection
-  // effects below depend on them and must not re-run on every render.
   const savedAddresses: UserAddress[] = useMemo(() => addressesData?.data ?? [], [addressesData])
   const stores: StoreType[] = useMemo(() => (storesData?.data ?? []).filter(s => s.is_active), [storesData])
 
-  // Prompt with the customer's saved addresses: default to their default one.
   useEffect(() => {
     if (savedAddresses.length === 0) return
     if (selectedAddressId !== 'new') return
@@ -70,7 +66,6 @@ export default function CartClient() {
 
   const handleProceedToCheckout = () => {
     if (!isAuthenticated) {
-      // Guests meet a friendly gate instead of filling the form and failing.
       setAuthModalOpen(true)
       return
     }
@@ -97,7 +92,6 @@ export default function CartClient() {
     } else {
       const saved = selectedAddressId === 'new' ? null : savedAddresses.find(a => a.id === selectedAddressId)
       if (saved) {
-        // Deliver to a saved address — its pinned coordinates resolve the store.
         payload.delivery_address = saved.address
         payload.delivery_latitude = saved.latitude
         payload.delivery_longitude = saved.longitude
@@ -115,11 +109,7 @@ export default function CartClient() {
 
     try {
       const result = await placeOrderMutation.mutateAsync(payload)
-      // Always clear the cart after a successful order placement.
-      // The backend handles retry/cancel logic — the customer shouldn't
-      // see a stale cart that implies they need to re-order.
       clearCart()
-      // Optionally keep a newly typed address for next time (non-fatal).
       if (fulfilment === 'delivery' && selectedAddressId === 'new' && saveAddress && payload.delivery_address && payload.delivery_latitude != null) {
         try {
           await api.createAddress({
@@ -130,15 +120,12 @@ export default function CartClient() {
             is_default: savedAddresses.length === 0,
           })
           queryClient.invalidateQueries({ queryKey: ['addresses'] })
-        } catch {
-          // The order matters more than the address book write.
-        }
+        } catch {}
       }
       setPlacedOrder({ order_number: result.data.order_number, id: result.data.id, payment_status: result.data.payment_status })
       setDispatch(result.dispatch)
     } catch (err: any) {
       if (err instanceof ApiError && err.status === 401) {
-        // Session gone (or guest) — the modal explains it far better than a banner.
         setAuthModalOpen(true)
         return
       }
@@ -156,120 +143,165 @@ export default function CartClient() {
   return (
     <>
       <div className="max-w-4xl mx-auto px-4 py-8">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <div className="flex items-center justify-between mb-8">
-            <h1 className="font-display text-xl sm:text-3xl font-bold">Your Cart</h1>
+        <motion.div
+          initial={shouldReduce ? { opacity: 0 } : { opacity: 0, y: 16, filter: 'blur(6px)' }}
+          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+          transition={{ duration: 0.5, ease: ease.apple }}
+        >
+          <motion.div
+            initial={shouldReduce ? { opacity: 0 } : { opacity: 0, y: 12, filter: 'blur(4px)' }}
+            animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+            transition={{ duration: 0.4, ease: ease.apple, delay: 0.06 }}
+            className="flex items-center justify-between mb-8"
+          >
+            <h1 className="font-display text-xl sm:text-3xl font-bold tracking-tight">Your Cart</h1>
             {items.length > 0 && (
-              <span className="text-sm text-gray-500">{itemCount} {itemCount === 1 ? 'item' : 'items'}</span>
+              <span className="text-sm text-gray-500 tabular-nums">{itemCount} {itemCount === 1 ? 'item' : 'items'}</span>
             )}
-          </div>
+          </motion.div>
 
           {items.length === 0 ? (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-20">
-              <ShoppingBag size={48} className="mx-auto text-gray-200 mb-4" />
-              <h2 className="text-lg font-semibold text-gray-600 mb-2">Your cart is empty</h2>
-              <p className="text-sm text-gray-500 mb-6">Add some groceries to get started.</p>
-              <Link
-                href="/products"
-                className="inline-flex items-center gap-2 bg-primary text-white px-6 py-2.5 rounded-lg font-medium hover:bg-primary-dark transition-colors"
+            <motion.div
+              initial={shouldReduce ? { opacity: 0 } : { opacity: 0, y: 16, scale: 0.97, filter: 'blur(6px)' }}
+              animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
+              transition={{ type: 'spring', ...spring.apple, delay: 0.1 }}
+              className="text-center py-20 bg-white rounded-[16px] border border-gray-100 shadow-[0_2px_12px_rgba(0,0,0,0.04)]"
+            >
+              <motion.div
+                initial={shouldReduce ? undefined : { scale: 0.8, rotate: -4 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ type: 'spring', ...spring.appleBounce, delay: 0.15 }}
               >
-                Browse Products <ArrowRight size={16} />
-              </Link>
+                <ShoppingBag size={48} className="mx-auto text-gray-200 mb-4" />
+              </motion.div>
+              <h2 className="text-[15px] font-semibold text-gray-900 tracking-tight mb-2">Your cart is empty</h2>
+              <p className="text-[13px] text-gray-500 mb-6 leading-relaxed max-w-[28ch] mx-auto">Add some groceries to get started — fresh picks every day.</p>
+              <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} transition={{ type: 'spring', ...spring.press }}>
+                <Link
+                  href="/products"
+                  className="inline-flex items-center gap-2 bg-gray-900 text-white px-6 py-2.5 rounded-full text-[13px] font-semibold hover:bg-black shadow-[0_2px_8px_rgba(0,0,0,0.15)] transition-colors"
+                >
+                  Browse Products <ArrowRight size={16} />
+                </Link>
+              </motion.div>
             </motion.div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-2 space-y-1">
-                <AnimatePresence initial={false}>
-                  {items.map(item => {
-                    const price = Number(item.product.effective_price ?? item.product.sale_price ?? item.product.price)
-                    return (
-                      <motion.div
-                        key={item.product.id}
-                        layout
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: 20, height: 0, marginBottom: 0 }}
-                        className="flex items-start gap-3 py-4 border-b border-gray-100 sm:items-center sm:gap-4"
-                      >
-                        <div className="relative w-16 h-16 sm:w-20 sm:h-20 bg-gray-50 rounded-lg flex-shrink-0 flex items-center justify-center overflow-hidden">
-                          {item.product.image ? (
-                            <SafeImage src={item.product.image} alt={item.product.name} fill sizes="64px" className="object-cover" />
-                          ) : (
-                            <ShoppingBag size={20} className="text-gray-300" />
-                          )}
-                        </div>
-
-                        <div className="flex-1 min-w-0 pt-0.5">
-                          <p className="text-sm font-medium line-clamp-2 sm:truncate">{item.product.name}</p>
-                          {item.product.unit && <p className="text-xs text-gray-500 mt-0.5">{item.product.unit}</p>}
-                          <p className="text-sm font-semibold text-primary mt-1 sm:mt-0.5">
-                            R{price.toFixed(2)}
-                          </p>
-                        </div>
-
-                        {/* Mobile: line total above the stepper, delete below —
-                            the five-column row physically cannot fit a phone,
-                            which squeezed the name into one character per line. */}
-                        <div className="flex flex-col items-end gap-2 sm:flex-row sm:items-center sm:gap-4">
-                          <p className="order-1 text-right text-sm sm:w-20 text-base font-semibold tabular-nums sm:order-2">
-                            <span className="tabular-nums">
-                              R<AnimatedNumber value={price * item.quantity} precision={2} format={(n) => n.toFixed(2)} />
-                            </span>
-                          </p>
-
-                          <div className="order-2 flex items-center gap-1.5 sm:order-1">
-                            <button
-                              onClick={() => decrementItem(item.product.id)}
-                              aria-label={`Decrease quantity of ${item.product.name}`}
-                              className="w-8 h-8 sm:w-7 sm:h-7 flex items-center justify-center rounded-md border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors"
-                            >
-                              <Minus size={14} />
-                            </button>
-                            <span className="w-8 text-center text-sm font-medium tabular-nums">
-                              {/* Quantity ticks snappier than money — same effect, tighter spring */}
-                              <AnimatedNumber value={item.quantity} precision={0} stiffness={260} damping={26} />
-                            </span>
-                            <button
-                              onClick={() => addItem(item.product, 1)}
-                              aria-label={`Increase quantity of ${item.product.name}`}
-                              className="w-8 h-8 sm:w-7 sm:h-7 flex items-center justify-center rounded-md border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors"
-                            >
-                              <Plus size={14} />
-                            </button>
+              <div className="lg:col-span-2">
+                <motion.div
+                  initial="hidden"
+                  animate="visible"
+                  variants={{
+                    hidden: {},
+                    visible: { transition: { staggerChildren: 0.06, delayChildren: 0.08 } },
+                  }}
+                  className="space-y-1 bg-white rounded-[16px] border border-gray-100/80 shadow-[0_2px_12px_rgba(0,0,0,0.04)] p-2 sm:p-3"
+                >
+                  <AnimatePresence initial={false}>
+                    {items.map((item, idx) => {
+                      const price = Number(item.product.effective_price ?? item.product.sale_price ?? item.product.price)
+                      return (
+                        <motion.div
+                          key={item.product.id}
+                          layout
+                          variants={{
+                            hidden: shouldReduce ? { opacity: 0 } : { opacity: 0, y: 12, filter: 'blur(4px)' },
+                            visible: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.35, ease: ease.apple } },
+                          }}
+                          initial="hidden"
+                          animate="visible"
+                          exit={{ opacity: 0, x: 20, height: 0, marginBottom: 0, filter: 'blur(4px)', transition: { duration: 0.25, ease: ease.apple } }}
+                          transition={{ delay: idx * 0.03 }}
+                          className="flex items-start gap-3 py-4 px-2 sm:px-3 rounded-[12px] hover:bg-gray-50/80 transition-colors border border-transparent hover:border-gray-100 sm:items-center sm:gap-4"
+                        >
+                          <div className="relative w-16 h-16 sm:w-20 sm:h-20 bg-gray-50 rounded-[12px] flex-shrink-0 flex items-center justify-center overflow-hidden border border-gray-100/50">
+                            {item.product.image ? (
+                              <SafeImage src={item.product.image} alt={item.product.name} fill sizes="64px" className="object-cover" />
+                            ) : (
+                              <ShoppingBag size={20} className="text-gray-300" />
+                            )}
                           </div>
 
-                          <button
-                            onClick={() => removeItem(item.product.id)}
-                            aria-label={`Remove ${item.product.name} from cart`}
-                            className="order-3 p-1.5 text-gray-300 hover:text-accent transition-colors"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                      </motion.div>
-                    )
-                  })}
-                </AnimatePresence>
+                          <div className="flex-1 min-w-0 pt-0.5">
+                            <p className="text-[13px] font-semibold tracking-tight line-clamp-2 sm:truncate text-gray-900">{item.product.name}</p>
+                            {item.product.unit && <p className="text-[11px] text-gray-500 mt-0.5 tracking-wide">{item.product.unit}</p>}
+                            <p className="text-[13px] font-bold text-primary mt-1 sm:mt-0.5 tabular-nums">
+                              R{price.toFixed(2)}
+                            </p>
+                          </div>
+
+                          <div className="flex flex-col items-end gap-2 sm:flex-row sm:items-center sm:gap-4">
+                            <p className="order-1 text-right text-sm sm:w-20 text-[14px] font-bold tabular-nums tracking-tight sm:order-2">
+                              <span className="tabular-nums">
+                                R<AnimatedNumber value={price * item.quantity} precision={2} format={(n) => n.toFixed(2)} />
+                              </span>
+                            </p>
+
+                            <div className="order-2 flex items-center gap-1.5 sm:order-1 bg-white rounded-full border border-gray-200 p-0.5 shadow-sm">
+                              <motion.button
+                                whileTap={{ scale: 0.9 }}
+                                transition={{ type: 'spring', ...spring.press }}
+                                onClick={() => decrementItem(item.product.id)}
+                                aria-label={`Decrease quantity of ${item.product.name}`}
+                                className="w-7 h-7 flex items-center justify-center rounded-full bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors"
+                              >
+                                <Minus size={12} strokeWidth={2} />
+                              </motion.button>
+                              <span className="w-7 text-center text-[13px] font-semibold tabular-nums">
+                                <AnimatedNumber value={item.quantity} precision={0} stiffness={260} damping={26} />
+                              </span>
+                              <motion.button
+                                whileTap={{ scale: 0.9 }}
+                                transition={{ type: 'spring', ...spring.press }}
+                                onClick={() => addItem(item.product, 1)}
+                                aria-label={`Increase quantity of ${item.product.name}`}
+                                className="w-7 h-7 flex items-center justify-center rounded-full bg-gray-900 text-white hover:bg-black transition-colors shadow-sm"
+                              >
+                                <Plus size={12} strokeWidth={2} />
+                              </motion.button>
+                            </div>
+
+                            <motion.button
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.9 }}
+                              transition={{ type: 'spring', ...spring.snap }}
+                              onClick={() => removeItem(item.product.id)}
+                              aria-label={`Remove ${item.product.name} from cart`}
+                              className="order-3 p-1.5 text-gray-300 hover:text-red-500 transition-colors"
+                            >
+                              <Trash2 size={15} strokeWidth={1.75} />
+                            </motion.button>
+                          </div>
+                        </motion.div>
+                      )
+                    })}
+                  </AnimatePresence>
+                </motion.div>
               </div>
 
               <div className="lg:col-span-1">
-                <div className="bg-gray-50 rounded-xl p-6 sticky top-24">
-                  <h2 className="font-display text-base sm:text-lg font-semibold mb-4">Order Summary</h2>
+                <motion.div
+                  initial={shouldReduce ? { opacity: 0 } : { opacity: 0, y: 16, scale: 0.97, filter: 'blur(6px)' }}
+                  animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
+                  transition={{ type: 'spring', ...spring.apple, delay: 0.18 }}
+                  className="bg-white rounded-[16px] border border-gray-100 shadow-[0_2px_12px_rgba(0,0,0,0.04)] p-5 sm:p-6 sticky top-24"
+                >
+                  <h2 className="font-display text-[15px] font-semibold tracking-tight mb-4">Order Summary</h2>
 
-                  <div className="space-y-2 text-sm">
+                  <div className="space-y-2.5 text-[13px]">
                     <div className="flex justify-between text-gray-500">
                       <span>Subtotal</span>
-                      <span className="tabular-nums">
+                      <span className="tabular-nums font-medium text-gray-900">
                         R<AnimatedNumber value={subtotal} precision={2} format={(n) => n.toFixed(2)} />
                       </span>
                     </div>
                     <div className="flex justify-between text-gray-500">
                       <span>{fulfilment === 'pickup' ? 'Pickup' : 'Delivery'}</span>
-                      <span className={deliveryFee === 0 ? 'text-green-600 font-medium' : ''}>
+                      <span className={deliveryFee === 0 ? 'text-green-600 font-semibold' : 'font-medium'}>
                         {deliveryFee === 0 ? 'Free' : `R${deliveryFee.toFixed(2)}`}
                       </span>
                     </div>
-                    <div className="border-t border-gray-200 pt-2 mt-2 flex justify-between font-semibold text-base">
+                    <div className="border-t border-gray-100 pt-3 mt-3 flex justify-between font-bold text-[15px] tracking-tight">
                       <span>Total</span>
                       <span className="tabular-nums">
                         R<AnimatedNumber value={subtotal + deliveryFee} precision={2} format={(n) => n.toFixed(2)} />
@@ -279,38 +311,41 @@ export default function CartClient() {
 
                   {!showCheckoutForm ? (
                     <motion.button
-                      whileTap={{ scale: 0.98 }}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.97 }}
+                      transition={{ type: 'spring', ...spring.press }}
                       onClick={handleProceedToCheckout}
-                      className="w-full mt-5 bg-primary text-white py-2.5 rounded-lg font-medium hover:bg-primary-dark transition-colors flex items-center justify-center gap-2"
+                      className="w-full mt-5 bg-gray-900 text-white py-3 rounded-full text-[13px] font-semibold hover:bg-black shadow-[0_2px_8px_rgba(0,0,0,0.15)] transition-colors flex items-center justify-center gap-2"
                     >
-                      Proceed to Checkout <ArrowRight size={16} />
+                      Proceed to Checkout <ArrowRight size={15} strokeWidth={2} />
                     </motion.button>
                   ) : (
                     <motion.form
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
+                      initial={shouldReduce ? { opacity: 0 } : { opacity: 0, y: 12, filter: 'blur(4px)' }}
+                      animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                      transition={{ duration: 0.35, ease: ease.apple }}
                       onSubmit={handlePlaceOrder}
                       className="mt-5 space-y-3"
                     >
                       {placeError && (
-                        <p className="text-xs text-accent">{placeError}</p>
+                        <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-[11px] text-red-500 font-medium bg-red-50 border border-red-100 rounded-[10px] px-3 py-2">{placeError}</motion.p>
                       )}
 
-                      {/* How would you like to get your order? */}
-                      <div className="grid grid-cols-2 gap-1 p-1 bg-gray-100 rounded-lg" role="group" aria-label="Fulfilment method">
+                      <div className="grid grid-cols-2 gap-1 p-1 bg-gray-100 rounded-full" role="group" aria-label="Fulfilment method">
                         {(['delivery', 'pickup'] as const).map(method => (
-                          <button
+                          <motion.button
                             key={method}
                             type="button"
+                            whileTap={{ scale: 0.96 }}
                             aria-pressed={fulfilment === method}
                             onClick={() => setFulfilment(method)}
-                            className={`flex items-center justify-center gap-1.5 py-2 rounded-md text-sm font-medium transition-colors ${
-                              fulfilment === method ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                            className={`flex items-center justify-center gap-1.5 py-2 rounded-full text-[12px] font-semibold tracking-wide transition-all ${
+                              fulfilment === method ? 'bg-white text-gray-900 shadow-[0_1px_4px_rgba(0,0,0,0.08)]' : 'text-gray-500 hover:text-gray-700'
                             }`}
                           >
-                            {method === 'delivery' ? <MapPin size={15} /> : <StoreIcon size={15} />}
+                            {method === 'delivery' ? <MapPin size={13} strokeWidth={2} /> : <StoreIcon size={13} strokeWidth={2} />}
                             {method === 'delivery' ? 'Deliver' : 'Pickup'}
-                          </button>
+                          </motion.button>
                         ))}
                       </div>
 
@@ -319,17 +354,17 @@ export default function CartClient() {
                       {fulfilment === 'delivery' ? (
                         savedAddresses.length > 0 || addressesLoading ? (
                           <div>
-                            <label htmlFor="saved-address" className="block text-xs font-medium text-gray-600 mb-1">
+                            <label htmlFor="saved-address" className="block text-[11px] font-semibold tracking-wide text-gray-600 mb-1.5 uppercase">
                               Deliver to
                             </label>
                             {addressesLoading ? (
-                              <div className="h-9 rounded-lg bg-gray-100 animate-pulse" aria-hidden="true" />
+                              <div className="h-10 rounded-[12px] bg-gray-100 animate-pulse" aria-hidden="true" />
                             ) : (
                               <select
                                 id="saved-address"
                                 value={String(selectedAddressId)}
                                 onChange={e => setSelectedAddressId(e.target.value === 'new' ? 'new' : Number(e.target.value))}
-                                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+                                className="w-full px-3.5 py-2.5 border border-gray-200 rounded-[12px] text-[13px] bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-shadow"
                               >
                                 {savedAddresses.map(a => (
                                   <option key={a.id} value={a.id}>
@@ -343,14 +378,14 @@ export default function CartClient() {
                         ) : null
                       ) : (
                         <div>
-                          <label htmlFor="pickup-store" className="block text-xs font-medium text-gray-600 mb-1">
+                          <label htmlFor="pickup-store" className="block text-[11px] font-semibold tracking-wide text-gray-600 mb-1.5 uppercase">
                             Collect from
                           </label>
                           <select
                             id="pickup-store"
                             value={selectedStoreId === '' ? '' : String(selectedStoreId)}
                             onChange={e => setSelectedStoreId(e.target.value === '' ? '' : Number(e.target.value))}
-                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+                            className="w-full px-3.5 py-2.5 border border-gray-200 rounded-[12px] text-[13px] bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
                           >
                             {stores.length === 0 && <option value="">Loading stores…</option>}
                             {stores.map(s => (
@@ -359,37 +394,37 @@ export default function CartClient() {
                               </option>
                             ))}
                           </select>
-                          <p className="text-xs text-gray-400 mt-1">We&apos;ll pack your order ready for you to collect. No delivery fee.</p>
+                          <p className="text-[11px] text-gray-400 mt-2 leading-relaxed">We&apos;ll pack your order ready for you to collect. No delivery fee.</p>
                         </div>
                       )}
 
                       {fulfilment === 'delivery' && selectedAddressId === 'new' && (
                         <>
                           <div>
-                            <label htmlFor="delivery-address" className="block text-xs font-medium text-gray-600 mb-1">
+                            <label htmlFor="delivery-address" className="block text-[11px] font-semibold tracking-wide text-gray-600 mb-1.5 uppercase">
                               Delivery Address
                             </label>
                             <div className="relative">
-                              <MapPin size={14} className="absolute left-3 top-3 text-gray-400" />
+                              <MapPin size={14} className="absolute left-3.5 top-3.5 text-gray-400" strokeWidth={1.75} />
                               <textarea
                                 id="delivery-address"
                                 rows={2}
                                 value={deliveryAddress}
                                 onChange={e => setDeliveryAddress(e.target.value)}
-                                className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none resize-none"
+                                className="w-full pl-10 pr-3.5 py-2.5 border border-gray-200 rounded-[12px] text-[13px] focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none resize-none leading-relaxed"
                                 placeholder="Enter your delivery address"
                               />
                             </div>
                           </div>
 
                           {coords && (
-                            <div className="text-xs text-gray-500 space-y-1.5">
+                            <div className="text-[11px] text-gray-500 space-y-2">
                               <label className="flex items-center gap-2 cursor-pointer">
                                 <input
                                   type="checkbox"
                                   checked={saveAddress}
                                   onChange={e => setSaveAddress(e.target.checked)}
-                                  className="h-3.5 w-3.5 accent-primary"
+                                  className="h-3.5 w-3.5 accent-primary rounded"
                                 />
                                 Save this address for next time
                               </label>
@@ -401,7 +436,7 @@ export default function CartClient() {
                                   maxLength={50}
                                   aria-label="Address label"
                                   placeholder="Label (e.g. Home, Work)"
-                                  className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+                                  className="w-full px-3.5 py-2 border border-gray-200 rounded-[12px] text-[12px] focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
                                 />
                               )}
                             </div>
@@ -409,27 +444,30 @@ export default function CartClient() {
                         </>
                       )}
 
-                      <div className="flex gap-2">
-                        <button
+                      <div className="flex gap-2 pt-1">
+                        <motion.button
                           type="button"
+                          whileTap={{ scale: 0.97 }}
                           onClick={() => setShowCheckoutForm(false)}
-                          className="flex-1 px-4 py-2.5 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                          className="flex-1 px-4 py-2.5 border border-gray-200 rounded-full text-[13px] font-medium text-gray-600 hover:bg-gray-50 transition-colors"
                         >
                           Back
-                        </button>
+                        </motion.button>
                         <motion.button
                           type="submit"
                           disabled={placeOrderMutation.isPending}
-                          whileTap={{ scale: 0.98 }}
-                          className="flex-1 bg-primary text-white py-2.5 rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.97 }}
+                          transition={{ type: 'spring', ...spring.press }}
+                          className="flex-1 bg-gray-900 text-white py-2.5 rounded-full text-[13px] font-semibold hover:bg-black shadow-[0_2px_8px_rgba(0,0,0,0.15)] transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
                         >
-                          {placeOrderMutation.isPending ? <Loader2 size={16} className="animate-spin" /> : null}
+                          {placeOrderMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : null}
                           {placeOrderMutation.isPending ? 'Placing...' : 'Place Order'}
                         </motion.button>
                       </div>
                     </motion.form>
                   )}
-                </div>
+                </motion.div>
               </div>
             </div>
           )}
