@@ -74,7 +74,7 @@ class RiderOrderGuardApiTest extends TestCase
     private function createPreparingOrder(bool $itemBought = false): Order
     {
         $order = Order::create([
-            'order_number' => 'ORD-GUARD-'.strtoupper(uniqid()),
+            'order_number' => 'ORD-GD-'.strtoupper(substr(uniqid(), -8)),
             'customer_id' => $this->customer->id,
             'store_id' => $this->store->id,
             'rider_id' => $this->rider->id,
