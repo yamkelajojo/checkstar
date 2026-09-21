@@ -11,47 +11,29 @@ import Animated, {
 import { useEffect } from 'react';
 import type { StyleProp, ViewStyle } from 'react-native';
 import { useReducedMotion } from './useReducedMotion';
-import { ENTRANCE_SPRING, stagger } from '../../theme/motion';
+import { APPLE_ENTRANCE_SPRING, stagger } from '../../theme/motion';
 
 interface FadeSlideInProps {
   children: ReactNode;
   delay?: number;
   distance?: number;
   style?: StyleProp<ViewStyle>;
-  /** If true, only animate on initial mount; skip re-animations when props change */
   once?: boolean;
+  scaleFrom?: number;
 }
 
 /**
- * FadeSlideIn — Mount Entrance Primitive
- *
- * Wraps any children and animates them in from below on mount.
- * Compound motion: opacity 0→1 + translateY 12→0, driven by ONE
- * shared value for guaranteed sync.
- *
- * Use for: screen content entrance, form fields, section headers,
- * any element that should "arrive" rather than "appear".
- *
- * ─── Stagger ──────────────────────────────────────────────────
- * When rendering a list of these, pass `delay` per item:
- *   <FadeSlideIn delay={0}>    → arrives immediately
- *   <FadeSlideIn delay={70}>   → arrives 70ms later
- *   <FadeSlideIn delay={140}>  → arrives 140ms later
- * The ripple reads as "the app is thoughtfully laying things out".
- *
- * ─── Props ────────────────────────────────────────────────────
- * delay       → ms to wait before animating (default 0)
- * distance    → px to slide from below (default 12, subtle)
- * style       → merged with the animated wrapper
- * children    → anything
+ * FadeSlideIn — Apple-Polished Mount Entrance
+ * Nothing just appears — everything arrives with y+scale+opacity
+ * Uses Apple spring: stiffness 400, damping 30 — feels like iOS 18
  */
 export function FadeSlideIn({
   children,
   delay = 0,
-  distance = 12,
+  distance = 10,
   style,
-  /** If true, only animate on initial mount; skip re-animations when props change */
   once = true,
+  scaleFrom = 0.97,
 }: FadeSlideInProps) {
   const reduceMotion = useReducedMotion();
   const progress = useSharedValue(0);
@@ -67,7 +49,7 @@ export function FadeSlideIn({
       return;
     }
     cancelAnimation(progress);
-    progress.value = withDelay(delay, withSpring(1, ENTRANCE_SPRING));
+    progress.value = withDelay(delay, withSpring(1, APPLE_ENTRANCE_SPRING));
     hasAnimated.current = true;
   }, [reduceMotion, delay, once, progress]);
 
@@ -75,6 +57,7 @@ export function FadeSlideIn({
     opacity: progress.value,
     transform: [
       { translateY: interpolate(progress.value, [0, 1], [distance, 0]) },
+      { scale: interpolate(progress.value, [0, 1], [scaleFrom, 1]) },
     ],
   }));
 

@@ -2,13 +2,15 @@
 
 import { useEffect, useState, useMemo, useRef } from 'react'
 import dynamic from 'next/dynamic'
+import { motion, useReducedMotion } from 'motion/react'
 import { Navigation, MapPin, Clock, WifiOff, Hourglass } from 'lucide-react'
 import { useOrderRiderLocation, useRouteGeometry } from '@/lib/query'
 import { decodePolyline, type LatLng } from '@/lib/polyline'
+import { spring, ease } from '@/lib/motion/tokens'
 
 const MapContainer = dynamic(() => import('@/components/MapContainer'), {
   ssr: false,
-  loading: () => <div className="h-[320px] bg-gray-100 animate-pulse rounded-xl" />,
+  loading: () => <div className="h-[320px] bg-gray-100 shimmer rounded-[16px]" />,
 })
 
 interface Props {
@@ -134,38 +136,77 @@ export default function OrderTrackingMap({
   const hasCoords = storeLat != null && storeLng != null && deliveryLat != null && deliveryLng != null
   const isWaiting = (orderStatus === 'confirmed' || orderStatus === 'preparing') && !hasRider
 
+  const shouldReduce = useReducedMotion()
+
   if (!hasCoords) {
     return (
-      <div className="rounded-xl border border-gray-100 bg-white p-8 text-center">
-        <MapPin className="mx-auto text-gray-300 mb-2" size={32} />
-        <p className="text-sm text-gray-500">Map unavailable — delivery coordinates not set</p>
-        {deliveryAddress && <p className="text-xs text-gray-400 mt-1">{deliveryAddress}</p>}
-      </div>
+      <motion.div
+        initial={shouldReduce ? { opacity: 0 } : { opacity: 0, y: 12, scale: 0.98, filter: 'blur(6px)' }}
+        animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
+        transition={{ type: 'spring', ...spring.apple }}
+        className="rounded-[16px] border border-gray-100 bg-white p-8 text-center shadow-[0_2px_8px_rgba(0,0,0,0.04)]"
+      >
+        <div className="w-12 h-12 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center mx-auto mb-3">
+          <MapPin className="text-gray-300" size={20} strokeWidth={1.5} />
+        </div>
+        <p className="text-[14px] font-medium text-gray-900">Map unavailable</p>
+        <p className="text-[12px] text-gray-500 mt-1">Delivery coordinates not set</p>
+        {deliveryAddress && <p className="text-[11px] text-gray-400 mt-2 max-w-[280px] mx-auto">{deliveryAddress}</p>}
+      </motion.div>
     )
   }
 
   return (
-    <div className="rounded-xl border border-gray-100 bg-white overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-50">
-        <div className="flex items-center gap-2">
-          <Navigation size={18} className="text-primary" />
-          <span className="text-sm font-semibold text-gray-900">{isWaiting ? 'Preparing Order' : 'Live Tracking'}</span>
+    <motion.div
+      initial={shouldReduce ? { opacity: 0 } : { opacity: 0, y: 16, scale: 0.97, filter: 'blur(8px)' }}
+      whileInView={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
+      viewport={{ once: true }}
+      transition={{ type: 'spring', ...spring.apple }}
+      className="rounded-[16px] border border-gray-100/80 bg-white overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,0.06),0_0_0_1px_rgba(0,0,0,0.03)]"
+    >
+      {/* Header — dedicated animation */}
+      <motion.div
+        initial={shouldReduce ? undefined : { opacity: 0, y: -6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1, ease: ease.apple }}
+        className="flex items-center justify-between px-4 py-3.5 border-b border-gray-50/80 bg-gradient-to-r from-white to-gray-50/50"
+      >
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-full bg-primary/10 border border-primary/15 flex items-center justify-center">
+            <Navigation size={14} className="text-primary" strokeWidth={2.5} />
+          </div>
+          <span className="text-[13px] font-semibold text-gray-900 tracking-tight">{isWaiting ? 'Preparing Order' : 'Live Tracking'}</span>
         </div>
         {isWaiting ? (
-          <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-100">
-            <Hourglass size={12} /> Waiting for rider
-          </span>
+          <motion.span
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: 'spring', ...spring.snap }}
+            className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200/60 shadow-sm"
+          >
+            <Hourglass size={12} strokeWidth={2.5} /> Waiting for rider
+          </motion.span>
         ) : hasRider ? (
-          <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-full text-white ${isStale ? 'bg-amber-500' : 'bg-green-600'}`}>
-            {isStale ? <WifiOff size={10} /> : <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />}
+          <motion.span
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: 'spring', ...spring.appleBounce }}
+            className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full text-white shadow-[0_2px_6px_rgba(0,0,0,0.15)] ${isStale ? 'bg-amber-500' : 'bg-green-600'}`}
+          >
+            {isStale ? <WifiOff size={11} strokeWidth={2.5} /> : <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse shadow-[0_0_6px_white]" />}
             {isStale ? 'STALE' : 'LIVE'}
-          </span>
+          </motion.span>
         ) : null}
-      </div>
+      </motion.div>
 
-      {/* Map */}
-      <div style={{ height }} className="relative">
+      {/* Map — scale+blur entrance */}
+      <motion.div
+        initial={shouldReduce ? undefined : { opacity: 0, scale: 0.98, filter: 'blur(4px)' }}
+        animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+        transition={{ delay: 0.15, duration: 0.5, ease: ease.apple }}
+        style={{ height }}
+        className="relative overflow-hidden"
+      >
         <MapContainer
           center={storeLat && storeLng ? [storeLat, storeLng] : [-29.8587, 31.0218]}
           zoom={13}
@@ -175,37 +216,63 @@ export default function OrderTrackingMap({
           className="h-full w-full"
           style={{ height: '100%', width: '100%' }}
         />
-        {/* Metrics overlay */}
+        {/* Metrics overlay — dedicated badge animation */}
         <div className="absolute top-3 right-3 z-[400] flex gap-1.5">
           {riderLocation && (
-            <div className="bg-black/75 text-white text-[11px] px-2 py-1 rounded-full flex items-center gap-1">
-              <Clock size={12} className="text-primary" />
-              {new Date(riderLocation.recorded_at).toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' })}
-            </div>
+            <motion.div
+              initial={{ opacity: 0, y: -8, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ type: 'spring', ...spring.appleBounce, delay: 0.3 }}
+              className="bg-black/75 backdrop-blur-md text-white text-[11px] px-2.5 py-1.5 rounded-full flex items-center gap-1.5 border border-white/10 shadow-[0_2px_8px_rgba(0,0,0,0.2)]"
+            >
+              <Clock size={12} className="text-primary" strokeWidth={2.5} />
+              <span className="tabular-nums font-medium">{new Date(riderLocation.recorded_at).toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' })}</span>
+            </motion.div>
           )}
         </div>
         {isWaiting && (
-          <div className="absolute bottom-0 left-0 right-0 bg-amber-50 border-t border-amber-100 px-4 py-2 flex items-center gap-2 text-xs text-amber-800">
-            <Hourglass size={14} /> Preparing your order — a rider will be assigned shortly
-          </div>
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4, ease: ease.apple }}
+            className="absolute bottom-0 left-0 right-0 bg-amber-50/90 backdrop-blur-md border-t border-amber-100 px-4 py-2.5 flex items-center gap-2.5 text-xs text-amber-800"
+          >
+            <div className="w-5 h-5 rounded-full bg-amber-100 border border-amber-200 flex items-center justify-center shrink-0">
+              <Hourglass size={11} strokeWidth={2.5} />
+            </div>
+            <span className="font-medium">Preparing your order — a rider will be assigned shortly</span>
+          </motion.div>
         )}
-      </div>
+      </motion.div>
 
-      {/* Info row */}
-      <div className="grid grid-cols-3 gap-4 px-4 py-3 text-xs border-t border-gray-50">
-        <div>
-          <p className="text-gray-400 uppercase tracking-wider text-[10px]">From</p>
-          <p className="font-medium text-gray-900 truncate">{storeName}</p>
-        </div>
-        <div className="text-center">
-          <p className="text-gray-400 uppercase tracking-wider text-[10px]">Rider</p>
-          <p className="font-medium text-primary truncate">{riderName || (hasRider ? 'Rider assigned' : '—')}</p>
-        </div>
-        <div className="text-right">
-          <p className="text-gray-400 uppercase tracking-wider text-[10px]">To</p>
-          <p className="font-medium text-gray-900 truncate">{deliveryAddress || 'Delivery'}</p>
-        </div>
-      </div>
-    </div>
+      {/* Info row — staggered */}
+      <motion.div
+        initial="hidden"
+        animate="visible"
+        variants={{
+          hidden: {},
+          visible: { transition: { staggerChildren: 0.05, delayChildren: 0.2 } },
+        }}
+        className="grid grid-cols-3 gap-4 px-4 py-3.5 text-xs border-t border-gray-50/80 bg-gray-50/30"
+      >
+        {[
+          { label: 'From', value: storeName, align: 'left' },
+          { label: 'Rider', value: riderName || (hasRider ? 'Rider assigned' : '—'), align: 'center', primary: true },
+          { label: 'To', value: deliveryAddress || 'Delivery', align: 'right' },
+        ].map((item, i) => (
+          <motion.div
+            key={item.label}
+            variants={{
+              hidden: shouldReduce ? { opacity: 0 } : { opacity: 0, y: 6, filter: 'blur(3px)' },
+              visible: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.3, ease: ease.apple } },
+            }}
+            className={item.align === 'center' ? 'text-center' : item.align === 'right' ? 'text-right' : ''}
+          >
+            <p className="text-gray-400 uppercase tracking-wider text-[10px] font-semibold">{item.label}</p>
+            <p className={`font-medium truncate mt-0.5 text-[12px] tracking-tight ${item.primary ? 'text-primary' : 'text-gray-900'}`}>{item.value}</p>
+          </motion.div>
+        ))}
+      </motion.div>
+    </motion.div>
   )
 }

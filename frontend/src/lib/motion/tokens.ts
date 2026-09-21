@@ -48,6 +48,7 @@ export function settleTime(s: SpringConfig): number {
 
 // ── Named springs ──────────────────────────────────────────
 // Each tuned for a specific physical behavior
+// Apple HIG: springs should feel like real materials, not UI decoration
 
 export const spring = {
   /**
@@ -93,6 +94,49 @@ export const spring = {
     damping: 36,
     mass: 0.6,
   } satisfies SpringConfig,
+
+  /**
+   * Apple — iOS 18 spring. The gold standard.
+   * ζ = 0.82, settles in ~280ms. Feels like turning a page in a
+   * well-bound book. Use for: page transitions, hero, focal.
+   */
+  apple: {
+    stiffness: 400,
+    damping: 30,
+    mass: 0.8,
+  } satisfies SpringConfig,
+
+  /**
+   * Apple Bounce — subtle overshoot, alive but not playful.
+   * ζ = 0.68, ~200ms. Feels like a rubber band at rest.
+   * Use for: cards popping in, success states, delight.
+   */
+  appleBounce: {
+    stiffness: 450,
+    damping: 22,
+    mass: 0.6,
+  } satisfies SpringConfig,
+
+  /**
+   * Apple Gentle — almost no overshoot, buttery.
+   * ζ = 0.92, ~350ms. Feels like sliding on silk.
+   * Use for: background, large panels, map.
+   */
+  appleGentle: {
+    stiffness: 220,
+    damping: 28,
+    mass: 1.0,
+  } satisfies SpringConfig,
+
+  /**
+   * Press — tactile feedback, instant.
+   * ζ = 0.7, ~100ms. Feels like pressing a physical key.
+   */
+  press: {
+    stiffness: 700,
+    damping: 30,
+    mass: 0.4,
+  } satisfies SpringConfig,
 } as const
 
 
@@ -134,8 +178,35 @@ export const ease = {
   /**
    * Exponential — dramatic reveals.
    * Slow build, explosive finish. Used sparingly.
+   * This is Apple's signature: cubic-bezier(0.16,1,0.3,1)
    */
   explosive: [0.16, 1, 0.3, 1] as CubicBezier,
+
+  /**
+   * Apple — iOS 18 / macOS Sequoia default.
+   * Confident arrival, natural settle. The hero curve.
+   * Use for: page transitions, hero entrances, focal moments.
+   */
+  apple: [0.16, 1, 0.3, 1] as CubicBezier,
+
+  /**
+   * Apple Spring — the other Apple signature.
+   * cubic-bezier(0.4,0.01,0.165,0.99) — used in Apple Music, App Store.
+   * Feels like a well-oiled drawer sliding shut.
+   */
+  appleSpring: [0.4, 0.01, 0.165, 0.99] as CubicBezier,
+
+  /**
+   * Emphasized — Material 3 expressive.
+   * For elements that need to feel alive and intentional.
+   */
+  emphasized: [0.2, 0, 0, 1] as CubicBezier,
+
+  /**
+   * Gentle — soft, almost imperceptible.
+   * For background elements, subtle state changes.
+   */
+  gentle: [0.25, 0.1, 0.25, 1] as CubicBezier,
 } as const
 
 

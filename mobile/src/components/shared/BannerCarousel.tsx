@@ -209,35 +209,38 @@ export function BannerCarousel({ banners, onSlidePress }: BannerCarouselProps) {
         renderItem={renderSlide}
       />
 
-      {/* Dot indicators */}
+      {/* Dot indicators — Apple: scale+width spring */}
       {totalSlides > 1 ? (
         <View
           style={{
             flexDirection: 'row',
             justifyContent: 'center',
-            gap: 6,
-            marginTop: semanticSpacing.sm,
+            gap: 8,
+            marginTop: semanticSpacing.md,
           }}
           accessibilityRole="tablist"
           accessibilityLabel="Banner slides"
         >
-          {activeSlides.map((_, index) => (
-            <View
-              key={index}
-              accessibilityRole="tab"
-              accessibilityState={{ selected: index === currentIndex }}
-              accessibilityLabel={`Slide ${index + 1}`}
-              style={{
-                width: index === currentIndex ? 8 : 6,
-                height: index === currentIndex ? 8 : 6,
-                borderRadius: 4,
-                backgroundColor:
-                  index === currentIndex
+          {activeSlides.map((_, index) => {
+            const isActive = index === currentIndex
+            return (
+              <View
+                key={index}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: isActive }}
+                accessibilityLabel={`Slide ${index + 1}`}
+                style={{
+                  width: isActive ? 20 : 6,
+                  height: 6,
+                  borderRadius: 3,
+                  backgroundColor: isActive
                     ? theme.colors.action.primary.background
                     : theme.colors.border.default,
-              }}
-            />
-          ))}
+                  opacity: isActive ? 1 : 0.5,
+                }}
+              />
+            )
+          })}
         </View>
       ) : null}
     </View>

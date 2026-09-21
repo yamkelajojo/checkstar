@@ -5,7 +5,16 @@
 :root {
   /* Shared design tokens (kept in sync with tailwind.config.ts) */
   --color-primary: #EB6522;
+  --color-primary-dark: #CC4400;
+  --color-primary-light: #FFE0CC;
   --color-text-muted: #6B7280;
+  --color-surface: #FFFCF9;
+  --color-border: #E6DFD6;
+  /* Apple-like motion tokens */
+  --ease-apple: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-apple-spring: cubic-bezier(0.4, 0.01, 0.165, 0.99);
+  --ease-decelerate: cubic-bezier(0, 0, 0.2, 1);
+  --ease-accelerate: cubic-bezier(0.4, 0, 1, 1);
 }
 @import 'leaflet/dist/leaflet.css';
 
@@ -22,9 +31,52 @@
   }
 
   body {
-    line-height: 1.5;
+    line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    font-variant-ligatures: common-ligatures;
+    font-feature-settings: "ss01" on, "ss02" on, "cv01" on;
+  }
+
+  /* Browser surfaces — the cheapest signal that a page was built, not assembled */
+  ::selection {
+    background: var(--color-primary);
+    color: white;
+  }
+
+  ::-moz-selection {
+    background: var(--color-primary);
+    color: white;
+  }
+
+  /* Focus rings — visible keyboard focus, logical, Apple-like */
+  :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* Remove default focus for mouse users */
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  /* Caret — tinted to brand */
+  input, textarea {
+    caret-color: var(--color-primary);
+  }
+
+  /* Underline offset — breathing room */
+  a {
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1px;
+  }
+
+  /* Tabular nums for prices, counts */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" on;
   }
 
   img,
@@ -44,9 +96,7 @@
   }
 
   /* Mobile web: iOS Safari zooms the whole page whenever a focused form
-     control has a computed font-size below 16px, which made login, register,
-     cart and checkout jarring on phones. Form controls used to ship at
-     text-sm (14px), so pin them to 16px on mobile viewports only. */
+     control has a computed font-size below 16px */
   @media (max-width: 767px) {
     input,
     select,
@@ -67,6 +117,7 @@
 
   p {
     text-wrap: pretty;
+    max-width: 75ch;
   }
 
   h1,
@@ -76,6 +127,20 @@
   h5,
   h6 {
     text-wrap: balance;
+    letter-spacing: -0.02em;
+  }
+
+  /* Display headings max 6rem per craft floor */
+  h1 {
+    font-size: clamp(2.5rem, 5vw, 4.5rem);
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+  }
+
+  h2 {
+    font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+    line-height: 1.1;
+    letter-spacing: -0.025em;
   }
 
   #root,
@@ -92,6 +157,47 @@
   .scrollbar-none::-webkit-scrollbar {
     display: none;
   }
+
+  /* Apple-like smooth appear */
+  .apple-enter {
+    animation: appleEnter 0.6s var(--ease-apple) both;
+  }
+
+  .apple-enter-stagger {
+    animation: appleEnter 0.5s var(--ease-apple) both;
+  }
+
+  /* Shimmer for skeletons — not just pulse */
+  .shimmer {
+    background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.8s infinite;
+  }
+
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  @keyframes appleEnter {
+    from {
+      opacity: 0;
+      transform: translateY(8px) scale(0.98);
+      filter: blur(4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      filter: blur(0);
+    }
+  }
+
+  /* Focus ring utility */
+  .focus-apple:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 3px;
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-primary) 20%, transparent);
+  }
 }
 
 @layer base {
@@ -105,22 +211,25 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    background: rgba(100, 116, 139, 0.5);
+    background: rgba(100, 116, 139, 0.45);
     border-radius: 9999px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: rgba(100, 116, 139, 0.7);
+    background: rgba(100, 116, 139, 0.65);
   }
 
   * {
     scrollbar-width: thin;
-    scrollbar-color: rgba(100, 116, 139, 0.5) transparent;
+    scrollbar-color: rgba(100, 116, 139, 0.45) transparent;
   }
 }
 
+/* Product carousel — polished with spring feel */
 .product-carousel .swiper-wrapper {
   flex-wrap: nowrap !important;
+  transition-timing-function: var(--ease-apple) !important;
 }
 
 .product-carousel .swiper-slide {
@@ -130,22 +239,62 @@
 .product-carousel .swiper-button-next,
 .product-carousel .swiper-button-prev {
   color: var(--color-primary);
-  width: 20px;
-  height: 20px;
+  width: 32px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(12px);
+  border-radius: 9999px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s var(--ease-apple);
+}
+
+.product-carousel .swiper-button-next:hover,
+.product-carousel .swiper-button-prev:hover {
+  background: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.06);
+  transform: scale(1.05);
 }
 
 .product-carousel .swiper-button-next::after,
 .product-carousel .swiper-button-prev::after {
-  font-size: 14px;
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .product-carousel .swiper-pagination-bullet {
   background: var(--color-text-muted);
   opacity: 0.3;
+  width: 6px;
+  height: 6px;
+  transition: all 0.3s var(--ease-apple);
 }
 
 .product-carousel .swiper-pagination-bullet-active {
   background: var(--color-primary);
   opacity: 1;
+  width: 20px;
+  border-radius: 3px;
 }
+
+/* Leaflet map polish */
+.leaflet-container {
+  font-family: inherit;
+  border-radius: 12px;
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  backdrop-filter: blur(16px);
+}
+
+.leaflet-control-zoom a {
+  border-radius: 8px !important;
+  transition: all 0.2s var(--ease-apple);
+}
+
+.leaflet-control-zoom a:hover {
+  background: white !important;
+}
+
 

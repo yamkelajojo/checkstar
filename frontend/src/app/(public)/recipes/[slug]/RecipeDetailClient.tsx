@@ -1,8 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { motion } from 'motion/react'
-import { Clock, Users, ChefHat, ChevronLeft, ListOrdered, Package, Check, ShoppingCart } from 'lucide-react'
+import { motion, useReducedMotion } from 'motion/react'
+import { Clock, Users, ChefHat, ChevronLeft, ListOrdered, Package, Check, ShoppingCart, Sparkles } from 'lucide-react'
 import { useState } from 'react'
 import { useRecipe, useAllProducts } from '@/lib/query'
 import { findIngredientProduct } from '@/lib/ingredientMatch'
@@ -16,6 +16,7 @@ import {
   PopoverContent,
   PopoverFooter,
 } from '@/components/ui/popover'
+import { spring, ease } from '@/lib/motion/tokens'
 
 export default function RecipeDetailClient({ slug }: { slug: string }) {
   const { data: recipe, isLoading: loading, error } = useRecipe(slug)
@@ -42,177 +43,211 @@ export default function RecipeDetailClient({ slug }: { slug: string }) {
       : []
 
   const { data: allProducts = [] } = useAllProducts()
+  const shouldReduce = useReducedMotion()
 
   if (fetchError) {
     return (
-      <>
-        <div className="max-w-4xl mx-auto px-4 py-8 text-center">
-          <p className="text-red-500 text-lg font-medium">{fetchError}</p>
-          <p className="text-sm text-gray-500 mt-1">Give it another try in a moment.</p>
-          <Link href="/recipes" className="text-primary hover:underline mt-4 inline-block">Back to recipes</Link>
+      <motion.div initial={{ opacity: 0, y: 12, filter: 'blur(4px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }} className="max-w-4xl mx-auto px-4 py-16 text-center">
+        <div className="bg-white rounded-[16px] border border-red-100 p-8 shadow-sm">
+          <p className="text-red-600 text-[15px] font-semibold">{fetchError}</p>
+          <p className="text-[13px] text-gray-500 mt-1">Give it another try in a moment.</p>
+          <Link href="/recipes" className="inline-flex mt-5 text-[13px] font-medium text-primary hover:underline">Back to recipes</Link>
         </div>
-      </>
+      </motion.div>
     )
   }
 
   if (loading) {
     return (
-      <>
-        <div className="max-w-4xl mx-auto px-4 py-8">
-          <div className="animate-pulse space-y-6">
-            <div className="h-6 bg-gray-50 rounded w-1/4" />
-            <div className="aspect-[2/1] bg-gray-50 rounded-xl" />
-            <div className="h-10 bg-gray-50 rounded w-1/2" />
-            <div className="h-4 bg-gray-50 rounded w-1/3" />
-            <div className="h-40 bg-gray-50 rounded" />
-          </div>
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="space-y-6">
+          <div className="h-6 bg-gray-100 rounded-full w-1/4 shimmer" />
+          <div className="aspect-[2/1] bg-gray-100 rounded-[20px] shimmer" />
+          <div className="h-8 bg-gray-100 rounded-full w-1/2 shimmer" />
+          <div className="h-4 bg-gray-100 rounded-full w-1/3 shimmer" />
+          <div className="h-40 bg-gray-100 rounded-[16px] shimmer" />
         </div>
-      </>
+      </div>
     )
   }
 
   if (!recipe) {
     return (
-      <>
-        <div className="max-w-4xl mx-auto px-4 py-8 text-center">
-          <p className="text-gray-500 text-lg">Recipe not found.</p>
-          <Link href="/recipes" className="text-primary hover:underline mt-4 inline-block">Back to recipes</Link>
+      <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="max-w-4xl mx-auto px-4 py-16 text-center">
+        <div className="bg-white rounded-[16px] border border-gray-100 p-8">
+          <p className="text-gray-900 text-[15px] font-semibold">Recipe not found.</p>
+          <Link href="/recipes" className="inline-flex mt-4 text-[13px] font-medium text-primary hover:underline">Back to recipes</Link>
         </div>
-      </>
+      </motion.div>
     )
   }
 
   return (
-    <>
-      <div className="max-w-4xl mx-auto px-4 py-16">
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-          <Link href="/recipes" className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-primary mb-8 transition-colors">
-            <ChevronLeft size={16} />
-            All Recipes
-          </Link>
-        </motion.div>
+    <div className="max-w-4xl mx-auto px-4 py-10 sm:py-16">
+      <motion.div initial={shouldReduce ? { opacity: 0 } : { opacity: 0, x: -8, filter: 'blur(4px)' }} animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }} transition={{ ease: ease.apple }}>
+        <Link href="/recipes" className="inline-flex items-center gap-1.5 text-[13px] font-medium text-gray-500 hover:text-primary mb-8 transition-colors group">
+          <motion.span whileHover={{ x: -2 }} className="inline-flex"><ChevronLeft size={16} strokeWidth={2} /></motion.span>
+          <span className="group-hover:underline underline-offset-4">All Recipes</span>
+        </Link>
+      </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="relative aspect-[2/1] rounded-xl overflow-hidden bg-gray-50 mb-8"
-        >
-          {recipe.image ? (
-            <SafeImage src={recipe.image} alt={recipe.title} fill sizes="(max-width: 768px) 100vw, 768px" className="object-cover" />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-gray-200">
-              <ChefHat size={64} />
-            </div>
+      <motion.div
+        initial={shouldReduce ? { opacity: 0 } : { opacity: 0, y: 20, scale: 0.97, filter: 'blur(12px)' }}
+        animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
+        transition={{ duration: 0.7, ease: ease.appleSpring }}
+        className="relative aspect-[2/1] rounded-[20px] overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 mb-8 shadow-[0_8px_32px_rgba(0,0,0,0.08),0_0_0_1px_rgba(0,0,0,0.04)]"
+      >
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-white/20 pointer-events-none z-10" />
+        {recipe.image ? (
+          <SafeImage src={recipe.image} alt={recipe.title} fill sizes="(max-width: 768px) 100vw, 768px" className="object-cover" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-gray-200">
+            <ChefHat size={56} strokeWidth={1.5} />
+          </div>
+        )}
+        {recipe.is_featured && (
+          <motion.div initial={{ opacity: 0, scale: 0.8, y: -8 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ delay: 0.3, type: 'spring', ...spring.appleBounce }} className="absolute top-4 left-4 z-20">
+            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/90 backdrop-blur-md border border-white/30 text-[11px] font-bold text-gray-900 shadow-[0_2px_8px_rgba(0,0,0,0.12)]">
+              <Sparkles size={12} className="text-primary" /> Featured
+            </span>
+          </motion.div>
+        )}
+      </motion.div>
+
+      <motion.div
+        initial="hidden"
+        animate="visible"
+        variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.06, delayChildren: 0.1 } } }}
+        className="mb-10"
+      >
+        <motion.h1 variants={{ hidden: shouldReduce ? { opacity: 0 } : { opacity: 0, y: 16, filter: 'blur(6px)' }, visible: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { ease: ease.apple } } }} className="font-display text-[26px] sm:text-[36px] md:text-[42px] font-bold tracking-tight leading-[1.05] mb-4">{recipe.title}</motion.h1>
+
+        {recipe.description && (
+          <motion.p variants={{ hidden: shouldReduce ? { opacity: 0 } : { opacity: 0, y: 12, filter: 'blur(4px)' }, visible: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { ease: ease.apple } } }} className="text-[15px] text-gray-600 leading-relaxed max-w-[65ch]">{recipe.description}</motion.p>
+        )}
+
+        <motion.div variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.04, delayChildren: 0.15 } } }} className="flex flex-wrap items-center gap-2.5 mt-6">
+          {[
+            recipe.prep_time && { icon: Clock, label: `Prep ${recipe.prep_time}m` },
+            recipe.cook_time && { icon: Clock, label: `Cook ${recipe.cook_time}m` },
+            recipe.servings && { icon: Users, label: `Serves ${recipe.servings}` },
+          ]
+            .filter(Boolean)
+            .map((item: any, i) => (
+              <motion.span
+                key={i}
+                variants={{ hidden: shouldReduce ? { opacity: 0 } : { opacity: 0, scale: 0.9, y: 6 }, visible: { opacity: 1, scale: 1, y: 0, transition: { type: 'spring', ...spring.snap } } }}
+                className="inline-flex items-center gap-1.5 bg-white border border-gray-200/80 px-3 py-1.5 rounded-full text-[12px] font-medium text-gray-700 shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
+              >
+                <item.icon size={14} className="text-primary" strokeWidth={2} />
+                {item.label}
+              </motion.span>
+            ))}
+          {recipe.category && (
+            <motion.span variants={{ hidden: shouldReduce ? { opacity: 0 } : { opacity: 0, scale: 0.9 }, visible: { opacity: 1, scale: 1, transition: { type: 'spring', ...spring.appleBounce } } }} className="inline-flex items-center gap-1.5 bg-primary/10 border border-primary/20 text-primary px-3 py-1.5 rounded-full text-[11px] font-bold tracking-wide capitalize">
+              {recipe.category}
+            </motion.span>
           )}
         </motion.div>
+      </motion.div>
 
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-10">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
+          initial={shouldReduce ? { opacity: 0 } : { opacity: 0, x: -16, filter: 'blur(6px)' }}
+          animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
+          transition={{ delay: 0.25, type: 'spring', ...spring.apple }}
+          className="lg:col-span-2"
         >
-          <h1 className="font-display text-xl sm:text-3xl md:text-4xl font-bold mb-3">{recipe.title}</h1>
-
-          {recipe.description && (
-            <p className="text-gray-500 leading-relaxed mb-6">{recipe.description}</p>
-          )}
-
-          <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 mb-8">
-            {recipe.prep_time && (
-              <span className="flex items-center gap-1.5 bg-gray-50 px-3 py-1.5 rounded-full">
-                <Clock size={16} className="text-primary" />
-                Prep: {recipe.prep_time} min
+          <div className="lg:sticky lg:top-24">
+            <h2 className="font-display text-[18px] sm:text-[20px] font-bold mb-5 flex items-center gap-2.5 tracking-tight">
+              <span className="w-7 h-7 rounded-full bg-primary/10 border border-primary/15 flex items-center justify-center">
+                <ListOrdered size={14} className="text-primary" strokeWidth={2.5} />
               </span>
-            )}
-            {recipe.cook_time && (
-              <span className="flex items-center gap-1.5 bg-gray-50 px-3 py-1.5 rounded-full">
-                <Clock size={16} className="text-primary" />
-                Cook: {recipe.cook_time} min
-              </span>
-            )}
-            {recipe.servings && (
-              <span className="flex items-center gap-1.5 bg-gray-50 px-3 py-1.5 rounded-full">
-                <Users size={16} className="text-primary" />
-                Serves {recipe.servings}
-              </span>
-            )}
-            {recipe.category && (
-              <span className="flex items-center gap-1.5 bg-primary-light text-primary px-3 py-1.5 rounded-full text-xs font-medium">
-                {recipe.category}
-              </span>
+              Ingredients
+            </h2>
+            {ingredients.length === 0 ? (
+              <p className="text-[13px] text-gray-500">No ingredients listed.</p>
+            ) : (
+              <motion.ul
+                initial="hidden"
+                animate="visible"
+                variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.03, delayChildren: 0.3 } } }}
+                className="space-y-1.5"
+              >
+                {ingredients.map((ing, idx) => {
+                  const match = findIngredientProduct(ing, allProducts)
+                  return (
+                    <motion.li
+                      key={idx}
+                      variants={{
+                        hidden: shouldReduce ? { opacity: 0 } : { opacity: 0, x: -8, filter: 'blur(3px)' },
+                        visible: { opacity: 1, x: 0, filter: 'blur(0px)', transition: { duration: 0.3, ease: ease.apple } },
+                      }}
+                      className="group flex items-center gap-3 px-3.5 py-2.5 rounded-[12px] text-[13px] bg-white border border-gray-100/80 hover:border-gray-200 hover:shadow-[0_2px_8px_rgba(0,0,0,0.04)] transition-all"
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary/60 group-hover:bg-primary transition-colors shrink-0" />
+                      <span className="flex flex-wrap items-center gap-x-2 gap-y-1 flex-1 min-w-0 text-gray-700 leading-snug">
+                        <span>{ing}</span>
+                        {match && <IngredientProductPopover product={match} />}
+                      </span>
+                    </motion.li>
+                  )
+                })}
+              </motion.ul>
             )}
           </div>
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 }}
-            className="lg:col-span-2"
-          >
-            <h2 className="font-display text-base sm:text-xl font-bold mb-4 flex items-center gap-2">
-              <ListOrdered size={20} className="text-primary" />
-              Ingredients
-            </h2>
-            {ingredients.length === 0 ? (
-              <p className="text-sm text-gray-500">No ingredients listed.</p>
-            ) : (
-              <ul className="space-y-1">
-                {ingredients.map((ing, idx) => {
-                  const match = findIngredientProduct(ing, allProducts)
-                  return (
-                    <li
-                      key={idx}
-                      className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors hover:bg-gray-50"
-                    >
-                      <span className="flex flex-wrap items-center gap-x-2 gap-y-1 flex-1 min-w-0 text-gray-700">
-                        <span>{ing}</span>
-                        {match && <IngredientProductPopover product={match} />}
-                      </span>
-                    </li>
-                  )
-                })}
-              </ul>
-            )}
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.3 }}
-            className="lg:col-span-3"
-          >
-            <h2 className="font-display text-base sm:text-xl font-bold mb-4 flex items-center gap-2">
-              <ChefHat size={20} className="text-primary" />
-              Method
-            </h2>
-            {methodSteps.length === 0 ? (
-              <p className="text-sm text-gray-500">No method available.</p>
-            ) : (
-              <ol className="space-y-4">
-                {methodSteps.map((step, idx) => (
-                  <li key={idx} className="flex gap-4">
-                    <span className="w-7 h-7 rounded-full bg-primary-light text-primary text-sm font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
-                      {idx + 1}
-                    </span>
-                    <p className="text-gray-600 leading-relaxed">{step}</p>
-                  </li>
-                ))}
-              </ol>
-            )}
-          </motion.div>
-        </div>
+        <motion.div
+          initial={shouldReduce ? { opacity: 0 } : { opacity: 0, x: 16, filter: 'blur(6px)' }}
+          animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
+          transition={{ delay: 0.3, type: 'spring', ...spring.apple }}
+          className="lg:col-span-3"
+        >
+          <h2 className="font-display text-[18px] sm:text-[20px] font-bold mb-5 flex items-center gap-2.5 tracking-tight">
+            <span className="w-7 h-7 rounded-full bg-primary/10 border border-primary/15 flex items-center justify-center">
+              <ChefHat size={14} className="text-primary" strokeWidth={2.5} />
+            </span>
+            Method
+          </h2>
+          {methodSteps.length === 0 ? (
+            <p className="text-[13px] text-gray-500">No method available.</p>
+          ) : (
+            <motion.ol
+              initial="hidden"
+              animate="visible"
+              variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.07, delayChildren: 0.35 } } }}
+              className="space-y-5"
+            >
+              {methodSteps.map((step, idx) => (
+                <motion.li
+                  key={idx}
+                  variants={{
+                    hidden: shouldReduce ? { opacity: 0 } : { opacity: 0, y: 12, filter: 'blur(4px)' },
+                    visible: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { type: 'spring', ...spring.apple } },
+                  }}
+                  className="flex gap-4 group"
+                >
+                  <motion.span
+                    initial={shouldReduce ? undefined : { scale: 0.8 }}
+                    whileInView={{ scale: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ type: 'spring', ...spring.appleBounce, delay: idx * 0.02 }}
+                    className="w-8 h-8 rounded-full bg-gray-900 text-white text-[12px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5 shadow-[0_2px_8px_rgba(0,0,0,0.15)] group-hover:bg-primary group-hover:shadow-[0_2px_8px_rgba(235,101,34,0.3)] transition-all"
+                  >
+                    {idx + 1}
+                  </motion.span>
+                  <p className="text-[14px] text-gray-700 leading-relaxed pt-1 max-w-[65ch]">{step}</p>
+                </motion.li>
+              ))}
+            </motion.ol>
+          )}
+        </motion.div>
       </div>
-    </>
+    </div>
   )
 }
 
-/**
- * Ingredient product pill — opens a small popover with the product's details
- * and a one-tap add-to-cart. Replaces the old behaviour of navigating straight
- * to the product page: the shopper stays on the recipe.
- */
 function IngredientProductPopover({ product }: { product: Product }) {
   const addItem = useCartStore(s => s.addItem)
   const [open, setOpen] = useState(false)
@@ -241,14 +276,12 @@ function IngredientProductPopover({ product }: { product: Product }) {
           <Package size={12} className="flex-shrink-0" />
         )}
         <span className="truncate max-w-[80px]">{product.name}</span>
-        <span className="font-semibold">
-          R{price.toFixed(2)}
-        </span>
+        <span className="font-semibold">R{price.toFixed(2)}</span>
       </PopoverTrigger>
 
-      <PopoverContent className="w-72">
+      <PopoverContent className="w-72 rounded-[16px] border border-gray-100 shadow-[0_8px_32px_rgba(0,0,0,0.12)]">
         <div className="flex gap-2.5">
-          <div className="relative w-11 h-11 rounded-lg bg-gray-50 flex items-center justify-center flex-shrink-0 overflow-hidden">
+          <div className="relative w-11 h-11 rounded-[10px] bg-gray-50 flex items-center justify-center flex-shrink-0 overflow-hidden border border-gray-100">
             {product.image ? (
               <SafeImage src={product.image} alt={product.name} width={44} height={44} className="object-contain" />
             ) : (
@@ -266,29 +299,25 @@ function IngredientProductPopover({ product }: { product: Product }) {
         </div>
 
         {product.description && (
-          <p className="text-[11px] leading-relaxed text-gray-500 line-clamp-3 mt-2">{product.description}</p>
+          <p className="text-[11px] leading-relaxed text-gray-500 line-clamp-3 mt-2.5">{product.description}</p>
         )}
 
-        <PopoverFooter className="mt-2.5">
+        <PopoverFooter className="mt-3">
           <span className="font-bold text-sm text-gray-900 tabular-nums">R{price.toFixed(2)}</span>
-          <button
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.92 }}
             type="button"
             onClick={addToCart}
             aria-label={`Add ${product.name} to cart`}
-            className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold text-white transition-colors ${
-              added ? 'bg-green-600' : 'bg-primary hover:bg-primary-dark'
-            }`}
+            className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-semibold text-white transition-colors shadow-sm ${added ? 'bg-green-600' : 'bg-primary hover:bg-primary-dark'}`}
           >
-            {added ? <Check size={12} /> : <ShoppingCart size={12} />}
+            {added ? <Check size={12} strokeWidth={2.5} /> : <ShoppingCart size={12} strokeWidth={2} />}
             {added ? 'Added' : 'Add'}
-          </button>
+          </motion.button>
         </PopoverFooter>
 
-        <Link
-          href={`/products/${product.slug}`}
-          aria-label={`View ${product.name} product page`}
-          className="mt-2 inline-block text-[11px] text-gray-400 hover:text-primary transition-colors"
-        >
+        <Link href={`/products/${product.slug}`} className="mt-3 inline-flex text-[11px] font-medium text-gray-400 hover:text-primary transition-colors">
           View product page →
         </Link>
       </PopoverContent>

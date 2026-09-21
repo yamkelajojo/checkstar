@@ -5,10 +5,8 @@ import Animated, {
   withSpring,
   withTiming,
   withDelay,
-  withSequence,
-  Easing,
 } from 'react-native-reanimated';
-import { CRASH_SPRING } from '../../theme/curves';
+import { SPRING_APPLE_LIST } from '../../theme/curves';
 import { useReducedMotion } from './useReducedMotion';
 
 interface CrashCascadeInProps {
@@ -18,63 +16,38 @@ interface CrashCascadeInProps {
   style?: any;
 }
 
+/**
+ * CrashCascadeIn — Apple-Polished List Entrance
+ * Each product card arrives with dedicated animation: y + scale + opacity
+ * Stagger capped, total delay reasonable. No element just appears.
+ * Uses Apple list spring: stiffness 350, damping 28 — buttery, not bouncy.
+ */
 export function CrashCascadeIn({ children, index, delay = 0, style }: CrashCascadeInProps) {
   const reduceMotion = useReducedMotion();
   const hasAnimated = useRef(false);
-  const translateX = useSharedValue(reduceMotion ? 0 : 100);
+  const translateY = useSharedValue(reduceMotion ? 0 : 14);
   const opacity = useSharedValue(reduceMotion ? 1 : 0);
-  const scaleX = useSharedValue(1);
-  const scaleY = useSharedValue(1);
+  const scale = useSharedValue(reduceMotion ? 1 : 0.96);
 
   useEffect(() => {
     if (reduceMotion || hasAnimated.current) return;
     hasAnimated.current = true;
 
-    const staggerDelay = 100 + index * 85;
+    // Apple stagger: 40ms per item, capped, feels like App Store
+    const staggerDelay = 40 + index * 38;
     const totalDelay = staggerDelay + delay;
 
-    translateX.value = withDelay(
-      totalDelay,
-      withSpring(0, CRASH_SPRING),
-    );
-
-    opacity.value = withDelay(
-      totalDelay,
-      withTiming(1, { duration: 200 }),
-    );
-
-    scaleX.value = withDelay(
-      totalDelay,
-      withSequence(
-        withTiming(1.08, { duration: 150, easing: Easing.out(Easing.cubic) }),
-        withTiming(0.95, { duration: 100, easing: Easing.in(Easing.cubic) }),
-        withTiming(1, { duration: 200 }),
-      ),
-    );
-
-    scaleY.value = withDelay(
-      totalDelay,
-      withSequence(
-        withTiming(1, { duration: 150 }),
-        withTiming(1.04, { duration: 80, easing: Easing.out(Easing.cubic) }),
-        withTiming(1, { duration: 200 }),
-      ),
-    );
+    translateY.value = withDelay(totalDelay, withSpring(0, SPRING_APPLE_LIST));
+    opacity.value = withDelay(totalDelay, withTiming(1, { duration: 260 }));
+    scale.value = withDelay(totalDelay, withSpring(1, SPRING_APPLE_LIST));
   }, [index, delay, reduceMotion]);
 
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateX: translateX.value },
-      { scale: 1 },
-      { scaleX: scaleX.value },
-      { scaleY: scaleY.value },
-    ],
+    transform: [{ translateY: translateY.value }, { scale: scale.value }],
     opacity: opacity.value,
   }));
 
   return (
-    <Animated.View style={[animatedStyle, style]}>
-      {children}
-    </Animated.View>
+    <Animated.View style={[animatedStyle, style]}>{children}</Animated.View>
   );
 }
