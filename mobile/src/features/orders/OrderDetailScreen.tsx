@@ -1,9 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { View, Text, ScrollView, Pressable, Alert, TextInput } from 'react-native';
 import { Check, RefreshCw, Star } from 'lucide-react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import * as Notifications from 'expo-notifications';
 import { useTheme } from '../../theme';
 import { brand } from '../../theme/colors';
 import { textStyle, fontWeight } from '../../theme/typography';
@@ -31,7 +30,6 @@ import {
   isAwaitingDeliveryConfirmation,
   canReview,
   cancelConflictLabel,
-  orderUpdateBody,
 } from './model';
 import { useAdaptivePoll, createAdaptiveRefetchInterval } from '../../lib/adaptivePoll';
 import { CUSTOMER_STATUS_LABEL as STATUS_LABEL } from '../../lib/status';
@@ -43,25 +41,6 @@ const PAYMENT_LABEL: Record<string, string> = {
   paid: 'Paid',
   refunded: 'Refunded',
 };
-
-function useOrderStatusNotification(status: string | undefined, orderId: number) {
-  const previousStatus = useRef<string | null>(null);
-  useEffect(() => {
-    if (status == null) return;
-    const previous = previousStatus.current;
-    previousStatus.current = status;
-    if (previous != null && previous !== status) {
-      void Notifications.scheduleNotificationAsync({
-        content: {
-          title: copy.orders.updateTitle,
-          body: orderUpdateBody(status),
-          data: { orderId },
-        },
-        trigger: null,
-      });
-    }
-  }, [status, orderId]);
-}
 
 function isPollingStatus(status: string | undefined): boolean {
   return status != null && isActiveOrderStatus(status);
@@ -92,8 +71,6 @@ export function OrderDetailScreen() {
     queryFn: () => fetchOrder(orderId),
     refetchInterval: createAdaptiveRefetchInterval(adaptivePoll),
   });
-
-  useOrderStatusNotification(order?.status, orderId);
 
   const invalidate = () => {
     void queryClient.invalidateQueries({ queryKey: queryKeys.order(orderId) });

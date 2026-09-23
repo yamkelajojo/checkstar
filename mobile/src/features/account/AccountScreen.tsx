@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, FlatList, TextInput, Alert, Platform } from 'react-native';
+import { View, Text, FlatList, TextInput, Alert } from 'react-native';
+import Constants from 'expo-constants';
 import { LogOut, Package, RefreshCw, Settings, ChevronDown, ChevronUp, Sun, Moon, Monitor } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -30,8 +31,22 @@ import { FadeSlideIn } from '../../components/shared/FadeSlideIn';
 import { CrashCascadeIn } from '../../components/shared/CrashCascadeIn';
 
 function getLocalIp(): string {
-  if (Platform.OS === 'android') return '10.0.2.2';
-  return '192.168.1.x';
+  // Auto-detect the Metro bundler host so the suggested URL works on any network.
+  try {
+    const candidates: (string | undefined)[] = [
+      (Constants as any).expoConfig?.hostUri,
+      (Constants as any).expoConfig?.extra?.hostUri,
+      (Constants as any).manifest2?.extra?.expoGo?.debuggerHost,
+      (Constants as any).manifest2?.extra?.expoGo?.developer?.host,
+      (Constants as any).manifest?.hostUri,
+    ];
+    for (const raw of candidates) {
+      if (!raw) continue;
+      const host = String(raw).includes('://') ? new URL(raw).hostname : String(raw).split(':')[0];
+      if (host && host !== 'localhost' && host !== '127.0.0.1' && host.includes('.')) return host;
+    }
+  } catch {}
+  return '192.168.0.108';
 }
 
 export function AccountScreen() {

@@ -54,7 +54,6 @@ export function PhysicsCarousel<T>({
 
   const onMomentumScrollEnd = useCallback(
     (event: any) => {
-      'worklet';
       const offset = event.contentOffset.x;
       const vel = event.velocity?.x ?? 0;
       const maxIndex = Math.max(0, data.length - 1);

@@ -3,7 +3,6 @@ import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
-import * as Notifications from 'expo-notifications';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { useFonts } from 'expo-font';
 import { queryClient } from './src/lib/queryKeys';
@@ -24,15 +23,6 @@ import { TamaguiProvider } from 'tamagui';
 import config from './tamagui.config';
 import type { ServerMergeResult } from './src/features/cart/model';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
-
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: false,
-    shouldSetBadge: false,
-  }),
-});
 
 export const navigationRef = createNavigationContainerRef<RootStackParamList>();
 
@@ -120,20 +110,9 @@ export default function App() {
       console.warn('[delivery] failed to load stores:', e);
     });
 
-    void Notifications.requestPermissionsAsync().catch(() => {
-      // Best-effort; local notifications simply won't display without consent.
-    });
     setUnauthorizedHandler(() => {
       void useSession.getState().signOut();
     });
-
-    const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
-      const orderId = response.notification.request.content.data?.orderId;
-      if (typeof orderId === 'number' && navigationRef.isReady()) {
-        navigationRef.navigate('OrderDetail', { orderId, fromNotification: true });
-      }
-    });
-    return () => subscription.remove();
   }, []);
 
   return (

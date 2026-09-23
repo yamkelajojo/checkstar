@@ -4,7 +4,6 @@ module.exports = function (api) {
     presets: ['babel-preset-expo'],
     plugins: [
       '@tamagui/babel-plugin',
-      'react-native-reanimated/plugin',
     ],
   };
 };

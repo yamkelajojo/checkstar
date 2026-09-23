@@ -158,7 +158,7 @@ export function TabScreenWrapper({
           ghostStyle,
         ]}
       >
-        <View style={{ flex: 1, opacity: 0.5 }}>{children}</View>
+        {null}
       </Animated.View>
 
       {/* Main content */}

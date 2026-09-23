@@ -95,7 +95,8 @@ describe('RiderHomeScreen', () => {
   it('toggles availability, calls the API and flips the label', async () => {
     (toggleAvailability as jest.Mock).mockResolvedValue({ message: 'ok' });
     await render(<RiderHomeScreen />);
-    expect(screen.getByText(copy.rider.offline)).toBeTruthy();
+    // Initial state: rider is unavailable, button shows goOnline
+    expect(screen.getByText(copy.rider.goOnline)).toBeTruthy();
     await fireEvent.press(screen.getByRole('button', { name: copy.rider.goOnline }));
     expect(toggleAvailability).toHaveBeenCalledTimes(1);
     expect(mockInvalidate).toHaveBeenCalled();
