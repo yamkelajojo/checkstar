@@ -11,9 +11,11 @@ import { semanticSpacing } from '../../theme/spacing';
 import { useTheme } from '../../theme';
 import { brand } from '../../theme/colors';
 import type { ProductVO } from '../../lib/product';
+import { getGridMetrics } from '../../lib/grid';
 
 export function RecommendationsSection() {
   const theme = useTheme();
+  const { columnWidth, screenPadding, gap } = getGridMetrics();
   const { data, isLoading } = useQuery({ queryKey: queryKeys.recommendations, queryFn: fetchRecommendations, staleTime: 5 * 60 * 1000 });
   const recommendations = (data?.recommendations ?? []) as ProductVO[];
   const isPersonalised = (data as any)?.isPersonalised ?? false;
@@ -27,7 +29,11 @@ export function RecommendationsSection() {
             <Text style={{ ...textStyle.h3, color: theme.colors.text.primary, letterSpacing: -0.2, fontWeight: fontWeight.bold }}>Picked for You</Text>
           </View>
         </FadeSlideIn>
-        <FlatList horizontal data={[1, 2, 3, 4]} renderItem={({ index }) => <ProductCardSkeleton index={index} />} keyExtractor={(_, i) => String(i)} showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: semanticSpacing.screenPadding, gap: semanticSpacing.sm }} />
+        <FlatList horizontal data={[1, 2, 3, 4]} renderItem={({ index }) => (
+          <View style={{ width: columnWidth }}>
+            <ProductCardSkeleton index={index} />
+          </View>
+        )} keyExtractor={(_, i) => String(i)} showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: screenPadding, gap }} />
       </View>
     );
   }
@@ -51,13 +57,15 @@ export function RecommendationsSection() {
           horizontal
           data={recommendations}
           renderItem={({ item, index }) => (
-            <CrashCascadeIn index={index}>
-              <ProductCard product={item} source="recommendation" />
-            </CrashCascadeIn>
+            <View style={{ width: columnWidth }}>
+              <CrashCascadeIn index={index}>
+                <ProductCard product={item} source="recommendation" />
+              </CrashCascadeIn>
+            </View>
           )}
           keyExtractor={(item) => String(item.id)}
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: semanticSpacing.screenPadding, gap: semanticSpacing.sm }}
+          contentContainerStyle={{ paddingHorizontal: screenPadding, gap }}
         />
       </View>
     </FadeSlideIn>
