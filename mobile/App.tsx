@@ -26,6 +26,18 @@ import { View, ActivityIndicator, StyleSheet } from 'react-native';
 
 export const navigationRef = createNavigationContainerRef<RootStackParamList>();
 
+// Wrap console.error to catch all errors in Metro logs
+if (__DEV__) {
+  const originalConsoleError = console.error;
+  console.error = (...args) => {
+    originalConsoleError.apply(console, ['[CONSOLE.ERROR]', ...args]);
+  };
+  const originalConsoleWarn = console.warn;
+  console.warn = (...args) => {
+    originalConsoleWarn.apply(console, ['[CONSOLE.WARN]', ...args]);
+  };
+}
+
 // Font loading wrapper - keeps hook order stable in main App
 function FontLoader({ children }: { children: React.ReactNode }) {
   const [fontsLoaded, fontError] = useFonts({

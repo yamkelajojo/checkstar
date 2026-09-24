@@ -295,7 +295,7 @@ function HeroBackground() {
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/images/hero-checkstar.jpg"
+            src="/images/home-page-hero-bg-wallpaper.png"
             alt=""
             className="absolute inset-0 w-full h-full object-cover"
             onError={() => setImageFailed(true)}

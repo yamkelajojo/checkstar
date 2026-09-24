@@ -1,0 +1,15 @@
+Starting project at C:\Users\Acer\Documents\Software\2026\checkstar\mobile
+Starting Metro Bundler
+
+warning: Bundler cache is empty, rebuilding (this may take a minute)
+Waiting on http://localhost:8081
+
+Logs for your project will appear below.
+|   [tamagui] skipped loading 2 module, see: https://tamagui.dev/docs/intro/errors#warning-001
+|   [tamagui] skipped loading 2 module, see: https://tamagui.dev/docs/intro/errors#warning-001
+|   [tamagui] skipped loading 2 module, see: https://tamagui.dev/docs/intro/errors#warning-001
+|   [tamagui] skipped loading 2 module, see: https://tamagui.dev/docs/intro/errors#warning-001
+|   [tamagui] skipped loading 2 module, see: https://tamagui.dev/docs/intro/errors#warning-001
+|   [tamagui] skipped loading 2 module, see: https://tamagui.dev/docs/intro/errors#warning-001
+iOS Bundled 90499ms index.ts (3842 modules)
+iOS Bundled 4882ms index.ts (1 module)

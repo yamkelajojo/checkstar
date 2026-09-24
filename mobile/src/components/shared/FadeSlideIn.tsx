@@ -94,7 +94,7 @@ export function FadeSlideIn({
 
     progress.value = withDelay(effectiveDelay, withSpring(1, APPLE_ENTRANCE_SPRING));
     hasAnimated.current = true;
-  }, [reduceMotion, delay, once, progress, triggerKey, tabTransition.isActive, tabTransition.direction, disableTabCoordination]);
+  }, [reduceMotion, delay, once, triggerKey, tabTransition.isActive, tabTransition.direction, disableTabCoordination]);
 
   const animatedStyle = useAnimatedStyle(() => {
     // Direction-aware: subtle x translation based on tab direction when active transition
@@ -110,6 +110,11 @@ export function FadeSlideIn({
       ],
     };
   });
+
+  // When reduceMotion is enabled, render children directly without animation wrapper
+  if (reduceMotion) {
+    return <>{children}</>;
+  }
 
   return (
     <Animated.View style={[style, animatedStyle]}>{children}</Animated.View>
