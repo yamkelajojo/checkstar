@@ -5,10 +5,19 @@ export type PaymentStatus = 'pending' | 'paid' | 'refunded'
 
 export interface User {
   id: number; name: string; email: string; role: UserRole; phone: string | null; avatar: string | null; is_active: boolean
+  /** Owners: the store they own (backend loads `store` on /auth/me). */
+  store?: Store | null
+  /** Managers/logistics: their store assignment(s) (backend loads `storeStaff.store`). */
+  storeStaff?: Array<{ id: number; store_id: number; role: string; store?: Store | null }> | null
+}
+
+/** The store the logged-in user operates from, if any. */
+export function resolveUserStore(user: Pick<User, 'store' | 'storeStaff'> | null | undefined): Store | null {
+  return user?.store ?? user?.storeStaff?.find((s) => s.store)?.store ?? user?.storeStaff?.[0]?.store ?? null
 }
 export interface Store { id: number; name: string; slug: string; address: string; city: string; phone: string; email: string | null; latitude: number; longitude: number; delivery_radius_km: number; trading_hours: Record<string, string>; logo: string | null; image: string | null; is_active: boolean }
 export interface Category { id: number; name: string; slug: string; description: string | null; image: string | null; icon: string | null; sort_order: number }
-export interface Product { id: number; category_id: number; name: string; slug: string; description: string | null; image: string | null; images: string[] | null; unit: string; price: number; sale_price: number | null; effective_price?: number | null; tags: string[] | null; is_featured: boolean; category?: Category }
+export interface Product { id: number; category_id: number; name: string; slug: string; description: string | null; image: string | null; images: string[] | null; unit: string; price: number; sale_price: number | null; effective_price?: number | null; special_price?: number | null; tags: string[] | null; is_featured: boolean; category?: Category }
 export interface StoreProduct { id: number; store_id: number; product_id: number; stock_quantity: number; is_available: boolean; product?: Product }
 export interface CartItem { product: Product; quantity: number; store_product_id?: number }
 export interface UserAddress { id: number; user_id: number; label: string; contact_name: string | null; contact_phone: string | null; address: string; latitude: number; longitude: number; is_default: boolean; created_at?: string; updated_at?: string }
@@ -16,10 +25,26 @@ export interface Order { id: number; order_number: string; status: OrderStatus; 
 export interface OrderItem { id: number; product_id: number; quantity: number; unit_price: number; total_price: number; product_snapshot: { name: string; image: string; unit: string; slug: string } }
 export interface Rider { id: number; user_id: number; store_id: number | null; is_available: boolean; vehicle_type: string | null; max_radius_km: number; total_deliveries: number; average_rating: number; xp: number; level: number; user?: User }
 export interface OrderActivityLog { id: number; order_id: number; user_id: number | null; event_type: string; old_status: string | null; new_status: string | null; metadata: Record<string, unknown>; created_at: string }
-export interface Special { id: number; title: string; slug: string; description: string | null; banner_image: string | null; start_date: string; end_date: string; products?: Product[] }
+export interface Special {
+  id: number
+  title: string
+  slug: string
+  description: string | null
+  banner_image: string | null
+  start_date: string
+  end_date: string
+  is_active?: boolean
+  /** null/undefined = chain-wide (developer-created); otherwise owning store. */
+  store_id?: number | null
+  store?: Store | null
+  banner?: { id: number; name: string; status: 'draft' | 'published' } | null
+  /** Public /specials/{slug} only: is_active and inside the date window right now. */
+  in_window?: boolean
+  products?: Product[]
+}
 export interface Recipe { id: number; title: string; slug: string; description: string | null; ingredients: string | string[]; method: string; image: string | null; category: string | null; prep_time: number | null; cook_time: number | null; servings: number | null; is_featured?: boolean }
-export interface CommunityPost { id: number; title: string; slug: string; content: string | null; image: string | null; category: 'gallery' | 'csr'; event_date: string | null }
-export interface CareerListing { id: number; title: string; slug: string; description: string; requirements: string | null; location: string; type: string; department: string | null; closes_at: string | null }
+export interface CommunityPost { id: number; title: string; slug: string; content: string | null; image: string | null; category: 'gallery' | 'csr'; event_date: string | null; is_published?: boolean }
+export interface CareerListing { id: number; title: string; slug: string; description: string; requirements: string | null; location: string; type: string; department: string | null; closes_at: string | null; is_active?: boolean }
 export interface Paginated<T> { current_page: number; data: T[]; per_page: number; total: number; last_page: number }
 export type DispatchStatus = 'assigned' | 'retrying' | 'cancelled' | 'pickup'
 export interface Dispatch {
@@ -66,4 +91,7 @@ export interface Banner {
   end_date?: string | null
   store?: Store
   created_at: string
+  /** Set when this banner fronts a sale; the slide CTA points at the sale page. */
+  special_id?: number | null
+  special?: { id: number; slug: string; title: string } | null
 }

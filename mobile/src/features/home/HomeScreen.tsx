@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { View, Text, FlatList, ScrollView, RefreshControl } from 'react-native';
-import { PhysicsCarousel } from '../../components/shared/PhysicsCarousel';
+import { View, Text, ScrollView, RefreshControl, FlatList } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Search, MapPin, Store, RefreshCw } from 'lucide-react-native';
+import { Search, MapPin, Store, Tag } from 'lucide-react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -10,8 +9,10 @@ import { useTheme } from '../../theme';
 import { brand, heroGradient } from '../../theme/colors';
 import { textStyle, fontWeight } from '../../theme/typography';
 import { semanticSpacing, semanticRadius } from '../../theme/spacing';
-import { useCategories, useProducts, useSpecials, useTrendingProducts, usePopularProducts, useNewArrivals } from '../catalog/hooks';
-import { ProductCard } from '../../components/shared/ProductCard';
+import { useCategories, useSpecials, useTrendingProducts, usePopularProducts, useNewArrivals } from '../catalog/hooks';
+import { ProductCarousel } from '../../components/shared/ProductCarousel';
+import { ProductGrid } from '../../components/shared/ProductGrid';
+import { SectionHeader } from '../../components/shared/SectionHeader';
 import { CollectionPill } from '../../components/shared/CollectionPill';
 import { TactilePressable } from '../../components/shared/TactilePressable';
 import { ProductCardSkeleton } from '../../components/shared/ProductCardSkeleton';
@@ -20,12 +21,11 @@ import { FadeEdgeScroll } from '../../components/shared/FadeEdgeScroll';
 import { useDeliveryStore } from '../../stores/deliveryStore';
 import { useCart } from '../cart/store';
 import { EmptyState } from '../../components/shared/EmptyState';
-import { Tag } from 'lucide-react-native';
 import type { RootStackParamList } from '../../navigation/types';
 import { Logo } from '../../components/shared/Logo';
 import { useStoreSelection } from '../catalog/storeSelection';
 import { useTopSafeArea } from '../../components/shared/ScreenHeader';
-import type { ProductVO, StoreAvailabilityVO } from '../../lib/product';
+import type { ProductVO } from '../../lib/product';
 import { findStoreAvailability } from '../../lib/product';
 import { ErrorBoundary } from '../../components/shared/ErrorBoundary';
 import { FREE_DELIVERY_THRESHOLD_CENTS } from '../../lib/constants';
@@ -123,7 +123,7 @@ export function HomeScreen() {
         {/* Header: CheckStar logo + search + delivery Store */}
         <View style={{ paddingHorizontal: semanticSpacing.screenPadding, paddingTop: topInset, gap: semanticSpacing.xs }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <FadeSlideIn>
+            <FadeSlideIn delay={60}>
               <Logo variant="lockup" size={22} tone={theme.name} />
             </FadeSlideIn>
             <TactilePressable
@@ -167,7 +167,7 @@ export function HomeScreen() {
         </View>
       </LinearGradient>
 
-      {/* First-run / unseeded catalogue: one coherent empty state with Apple polish */}
+      {/* First-run / unseeded catalogue: one coherent empty state */}
       {!trendingLoading && trending.length === 0 && specials.length === 0 && categories.length === 0 && banners.length === 0 ? (
         <FadeSlideIn delay={120} style={{ marginTop: semanticSpacing.sectionGap }}>
           <EmptyState
@@ -178,46 +178,39 @@ export function HomeScreen() {
         </FadeSlideIn>
       ) : (
         <>
-          {/* Banner carousel — dedicated entrance */}
-          <FadeSlideIn delay={80} distance={12}>
+          {/* Banner carousel */}
+          <FadeSlideIn delay={80}>
             <BannerCarousel banners={banners} />
           </FadeSlideIn>
 
-          {/* Picked for You recommendations — dedicated */}
-          <FadeSlideIn delay={120} distance={10}>
+          {/* Picked for You recommendations */}
+          <FadeSlideIn delay={120}>
             <RecommendationsSection />
           </FadeSlideIn>
 
-          {/* Specials carousel — Apple list entrance */}
+          {/* Best Deals — the current sale products, as a product rail */}
           <ErrorBoundary fallback={<View style={{ marginTop: semanticSpacing.lg, paddingHorizontal: semanticSpacing.screenPadding }}>
             <View style={{ backgroundColor: theme.colors.surface.elevated, borderRadius: 16, padding: 20, alignItems: 'center', borderWidth: 1, borderColor: theme.colors.border.subtle }}>
               <Text style={{ color: theme.colors.text.secondary, fontSize: 13, fontWeight: '500' }}>Specials unavailable</Text>
             </View>
           </View>}>
-            <FadeSlideIn delay={160} distance={10} style={{ marginTop: semanticSpacing.lg }}>
-              <SectionTitle title="Best Deals" icon={<Tag size={16} color={brand.orange} />} />
+            <FadeSlideIn delay={160} style={{ marginTop: semanticSpacing.lg }}>
+              <SectionHeader title="Best Deals" icon={<Tag size={16} color={brand.orange} />} />
               {specials.length > 0 ? (
-                <PhysicsCarousel
+                <ProductCarousel
                   data={specials}
-                  keyExtractor={(p) => String(p.id)}
-                  snapInterval={200}
-                  contentOffset={semanticSpacing.screenPadding}
-                  showsHorizontalScrollIndicator={false}
-                  renderItem={({ item, index }) => (
-                    <View style={{ marginRight: index === specials.length - 1 ? 0 : 0 }}>
-                      <ProductCard product={item} storeProductId={getStoreProductId(item)} source="home" />
-                    </View>
-                  )}
+                  getStoreProductId={getStoreProductId}
+                  source="home"
                 />
               ) : (
-                <Text style={{ color: theme.colors.text.secondary, paddingHorizontal: semanticSpacing.screenPadding, fontSize: 13 }}>No Specials right now — new deals land every week.</Text>
+                <Text style={{ color: theme.colors.text.secondary, paddingHorizontal: semanticSpacing.screenPadding, fontSize: 13 }}>No specials right now — new deals land every week.</Text>
               )}
             </FadeSlideIn>
           </ErrorBoundary>
 
-          {/* Categories — dedicated with fade edge */}
-          <FadeSlideIn delay={200} distance={10} style={{ marginTop: semanticSpacing.xl }}>
-            <SectionTitle title="Shop by category" icon={<Store size={16} color={brand.orange} />} />
+          {/* Categories — with soft edge fades */}
+          <FadeSlideIn delay={200} style={{ marginTop: semanticSpacing.xl }}>
+            <SectionHeader title="Shop by category" icon={<Store size={16} color={brand.orange} />} />
             <FadeEdgeScroll
               fadeWidth={32}
               contentPaddingLeft={semanticSpacing.screenPadding}
@@ -225,78 +218,60 @@ export function HomeScreen() {
               backgroundColor={theme.colors.background.primary}
             >
               {categories.map((c, idx) => (
-                <FadeSlideIn key={c.id} delay={idx * 20} distance={8} scaleFrom={0.96}>
+                <FadeSlideIn key={c.id} delay={idx * 20} distance={8}>
                   <CollectionPill label={c.name} onPress={() => navigation.navigate('Tabs', { screen: 'Browse', params: { category: c.slug } })} />
                 </FadeSlideIn>
               ))}
             </FadeEdgeScroll>
           </FadeSlideIn>
 
-          {/* Trending Now — horizontal carousel with Apple polish */}
+          {/* Trending Now — product rail (same card size as the grid) */}
           {trending.length > 0 && (
-            <FadeSlideIn delay={240} distance={12} style={{ marginTop: semanticSpacing.xl }}>
-              <SectionTitle title="Trending Now" icon={<Tag size={16} color={brand.orange} />} />
-              <PhysicsCarousel
+            <FadeSlideIn delay={240} style={{ marginTop: semanticSpacing.xl }}>
+              <SectionHeader title="Trending Now" icon={<Tag size={16} color={brand.orange} />} />
+              <ProductCarousel
                 data={trending}
-                keyExtractor={(p) => String(p.id)}
-                snapInterval={200}
-                contentOffset={semanticSpacing.screenPadding}
-                showsHorizontalScrollIndicator={false}
-                renderItem={({ item }) => <ProductCard product={item} storeProductId={getStoreProductId(item)} source="home" />}
+                getStoreProductId={getStoreProductId}
+                source="home"
               />
             </FadeSlideIn>
           )}
 
-          {/* Popular — dedicated */}
+          {/* Popular — product rail */}
           {popular.length > 0 && (
-            <FadeSlideIn delay={280} distance={12} style={{ marginTop: semanticSpacing.xl }}>
-              <SectionTitle title="Popular" icon={<Tag size={16} color={brand.orange} />} />
-              <PhysicsCarousel
+            <FadeSlideIn delay={280} style={{ marginTop: semanticSpacing.xl }}>
+              <SectionHeader title="Popular" icon={<Tag size={16} color={brand.orange} />} />
+              <ProductCarousel
                 data={popular}
-                keyExtractor={(p) => String(p.id)}
-                snapInterval={200}
-                contentOffset={semanticSpacing.screenPadding}
-                showsHorizontalScrollIndicator={false}
-                renderItem={({ item }) => <ProductCard product={item} storeProductId={getStoreProductId(item)} source="home" />}
+                getStoreProductId={getStoreProductId}
+                source="home"
               />
             </FadeSlideIn>
           )}
 
-          {/* New Arrivals — 2-col grid with staggered Apple entrance */}
+          {/* New Arrivals — the canonical 2-col grid */}
           {newArrivals.length > 0 && (
-            <FadeSlideIn delay={320} distance={12} style={{ marginTop: semanticSpacing.xl }}>
-              <View style={{ paddingHorizontal: semanticSpacing.screenPadding }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: semanticSpacing.inlineGap, marginBottom: semanticSpacing.md }}>
-                  <Text style={{ ...textStyle.h3, fontWeight: fontWeight.bold, color: theme.colors.text.primary, letterSpacing: -0.3 }}>New Arrivals</Text>
-                  <View style={{ backgroundColor: brand.orange + '15', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2 }}>
+            <FadeSlideIn delay={320} style={{ marginTop: semanticSpacing.xl }}>
+              <SectionHeader
+                title="New Arrivals"
+                trailing={
+                  <View style={{ backgroundColor: brand.orange + '15', borderRadius: semanticRadius.smallControl, paddingHorizontal: 8, paddingVertical: 2 }}>
                     <Text style={{ fontSize: 10, fontWeight: '700', color: brand.orange, letterSpacing: 0.5 }}>NEW</Text>
                   </View>
-                </View>
-              </View>
-              <FlatList
+                }
+              />
+              <ProductGrid
                 data={newArrivals}
-                keyExtractor={(p) => String(p.id)}
-                numColumns={2}
-                columnWrapperStyle={{ gap: semanticSpacing.inlineGap, paddingHorizontal: semanticSpacing.screenPadding }}
-                contentContainerStyle={{ gap: semanticSpacing.inlineGap, paddingVertical: semanticSpacing.xs, paddingBottom: semanticSpacing.xl }}
-                showsVerticalScrollIndicator={false}
-                renderItem={({ item, index }) => (
-                  <FadeSlideIn delay={index * 38} distance={14} scaleFrom={0.96}>
-                    <ProductCard product={item} storeProductId={getStoreProductId(item)} source="home" />
-                  </FadeSlideIn>
-                )}
+                getStoreProductId={getStoreProductId}
+                source="home"
               />
             </FadeSlideIn>
           )}
 
-          {/* Featured grid — fallback when trending is loading with shimmer */}
+          {/* Trending Now — loading shimmer */}
           {trendingLoading && (
             <FadeSlideIn delay={200} style={{ marginTop: semanticSpacing.xl }}>
-              <View style={{ paddingHorizontal: semanticSpacing.screenPadding }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: semanticSpacing.inlineGap, marginBottom: semanticSpacing.md }}>
-                  <Text style={{ ...textStyle.h3, fontWeight: fontWeight.bold, color: theme.colors.text.primary }}>Trending Now</Text>
-                </View>
-              </View>
+              <SectionHeader title="Trending Now" />
               <View style={{ flexDirection: 'row', gap: semanticSpacing.inlineGap, paddingHorizontal: semanticSpacing.screenPadding }}>
                 <ProductCardSkeleton />
                 <ProductCardSkeleton />
@@ -306,20 +281,6 @@ export function HomeScreen() {
         </>
       )}
     </ScrollView>
-  );
-}
-
-function SectionTitle({ title, icon }: { title: string; icon: React.ReactNode | null }) {
-  const theme = useTheme();
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: semanticSpacing.sm, paddingHorizontal: semanticSpacing.screenPadding, marginBottom: semanticSpacing.md }}>
-      {icon ? (
-        <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: theme.colors.surface.elevated, borderWidth: 1, borderColor: theme.colors.border.subtle, alignItems: 'center', justifyContent: 'center' }}>
-          {icon}
-        </View>
-      ) : null}
-      <Text style={{ ...textStyle.h3, fontWeight: fontWeight.bold, color: theme.colors.text.primary, letterSpacing: -0.3 }}>{title}</Text>
-    </View>
   );
 }
 

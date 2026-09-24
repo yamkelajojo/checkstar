@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, Text, FlatList, TextInput, Pressable } from 'react-native';
+import { View, Text, TextInput, Pressable } from 'react-native';
 import { Search, SearchX, History, ChevronLeft } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../../theme';
@@ -8,7 +8,7 @@ import { fontWeight, textStyle } from '../../theme/typography';
 import { semanticSpacing, semanticRadius } from '../../theme/spacing';
 import { useInfiniteProducts } from '../catalog/hooks';
 import { useDeliveryStore } from '../../stores/deliveryStore';
-import { ProductCard } from '../../components/shared/ProductCard';
+import { ProductGrid } from '../../components/shared/ProductGrid';
 import { CollectionPill } from '../../components/shared/CollectionPill';
 import { EmptyState } from '../../components/shared/EmptyState';
 import { SkeletonCard } from '../../components/shared/SkeletonCard';
@@ -107,6 +107,8 @@ export function SearchScreen() {
               justifyContent: 'center',
             }}
             hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel="Back"
           >
             <ChevronLeft size={18} color={theme.colors.text.primary} strokeWidth={2.2} />
           </Pressable>
@@ -137,6 +139,7 @@ export function SearchScreen() {
               onChangeText={setTerm}
               placeholder="Search for products"
               placeholderTextColor={theme.colors.text.tertiary}
+              accessibilityLabel="Search for products"
               style={{ flex: 1, color: theme.colors.text.primary, fontSize: 13, letterSpacing: -0.1 }}
             />
             {term.length > 0 ? (
@@ -171,6 +174,7 @@ export function SearchScreen() {
                         haptic.selection();
                         setTerm(r);
                       }}
+                      accessibilityRole="button"
                       style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8, paddingHorizontal: 12, backgroundColor: theme.colors.surface.primary, borderRadius: 12, borderWidth: 1, borderColor: theme.colors.border.subtle }}
                     >
                       <Search size={12} color={theme.colors.text.tertiary} />
@@ -187,7 +191,7 @@ export function SearchScreen() {
               <Text style={{ fontSize: 10, color: theme.colors.text.tertiary, textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: '600' }}>Browse categories</Text>
               <FadeEdgeScroll fadeWidth={24} contentPaddingLeft={0} contentPaddingRight={16} backgroundColor={theme.colors.background.primary}>
                 {categories.map((c, idx) => (
-                  <FadeSlideIn key={c.id} delay={160 + idx * 20} distance={8} initialScale={0.96}>
+                  <FadeSlideIn key={c.id} delay={160 + idx * 20} distance={8}>
                     <CollectionPill label={c.name} onPress={() => { trackCategoryFilterTap(c.id, c.name, 0); setTerm(c.name); haptic.selection(); }} />
                   </FadeSlideIn>
                 ))}
@@ -211,18 +215,15 @@ export function SearchScreen() {
           <EmptyState icon={SearchX} title={`No matches for "${debounced}"`} caption="Try a different search — check spelling or browse categories." />
         </FadeSlideIn>
       ) : (
-        <FlatList
+        <ProductGrid
           data={results}
-          keyExtractor={(p) => String(p.id)}
-          numColumns={2}
-          columnWrapperStyle={{ gap: semanticSpacing.sm, paddingHorizontal: semanticSpacing.screenPadding }}
-          contentContainerStyle={{ gap: semanticSpacing.sm, paddingVertical: semanticSpacing.md, paddingBottom: 20 }}
+          getStoreProductId={getStoreProductId}
+          source="search"
           onEndReached={handleLoadMore}
           onEndReachedThreshold={0.5}
-          showsVerticalScrollIndicator={false}
           ListHeaderComponent={
             <FadeSlideIn delay={80} distance={8}>
-              <Pressable onPress={() => { haptic.selection(); recordSearch(); }} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: semanticSpacing.screenPadding, paddingBottom: 8 }}>
+              <Pressable onPress={() => { haptic.selection(); recordSearch(); }} accessibilityRole="button" style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: semanticSpacing.screenPadding, paddingBottom: semanticSpacing.xs }}>
                 <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: brand.orange }} />
                 <Text style={{ color: brand.orange, fontSize: 11, fontWeight: '600', letterSpacing: 0.2 }}>{results.length} results · save search</Text>
               </Pressable>
@@ -231,17 +232,12 @@ export function SearchScreen() {
           ListFooterComponent={
             isFetchingNextPage ? (
               <FadeSlideIn delay={0} distance={6}>
-                <View style={{ padding: 16, alignItems: 'center' }}>
+                <View style={{ padding: semanticSpacing.md, alignItems: 'center' }}>
                   <SkeletonCard width={120} height={16} orientation="carousel" />
                 </View>
               </FadeSlideIn>
             ) : null
           }
-          renderItem={({ item, index }) => (
-            <CrashCascadeIn index={index}>
-              <ProductCard product={item} storeProductId={getStoreProductId(item)} />
-            </CrashCascadeIn>
-          )}
         />
       )}
     </View>

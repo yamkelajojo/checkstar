@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { Easing } from 'react-native';
 import { useSession } from '../stores/session';
 import { useNavigationSignal } from '../stores/navigationSignal';
 import { storage, STORAGE_KEYS } from '../lib/storage';
@@ -22,13 +21,6 @@ import { CustomerTabs } from './CustomerTabs';
 import type { RootStackParamList } from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
-
-/**
- * Apple iOS 18 polish — EASE_APPLE [0.16,1,0.3,1] / 280ms
- * Same curve used in tabTransitions.ts for 1:1 cohesion.
- * Slide from right for pushes, slide from bottom for modals, fade for onboarding.
- */
-const EASE_APPLE = Easing.bezier(0.16, 1, 0.3, 1) as any;
 
 export function RootNavigator() {
   const status = useSession((s) => s.status);
@@ -71,9 +63,6 @@ export function RootNavigator() {
         gestureEnabled: true,
         fullScreenGestureEnabled: true,
         contentStyle: { backgroundColor: '#FFFEFB' },
-        // Apple spring easing — same as tabTransitions
-        // @ts-ignore — Easing prop exists in native-stack
-        easing: EASE_APPLE,
       }}
     >
       {showOnboarding ? (

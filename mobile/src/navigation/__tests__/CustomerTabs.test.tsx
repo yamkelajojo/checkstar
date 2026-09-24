@@ -113,29 +113,4 @@ describe('CustomerTabs', () => {
     expect(getTabDirection(3, 1)).toBe(-1);
     expect(getTabDirection(4, 0)).toBe(-1);
   });
-
-  it('motion blur is subtle for typical swipes', () => {
-    const { getMotionBlurIntensity, getMotionBlurStyle } = require('../tabTransitions');
-    const intensity = getMotionBlurIntensity(0.3, 0.2);
-    const style = getMotionBlurStyle(intensity);
-    expect(style.scaleX).toBeLessThanOrEqual(1.03);
-    expect(style.opacity).toBeGreaterThanOrEqual(0.9);
-  });
-
-  it('stagger delays are capped and increasing', () => {
-    const { getStaggerDelayForContent } = require('../tabTransitions');
-    const d0 = getStaggerDelayForContent(0, true);
-    const d5 = getStaggerDelayForContent(5, true);
-    const d20 = getStaggerDelayForContent(20, true);
-    expect(d5).toBeGreaterThan(d0);
-    expect(d20).toBeLessThanOrEqual(300);
-  });
-
-  it('tab transition config is snappy (Apple 280ms)', () => {
-    const { getTabTransitionConfig } = require('../tabTransitions');
-    const config = getTabTransitionConfig(1, 390);
-    expect(config.duration).toBe(280);
-    expect(config.spring.stiffness).toBe(400);
-    expect(config.spring.damping).toBe(30);
-  });
 });

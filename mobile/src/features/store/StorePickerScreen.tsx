@@ -59,6 +59,9 @@ export function StorePickerScreen() {
                 <TactilePressable
                   onPress={() => handleSelect(item)}
                   haptic="selection"
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: isFulfillmentStore }}
+                  accessibilityLabel={`Select ${item.name} as delivery store`}
                   style={{
                     flexDirection: 'row',
                     alignItems: 'center',

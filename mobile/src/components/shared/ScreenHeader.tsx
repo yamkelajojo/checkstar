@@ -14,16 +14,16 @@ export function useTopSafeArea(base = 0): number {
 }
 
 /**
- * Canonical large-title header — Apple-polished
- * Every tab screen renders same typography, padding, safe-area offset
- * Now with y12 blur4 entrance, tracking -0.3, coordinated with tab transition
+ * Canonical large-title header.
+ * Every tab screen renders the same typography, padding and safe-area
+ * offset, with one subtle fade entrance.
  */
 export function ScreenHeader({ title, subtitle }: { title: string; subtitle?: string }) {
   const theme = useTheme();
   const top = useTopSafeArea(semanticSpacing.sm);
 
   return (
-    <FadeSlideIn delay={60} distance={12} initialScale={0.98}>
+    <FadeSlideIn delay={60} distance={12}>
       <View style={{ paddingTop: top, paddingHorizontal: semanticSpacing.screenPadding, gap: 2 }}>
         <Text
           accessibilityRole="header"

@@ -18,26 +18,29 @@ const Easing = {
   step: () => (t) => t,
 };
 
-// Animated component that just renders children wrapped in a View
-function AnimatedView(props) {
-  return props.children;
-}
+// Animated components render the real RN component, forwarding all props.
+// This matters for accessibility: accessibilityRole/Label/State must reach
+// the rendered element so tests (and screen readers) can see them.
+// Styles produced by the mocked useAnimatedStyle are plain objects, which
+// RN accepts directly.
+const React = require('react');
+const RN = require('react-native');
 
-function passthrough(props) {
-  return props.children ?? null;
+function animatedHost(Component) {
+  return function AnimatedComponent(props) {
+    return React.createElement(Component, props);
+  };
 }
 
 const Animated = Object.assign(
-  function AnimatedComponent(props) {
-    return passthrough(props);
-  },
+  animatedHost(RN.View),
   {
-    View: function AnimatedView(props) { return passthrough(props); },
-    Text: function AnimatedText(props) { return passthrough(props); },
-    Image: function AnimatedImage(props) { return passthrough(props); },
-    ScrollView: function AnimatedScrollView(props) { return passthrough(props); },
-    FlatList: function AnimatedFlatList(props) { return passthrough(props); },
-    Pressable: function AnimatedPressable(props) { return passthrough(props); },
+    View: animatedHost(RN.View),
+    Text: animatedHost(RN.Text),
+    Image: animatedHost(RN.Image),
+    ScrollView: animatedHost(RN.ScrollView),
+    FlatList: animatedHost(RN.FlatList),
+    Pressable: animatedHost(RN.Pressable),
     createAnimatedComponent: (C) => C,
   }
 );

@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\BannerCreative;
+use App\Models\Special;
 use App\Models\Store;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
@@ -22,7 +23,32 @@ class BannerSeeder extends Seeder
             return;
         }
 
+        // A banner is either a standalone branding banner or the visual
+        // face of exactly one sale (special_id). The Winter Warmers sale
+        // gets its own dedicated sale banner; the rest stay standalone.
+        $winterWarmers = Special::where('slug', 'winter-warmers')->first();
+
         $banners = [
+            [
+                'name' => 'Winter Warmers Sale',
+                'store_id' => $store?->id,
+                'status' => 'published',
+                'start_date' => Carbon::now()->subDays(14),
+                'end_date' => Carbon::now()->addDays(30),
+                'created_by' => $creatorId,
+                'special_id' => $winterWarmers?->id,
+                'slides' => [
+                    [
+                        'title' => 'Winter Warmers Sale',
+                        'subtitle' => 'Up to 30% off selected items',
+                        'ctaLabel' => 'View sale',
+                        'url' => $winterWarmers ? '/specials/'.$winterWarmers->slug : '/specials',
+                        'bgType' => 'gradient',
+                        'colors' => ['#2563EB', '#1D4ED8'],
+                        'pattern' => 'circles',
+                    ],
+                ],
+            ],
             [
                 'name' => 'Welcome to Checkstar',
                 'store_id' => $store?->id,
@@ -48,15 +74,6 @@ class BannerSeeder extends Seeder
                         'bgType' => 'gradient',
                         'colors' => ['#1B1816', '#3D3530'],
                         'pattern' => 'lines',
-                    ],
-                    [
-                        'title' => 'Winter Warmers Sale',
-                        'subtitle' => 'Up to 30% off selected items',
-                        'ctaLabel' => 'View Specials',
-                        'url' => '/specials',
-                        'bgType' => 'gradient',
-                        'colors' => ['#2563EB', '#1D4ED8'],
-                        'pattern' => 'circles',
                     ],
                 ],
             ],

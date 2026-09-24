@@ -147,33 +147,24 @@ export default function StoreOrdersClient() {
 
         {user?.role === 'developer' && (
           <motion.div variants={fadeUp} className="mb-6 bg-amber-50 border border-amber-200 rounded-xl p-4">
-            <label className="block text-xs font-medium text-amber-800 mb-1 flex items-center gap-1.5">
-              <StoreIcon size={12} /> Developer: explicit store_id required
+            <label htmlFor="orders-store-select" className="block text-xs font-medium text-amber-800 mb-1 flex items-center gap-1.5">
+              <StoreIcon size={12} /> Developer: pick a store
             </label>
-            <div className="flex gap-2">
-              <input
-                value={storeIdInput}
-                onChange={e => setStoreIdInput(e.target.value)}
-                placeholder="Store ID (e.g. 1)"
-                className="w-32 px-3 py-2 border border-amber-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 outline-none bg-white"
-              />
-              {stores.length > 0 && (
-                <select
-                  value={storeIdInput}
-                  onChange={e => setStoreIdInput(e.target.value)}
-                  className="px-3 py-2 border border-amber-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"
-                >
-                  <option value="">Select store…</option>
-                  {stores.map(s => (
-                    <option key={(s as { id: number }).id} value={(s as { id: number }).id}>
-                      {(s as { name: string }).name} (ID {(s as { id: number }).id})
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
+            <select
+              id="orders-store-select"
+              value={storeIdInput}
+              onChange={e => setStoreIdInput(e.target.value)}
+              className="px-3 py-2 border border-amber-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 min-w-56"
+            >
+              <option value="">Select store…</option>
+              {stores.map(s => (
+                <option key={(s as { id: number }).id} value={(s as { id: number }).id}>
+                  {(s as { name: string }).name}
+                </option>
+              ))}
+            </select>
             {!activeStoreId && (
-              <p className="text-xs text-amber-700 mt-2">Enter a Store ID to load orders.</p>
+              <p className="text-xs text-amber-700 mt-2">Select a store to load its orders.</p>
             )}
           </motion.div>
         )}

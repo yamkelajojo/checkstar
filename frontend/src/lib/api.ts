@@ -105,9 +105,10 @@ export const api = {
   getSpecials: () => request<{ data: Special[] }>('/specials'),
   getBanners: () => request<{ data: Banner[] }>('/banners'),
   getAdminBanners: () => request<{ data: Banner[] }>('/admin/banners'),
-  createBanner: (data: { name: string; slides: Banner['slides']; status?: string; store_id?: number; start_date?: string; end_date?: string }) =>
+  /** `special_id` links the banner to a sale; the backend then normalises the slide CTAs to the sale page. */
+  createBanner: (data: { name: string; slides: Banner['slides']; status?: string; store_id?: number; special_id?: number | null; start_date?: string; end_date?: string }) =>
     request<{ data: Banner }>('/admin/banners', { method: 'POST', body: JSON.stringify(data) }),
-  updateBanner: (id: number, data: Partial<{ name: string; slides: Banner['slides']; status: string; store_id: number | null; start_date: string | null; end_date: string | null }>) =>
+  updateBanner: (id: number, data: Partial<{ name: string; slides: Banner['slides']; status: string; store_id: number | null; special_id: number | null; start_date: string | null; end_date: string | null }>) =>
     request<{ data: Banner }>(`/admin/banners/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteBanner: (id: number) => request<{ message: string }>(`/admin/banners/${id}`, { method: 'DELETE' }),
   getStores: () => request<{ data: Store[] }>('/stores'),
@@ -275,9 +276,20 @@ export const api = {
     const qs = params ? `?${new URLSearchParams(params)}` : ''
     return request<Paginated<Special> | { data: Special[] }>(`/admin/specials${qs}`)
   },
+  getAdminSpecial: (id: number) => request<{ data: Special }>(`/admin/specials/${id}`),
   createAdminSpecial: (data: Record<string, unknown>) => request<{ data: Special }>('/admin/specials', { method: 'POST', body: JSON.stringify(data) }),
   updateAdminSpecial: (id: number, data: Record<string, unknown>) => request<{ data: Special }>(`/admin/specials/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteAdminSpecial: (id: number) => request<{ message: string }>(`/admin/specials/${id}`, { method: 'DELETE' }),
+  /**
+   * Idempotent full product sync for a sale. Products in the array are
+   * attached (or re-priced); products missing are detached. `special_price`
+   * is optional — omit it to keep the product's own price.
+   */
+  syncSaleProducts: (id: number, products: Array<{ product_id: number; special_price?: number | null }>) =>
+    request<{ data: Special }>(`/admin/specials/${id}/products`, { method: 'PUT', body: JSON.stringify({ products }) }),
+
+  /** Public sale landing: a single sale with its products, live or ended. */
+  getSaleBySlug: (slug: string) => request<{ data: Special }>(`/specials/${encodeURIComponent(slug)}`),
 
   getAdminStores: (params?: Record<string, string>) => {
     const qs = params ? `?${new URLSearchParams(params)}` : ''

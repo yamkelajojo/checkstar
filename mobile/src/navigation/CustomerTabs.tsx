@@ -12,12 +12,19 @@ import { FavoritesScreen } from '../features/favorites/FavoritesScreen';
 import { CartScreen } from '../features/cart/CartScreen';
 import { AccountScreen } from '../features/account/AccountScreen';
 import { AnimatedTabBar } from './AnimatedTabBar';
-import { TabScreenWrapper, TabTransitionContext } from './TabScreenWrapper';
-import { getTabDirection, TAB_ORDER } from './tabTransitions';
+import { TabScreenWrapper } from './TabScreenWrapper';
 import { haptic } from '../lib/haptics';
 
 const TAB_COMPONENTS = [HomeScreen, BrowseScreen, FavoritesScreen, CartScreen, AccountScreen] as const;
 
+/**
+ * CustomerTabs — the 5-tab pager.
+ *
+ * The native PagerView does the swipe. The only shared values are
+ * scroll position/offset, fed solely to the tab bar's sliding indicator
+ * (UI-thread-only usage, never read from JS render). Tab content is a
+ * plain, static page — no entrance animations, no motion blur.
+ */
 export function CustomerTabs() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
@@ -26,26 +33,19 @@ export function CustomerTabs() {
 
   const pagerRef = useRef<PagerView>(null);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [directionState, setDirectionState] = useState(0);
-  const prevIndexRef = useRef(0);
 
-  // Shared values for fluid, synchronized animations — UI thread
+  // Shared values for the tab bar indicator only — UI thread.
   const scrollPosition = useSharedValue(0);
   const scrollOffset = useSharedValue(0);
-  const direction = useSharedValue(0);
 
   const tabBarHeight = 50 + insets.bottom;
 
   const handleTabPress = useCallback(
     (index: number) => {
       if (index === activeIndex) return;
-      const dir = getTabDirection(activeIndex, index);
-      direction.value = dir;
-      setDirectionState(dir);
-      prevIndexRef.current = activeIndex;
       pagerRef.current?.setPage(index);
     },
-    [activeIndex, direction]
+    [activeIndex],
   );
 
   const onPageScroll = useCallback(
@@ -53,25 +53,23 @@ export function CustomerTabs() {
       scrollPosition.value = e.nativeEvent.position;
       scrollOffset.value = e.nativeEvent.offset;
     },
-    [scrollPosition, scrollOffset]
+    [scrollPosition, scrollOffset],
   );
 
   const onPageSelected = useCallback(
     (e: { nativeEvent: { position: number } }) => {
       const newIndex = e.nativeEvent.position;
-      const dir = getTabDirection(prevIndexRef.current, newIndex);
-      direction.value = dir;
-      setDirectionState(dir);
-      if (newIndex !== prevIndexRef.current) {
-        haptic.selection();
-      }
-      prevIndexRef.current = newIndex;
-      setActiveIndex(newIndex);
+      setActiveIndex((prev) => {
+        if (prev !== newIndex) {
+          haptic.selection();
+        }
+        return newIndex;
+      });
     },
-    [direction]
+    [],
   );
 
-  // For testing environment where PagerView might not be fully available, fallback to View
+  // Fallback for test environments where PagerView might not be fully available
   const isPagerAvailable = typeof PagerView !== 'undefined';
 
   return (
@@ -88,32 +86,17 @@ export function CustomerTabs() {
             onPageScroll={onPageScroll}
             onPageSelected={onPageSelected}
           >
-            {TAB_COMPONENTS.map((Component, index) => {
-              const isActive = activeIndex === index;
-              return (
-                <View key={TAB_ORDER[index]} style={styles.page} collapsable={false}>
-                  <TabTransitionContext.Provider
-                    value={{
-                      isActive,
-                      direction: directionState,
-                      activeIndex,
-                      index,
-                    }}
-                  >
-                    <TabScreenWrapper
-                      isActive={isActive}
-                      direction={direction}
-                      scrollPosition={scrollPosition}
-                      scrollOffset={scrollOffset}
-                      index={index}
-                      activeIndex={activeIndex}
-                    >
-                      <Component />
-                    </TabScreenWrapper>
-                  </TabTransitionContext.Provider>
-                </View>
-              );
-            })}
+            {TAB_COMPONENTS.map((Component, index) => (
+              <View key={String(index)} style={styles.page} collapsable={false}>
+                <TabScreenWrapper
+                  isActive={activeIndex === index}
+                  index={index}
+                  activeIndex={activeIndex}
+                >
+                  <Component />
+                </TabScreenWrapper>
+              </View>
+            ))}
           </PagerView>
         ) : (
           // Fallback for test environment

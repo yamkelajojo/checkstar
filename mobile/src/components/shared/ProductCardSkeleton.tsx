@@ -14,9 +14,9 @@ import { semanticRadius, semanticSpacing } from '../../theme/spacing';
 import { FadeSlideIn } from './FadeSlideIn';
 
 /**
- * Loading placeholder that mirrors a ProductCard 1:1 — Apple-polished
- * Same padding, image frame, backdrop circle, 2-line title, price, Add pill
- * With shimmer and y8 entrance, border subtle, shadow
+ * Loading placeholder that mirrors a ProductCard 1:1.
+ * Same padding, image frame, backdrop circle, 2-line title, price, Add
+ * pill — with a soft shimmer.
  */
 export function ProductCardSkeleton({ index = 0 }: { index?: number }) {
   const theme = useTheme();
@@ -33,7 +33,7 @@ export function ProductCardSkeleton({ index = 0 }: { index?: number }) {
   }));
 
   return (
-    <FadeSlideIn delay={index * 38} distance={10} initialScale={0.96}>
+    <FadeSlideIn delay={index * 38} distance={10}>
       <View
         style={{
           flex: 1,

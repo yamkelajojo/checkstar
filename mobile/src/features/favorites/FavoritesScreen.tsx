@@ -1,16 +1,15 @@
-import { View, Text, FlatList } from 'react-native';
+import { View, Text } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import { Heart, WifiOff, RefreshCw } from 'lucide-react-native';
 import { queryKeys } from '../../lib/queryKeys';
 import { fetchFavorites } from '../../lib/apiClient';
-import { ProductCard } from '../../components/shared/ProductCard';
+import { ProductGrid } from '../../components/shared/ProductGrid';
 import { ProductCardSkeleton } from '../../components/shared/ProductCardSkeleton';
 import { EmptyState } from '../../components/shared/EmptyState';
 import { ScreenHeader } from '../../components/shared/ScreenHeader';
 import { TactilePressable } from '../../components/shared/TactilePressable';
 import { FadeSlideIn } from '../../components/shared/FadeSlideIn';
-import { CrashCascadeIn } from '../../components/shared/CrashCascadeIn';
 import { textStyle, fontWeight } from '../../theme/typography';
 import { semanticSpacing, semanticRadius } from '../../theme/spacing';
 import { useTheme } from '../../theme';
@@ -20,9 +19,9 @@ import { findStoreAvailability } from '../../lib/product';
 import type { ProductVO } from '../../lib/product';
 
 /**
- * Saved products — Apple-polished
- * Shares exact header, grid gutter and card spec as Browse/Cart
- * Now with y+scale+blur entrance, tab-coordinated stagger, border subtle
+ * Saved products.
+ * Shares the exact header, grid and card spec as Browse — the canonical
+ * ProductGrid — so cards line up identically on every screen.
  */
 export function FavoritesScreen() {
   const theme = useTheme();
@@ -35,6 +34,7 @@ export function FavoritesScreen() {
   });
 
   const items = (data as any)?.data ?? data ?? [];
+  const products: ProductVO[] = items.map((item: any) => item.product ?? item);
 
   const storeProductIdOf = (product: ProductVO): number | null => {
     if (!store) return null;
@@ -104,7 +104,7 @@ export function FavoritesScreen() {
                 haptic="commit"
                 style={{
                   backgroundColor: theme.colors.text.primary,
-                  borderRadius: 999,
+                  borderRadius: semanticRadius.buttonPill,
                   paddingHorizontal: 24,
                   paddingVertical: 12,
                   marginTop: semanticSpacing.md,
@@ -129,33 +129,19 @@ export function FavoritesScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background.primary }}>
       <ScreenHeader title="Favorites" />
-      {items.length > 0 && (
-        <FadeSlideIn delay={80} distance={8}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: semanticSpacing.screenPadding, marginBottom: semanticSpacing.xs }}>
-            <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: brand.orange }} />
-            <Text style={{ ...textStyle.caption, color: theme.colors.text.secondary, fontSize: 11, letterSpacing: 0.2 }}>
-              {items.length} saved {items.length === 1 ? 'item' : 'items'}
-            </Text>
-          </View>
-        </FadeSlideIn>
-      )}
-      <FlatList
-        data={items}
-        numColumns={2}
-        renderItem={({ item, index }) => {
-          const product: ProductVO = item.product ?? item;
-          return (
-            <CrashCascadeIn index={index}>
-              <ProductCard product={product} storeProductId={storeProductIdOf(product)} source="saved" />
-            </CrashCascadeIn>
-          );
-        }}
-        keyExtractor={(item: any) => String(item.product_id ?? item.id)}
-        columnWrapperStyle={{ gap: semanticSpacing.inlineGap, paddingHorizontal: semanticSpacing.screenPadding }}
-        contentContainerStyle={{ gap: semanticSpacing.inlineGap, paddingVertical: semanticSpacing.xs, paddingBottom: semanticSpacing.xl }}
-        onRefresh={refetch}
-        refreshing={false}
-        showsVerticalScrollIndicator={false}
+      <FadeSlideIn delay={80} distance={8}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: semanticSpacing.screenPadding, marginBottom: semanticSpacing.xs }}>
+          <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: brand.orange }} />
+          <Text style={{ ...textStyle.caption, color: theme.colors.text.secondary, fontSize: 11, letterSpacing: 0.2 }}>
+            {items.length} saved {items.length === 1 ? 'item' : 'items'}
+          </Text>
+        </View>
+      </FadeSlideIn>
+      <ProductGrid
+        data={products}
+        keyExtractor={(p) => String(p.id)}
+        getStoreProductId={storeProductIdOf}
+        source="saved"
       />
     </View>
   );

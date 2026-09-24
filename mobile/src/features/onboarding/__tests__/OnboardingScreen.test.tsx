@@ -137,7 +137,7 @@ describe('FadeSlideIn component', () => {
     const { FadeSlideIn, stagger } = require('../../../components/shared/FadeSlideIn');
     expect(typeof FadeSlideIn).toBe('function');
     expect(stagger).toHaveProperty('standard');
-    expect(stagger.standard).toBe(70);
+    expect(stagger.standard).toBe(60);
   });
 });
 

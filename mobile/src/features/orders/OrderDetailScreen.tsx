@@ -168,7 +168,7 @@ export function OrderDetailScreen() {
                 STATUS_STEPS.map((step, i) => {
                   const done = i <= statusIndex;
                   return (
-                    <FadeSlideIn key={step} delay={120 + i * 40} distance={8} initialScale={0.98}>
+                    <FadeSlideIn key={step} delay={120 + i * 40} distance={8}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: semanticSpacing.inlineGap }}>
                         <View
                           style={{
@@ -207,7 +207,7 @@ export function OrderDetailScreen() {
           </FadeSlideIn>
 
           {['confirmed', 'preparing', 'out_for_delivery'].includes(order.status) && order.store && (
-            <FadeSlideIn delay={160} distance={12} initialScale={0.98}>
+            <FadeSlideIn delay={160} distance={12}>
               <LiveDeliveryMap
                 orderId={orderId}
                 orderStatus={order.status}
@@ -246,7 +246,7 @@ export function OrderDetailScreen() {
                 const name = (item.product_snapshot as { name?: string } | null)?.name ?? `Item ${item.product_id}`;
                 const unit = (item.product_snapshot as { unit?: string } | null)?.unit ?? '';
                 return (
-                  <FadeSlideIn key={item.id} delay={260 + idx * 20} distance={6} initialScale={0.99}>
+                  <FadeSlideIn key={item.id} delay={260 + idx * 20} distance={6}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                       <Text style={[textStyle.body, { flex: 1, color: theme.colors.text.primary }]}>
                         {item.quantity} {'\u00D7'} {name}
@@ -314,7 +314,7 @@ export function OrderDetailScreen() {
           )}
 
           {reviewable && (
-            <FadeSlideIn delay={380} distance={10} initialScale={0.98}>
+            <FadeSlideIn delay={380} distance={10}>
               <ReviewCard orderId={orderId} onDone={invalidate} />
             </FadeSlideIn>
           )}

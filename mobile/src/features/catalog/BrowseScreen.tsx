@@ -1,20 +1,20 @@
 import { useState, useEffect } from 'react';
-import { View, Text, FlatList } from 'react-native';
+import { View, Text } from 'react-native';
 import { useRoute } from '@react-navigation/native';
 import { useTheme } from '../../theme';
-import { textStyle } from '../../theme/typography';
 import { semanticSpacing } from '../../theme/spacing';
 import { useCategories, useInfiniteProducts } from './hooks';
-import { ProductCard } from '../../components/shared/ProductCard';
+import { ProductGrid } from '../../components/shared/ProductGrid';
 import { CollectionPill } from '../../components/shared/CollectionPill';
 import { FadeEdgeScroll } from '../../components/shared/FadeEdgeScroll';
 import { ProductSummaryModal, type SourceRect } from './ProductSummaryModal';
 import { SkeletonCard } from '../../components/shared/SkeletonCard';
 import { ProductCardSkeleton } from '../../components/shared/ProductCardSkeleton';
-import { CrashCascadeIn } from '../../components/shared/CrashCascadeIn';
 import { ScreenHeader } from '../../components/shared/ScreenHeader';
+import { EmptyState } from '../../components/shared/EmptyState';
+import { PackageSearch } from 'lucide-react-native';
 import { useDeliveryStore } from '../../stores/deliveryStore';
-import type { ProductVO, StoreAvailabilityVO } from '../../lib/product';
+import type { ProductVO } from '../../lib/product';
 import { findStoreAvailability } from '../../lib/product';
 import { trackCategoryFilterTap } from '../../services/trackingService';
 
@@ -30,12 +30,12 @@ export function BrowseScreen() {
   useEffect(() => {
     if (routeCategory !== undefined) setActiveCategory(routeCategory);
   }, [routeCategory]);
-  const { 
-    data, 
-    isLoading, 
-    isFetchingNextPage, 
-    hasNextPage, 
-    fetchNextPage 
+  const {
+    data,
+    isLoading,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
   } = useInfiniteProducts({ category: activeCategory, storeId: store?.id ?? null });
 
   // Flatten all pages into a single array
@@ -51,7 +51,7 @@ export function BrowseScreen() {
     }
   };
 
-  // Helper to get effective storeProductId for a product (fulfillment store only)
+  // Helper to get effective storeProductId (fulfillment store only)
   const getStoreProductId = (product: ProductVO): number | null => {
     if (!store) return null;
     const avail = findStoreAvailability(product, store.id);
@@ -62,7 +62,7 @@ export function BrowseScreen() {
     <View style={{ flex: 1, backgroundColor: theme.colors.background.primary }}>
       <ScreenHeader title="Browse" />
 
-      {/* Horizontal category filter — GreenBidder pattern: scrollable pills with fade edge, no desktop sidebar leak */}
+      {/* Horizontal category filter — scrollable pills with soft edge fades */}
       <View style={{ marginTop: semanticSpacing.xs }}>
         <FadeEdgeScroll
           fadeWidth={24}
@@ -90,47 +90,42 @@ export function BrowseScreen() {
         </FadeEdgeScroll>
       </View>
 
-      {/* Full-width 2-col product grid with infinite scroll */}
-      <FlatList
-        style={{ flex: 1, marginTop: semanticSpacing.sm }}
-        data={isLoading ? [] : products}
-        keyExtractor={(p) => String(p.id)}
-        numColumns={2}
-        columnWrapperStyle={{ gap: semanticSpacing.inlineGap, paddingHorizontal: semanticSpacing.screenPadding }}
-        contentContainerStyle={{ gap: semanticSpacing.inlineGap, paddingVertical: semanticSpacing.xs, paddingBottom: semanticSpacing.xl }}
-        showsVerticalScrollIndicator={false}
-        onEndReached={handleLoadMore}
-        onEndReachedThreshold={0.5}
-        ListEmptyComponent={
-          isLoading ? (
-            <View style={{ flexDirection: 'row', gap: semanticSpacing.inlineGap, paddingHorizontal: semanticSpacing.screenPadding }}>
-              <ProductCardSkeleton />
-              <ProductCardSkeleton />
-            </View>
-          ) : (
-            <Text style={{ color: theme.colors.text.secondary, padding: semanticSpacing.md }}>No products here yet.</Text>
-          )
-        }
-        ListFooterComponent={
-          isFetchingNextPage ? (
-            <View style={{ padding: semanticSpacing.md, alignItems: 'center' }}>
-              <SkeletonCard width={120} height={16} orientation="carousel" />
-            </View>
-          ) : null
-        }
-        renderItem={({ item, index }) => (
-            <CrashCascadeIn index={index}>
-              <ProductCard product={item} storeProductId={getStoreProductId(item)} onRequestSummary={handleRequestSummary} source="feed" />
-            </CrashCascadeIn>
-          )}
-      />
+      {/* 2-col product grid with infinite scroll — the app's canonical grid */}
+      {isLoading ? (
+        <View style={{ flexDirection: 'row', gap: semanticSpacing.inlineGap, paddingHorizontal: semanticSpacing.screenPadding, marginTop: semanticSpacing.md }}>
+          <ProductCardSkeleton />
+          <ProductCardSkeleton />
+        </View>
+      ) : products.length === 0 ? (
+        <EmptyState
+          icon={PackageSearch}
+          title="No products here yet."
+          caption="This shelf is empty for now — try another category."
+        />
+      ) : (
+        <ProductGrid
+          data={products}
+          getStoreProductId={getStoreProductId}
+          onRequestSummary={handleRequestSummary}
+          source="feed"
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={
+            isFetchingNextPage ? (
+              <View style={{ padding: semanticSpacing.md, alignItems: 'center' }}>
+                <SkeletonCard width={120} height={16} orientation="carousel" />
+              </View>
+            ) : null
+          }
+        />
+      )}
 
       {summaryState != null && (
-        <ProductSummaryModal 
-          product={summaryState.product} 
+        <ProductSummaryModal
+          product={summaryState.product}
           storeProductId={getStoreProductId(summaryState.product)}
-          sourceRect={summaryState.rect} 
-          onClose={() => setSummaryState(null)} 
+          sourceRect={summaryState.rect}
+          onClose={() => setSummaryState(null)}
         />
       )}
     </View>

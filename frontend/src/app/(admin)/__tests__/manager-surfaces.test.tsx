@@ -38,7 +38,12 @@ const { authState, setAuth, apiMocks, scratch } = vi.hoisted(() => {
     dispatchOrder: vi.fn(),
     reassignOrder: vi.fn(),
   },
-    scratch: { pendingDispatch: [] as Array<Record<string, unknown>>, riders: [] as Array<Record<string, unknown>> },
+    scratch: {
+      pendingDispatch: [] as Array<Record<string, unknown>>,
+      riders: [] as Array<Record<string, unknown>>,
+      storeOrders: [] as Array<Record<string, unknown>>,
+      inventory: [] as Array<Record<string, unknown>>,
+    },
   }
 })
 
@@ -62,6 +67,18 @@ vi.mock('@/lib/query', () => ({
   useCategories: () => ({ data: [{ id: 1 }], isLoading: false, error: null }),
   useOrders: () => ({ data: [{ id: 9, order_number: 'CS-9', status: 'preparing', total: '50', created_at: '2026-09-01T00:00:00Z' }], isLoading: false, error: null }),
   useStores: () => ({ data: [{ id: 1, name: 'Durban Central' }], isLoading: false, error: null }),
+  useStoreOrders: (_storeId?: number, _params?: Record<string, string>, options?: { enabled?: boolean }) => ({
+    data: options?.enabled === false ? [] : scratch.storeOrders,
+    isLoading: false,
+    error: null,
+    refetch: vi.fn(),
+    isFetching: false,
+  }),
+  useStoreInventory: (_storeId?: number, options?: { enabled?: boolean }) => ({
+    data: options?.enabled === false ? [] : scratch.inventory,
+    isLoading: false,
+    error: null,
+  }),
   useSpecials: () => ({ data: [], isLoading: false, error: null }),
   useRecipes: () => ({ data: [], isLoading: false, error: null }),
   usePendingDispatch: (_storeId?: number, options?: { enabled?: boolean }) => ({
@@ -103,9 +120,18 @@ beforeEach(() => {
   setAuth(null)
   setRows(scratch, [])
   setRows(scratch, [], 'riders')
+  setRows(scratch, [], 'storeOrders')
+  setRows(scratch, [], 'inventory')
 })
 
-function setRows(target: { pendingDispatch: Array<Record<string, unknown>>; riders: Array<Record<string, unknown>> }, rows: Array<Record<string, unknown>>, key: 'pendingDispatch' | 'riders' = 'pendingDispatch') {
+type Scratch = {
+  pendingDispatch: Array<Record<string, unknown>>
+  riders: Array<Record<string, unknown>>
+  storeOrders: Array<Record<string, unknown>>
+  inventory: Array<Record<string, unknown>>
+}
+
+function setRows(target: Scratch, rows: Array<Record<string, unknown>>, key: keyof Scratch = 'pendingDispatch') {
   target[key] = rows
 }
 
@@ -134,7 +160,63 @@ describe('AdminDashboardClient', () => {
     expect(hrefs).toContain('/admin/orders')
     expect(hrefs).toContain('/operations')
     expect(hrefs).toContain('/account/dispatch')
+    // Sales is a first-class staff tool (owner/manager manage their store's sales)
+    expect(hrefs).toContain('/admin/specials')
     expect(hrefs).not.toContain('/admin/messages')
+  })
+
+  it('shows a needs-attention cockpit with the owner store’s orders', async () => {
+    setAuth({
+      id: 2,
+      name: 'Thandi Owner',
+      email: 'owner@x.co.za',
+      role: 'store_owner',
+      store: { id: 1, name: 'Durban Central', slug: 'durban-central' },
+    })
+    setRows(scratch, [{ id: 7, order_number: 'CS-7', status: 'confirmed', total: '84.50', created_at: '2026-09-24T07:00:00Z' }], 'storeOrders')
+    setRows(scratch, [{ stock_quantity: 3 }, { stock_quantity: 0 }, { stock_quantity: 25 }], 'inventory')
+    setRows(scratch, [{ id: 500, order_number: 'CS-1500', status: 'confirmed' }])
+
+    renderWithProviders(<AdminDashboardClient />)
+
+    expect(await screen.findByText('Needs Attention')).toBeInTheDocument()
+    // 1 awaiting dispatch, 1 low, 1 out of stock
+    expect(screen.getByText('orders awaiting dispatch')).toBeInTheDocument()
+    expect(screen.getByText('low on stock')).toBeInTheDocument()
+    expect(screen.getByText('out of stock')).toBeInTheDocument()
+
+    // Recent orders come from the store orders endpoint, linking to the staff view
+    expect(await screen.findByText('CS-7')).toBeInTheDocument()
+    const orderLink = screen.getByText('CS-7').closest('a')!
+    expect(orderLink).toHaveAttribute('href', '/admin/orders')
+  })
+
+  it('shows the all-clear when nothing needs attention', async () => {
+    setAuth({
+      id: 2,
+      name: 'Thandi Owner',
+      email: 'owner@x.co.za',
+      role: 'store_owner',
+      store: { id: 1, name: 'Durban Central', slug: 'durban-central' },
+    })
+    renderWithProviders(<AdminDashboardClient />)
+    expect(await screen.findByText('Nothing needs attention right now.')).toBeInTheDocument()
+  })
+
+  it('gives developers a store focus that drives the order widgets', async () => {
+    setAuth({ id: 1, name: 'Dev User', email: 'dev@x.co.za', role: 'developer' })
+    apiMocks.getMessages.mockResolvedValue({ data: [] })
+    setRows(scratch, [{ id: 7, order_number: 'CS-7', status: 'preparing', total: '50', created_at: '2026-09-20T00:00:00Z' }], 'storeOrders')
+
+    renderWithProviders(<AdminDashboardClient />)
+
+    // Store focus defaults to the first store; the pulse section names it
+    expect(await screen.findByText('Durban Central — right now')).toBeInTheDocument()
+    expect(screen.getByLabelText('Store focus')).toBeInTheDocument()
+    // The store's orders render in Recent Orders (not the dev's customer orders)
+    expect(await screen.findByText('CS-7')).toBeInTheDocument()
+    const orderLink = screen.getByText('CS-7').closest('a')!
+    expect(orderLink).toHaveAttribute('href', '/admin/orders')
   })
 
   it('renders overview stats and the real management links for developers', async () => {

@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { useTheme } from '../theme';
 import { brand } from '../theme/colors';
@@ -7,12 +8,9 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
-  useDerivedValue,
-  interpolate,
   withDelay,
   type SharedValue,
 } from 'react-native-reanimated';
-import { useEffect } from 'react';
 import { springs } from '../theme/motion';
 import { TAB_ORDER } from './tabTransitions';
 import { haptic } from '../lib/haptics';
@@ -83,45 +81,23 @@ function CartBadge({ count }: { count: number }) {
 
 interface TabItemProps {
   config: TabConfig;
-  index: number;
   isActive: boolean;
-  activeIndex: number;
-  scrollPosition: SharedValue<number>;
-  scrollOffset: SharedValue<number>;
   onPress: () => void;
   cartCount?: number;
 }
 
-function TabItem({ config, index, isActive, activeIndex, scrollPosition, scrollOffset, onPress, cartCount }: TabItemProps) {
+/**
+ * TabItem — the active treatment is driven purely by React state
+ * (`activeIndex`), never by scroll-progress shared values read in JS.
+ * Reading UI-thread shared values during render is how the tab bar
+ * desynced (e.g. Account rendering as active while on Home).
+ */
+function TabItem({ config, isActive, onPress, cartCount }: TabItemProps) {
   const theme = useTheme();
   const { Icon } = config;
 
-  // Interpolate scale and opacity based on scroll position for fluid indicator sync
-  const progress = useDerivedValue(() => {
-    const pos = scrollPosition.value + scrollOffset.value;
-    // Distance from this tab
-    const dist = Math.abs(pos - index);
-    // 1 when active, 0 when far
-    return Math.max(0, 1 - dist);
-  });
-
-  const iconStyle = useAnimatedStyle(() => {
-    const scale = interpolate(progress.value, [0, 1], [1, 1.12]);
-    const translateY = interpolate(progress.value, [0, 1], [0, -1]);
-    return {
-      transform: [{ scale }, { translateY }],
-    };
-  });
-
-  const labelStyle = useAnimatedStyle(() => {
-    const opacity = interpolate(progress.value, [0, 0.5, 1], [0.6, 0.8, 1]);
-    return { opacity };
-  });
-
   const activeColor = brand.orange;
   const inactiveColor = theme.name === 'dark' ? theme.colors.text.tertiary : theme.colors.text.disabled;
-
-  // Determine color based on progress for smooth transition during swipe
   const color = isActive ? activeColor : inactiveColor;
 
   return (
@@ -134,28 +110,25 @@ function TabItem({ config, index, isActive, activeIndex, scrollPosition, scrollO
       hitSlop={8}
     >
       <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-        <Animated.View style={iconStyle}>
-          <View>
-            <Icon
-              size={22}
-              color={progress.value > 0.5 ? activeColor : inactiveColor}
-              strokeWidth={isActive ? 2.2 : 1.8}
-            />
-            {config.name === 'Cart' && <CartBadge count={cartCount ?? 0} />}
-          </View>
-        </Animated.View>
-        <Animated.View style={[{ marginTop: 3 }, labelStyle]}>
-          <Text
-            style={{
-              fontSize: 10,
-              fontWeight: isActive ? '600' : '500',
-              color: progress.value > 0.5 ? activeColor : inactiveColor,
-              letterSpacing: 0.2,
-            }}
-          >
-            {config.label}
-          </Text>
-        </Animated.View>
+        <View>
+          <Icon
+            size={22}
+            color={color}
+            strokeWidth={isActive ? 2.2 : 1.8}
+          />
+          {config.name === 'Cart' && <CartBadge count={cartCount ?? 0} />}
+        </View>
+        <Text
+          style={{
+            marginTop: 3,
+            fontSize: 10,
+            fontWeight: isActive ? '600' : '500',
+            color,
+            letterSpacing: 0.2,
+          }}
+        >
+          {config.label}
+        </Text>
       </View>
     </Pressable>
   );
@@ -184,14 +157,14 @@ export function AnimatedTabBar({
     });
   }, [activeIndex]);
 
-  // During swipe, indicator follows scrollPosition + offset directly for 1:1 tracking
+  // During a swipe the indicator tracks the pager 1:1; at rest it follows
+  // the spring. This is the only animated element in the bar.
   const indicatorStyle = useAnimatedStyle(() => {
     const pos = scrollPosition.value + scrollOffset.value;
-    // If actively scrolling (offset !=0), follow directly; else follow spring indicatorPosition
     const isScrolling = Math.abs(scrollOffset.value) > 0.001;
     const targetPos = isScrolling ? pos : indicatorPosition.value;
 
-    // tabWidth may be 0 initially, guard
+    // tabWidth may be 0 initially — guard
     const x = targetPos * (tabWidth.value || 1);
     return {
       transform: [{ translateX: x }],
@@ -255,11 +228,7 @@ export function AnimatedTabBar({
         <TabItem
           key={tab.name}
           config={tab}
-          index={index}
           isActive={activeIndex === index}
-          activeIndex={activeIndex}
-          scrollPosition={scrollPosition}
-          scrollOffset={scrollOffset}
           cartCount={tab.name === 'Cart' ? cartCount : undefined}
           onPress={() => {
             if (index !== activeIndex) {

@@ -1,16 +1,22 @@
 'use client'
 
 import { useState } from 'react'
-import { motion, AnimatePresence } from 'motion/react'
+import { motion } from 'motion/react'
 import {
-  Image as ImageIcon, Plus, Trash2, Edit3, Eye, EyeOff,
-  ChevronDown, ChevronUp, Save, X, Loader2, AlertCircle,
+  Image as ImageIcon, Plus, Trash2, Edit3,
+  ChevronDown, ChevronUp, Save, Loader2, Sparkles,
 } from 'lucide-react'
 import { useAdminBanners, useCreateBanner, useUpdateBanner, useDeleteBanner } from '@/lib/query'
 import Link from 'next/link'
 import { useAuthStore } from '@/stores/auth-store'
 import { toast } from 'sonner'
 import { fadeUpTight as fadeUp, staggerTight as stagger } from '@/lib/motion/variants'
+import PageHeader from '@/components/admin/PageHeader'
+import Modal from '@/components/admin/Modal'
+import ConfirmDialog from '@/components/admin/ConfirmDialog'
+import EmptyState from '@/components/admin/EmptyState'
+import ErrorState from '@/components/admin/ErrorState'
+import { BannerStatusBadge } from '@/components/admin/StatusBadge'
 import type { Banner, BannerSlide } from '@/types'
 
 const EMPTY_SLIDE: BannerSlide = {
@@ -216,23 +222,37 @@ function BannerForm({ banner, onClose }: { banner?: Banner | null; onClose: () =
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
-        className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
-      >
-        <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between z-10">
-          <h2 className="font-display text-lg font-semibold">{isEditing ? 'Edit Banner' : 'New Banner'}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-            <X size={20} />
+    <Modal
+      open
+      onClose={isLoading ? () => {} : onClose}
+      title={isEditing ? 'Edit Banner' : 'New Banner'}
+      size="lg"
+      footer={
+        <>
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 rounded-lg disabled:opacity-50"
+            disabled={isLoading}
+          >
+            Cancel
           </button>
-        </div>
-
-        <div className="p-6 space-y-6">
-          {/* Name */}
-          <input
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={!name || slides.length === 0 || isLoading}
+            className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50 flex items-center gap-2"
+          >
+            {isLoading && <Loader2 size={14} className="animate-spin" />}
+            <Save size={14} />
+            {isEditing ? 'Update' : 'Create'}
+          </button>
+        </>
+      }
+    >
+      <div className="space-y-6">
+        {/* Name */}
+        <input
             placeholder="Banner name *"
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -285,33 +305,11 @@ function BannerForm({ banner, onClose }: { banner?: Banner | null; onClose: () =
         </div>
 
         {formError && (
-          <div className="px-6 pb-2">
-            <p className="text-sm text-accent flex items-center gap-1.5 bg-accent/5 border border-accent/20 rounded-lg px-3 py-2">
-              <AlertCircle size={14} className="shrink-0" /> {formError}
-            </p>
-          </div>
+          <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2" role="alert">
+            {formError}
+          </p>
         )}
-
-        <div className="sticky bottom-0 bg-white border-t border-gray-100 px-6 py-4 flex justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
-            disabled={isLoading}
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={!name || slides.length === 0 || isLoading}
-            className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50 flex items-center gap-2"
-          >
-            {isLoading && <Loader2 size={14} className="animate-spin" />}
-            <Save size={14} />
-            {isEditing ? 'Update' : 'Create'}
-          </button>
-        </div>
-      </motion.div>
-    </div>
+    </Modal>
   )
 }
 
@@ -324,36 +322,26 @@ export default function BannersClient() {
   // than rendering a page whose every API call 403s.
   const canManage = !!user && BANNER_ROLES.includes(user.role)
 
-  const { data: banners = [], isLoading, error } = useAdminBanners({ enabled: canManage })
+  const { data: banners = [], isLoading, error, refetch } = useAdminBanners({ enabled: canManage })
   const deleteBanner = useDeleteBanner()
 
   const [showForm, setShowForm] = useState(false)
   const [editingBanner, setEditingBanner] = useState<Banner | null>(null)
-  const [deletingId, setDeletingId] = useState<number | null>(null)
-
-  const handleDelete = (id: number) => {
-    setDeletingId(id)
-  }
-
-  const confirmDelete = () => {
-    if (deletingId != null) {
-      deleteBanner.mutate(deletingId, { onSuccess: () => { toast.success('Banner deleted'); setDeletingId(null) } })
-    }
-  }
+  const [deleting, setDeleting] = useState<Banner | null>(null)
 
   if (!canManage) {
     return (
-      <main className="max-w-4xl mx-auto px-4 py-16 text-center">
-        <div className="w-12 h-12 rounded-full bg-rose-100 flex items-center justify-center mx-auto mb-4">
-          <X size={20} className="text-rose-500" />
-        </div>
-        <h1 className="text-xl font-semibold">Banner access only</h1>
-        <p className="text-sm text-gray-500 mt-2">
-          Banners are managed by store owners and managers. Ask an owner for access.
-        </p>
-        <Link href="/admin/dashboard" className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline mt-4">
-          Back to Dashboard
-        </Link>
+      <main className="max-w-4xl mx-auto px-4 py-16">
+        <EmptyState
+          icon={ImageIcon}
+          title="Banner access only"
+          hint="Banners are managed by store owners and managers. Ask an owner for access."
+          action={
+            <Link href="/admin/dashboard" className="px-4 py-2 text-sm font-medium text-primary hover:underline">
+              Back to Dashboard
+            </Link>
+          }
+        />
       </main>
     )
   }
@@ -362,34 +350,25 @@ export default function BannersClient() {
     <main className="max-w-6xl mx-auto px-4 py-8">
       <motion.div initial="hidden" animate="show" variants={stagger}>
         {/* Header */}
-        <motion.div variants={fadeUp} className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                <h1 className="font-display text-3xl font-bold text-gray-900">Banners</h1>
-                <span className="inline-flex items-center gap-1 px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium">
-                  <ImageIcon size={12} />
-                  {banners.length} banner{banners.length !== 1 ? 's' : ''}
-                </span>
-              </div>
-              <p className="text-gray-500 text-sm">
-                Create and manage promotional banners displayed on the home page.
-              </p>
-            </div>
-            <button
-              onClick={() => { setEditingBanner(null); setShowForm(true) }}
-              className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 flex items-center gap-2"
-            >
-              <Plus size={16} /> New Banner
-            </button>
-          </div>
+        <motion.div variants={fadeUp} className="mb-6">
+          <PageHeader
+            title="Banners"
+            subtitle={`Create and manage promotional banners displayed on the home page · ${banners.length} banner${banners.length !== 1 ? 's' : ''}`}
+            actions={
+              <button
+                onClick={() => { setEditingBanner(null); setShowForm(true) }}
+                className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 flex items-center gap-2"
+              >
+                <Plus size={16} /> New Banner
+              </button>
+            }
+          />
         </motion.div>
 
         {/* Error */}
         {error && (
-          <motion.div variants={fadeUp} className="mb-6 bg-accent/5 border border-accent/20 rounded-xl p-4 flex items-center gap-3">
-            <AlertCircle size={18} className="text-accent shrink-0" />
-            <p className="text-sm text-gray-600">{error.message}</p>
+          <motion.div variants={fadeUp} className="mb-6">
+            <ErrorState message={error.message} onRetry={() => refetch()} />
           </motion.div>
         )}
 
@@ -406,16 +385,20 @@ export default function BannersClient() {
             ))}
           </div>
         ) : banners.length === 0 ? (
-          <motion.div variants={fadeUp} className="bg-white border border-gray-100 rounded-xl p-12 text-center">
-            <ImageIcon size={40} className="text-gray-200 mx-auto mb-3" />
-            <p className="text-gray-500 font-medium mb-1">No banners yet</p>
-            <p className="text-sm text-gray-400 mb-4">Create your first promotional banner to display on the home page.</p>
-            <button
-              onClick={() => { setEditingBanner(null); setShowForm(true) }}
-              className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90"
-            >
-              Create Banner
-            </button>
+          <motion.div variants={fadeUp}>
+            <EmptyState
+              icon={ImageIcon}
+              title="No banners yet"
+              hint="Create your first promotional banner to display on the home page — or create one from a sale."
+              action={
+                <button
+                  onClick={() => { setEditingBanner(null); setShowForm(true) }}
+                  className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90"
+                >
+                  Create Banner
+                </button>
+              }
+            />
           </motion.div>
         ) : (
           <motion.div variants={fadeUp} className="space-y-4">
@@ -423,16 +406,19 @@ export default function BannersClient() {
               <div key={banner.id} className="bg-white border border-gray-100 rounded-xl p-5 hover:shadow-md transition-shadow">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
                       <h3 className="font-medium text-gray-900">{banner.name}</h3>
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
-                        banner.status === 'published'
-                          ? 'bg-success/10 text-success'
-                          : 'bg-gray-100 text-gray-500'
-                      }`}>
-                        {banner.status === 'published' ? <Eye size={10} /> : <EyeOff size={10} />}
-                        {banner.status}
-                      </span>
+                      <BannerStatusBadge status={banner.status} />
+                      {banner.special && (
+                        <Link
+                          href={`/specials/${banner.special.slug}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                        >
+                          <Sparkles size={11} /> Fronts sale: {banner.special.title}
+                        </Link>
+                      )}
                     </div>
                     <p className="text-sm text-gray-500 mb-2">
                       {banner.slides.length} slide{banner.slides.length !== 1 ? 's' : ''}
@@ -477,9 +463,10 @@ export default function BannersClient() {
                       <Edit3 size={16} />
                     </button>
                     <button
-                      onClick={() => handleDelete(banner.id)}
+                      onClick={() => setDeleting(banner)}
                       className="p-2 text-gray-500 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors"
                       title="Delete"
+                      aria-label={`Delete ${banner.name}`}
                     >
                       <Trash2 size={16} />
                     </button>
@@ -492,50 +479,33 @@ export default function BannersClient() {
       </motion.div>
 
       {/* Create/Edit form modal */}
-      <AnimatePresence>
-        {showForm && (
-          <BannerForm
-            banner={editingBanner}
-            onClose={() => { setShowForm(false); setEditingBanner(null) }}
-          />
-        )}
-      </AnimatePresence>
+      {showForm && (
+        <BannerForm
+          banner={editingBanner}
+          onClose={() => { setShowForm(false); setEditingBanner(null) }}
+        />
+      )}
 
-      {/* Delete confirmation modal */}
-      <AnimatePresence>
-        {deletingId != null && (
-          <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6"
-            >
-              <h3 className="font-display text-lg font-semibold mb-2">Delete Banner</h3>
-              <p className="text-sm text-gray-500 mb-6">
-                Are you sure you want to delete this banner? This action cannot be undone.
-              </p>
-              <div className="flex justify-end gap-3">
-                <button
-                  onClick={() => setDeletingId(null)}
-                  className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
-                  disabled={deleteBanner.isPending}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={confirmDelete}
-                  disabled={deleteBanner.isPending}
-                  className="px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 disabled:opacity-50 flex items-center gap-2"
-                >
-                  {deleteBanner.isPending && <Loader2 size={14} className="animate-spin" />}
-                  Delete
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      {/* Delete confirmation */}
+      <ConfirmDialog
+        open={deleting != null}
+        title="Delete this banner?"
+        body={deleting ? `“${deleting.name}” will be removed from the home page rotation. This cannot be undone.` : ''}
+        confirmLabel="Delete banner"
+        loading={deleteBanner.isPending}
+        onConfirm={() => {
+          if (deleting) {
+            deleteBanner.mutate(deleting.id, {
+              onSuccess: () => {
+                toast.success('Banner deleted')
+                setDeleting(null)
+              },
+              onError: (e) => toast.error((e as Error).message),
+            })
+          }
+        }}
+        onClose={() => setDeleting(null)}
+      />
     </main>
   )
 }

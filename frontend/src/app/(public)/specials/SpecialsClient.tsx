@@ -1,6 +1,7 @@
 'use client'
 
 import { motion } from 'motion/react'
+import Link from 'next/link'
 import SafeImage from '@/components/SafeImage'
 import { Calendar, Clock, Tag } from 'lucide-react'
 import ProductCard from '@/components/ProductCard'
@@ -99,6 +100,12 @@ export default function SpecialsClient() {
                     }`}>
                       {active ? 'Active' : 'Ended'}
                     </span>
+                    <Link
+                      href={`/specials/${special.slug}`}
+                      className="ml-auto text-primary hover:underline font-medium"
+                    >
+                      View sale →
+                    </Link>
                   </div>
 
                   {special.products && special.products.length > 0 && (

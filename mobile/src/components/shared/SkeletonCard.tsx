@@ -41,7 +41,7 @@ export function SkeletonCard({ width, height, orientation = 'grid', style, index
   }));
 
   return (
-    <FadeSlideIn delay={index * 40} distance={8} initialScale={0.97}>
+    <FadeSlideIn delay={index * 40} distance={8}>
       <Animated.View
         style={[
           {

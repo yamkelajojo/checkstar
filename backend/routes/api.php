@@ -121,7 +121,6 @@ Route::post('/auth/email/verification-notification', [AuthController::class, 'se
     Route::prefix('admin')->middleware('role:developer')->group(function () {
         Route::apiResource('products', Admin\ProductController::class)->middleware('throttle:30,1');
         Route::apiResource('categories', Admin\CategoryController::class)->middleware('throttle:30,1');
-        Route::apiResource('specials', Admin\SpecialController::class)->middleware('throttle:30,1');
         Route::apiResource('recipes', Admin\RecipeController::class)->middleware('throttle:30,1');
         Route::apiResource('community-posts', Admin\CommunityPostController::class)->middleware('throttle:30,1');
         Route::apiResource('careers', Admin\CareerController::class)->middleware('throttle:30,1');
@@ -135,10 +134,16 @@ Route::post('/auth/email/verification-notification', [AuthController::class, 'se
         Route::get('health', [Admin\HealthController::class, 'index'])->middleware('throttle:30,1');
     });
 
-    // Banner management (developer, store_owner, store_manager)
+    // Banner + sale management (developer, store_owner, store_manager).
+    // Sales are per-store: owners/managers act on their own store,
+    // developers on any (or chain-wide when no store_id is given).
+    // Logistics officers deliberately have no access here.
     Route::prefix('admin')->middleware('role:developer,store_owner,store_manager')->group(function () {
         Route::get('banners', [BannerController::class, 'adminIndex'])->middleware('throttle:30,1');
         Route::apiResource('banners', BannerController::class)->only(['store', 'show', 'update', 'destroy'])->middleware('throttle:30,1');
+        Route::apiResource('specials', Admin\SpecialController::class)->middleware('throttle:30,1');
+        // Idempotent product sync for a sale (attach/detach + special prices).
+        Route::put('specials/{id}/products', [Admin\SpecialController::class, 'syncProducts'])->middleware('throttle:20,1');
     });
 
     // User tracking events (authenticated customers)
@@ -179,6 +184,7 @@ Route::get('/products/new-arrivals', [ProductCarouselController::class, 'newArri
 Route::get('/products/{slug}/related', [ProductController::class, 'related'])->middleware('throttle:30,1');
 Route::get('/products/{slug}', [ProductController::class, 'show']);
 Route::get('/specials', [SpecialController::class, 'index']);
+Route::get('/specials/{slug}', [SpecialController::class, 'show']);
 Route::get('/stores', [StoreController::class, 'index']);
 Route::get('/stores/{slug}', [StoreController::class, 'show']);
 Route::get('/recipes', [RecipeController::class, 'index']);

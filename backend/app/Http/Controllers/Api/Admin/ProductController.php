@@ -11,9 +11,21 @@ class ProductController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $products = Product::with('category')
-            ->orderByDesc('created_at')
-            ->paginate(20);
+        $query = Product::with('category');
+
+        // Product picker support: name search + category filter.
+        if ($search = $request->query('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', '%'.$search.'%')
+                    ->orWhere('slug', 'like', '%'.$search.'%');
+            });
+        }
+        if ($categoryId = $request->query('category_id')) {
+            $query->where('category_id', $categoryId);
+        }
+
+        $perPage = min(50, max(1, (int) $request->query('per_page', 20)));
+        $products = $query->orderByDesc('created_at')->paginate($perPage);
 
         return response()->json($products);
     }

@@ -317,7 +317,11 @@ function IngredientProductPopover({ product }: { product: Product }) {
           </motion.button>
         </PopoverFooter>
 
-        <Link href={`/products/${product.slug}`} className="mt-3 inline-flex text-[11px] font-medium text-gray-400 hover:text-primary transition-colors">
+        <Link
+          href={`/products/${product.slug}`}
+          aria-label={`View ${product.name} product page`}
+          className="mt-3 inline-flex text-[11px] font-medium text-gray-400 hover:text-primary transition-colors"
+        >
           View product page →
         </Link>
       </PopoverContent>

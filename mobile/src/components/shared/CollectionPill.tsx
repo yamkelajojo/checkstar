@@ -62,7 +62,7 @@ export function CollectionPill({ label, active = false, onPress, index = 0 }: Co
   }
 
   return (
-    <FadeSlideIn delay={index * 20} distance={8} initialScale={0.92}>
+    <FadeSlideIn delay={index * 20} distance={8}>
       <TactilePressable onPress={onPress} haptic="selection" accessibilityRole="button" accessibilityState={{ selected: active }} style={pillStyle}>
         {content}
       </TactilePressable>

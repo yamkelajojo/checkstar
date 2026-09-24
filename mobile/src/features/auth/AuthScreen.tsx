@@ -121,7 +121,7 @@ export function AuthScreen() {
   return (
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: theme.colors.background.primary }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={{ padding: semanticSpacing.screenPadding, paddingTop: 64, gap: 16 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-        <FadeSlideIn delay={60} distance={12} initialScale={0.96}>
+        <FadeSlideIn delay={60} distance={12}>
           <Logo variant="lockup" size={24} tone={theme.name} />
         </FadeSlideIn>
 
@@ -154,6 +154,7 @@ export function AuthScreen() {
                       key={v}
                       onPress={() => setVehicle(v)}
                       haptic="selection"
+                      accessibilityState={{ selected: active }}
                       style={{
                         flex: 1,
                         borderRadius: 999,

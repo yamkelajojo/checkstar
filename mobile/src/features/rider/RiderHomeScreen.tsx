@@ -108,6 +108,7 @@ export function RiderHomeScreen() {
               </View>
               <Text style={{ fontSize: 20, fontWeight: '800', letterSpacing: -0.4, color: theme.colors.text.primary }}>Rider</Text>
               <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: isAvailable ? '#22C55E' : theme.colors.text.tertiary, shadowColor: isAvailable ? '#22C55E' : 'transparent', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 4 }} />
+              <Text accessibilityLiveRegion="polite" style={{ fontSize: 12, fontWeight: '700', color: isAvailable ? '#16A34A' : theme.colors.text.tertiary }}>{isAvailable ? copy.rider.available : copy.rider.offline}</Text>
             </View>
 
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>

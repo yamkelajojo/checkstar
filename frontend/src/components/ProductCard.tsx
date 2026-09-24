@@ -70,7 +70,7 @@ export default function ProductCard({ product, compact = false, index = 0 }: Pro
               initial={shouldReduce ? undefined : { opacity: 0, scale: 0.8, y: -4 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               transition={{ type: 'spring', ...spring.appleBounce, delay: 0.2 }}
-              className="absolute top-2.5 left-2.5 rounded-full bg-gray-900 px-2.5 py-1 text-[11px] font-semibold text-white shadow-[0_2px_8px_rgba(0,0,0,0.15)] backdrop-blur-md"
+              className="absolute top-2.5 left-2.5 rounded-full bg-gray-900 px-2.5 py-1 text-[11px] font-medium text-white shadow-[0_2px_8px_rgba(0,0,0,0.15)] backdrop-blur-md"
             >
               Special
             </motion.span>

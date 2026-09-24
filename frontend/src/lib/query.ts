@@ -460,13 +460,33 @@ export function useDeleteAdminCategory() {
   })
 }
 
-export function useAdminSpecials() {
+export function useAdminSpecials(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['admin-specials'],
     queryFn: async () => {
       const res = await api.getAdminSpecials()
       return normalizePaginated<Special>(res as any)
     },
+    enabled: options?.enabled,
+  })
+}
+
+/** One sale in detail (products + pivot special_price + store + banner). */
+export function useAdminSpecialDetail(id: number | null, enabled = true) {
+  return useQuery({
+    queryKey: ['admin-special', id],
+    queryFn: () => api.getAdminSpecial(id!).then(r => r.data),
+    enabled: enabled && id != null,
+  })
+}
+
+/** Public sale landing page data (GET /specials/{slug}). */
+export function useSaleDetail(slug: string | undefined) {
+  return useQuery({
+    queryKey: ['sale', slug],
+    queryFn: () => api.getSaleBySlug(slug!).then(r => r.data),
+    enabled: !!slug,
+    staleTime: 30_000,
   })
 }
 export function useCreateAdminSpecial() {
@@ -487,7 +507,26 @@ export function useDeleteAdminSpecial() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (id: number) => api.deleteAdminSpecial(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-specials'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-specials'] })
+      qc.invalidateQueries({ queryKey: ['admin-special'] })
+      qc.invalidateQueries({ queryKey: ['specials'] })
+      qc.invalidateQueries({ queryKey: ['sale'] })
+    },
+  })
+}
+
+export function useSyncSaleProducts() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, products }: { id: number; products: Array<{ product_id: number; special_price?: number | null }> }) =>
+      api.syncSaleProducts(id, products),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-specials'] })
+      qc.invalidateQueries({ queryKey: ['admin-special'] })
+      qc.invalidateQueries({ queryKey: ['specials'] })
+      qc.invalidateQueries({ queryKey: ['sale'] })
+    },
   })
 }
 
@@ -603,13 +642,14 @@ export function useDeleteAdminRecipe() {
   })
 }
 
-export function useAdminCommunityPosts() {
+export function useAdminCommunityPosts(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['admin-community-posts'],
     queryFn: async () => {
       const res = await api.getAdminCommunityPosts()
       return normalizePaginated<CommunityPost>(res as any)
     },
+    enabled: options?.enabled,
   })
 }
 export function useCreateAdminCommunityPost() {
@@ -634,13 +674,14 @@ export function useDeleteAdminCommunityPost() {
   })
 }
 
-export function useAdminCareers() {
+export function useAdminCareers(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['admin-careers'],
     queryFn: async () => {
       const res = await api.getAdminCareers()
       return normalizePaginated<CareerListing>(res as any)
     },
+    enabled: options?.enabled,
   })
 }
 export function useCreateAdminCareer() {

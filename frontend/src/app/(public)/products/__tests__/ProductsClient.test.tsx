@@ -22,6 +22,7 @@ vi.mock('next/navigation', () => ({
 
 vi.mock('motion/react', () => ({
   motion: new Proxy({}, { get: (_t, tag) => tag }),
+  useReducedMotion: () => false,
 }))
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'

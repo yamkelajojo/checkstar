@@ -159,11 +159,14 @@ describe('submit gates', () => {
     expect(mockNavigate).toHaveBeenCalledWith('Auth', { intent: 'checkout' });
   });
 
-  it('shows an inability banner when no store is resolved', async () => {
+  it('shows an inability banner when no store can fulfill the order', async () => {
     useDeliveryStore.setState({ fulfillmentStore: null });
-    (validateFulfillment as jest.Mock).mockResolvedValue({ success: false, error: 'No store found' });
+    (validateFulfillment as jest.Mock).mockResolvedValue({ success: false, reason: 'No store has these items in stock' });
     await renderScreen();
-    expect(screen.getByText('Unable to determine fulfillment store')).toBeTruthy();
+    // Validation is debounced; the banner appears once it settles.
+    await waitFor(() => {
+      expect(screen.getByText('No store has these items in stock')).toBeTruthy();
+    }, { timeout: 3000 });
     expect(placeOrderButton().props.accessibilityState.disabled).toBe(true);
   });
 });

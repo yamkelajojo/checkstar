@@ -1,96 +1,39 @@
-import React from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  useAnimatedScrollHandler,
-  interpolate,
-  Extrapolation,
-  type SharedValue,
-} from 'react-native-reanimated';
-import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
+import type { ReactNode } from 'react';
+import { View, ScrollView, StyleSheet } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../theme';
 import { semanticSpacing } from '../../theme/spacing';
 
-// jest-expo + reanimated 4 mock gaps — fallback to plain RN components
-const LinearGradient: any = (ExpoLinearGradient as any) ?? View;
-const AScrollView: any = (Animated as any)?.ScrollView ?? ScrollView;
-const AView: any = (Animated as any)?.View ?? View;
-
 interface FadeEdgeScrollProps {
-  children: React.ReactNode | ((scrollX: SharedValue<number>, viewportWidth: SharedValue<number>) => React.ReactNode);
-  snapInterval?: number;
+  children: ReactNode;
   fadeWidth?: number;
   contentPaddingLeft?: number;
   contentPaddingRight?: number;
   backgroundColor?: string;
-  decelerationRate?: number | 'fast' | 'normal';
 }
 
 /**
- * FadeEdgeScroll — Horizontal carousel with scroll-aware edge fades
- * Ported from GreenBidder (FadeEdgeScroll.jsx) to Checkstar design tokens.
+ * FadeEdgeScroll — horizontal scroller with soft edge fades.
  *
- * - Tracks scrollX / contentWidth / viewportWidth as shared values (UI thread)
- * - Left fade grows in over first 48px of scroll; right fade fades out near end
- * - Uses LinearGradient overlays with pointerEvents none so scroll remains interactive
- * - Exposes shared values via render-prop for ScrollAwareCard parallax if needed
+ * The fades are static gradient overlays (the "slight blur on the edges"),
+ * always on, pointer-events disabled. No scroll listeners, no Reanimated —
+ * the scroll path stays plain so it can't crash, and the look is the same.
  */
 export function FadeEdgeScroll({
   children,
-  snapInterval,
-  fadeWidth = 28,
+  fadeWidth = 24,
   contentPaddingLeft = semanticSpacing.screenPadding,
   contentPaddingRight = semanticSpacing.screenPadding,
   backgroundColor,
-  decelerationRate = 0.92 as const,
 }: FadeEdgeScrollProps) {
   const theme = useTheme();
   const bg = backgroundColor ?? theme.colors.background.primary;
-  const scrollX = useSharedValue(0);
-  const contentWidth = useSharedValue(0);
-  const viewportWidth = useSharedValue(0);
-
-  // jest-expo mock for reanimated v4 does not provide useAnimatedScrollHandler — fallback to plain scroll for tests
-  const scrollHandler: any =
-    typeof useAnimatedScrollHandler === 'function'
-      ? useAnimatedScrollHandler({
-          onScroll: (event: any) => {
-            scrollX.value = event.contentOffset.x;
-            contentWidth.value = event.contentSize.width;
-            viewportWidth.value = event.layoutMeasurement.width;
-          },
-        })
-      : undefined;
-
-  const leftFadeStyle =
-    typeof useAnimatedStyle === 'function'
-      ? useAnimatedStyle(() => ({
-          opacity: interpolate(scrollX.value, [0, 48], [0, 1], Extrapolation.CLAMP),
-        }))
-      : { opacity: 0 };
-
-  const rightFadeStyle =
-    typeof useAnimatedStyle === 'function'
-      ? useAnimatedStyle(() => {
-          const maxScroll = contentWidth.value - viewportWidth.value;
-          if (maxScroll <= 0) return { opacity: 0 };
-          return {
-            opacity: interpolate(scrollX.value, [maxScroll - 48, maxScroll], [1, 0], Extrapolation.CLAMP),
-          };
-        })
-      : { opacity: 1 };
 
   return (
     <View style={styles.wrapper}>
-      <AScrollView
+      <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        onScroll={scrollHandler}
-        scrollEventThrottle={16}
-        decelerationRate={decelerationRate as any}
-        snapToInterval={snapInterval}
-        snapToAlignment="start"
         contentContainerStyle={{
           paddingLeft: contentPaddingLeft,
           paddingRight: contentPaddingRight,
@@ -99,26 +42,26 @@ export function FadeEdgeScroll({
           alignItems: 'center',
         }}
       >
-        {typeof children === 'function' ? (children as any)(scrollX, viewportWidth) : children}
-      </AScrollView>
+        {children}
+      </ScrollView>
 
-      <AView style={[styles.fadeLeft, { width: fadeWidth }, leftFadeStyle]} pointerEvents="none">
+      <View style={[styles.fadeLeft, { width: fadeWidth }]} pointerEvents="none">
         <LinearGradient
           colors={[bg, `${bg}00`]}
           start={{ x: 0, y: 0.5 }}
           end={{ x: 1, y: 0.5 }}
           style={StyleSheet.absoluteFill}
         />
-      </AView>
+      </View>
 
-      <AView style={[styles.fadeRight, { width: fadeWidth }, rightFadeStyle]} pointerEvents="none">
+      <View style={[styles.fadeRight, { width: fadeWidth }]} pointerEvents="none">
         <LinearGradient
           colors={[`${bg}00`, bg]}
           start={{ x: 0, y: 0.5 }}
           end={{ x: 1, y: 0.5 }}
           style={StyleSheet.absoluteFill}
         />
-      </AView>
+      </View>
     </View>
   );
 }

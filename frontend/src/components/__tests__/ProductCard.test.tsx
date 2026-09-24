@@ -4,6 +4,7 @@ import React from 'react'
 
 vi.mock('motion/react', () => ({
   motion: new Proxy({}, { get: (_t, tag) => tag }),
+  useReducedMotion: () => false,
 }))
 
 const addItem = vi.fn()

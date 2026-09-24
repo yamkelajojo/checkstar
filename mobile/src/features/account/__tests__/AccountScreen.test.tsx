@@ -131,3 +131,34 @@ describe('authenticated account', () => {
     expect(mockNavigate).toHaveBeenCalledWith('OrderDetail', { orderId: 12 });
   });
 });
+
+describe('developer settings (regression: previously cut off at the bottom)', () => {
+  beforeEach(() => {
+    useSession.setState({ status: 'authenticated', token: 't', user: customer });
+  });
+
+  it('renders the Developer Settings row in normal flow, even with a long order list', async () => {
+    (fetchOrders as jest.Mock).mockReturnValue([
+      order({}),
+      order({ id: 8 }),
+      order({ id: 9 }),
+      order({ id: 10 }),
+      order({ id: 11 }),
+    ]);
+    await renderAccount();
+    await screen.findByText('Order #11');
+
+    // The row exists in the tree (inside the scrollview) and is tappable —
+    // it is no longer a fixed element that could be clipped off-screen.
+    const row = screen.getByRole('button', { name: /Developer Settings/ });
+    expect(row).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /Save & Test/i })).toBeNull();
+  });
+
+  it('expands into the debug panel when tapped', async () => {
+    await renderAccount();
+    await fireEvent.press(screen.getByRole('button', { name: /Developer Settings/ }));
+
+    expect(await screen.findByRole('button', { name: /Save & Test/i })).toBeTruthy();
+  });
+});

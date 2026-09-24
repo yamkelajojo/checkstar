@@ -110,7 +110,7 @@ export function RiderOrderDetailScreen() {
             </View>
           </FadeSlideIn>
 
-          <FadeSlideIn delay={140} distance={12} initialScale={0.98}>
+          <FadeSlideIn delay={140} distance={12}>
             <RouteMap storeName={order.store?.name ?? 'Checkstar'} storeLat={order.store?.latitude ?? undefined} storeLng={order.store?.longitude ?? undefined} deliveryAddress={order.delivery_address} deliveryLat={order.delivery_latitude ?? undefined} deliveryLng={order.delivery_longitude ?? undefined} distanceKm={routeGeometry?.distance_km ?? (hasRouteCoords ? 3.2 : undefined)} durationMinutes={routeGeometry?.duration_minutes ?? (hasRouteCoords ? 15 : undefined)} source={routeGeometry?.source ?? 'mock_fallback'} geometry={routeGeometry?.geometry ?? null} />
           </FadeSlideIn>
 
@@ -148,7 +148,7 @@ export function RiderOrderDetailScreen() {
                 const canToggle = isPreparing || isConfirmed;
                 return (
                   <CrashCascadeIn key={item.id} index={idx}>
-                    <TactilePressable onPress={() => canToggle && toggleItem(item.id)} haptic={canToggle ? 'selection' : undefined} disabled={!canToggle} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                    <TactilePressable onPress={() => canToggle && toggleItem(item.id)} haptic={canToggle ? 'selection' : undefined} disabled={!canToggle} accessibilityState={{ checked: bought, disabled: !canToggle }} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                       <View style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 1.5, borderColor: bought ? theme.colors.text.primary : theme.colors.border.subtle, backgroundColor: bought ? theme.colors.text.primary : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
                         {bought ? <Check size={12} color="#fff" strokeWidth={3} /> : null}
                       </View>

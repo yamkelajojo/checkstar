@@ -13,6 +13,10 @@ class SpecialSeeder extends Seeder
     {
         $now = Carbon::now();
 
+        // Demo sales belong to the first (flagship) store; null would make
+        // them chain-wide, which only developers create.
+        $storeId = \App\Models\Store::query()->min('id');
+
         $specials = [
             [
                 'title' => 'Winter Warmers',
@@ -120,9 +124,15 @@ class SpecialSeeder extends Seeder
         foreach ($specials as $specialData) {
             $products = $specialData['products'];
             unset($specialData['products']);
+            $specialData['store_id'] = $storeId;
 
             // Idempotent: re-seeding must not die on the unique slug.
             $special = Special::firstOrCreate(['slug' => $specialData['slug']], $specialData);
+
+            // Heals rows seeded before sales became store-owned.
+            if ((int) $special->store_id !== (int) $storeId) {
+                $special->forceFill(['store_id' => $storeId])->save();
+            }
 
             // sync() (not attach()) keeps re-seeds from duplicating pivots.
             $pivot = [];

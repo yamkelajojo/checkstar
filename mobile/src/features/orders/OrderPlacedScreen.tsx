@@ -57,7 +57,7 @@ export function OrderPlacedScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background.primary, alignItems: 'center', justifyContent: 'center', padding: semanticSpacing.screenPadding, gap: 24 }}>
-      <FadeSlideIn delay={60} distance={16} initialScale={0.96}>
+      <FadeSlideIn delay={60} distance={16}>
         <View style={{ alignItems: 'center', gap: 16 }}>
           <Animated.View style={[{ width: 88, height: 88, borderRadius: 44, backgroundColor: tone.bg, borderWidth: 1, borderColor: tone.color + '20', alignItems: 'center', justifyContent: 'center', shadowColor: tone.color, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 12, elevation: 3 }, iconStyle]}>
             <Icon size={40} color={tone.color} strokeWidth={1.8} />
@@ -79,7 +79,7 @@ export function OrderPlacedScreen() {
           )}
 
           {order != null && (
-            <FadeSlideIn delay={200} distance={10} initialScale={0.96}>
+            <FadeSlideIn delay={200} distance={10}>
               <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: 20, paddingVertical: 16, paddingHorizontal: 24, alignItems: 'center', gap: 4, borderWidth: 1, borderColor: theme.colors.border.subtle, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 1 }}>
                 <Text style={{ fontSize: 10, color: theme.colors.text.tertiary, textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: '600' }}>Order #{order.id}</Text>
                 <Text style={{ fontSize: 22, fontWeight: '800', color: theme.colors.text.primary, letterSpacing: -0.5 }}>{formatZar(order.total_cents ?? 0)}</Text>
@@ -89,7 +89,7 @@ export function OrderPlacedScreen() {
         </View>
       </FadeSlideIn>
 
-      <FadeSlideIn delay={280} distance={12} initialScale={0.98}>
+      <FadeSlideIn delay={280} distance={12}>
         <View style={{ alignSelf: 'stretch', gap: 10, minWidth: 280 }}>
           {outcome !== 'cancelled' ? (
             <TactilePressable onPress={() => navigation.replace('OrderDetail', { orderId })} haptic="commit" style={{ backgroundColor: theme.colors.text.primary, borderRadius: 999, paddingVertical: 14, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 8, elevation: 3 }}>

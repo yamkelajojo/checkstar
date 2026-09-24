@@ -139,7 +139,7 @@ export function BannerCarousel({ banners, onSlidePress }: BannerCarouselProps) {
     };
 
     return (
-      <FadeSlideIn delay={index * 60} distance={12} initialScale={0.98}>
+      <FadeSlideIn delay={index * 60} distance={12}>
         <Pressable
           onPress={() => {
             haptic.tap();

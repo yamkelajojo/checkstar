@@ -142,7 +142,7 @@ export function AddressesSection() {
       ))}
 
       {adding ? (
-        <FadeSlideIn delay={120} distance={10} initialScale={0.97}>
+        <FadeSlideIn delay={120} distance={10}>
           <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: 16, padding: 14, gap: 10, borderWidth: 1, borderColor: theme.colors.border.subtle, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 1 }}>
             <TextInput value={label} onChangeText={setLabel} placeholder="Label (e.g. Home, Work)" placeholderTextColor={theme.colors.text.tertiary} maxLength={50} style={{ backgroundColor: theme.colors.background.secondary, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, color: theme.colors.text.primary, fontSize: 12, borderWidth: 1, borderColor: theme.colors.border.subtle }} />
             <TextInput value={address} onChangeText={setAddress} placeholder="Street address" placeholderTextColor={theme.colors.text.tertiary} multiline style={{ backgroundColor: theme.colors.background.secondary, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, color: theme.colors.text.primary, fontSize: 12, minHeight: 60, textAlignVertical: 'top', borderWidth: 1, borderColor: theme.colors.border.subtle }} />

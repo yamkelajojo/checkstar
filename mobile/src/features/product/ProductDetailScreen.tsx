@@ -158,7 +158,7 @@ export function ProductDetailScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background.primary }}>
-      <FadeSlideIn delay={60} distance={8} initialScale={0.96}>
+      <FadeSlideIn delay={60} distance={8}>
         <Pressable
           onPress={() => {
             haptic.selection();
@@ -192,7 +192,7 @@ export function ProductDetailScreen() {
 
       <ScrollView contentContainerStyle={{ paddingBottom: 160 }} showsVerticalScrollIndicator={false} scrollEventThrottle={16} onScroll={(e) => setScrollY(e.nativeEvent.contentOffset.y)}>
         <View style={{ paddingTop: insets.top + 56, paddingHorizontal: semanticSpacing.screenPadding, gap: 12 }}>
-          <FadeSlideIn delay={80} distance={16} initialScale={0.96}>
+          <FadeSlideIn delay={80} distance={16}>
             <View
               style={{
                 width: '100%',
@@ -370,7 +370,7 @@ export function ProductDetailScreen() {
               <Text style={{ color: theme.colors.text.secondary, fontSize: 12 }}>Unavailable at all stores</Text>
             </View>
           ) : quantity === 0 ? (
-            <TactilePressable onPress={handleAddToCart} haptic="commit" style={{ backgroundColor: theme.colors.text.primary, borderRadius: 999, width: '80%', alignSelf: 'center', paddingVertical: 14, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 8, elevation: 3 }}>
+            <TactilePressable onPress={handleAddToCart} haptic="commit" accessibilityLabel={`Add ${product.name} to cart`} style={{ backgroundColor: theme.colors.text.primary, borderRadius: 999, width: '80%', alignSelf: 'center', paddingVertical: 14, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 8, elevation: 3 }}>
               <Text style={{ color: theme.colors.text.inverse, fontWeight: '700', fontSize: 12, letterSpacing: 0.3, textTransform: 'uppercase' }}>{`Add to cart · ${formatZar(product.effectivePriceCents)}`}</Text>
             </TactilePressable>
           ) : (

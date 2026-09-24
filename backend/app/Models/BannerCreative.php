@@ -10,6 +10,7 @@ class BannerCreative extends Model
     protected $fillable = [
         'name',
         'store_id',
+        'special_id',
         'created_by',
         'slides',
         'status',
@@ -31,6 +32,15 @@ class BannerCreative extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * The sale this banner fronts, when it is a sale banner rather than a
+     * standalone branding banner.
+     */
+    public function special(): BelongsTo
+    {
+        return $this->belongsTo(Special::class);
     }
 
     public function scopePublished($query)

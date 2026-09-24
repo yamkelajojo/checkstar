@@ -98,7 +98,7 @@ describe('HomeScreen with a stocked catalogue', () => {
     await renderHome();
 
     expect(screen.getByText('Shop by category')).toBeTruthy();
-    expect(screen.getByText('No Specials right now — new deals land every week.')).toBeTruthy();
+    expect(screen.getByText('No specials right now — new deals land every week.')).toBeTruthy();
     expect(screen.queryByText('The shelves are being stocked')).toBeNull();
   });
 });

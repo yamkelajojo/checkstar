@@ -194,7 +194,7 @@ export function CartScreen() {
         />
       )}
 
-      <FadeSlideIn delay={200} distance={12} initialScale={0.98}>
+      <FadeSlideIn delay={200} distance={12}>
         <View
           style={{
             position: 'absolute',
@@ -272,7 +272,7 @@ export function CartScreen() {
 function CartSkeletonRow({ index = 0 }: { index?: number }) {
   const theme = useTheme();
   return (
-    <FadeSlideIn delay={index * 40} distance={8} initialScale={0.97}>
+    <FadeSlideIn delay={index * 40} distance={8}>
       <View
         style={{
           flexDirection: 'row',

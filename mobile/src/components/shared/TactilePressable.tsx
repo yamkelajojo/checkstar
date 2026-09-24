@@ -58,6 +58,7 @@ export function TactilePressable({
   onPress,
   onPressIn: externalPressIn,
   onPressOut: externalPressOut,
+  accessibilityRole = 'button',
   ...rest
 }: TactilePressableProps) {
   const reduceMotion = useReducedMotion();
@@ -130,6 +131,7 @@ export function TactilePressable({
       >
         <Pressable
           {...rest}
+          accessibilityRole={accessibilityRole}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}

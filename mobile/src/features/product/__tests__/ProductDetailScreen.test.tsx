@@ -92,7 +92,10 @@ describe('loaded product', () => {
     expect(
       screen.getByRole('button', { name: 'Add Baby Spinach to cart' }),
     ).toBeTruthy();
-    expect(screen.getByText(/R 25,00 \/ kg/)).toBeTruthy();  });
+    // PriceLabel renders price and unit as separate styled nodes.
+    expect(screen.getByText('R 25,00')).toBeTruthy();
+    expect(screen.getByText('/ kg')).toBeTruthy();
+  });
 
   it('adds the product once and swaps to a stepper', async () => {
     await renderDetail();
@@ -124,12 +127,13 @@ describe('specials display', () => {
     onSale.salePriceCents = 2000;
     mockUseProduct.mockReturnValue({ data: onSale, isLoading: false });
     await renderDetail();
-    expect(screen.getByText(/Special Offer/i)).toBeTruthy();
+    // 2000 vs 2500 base → the hero shows a 20% OFF badge.
+    expect(screen.getByText('20% OFF')).toBeTruthy();
   });
 
   it('shows no special flag at full price', async () => {
     await renderDetail();
-    expect(screen.queryByText(/Special Offer/i)).toBeNull();
+    expect(screen.queryByText(/% OFF/i)).toBeNull();
   });
 });
 

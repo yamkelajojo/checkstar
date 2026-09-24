@@ -1,17 +1,23 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'motion/react'
 import { useAuthStore } from '@/stores/auth-store'
-import { useAllProducts, useCategories, useOrders, useStores, useSpecials, useRecipes } from '@/lib/query'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import type { Order } from '@/types'
 import {
-  ShoppingBag, Store, Tags, Sparkles,
+  useAllProducts, useCategories, useStores, useSpecials, useRecipes,
+  useStoreOrders, useStoreInventory, usePendingDispatch,
+} from '@/lib/query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import type { Order, Store } from '@/types'
+import { resolveUserStore } from '@/types'
+import {
+  ShoppingBag, Store as StoreIcon, Tags, Sparkles,
   BookOpen, Users, MessageSquare,
   HeartPulse, Loader2, AlertCircle,
   RefreshCw, LayoutDashboard, ArrowUpRight,
   ShoppingCart, Bike, Image, ShieldAlert, Activity,
+  AlertTriangle, PackageX, Bike as BikeIcon,
 } from 'lucide-react'
 import { fadeUpTight as fadeUp, staggerTight as stagger } from '@/lib/motion/variants'
 import { api } from '@/lib/api'
@@ -19,23 +25,25 @@ import { api } from '@/lib/api'
 // Only pages that actually exist — every link must resolve.
 // Roles aligned with backend route middleware:
 // - banners: developer, store_owner, store_manager
+// - sales: developer, store_owner, store_manager
 // - staff: store_owner, developer
 // - inventory/orders: store_manager, logistics_officer, store_owner, developer
 // - operations/analytics/audit-logs: store_owner, store_manager, logistics_officer, developer
 // - dispatch: store_manager, logistics_officer, store_owner, developer
-// - products/categories/specials/stores/users/riders: developer only
+// - products/categories/stores/users/riders: developer only
 const storeManagementLinks = [
+  { href: '/admin/orders', label: 'Store Orders', icon: ShoppingCart, desc: 'View and update store orders', roles: ['store_manager', 'logistics_officer', 'store_owner', 'developer'] },
+  { href: '/admin/inventory', label: 'Inventory', icon: ShoppingBag, desc: 'Manage stock levels and availability', roles: ['store_manager', 'logistics_officer', 'store_owner', 'developer'] },
+  { href: '/admin/specials', label: 'Sales', icon: Sparkles, desc: 'Create sales with products and banners', roles: ['store_owner', 'store_manager', 'developer'] },
   { href: '/admin/banners', label: 'Banners', icon: Image, desc: 'Create and manage promotional banners', roles: ['store_owner', 'store_manager', 'developer'] },
   { href: '/admin/staff', label: 'Store Staff', icon: Users, desc: 'Hire and remove store staff access', roles: ['store_owner', 'developer'] },
-  { href: '/admin/inventory', label: 'Inventory', icon: ShoppingBag, desc: 'Manage stock levels and availability', roles: ['store_manager', 'logistics_officer', 'store_owner', 'developer'] },
-  { href: '/admin/orders', label: 'Store Orders', icon: ShoppingCart, desc: 'View and update store orders', roles: ['store_manager', 'logistics_officer', 'store_owner', 'developer'] },
 ]
 
 const catalogManagementLinks = [
   { href: '/admin/products', label: 'Products', icon: ShoppingBag, desc: 'Create and manage product catalogue', roles: ['developer'] },
   { href: '/admin/categories', label: 'Categories', icon: Tags, desc: 'Manage product categories', roles: ['developer'] },
-  { href: '/admin/specials', label: 'Specials', icon: Sparkles, desc: 'Manage promotional specials', roles: ['developer'] },
-  { href: '/admin/stores', label: 'Stores', icon: Store, desc: 'Manage store locations and settings', roles: ['developer'] },
+  { href: '/admin/specials', label: 'Sales', icon: Sparkles, desc: 'Manage sales, products and prices', roles: ['developer'] },
+  { href: '/admin/stores', label: 'Stores', icon: StoreIcon, desc: 'Manage store locations and settings', roles: ['developer'] },
   { href: '/admin/users', label: 'Users', icon: Users, desc: 'Manage user accounts and roles', roles: ['developer'] },
   { href: '/admin/riders', label: 'Riders', icon: Bike, desc: 'Manage rider fleet', roles: ['developer'] },
   { href: '/admin/recipes', label: 'Recipes', icon: BookOpen, desc: 'Create and manage recipes', roles: ['developer'] },
@@ -44,10 +52,10 @@ const catalogManagementLinks = [
 ]
 
 const operationsLinks = [
+  { href: '/account/dispatch', label: 'Dispatch Console', icon: Bike, desc: 'Assign and reassign delivery riders', roles: ['logistics_officer', 'store_manager', 'store_owner', 'developer'] },
   { href: '/operations', label: 'Live Operations', icon: Activity, desc: 'Realtime map, metrics and event feed', roles: ['logistics_officer', 'store_owner', 'store_manager', 'developer'] },
   { href: '/operations/analytics', label: 'Analytics', icon: ShoppingCart, desc: 'Revenue, orders and fleet insights', roles: ['logistics_officer', 'store_owner', 'store_manager', 'developer'] },
   { href: '/operations/audit-logs', label: 'Audit Logs', icon: ShieldAlert, desc: 'Searchable audit trail', roles: ['logistics_officer', 'store_owner', 'store_manager', 'developer'] },
-  { href: '/account/dispatch', label: 'Dispatch Console', icon: Bike, desc: 'Assign and reassign delivery riders', roles: ['logistics_officer', 'store_manager', 'store_owner', 'developer'] },
   { href: '/admin/health', label: 'System Health', icon: HeartPulse, desc: 'Service status and uptime', roles: ['developer'] },
 ]
 
@@ -74,45 +82,180 @@ export default function AdminDashboardClient() {
   const { user } = useAuthStore()
   const queryClient = useQueryClient()
 
-  // Non-developer staff get a focused dashboard with their available tools.
+  // Non-developer staff get a focused cockpit for their store.
   if (user && user.role !== 'developer') {
-    const roleLabel = user.role?.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())
-    const visibleStoreLinks = storeManagementLinks.filter(l => l.roles.includes(user.role))
-    const visibleOpsLinks = operationsLinks.filter(l => l.roles.includes(user.role))
-
-    return (
-      <main className="max-w-5xl mx-auto px-4 py-8">
-        <motion.div initial="hidden" animate="show" variants={stagger}>
-          <motion.div variants={fadeUp} className="mb-8">
-            <div className="flex items-center gap-3 mb-2">
-              <h1 className="font-display text-3xl font-bold text-gray-900">Staff Dashboard</h1>
-              <span className="inline-flex items-center gap-1 px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium">
-                {roleLabel}
-              </span>
-            </div>
-            <p className="text-gray-500 text-sm">
-              Welcome back, {user?.name?.split(' ')[0] || 'Staff'}. Select a tool below to get started.
-            </p>
-          </motion.div>
-
-          <motion.div variants={fadeUp} className="mb-8">
-            <h2 className="font-display text-lg font-semibold mb-4">Your Tools</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {visibleStoreLinks.map((link) => (
-                <LinkCard key={link.href} link={link} />
-              ))}
-              {visibleOpsLinks.map((link) => (
-                <LinkCard key={link.href} link={link} />
-              ))}
-            </div>
-          </motion.div>
-        </motion.div>
-      </main>
-    )
+    return <StaffDashboard user={user} />
   }
 
   return <AdminDashboardBody user={user} queryClient={queryClient} />
 }
+
+// ---------------------------------------------------------------------------
+// Staff dashboard — owner / manager / logistics
+// ---------------------------------------------------------------------------
+
+function StaffDashboard({ user }: { user: NonNullable<ReturnType<typeof useAuthStore.getState>['user']> }) {
+  const myStore = resolveUserStore(user)
+  const storeId = myStore?.id ?? null
+  const roleLabel = user.role.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+
+  const { data: pending = [], isLoading: pendingLoading } = usePendingDispatch(storeId ?? undefined, { enabled: !!storeId })
+  const { data: inventoryRaw, isLoading: inventoryLoading } = useStoreInventory(storeId ?? undefined, { enabled: !!storeId })
+  const { data: orders = [], isLoading: ordersLoading } = useStoreOrders(storeId ?? undefined, undefined, { enabled: !!storeId })
+
+  const inventory = (inventoryRaw ?? []) as Array<{ stock_quantity: number }>
+  const lowStockCount = inventory.filter((i) => i.stock_quantity > 0 && i.stock_quantity < 10).length
+  const outOfStockCount = inventory.filter((i) => i.stock_quantity === 0).length
+  const awaitingDispatch = (pending as unknown[]).length
+  const recentOrders = [...orders].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 5)
+
+  const visibleStoreLinks = storeManagementLinks.filter((l) => l.roles.includes(user.role))
+  const visibleOpsLinks = operationsLinks.filter((l) => l.roles.includes(user.role))
+
+  const attention = [
+    { label: 'orders awaiting dispatch', count: awaitingDispatch, href: '/account/dispatch', icon: BikeIcon, tone: 'text-amber-600' },
+    { label: 'low on stock', count: lowStockCount, href: '/admin/inventory', icon: AlertTriangle, tone: 'text-amber-600' },
+    { label: 'out of stock', count: outOfStockCount, href: '/admin/inventory', icon: PackageX, tone: 'text-accent' },
+  ]
+  const anyAttention = attention.some((a) => a.count > 0)
+
+  return (
+    <main className="max-w-5xl mx-auto px-4 py-8">
+      <motion.div initial="hidden" animate="show" variants={stagger}>
+        <motion.div variants={fadeUp} className="mb-8">
+          <div className="flex items-center gap-3 mb-2">
+            <h1 className="font-display text-3xl font-bold text-gray-900">Staff Dashboard</h1>
+            <span className="inline-flex items-center gap-1 px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium">
+              {roleLabel}
+            </span>
+          </div>
+          <p className="text-gray-500 text-sm">
+            Welcome back, {user.name?.split(' ')[0] || 'Staff'}.
+            {myStore ? ` Here’s what needs your attention at ${myStore.name}.` : ''}
+          </p>
+        </motion.div>
+
+        {storeId && (
+          <motion.div variants={fadeUp} className="mb-8">
+            <h2 className="font-display text-lg font-semibold mb-4">Needs Attention</h2>
+            {pendingLoading || inventoryLoading ? (
+              <div className="bg-white border border-gray-100 rounded-xl p-5">
+                <div className="h-4 w-64 bg-gray-100 rounded animate-pulse" />
+              </div>
+            ) : !anyAttention ? (
+              <div className="bg-white border border-gray-100 rounded-xl p-5 flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-success/10 flex items-center justify-center">
+                  <AlertTriangle size={16} className="text-success" />
+                </div>
+                <p className="text-sm text-gray-600">Nothing needs attention right now.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {attention.map((a) => {
+                  const Icon = a.icon
+                  return (
+                    <Link
+                      key={a.label}
+                      href={a.href}
+                      className={`bg-white border rounded-xl p-4 flex items-center gap-3 hover:shadow-md transition-shadow ${
+                        a.count > 0 ? 'border-amber-200 bg-amber-50/40' : 'border-gray-100'
+                      }`}
+                    >
+                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${a.count > 0 ? 'bg-amber-100' : 'bg-gray-50'}`}>
+                        <Icon size={17} className={a.count > 0 ? a.tone : 'text-gray-300'} />
+                      </div>
+                      <div>
+                        <p className="font-display text-xl font-bold text-gray-900 leading-none">{a.count}</p>
+                        <p className="text-xs text-gray-500 mt-1">{a.label}</p>
+                      </div>
+                    </Link>
+                  )
+                })}
+              </div>
+            )}
+          </motion.div>
+        )}
+
+        {storeId && (
+          <motion.div variants={fadeUp} className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-display text-lg font-semibold">Recent Orders</h2>
+              <Link href="/admin/orders" className="text-sm text-primary hover:underline font-medium">
+                All orders →
+              </Link>
+            </div>
+            {ordersLoading ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="bg-white border border-gray-100 rounded-xl p-4">
+                    <div className="animate-pulse space-y-2">
+                      <div className="h-4 w-32 bg-gray-100 rounded" />
+                      <div className="h-3 w-24 bg-gray-100 rounded" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : recentOrders.length === 0 ? (
+              <div className="bg-white border border-gray-100 rounded-xl p-8 text-center">
+                <ShoppingCart size={28} className="text-gray-200 mx-auto mb-2" />
+                <p className="text-sm text-gray-400">No orders yet</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {recentOrders.map((order) => (
+                  <Link
+                    key={order.id}
+                    href="/admin/orders"
+                    className="block bg-white border border-gray-100 rounded-xl p-4 hover:shadow-md transition-shadow"
+                  >
+                    <OrderRow order={order} />
+                  </Link>
+                ))}
+              </div>
+            )}
+          </motion.div>
+        )}
+
+        <motion.div variants={fadeUp} className="mb-8">
+          <h2 className="font-display text-lg font-semibold mb-4">Your Tools</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {visibleStoreLinks.map((link) => (
+              <LinkCard key={link.href} link={link} />
+            ))}
+            {visibleOpsLinks.map((link) => (
+              <LinkCard key={link.href} link={link} />
+            ))}
+          </div>
+        </motion.div>
+      </motion.div>
+    </main>
+  )
+}
+
+function OrderRow({ order }: { order: Order }) {
+  return (
+    <>
+      <div className="flex items-center justify-between mb-1">
+        <span className="font-medium text-sm text-gray-900">{order.order_number}</span>
+        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+          order.status === 'delivered' ? 'bg-success/10 text-success' :
+          order.status === 'cancelled' ? 'bg-accent/10 text-accent' :
+          'bg-primary/10 text-primary'
+        }`}>
+          {order.status.replace(/_/g, ' ')}
+        </span>
+      </div>
+      <div className="flex items-center justify-between text-sm">
+        <span className="text-gray-400">{new Date(order.created_at).toLocaleDateString('en-ZA')}</span>
+        <span className="font-semibold text-gray-700">R{Number(order.total).toFixed(2)}</span>
+      </div>
+    </>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Developer dashboard — platform overview
+// ---------------------------------------------------------------------------
 
 // Module scope — components defined inside a render function get a fresh
 // identity every render, forcing React to unmount/remount the whole grid.
@@ -152,7 +295,6 @@ function LinkCard({ link }: { link: { href: string; label: string; icon: React.E
 function AdminDashboardBody({ user, queryClient }: { user: ReturnType<typeof useAuthStore.getState>['user']; queryClient: ReturnType<typeof useQueryClient> }) {
   const { data: products = [], isLoading: productsLoading, error: productsError } = useAllProducts()
   const { data: categories = [], isLoading: categoriesLoading, error: categoriesError } = useCategories()
-  const { data: orders = [], isLoading: ordersLoading, error: ordersError } = useOrders()
   const { data: stores = [], isLoading: storesLoading, error: storesError } = useStores()
   const { data: specials = [], isLoading: specialsLoading, error: specialsError } = useSpecials()
   const { data: recipes = [], isLoading: recipesLoading, error: recipesError } = useRecipes()
@@ -168,23 +310,37 @@ function AdminDashboardBody({ user, queryClient }: { user: ReturnType<typeof use
     refetchInterval: 60_000,
   })
 
+  // Store focus: the backend resolves a developer's store explicitly, so
+  // order/stock widgets need one. Defaults to the first store once loaded.
+  const [focusStoreId, setFocusStoreId] = useState<number | null>(null)
+  useEffect(() => {
+    if (focusStoreId == null && stores.length > 0) setFocusStoreId(stores[0].id)
+  }, [stores, focusStoreId])
+  const focusStore: Store | undefined = stores.find((s) => s.id === focusStoreId)
+
+  const { data: storeOrders = [], isLoading: storeOrdersLoading } = useStoreOrders(focusStoreId ?? undefined, undefined, { enabled: !!focusStoreId })
+  const { data: pending = [] } = usePendingDispatch(focusStoreId ?? undefined, { enabled: !!focusStoreId })
+  const { data: inventoryRaw } = useStoreInventory(focusStoreId ?? undefined, { enabled: !!focusStoreId })
+  const inventory = (inventoryRaw ?? []) as Array<{ stock_quantity: number }>
+  const lowStockCount = inventory.filter((i) => i.stock_quantity > 0 && i.stock_quantity < 10).length
+  const outOfStockCount = inventory.filter((i) => i.stock_quantity === 0).length
+  const awaitingDispatch = (pending as unknown[]).length
+
   const productsCount = products.length || 0
   const categoriesCount = categories.length || 0
-  const ordersCount = orders.length || 0
   const storesCount = stores.length || 0
   const specialsCount = specials.length || 0
   const recipesCount = recipes.length || 0
   const contactCount = Array.isArray(contactData?.data) ? (contactData.data as unknown[]).length : Array.isArray(contactData) ? (contactData as unknown[]).length : null
 
-  const loading = productsLoading || categoriesLoading || ordersLoading || storesLoading || specialsLoading || recipesLoading || contactLoading
-  const error = productsError?.message || categoriesError?.message || ordersError?.message || storesError?.message || specialsError?.message || recipesError?.message || contactError?.message || null
-  const stats = { products: productsCount, categories: categoriesCount, orders: ordersCount, stores: storesCount, specials: specialsCount, recipes: recipesCount }
-  const recentOrders = [...(orders as Order[])].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 5)
+  const loading = productsLoading || categoriesLoading || storesLoading || specialsLoading || recipesLoading || contactLoading
+  const error = productsError?.message || categoriesError?.message || storesError?.message || specialsError?.message || recipesError?.message || contactError?.message || null
+  const recentOrders = [...storeOrders].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 5)
 
   const fetchData = () => {
     queryClient.invalidateQueries({ queryKey: ['products'] })
     queryClient.invalidateQueries({ queryKey: ['categories'] })
-    queryClient.invalidateQueries({ queryKey: ['orders'] })
+    queryClient.invalidateQueries({ queryKey: ['store-orders'] })
     queryClient.invalidateQueries({ queryKey: ['stores'] })
     queryClient.invalidateQueries({ queryKey: ['specials'] })
     queryClient.invalidateQueries({ queryKey: ['recipes'] })
@@ -203,12 +359,27 @@ function AdminDashboardBody({ user, queryClient }: { user: ReturnType<typeof use
       <motion.div initial="hidden" animate="show" variants={stagger}>
         {/* Header */}
         <motion.div variants={fadeUp} className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
+          <div className="flex flex-wrap items-center gap-3 mb-2">
             <h1 className="font-display text-3xl font-bold text-gray-900">Admin Dashboard</h1>
             <span className="inline-flex items-center gap-1 px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium">
               <LayoutDashboard size={12} />
               {roleBadge || 'Admin'}
             </span>
+            {stores.length > 0 && (
+              <label htmlFor="dev-store-focus" className="ml-auto flex items-center gap-2 text-sm text-gray-500">
+                Store focus
+                <select
+                  id="dev-store-focus"
+                  value={focusStoreId ?? ''}
+                  onChange={(e) => setFocusStoreId(Number(e.target.value))}
+                  className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/30"
+                >
+                  {stores.map((s) => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+                </select>
+              </label>
+            )}
           </div>
           <p className="text-gray-500 text-sm">
             Welcome back, {user?.name?.split(' ')[0] || 'Admin'}. Manage your Checkstar platform from here.
@@ -240,15 +411,52 @@ function AdminDashboardBody({ user, queryClient }: { user: ReturnType<typeof use
             </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-              <StatCard icon={ShoppingBag} label="Products" value={stats.products} color="bg-primary" />
-              <StatCard icon={Tags} label="Categories" value={stats.categories} color="bg-blue-500" />
-              <StatCard icon={ShoppingCart} label="Orders" value={stats.orders} color="bg-success" />
-              <StatCard icon={Store} label="Stores" value={stats.stores} color="bg-purple-500" />
-              <StatCard icon={Sparkles} label="Specials" value={stats.specials} color="bg-amber-500" />
-              <StatCard icon={BookOpen} label="Recipes" value={stats.recipes} color="bg-pink-500" />
+              <StatCard icon={ShoppingBag} label="Products" value={productsCount} color="bg-primary" />
+              <StatCard icon={Tags} label="Categories" value={categoriesCount} color="bg-blue-500" />
+              <StatCard icon={ShoppingCart} label={focusStore ? `Orders · ${focusStore.name}` : 'Orders'} value={focusStoreId ? storeOrders.length : '—'} color="bg-success" />
+              <StatCard icon={StoreIcon} label="Stores" value={storesCount} color="bg-purple-500" />
+              <StatCard icon={Sparkles} label="Live Sales" value={specialsCount} color="bg-amber-500" />
+              <StatCard icon={BookOpen} label="Recipes" value={recipesCount} color="bg-pink-500" />
             </div>
           )}
         </motion.div>
+
+        {/* Store pulse — the focused store's operational state */}
+        {focusStore && (
+          <motion.div variants={fadeUp} className="mb-8">
+            <h2 className="font-display text-lg font-semibold mb-4">
+              {focusStore.name} — right now
+            </h2>
+            {storeOrdersLoading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="bg-white border border-gray-100 rounded-xl p-4 h-20 animate-pulse" />
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <PulseTile
+                  label="awaiting dispatch"
+                  count={awaitingDispatch}
+                  href="/account/dispatch"
+                  tone={awaitingDispatch > 0 ? 'warn' : 'ok'}
+                />
+                <PulseTile
+                  label="low on stock"
+                  count={lowStockCount}
+                  href="/admin/inventory"
+                  tone={lowStockCount > 0 ? 'warn' : 'ok'}
+                />
+                <PulseTile
+                  label="out of stock"
+                  count={outOfStockCount}
+                  href="/admin/inventory"
+                  tone={outOfStockCount > 0 ? 'danger' : 'ok'}
+                />
+              </div>
+            )}
+          </motion.div>
+        )}
 
         {/* Management links — only real destinations */}
         <motion.div variants={fadeUp} className="mb-8">
@@ -274,7 +482,7 @@ function AdminDashboardBody({ user, queryClient }: { user: ReturnType<typeof use
         </motion.div>
 
         <motion.div variants={fadeUp} className="mb-8">
-          <h2 className="font-display text-lg font-semibold mb-4">Catalog Management</h2>
+          <h2 className="font-display text-lg font-semibold mb-4">Catalog &amp; Platform</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {catalogManagementLinks.map((link) => (
               <LinkCard key={link.href} link={link} />
@@ -292,10 +500,15 @@ function AdminDashboardBody({ user, queryClient }: { user: ReturnType<typeof use
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Recent Orders */}
+          {/* Recent Orders — the focused store's orders, linking to the staff order view */}
           <motion.div variants={fadeUp}>
-            <h2 className="font-display text-lg font-semibold mb-4">Recent Orders</h2>
-            {ordersLoading ? (
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-display text-lg font-semibold">Recent Orders</h2>
+              <Link href="/admin/orders" className="text-sm text-primary hover:underline font-medium">
+                All orders →
+              </Link>
+            </div>
+            {storeOrdersLoading ? (
               <div className="space-y-3">
                 {[1, 2, 3].map((i) => (
                   <div key={i} className="bg-white border border-gray-100 rounded-xl p-4">
@@ -309,30 +522,17 @@ function AdminDashboardBody({ user, queryClient }: { user: ReturnType<typeof use
             ) : recentOrders.length === 0 ? (
               <div className="bg-white border border-gray-100 rounded-xl p-8 text-center">
                 <ShoppingCart size={28} className="text-gray-200 mx-auto mb-2" />
-                <p className="text-sm text-gray-400">No orders yet</p>
+                <p className="text-sm text-gray-400">{focusStore ? `No orders for ${focusStore.name} yet` : stores.length > 0 ? 'Pick a store above to see its orders' : 'No stores yet'}</p>
               </div>
             ) : (
               <div className="space-y-3">
                 {recentOrders.map((order) => (
                   <Link
                     key={order.id}
-                    href={`/account/orders/${order.id}`}
+                    href="/admin/orders"
                     className="block bg-white border border-gray-100 rounded-xl p-4 hover:shadow-md transition-shadow"
                   >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-medium text-sm text-gray-900">{order.order_number}</span>
-                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                        order.status === 'delivered' ? 'bg-success/10 text-success' :
-                        order.status === 'cancelled' ? 'bg-accent/10 text-accent' :
-                        'bg-primary/10 text-primary'
-                      }`}>
-                        {order.status.replace(/_/g, ' ')}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-400">{new Date(order.created_at).toLocaleDateString('en-ZA')}</span>
-                      <span className="font-semibold text-gray-700">R{Number(order.total).toFixed(2)}</span>
-                    </div>
+                    <OrderRow order={order} />
                   </Link>
                 ))}
               </div>
@@ -387,5 +587,27 @@ function AdminDashboardBody({ user, queryClient }: { user: ReturnType<typeof use
         </div>
       </motion.div>
     </main>
+  )
+}
+
+function PulseTile({ label, count, href, tone }: { label: string; count: number; href: string; tone: 'ok' | 'warn' | 'danger' }) {
+  return (
+    <Link
+      href={href}
+      className={`bg-white border rounded-xl p-4 hover:shadow-md transition-shadow flex items-center gap-3 ${
+        tone === 'ok' ? 'border-gray-100' : tone === 'warn' ? 'border-amber-200 bg-amber-50/40' : 'border-red-200 bg-red-50/40'
+      }`}
+    >
+      <span
+        className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+          tone === 'ok' ? 'bg-success' : tone === 'warn' ? 'bg-amber-500' : 'bg-red-500'
+        }`}
+        aria-hidden="true"
+      />
+      <div className="min-w-0">
+        <p className="font-display text-xl font-bold text-gray-900 leading-none">{count}</p>
+        <p className="text-xs text-gray-500 mt-1 truncate">{label}</p>
+      </div>
+    </Link>
   )
 }
