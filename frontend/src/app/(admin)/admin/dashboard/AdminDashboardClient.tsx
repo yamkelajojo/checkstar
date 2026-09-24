@@ -13,51 +13,15 @@ import type { Order, Store } from '@/types'
 import { resolveUserStore } from '@/types'
 import {
   ShoppingBag, Store as StoreIcon, Tags, Sparkles,
-  BookOpen, Users, MessageSquare,
+  BookOpen,
   HeartPulse, Loader2, AlertCircle,
-  RefreshCw, LayoutDashboard, ArrowUpRight,
-  ShoppingCart, Bike, Image, ShieldAlert, Activity,
+  RefreshCw, LayoutDashboard,
+  ShoppingCart,
   AlertTriangle, PackageX, Bike as BikeIcon,
 } from 'lucide-react'
 import { fadeUpTight as fadeUp, staggerTight as stagger } from '@/lib/motion/variants'
 import { api } from '@/lib/api'
-
-// Only pages that actually exist — every link must resolve.
-// Roles aligned with backend route middleware:
-// - banners: developer, store_owner, store_manager
-// - sales: developer, store_owner, store_manager
-// - staff: store_owner, developer
-// - inventory/orders: store_manager, logistics_officer, store_owner, developer
-// - operations/analytics/audit-logs: store_owner, store_manager, logistics_officer, developer
-// - dispatch: store_manager, logistics_officer, store_owner, developer
-// - products/categories/stores/users/riders: developer only
-const storeManagementLinks = [
-  { href: '/admin/orders', label: 'Store Orders', icon: ShoppingCart, desc: 'View and update store orders', roles: ['store_manager', 'logistics_officer', 'store_owner', 'developer'] },
-  { href: '/admin/inventory', label: 'Inventory', icon: ShoppingBag, desc: 'Manage stock levels and availability', roles: ['store_manager', 'logistics_officer', 'store_owner', 'developer'] },
-  { href: '/admin/specials', label: 'Sales', icon: Sparkles, desc: 'Create sales with products and banners', roles: ['store_owner', 'store_manager', 'developer'] },
-  { href: '/admin/banners', label: 'Banners', icon: Image, desc: 'Create and manage promotional banners', roles: ['store_owner', 'store_manager', 'developer'] },
-  { href: '/admin/staff', label: 'Store Staff', icon: Users, desc: 'Hire and remove store staff access', roles: ['store_owner', 'developer'] },
-]
-
-const catalogManagementLinks = [
-  { href: '/admin/products', label: 'Products', icon: ShoppingBag, desc: 'Create and manage product catalogue', roles: ['developer'] },
-  { href: '/admin/categories', label: 'Categories', icon: Tags, desc: 'Manage product categories', roles: ['developer'] },
-  { href: '/admin/specials', label: 'Sales', icon: Sparkles, desc: 'Manage sales, products and prices', roles: ['developer'] },
-  { href: '/admin/stores', label: 'Stores', icon: StoreIcon, desc: 'Manage store locations and settings', roles: ['developer'] },
-  { href: '/admin/users', label: 'Users', icon: Users, desc: 'Manage user accounts and roles', roles: ['developer'] },
-  { href: '/admin/riders', label: 'Riders', icon: Bike, desc: 'Manage rider fleet', roles: ['developer'] },
-  { href: '/admin/recipes', label: 'Recipes', icon: BookOpen, desc: 'Create and manage recipes', roles: ['developer'] },
-  { href: '/admin/community', label: 'Community', icon: Users, desc: 'Manage community posts', roles: ['developer'] },
-  { href: '/admin/careers', label: 'Careers', icon: Tags, desc: 'Manage career listings', roles: ['developer'] },
-]
-
-const operationsLinks = [
-  { href: '/account/dispatch', label: 'Dispatch Console', icon: Bike, desc: 'Assign and reassign delivery riders', roles: ['logistics_officer', 'store_manager', 'store_owner', 'developer'] },
-  { href: '/operations', label: 'Live Operations', icon: Activity, desc: 'Realtime map, metrics and event feed', roles: ['logistics_officer', 'store_owner', 'store_manager', 'developer'] },
-  { href: '/operations/analytics', label: 'Analytics', icon: ShoppingCart, desc: 'Revenue, orders and fleet insights', roles: ['logistics_officer', 'store_owner', 'store_manager', 'developer'] },
-  { href: '/operations/audit-logs', label: 'Audit Logs', icon: ShieldAlert, desc: 'Searchable audit trail', roles: ['logistics_officer', 'store_owner', 'store_manager', 'developer'] },
-  { href: '/admin/health', label: 'System Health', icon: HeartPulse, desc: 'Service status and uptime', roles: ['developer'] },
-]
+import EmptyState from '@/components/admin/EmptyState'
 
 const SERVICE_ORDER: Array<{ key: string; label: string }> = [
   { key: 'api', label: 'API' },
@@ -109,15 +73,35 @@ function StaffDashboard({ user }: { user: NonNullable<ReturnType<typeof useAuthS
   const awaitingDispatch = (pending as unknown[]).length
   const recentOrders = [...orders].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 5)
 
-  const visibleStoreLinks = storeManagementLinks.filter((l) => l.roles.includes(user.role))
-  const visibleOpsLinks = operationsLinks.filter((l) => l.roles.includes(user.role))
-
   const attention = [
     { label: 'orders awaiting dispatch', count: awaitingDispatch, href: '/account/dispatch', icon: BikeIcon, tone: 'text-amber-600' },
     { label: 'low on stock', count: lowStockCount, href: '/admin/inventory', icon: AlertTriangle, tone: 'text-amber-600' },
     { label: 'out of stock', count: outOfStockCount, href: '/admin/inventory', icon: PackageX, tone: 'text-accent' },
   ]
   const anyAttention = attention.some((a) => a.count > 0)
+
+  // Data-integrity edge: a staff role whose account has no resolvable store
+  // must not render a blank dashboard.
+  if (!storeId) {
+    return (
+      <main className="max-w-5xl mx-auto px-4 py-8">
+        <div className="mb-6">
+          <div className="flex items-center gap-3 mb-2">
+            <h1 className="font-display text-3xl font-bold text-gray-900">Staff Dashboard</h1>
+            <span className="inline-flex items-center gap-1 px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium">
+              {roleLabel}
+            </span>
+          </div>
+          <p className="text-gray-500 text-sm">Welcome back, {user.name?.split(' ')[0] || 'Staff'}.</p>
+        </div>
+        <EmptyState
+          icon={StoreIcon}
+          title="No store linked to your account"
+          hint="Your dashboard tracks one store. If this looks wrong, ask a developer to check your store access."
+        />
+      </main>
+    )
+  }
 
   return (
     <main className="max-w-5xl mx-auto px-4 py-8">
@@ -216,17 +200,6 @@ function StaffDashboard({ user }: { user: NonNullable<ReturnType<typeof useAuthS
           </motion.div>
         )}
 
-        <motion.div variants={fadeUp} className="mb-8">
-          <h2 className="font-display text-lg font-semibold mb-4">Your Tools</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {visibleStoreLinks.map((link) => (
-              <LinkCard key={link.href} link={link} />
-            ))}
-            {visibleOpsLinks.map((link) => (
-              <LinkCard key={link.href} link={link} />
-            ))}
-          </div>
-        </motion.div>
       </motion.div>
     </main>
   )
@@ -270,25 +243,6 @@ function StatCard({ icon: Icon, label, value, color }: { icon: React.ElementType
       </div>
       <p className="font-display text-2xl font-bold text-gray-900">{value}</p>
     </motion.div>
-  )
-}
-
-function LinkCard({ link }: { link: { href: string; label: string; icon: React.ElementType; desc: string } }) {
-  const Icon = link.icon
-  return (
-    <Link
-      href={link.href}
-      className="group bg-white border border-gray-100 rounded-xl p-5 hover:shadow-md hover:border-primary/20 transition-all"
-    >
-      <div className="flex items-center gap-3 mb-2">
-        <div className="w-10 h-10 bg-primary-light rounded-lg flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-          <Icon size={20} className="text-primary" />
-        </div>
-        <ArrowUpRight size={16} className="text-gray-300 ml-auto group-hover:text-primary transition-colors" />
-      </div>
-      <h3 className="font-medium text-gray-900 mb-0.5">{link.label}</h3>
-      <p className="text-xs text-gray-400">{link.desc}</p>
-    </Link>
   )
 }
 
@@ -458,46 +412,8 @@ function AdminDashboardBody({ user, queryClient }: { user: ReturnType<typeof use
           </motion.div>
         )}
 
-        {/* Management links — only real destinations */}
-        <motion.div variants={fadeUp} className="mb-8">
-          <h2 className="font-display text-lg font-semibold mb-4">Store Management</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {storeManagementLinks.map((link) => (
-              <LinkCard key={link.href} link={link} />
-            ))}
-            <Link
-              href="/admin/messages"
-              className="group bg-white border border-gray-100 rounded-xl p-5 hover:shadow-md hover:border-primary/20 transition-all"
-            >
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 bg-primary-light rounded-lg flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                  <MessageSquare size={20} className="text-primary" />
-                </div>
-                <ArrowUpRight size={16} className="text-gray-300 ml-auto group-hover:text-primary transition-colors" />
-              </div>
-              <h3 className="font-medium text-gray-900 mb-0.5">Messages</h3>
-              <p className="text-xs text-gray-400">{contactCount !== null ? `${contactCount} customer message${contactCount === 1 ? '' : 's'}` : 'Customer enquiries inbox'}</p>
-            </Link>
-          </div>
-        </motion.div>
-
-        <motion.div variants={fadeUp} className="mb-8">
-          <h2 className="font-display text-lg font-semibold mb-4">Catalog &amp; Platform</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {catalogManagementLinks.map((link) => (
-              <LinkCard key={link.href} link={link} />
-            ))}
-          </div>
-        </motion.div>
-
-        <motion.div variants={fadeUp} className="mb-8">
-          <h2 className="font-display text-lg font-semibold mb-4">Operations</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {operationsLinks.map((link) => (
-              <LinkCard key={link.href} link={link} />
-            ))}
-          </div>
-        </motion.div>
+        {/* Navigation lives in the AdminNav sidebar — these pages used to
+            duplicate it as icon-card grids (noise, per the admin audit). */}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Recent Orders — the focused store's orders, linking to the staff order view */}

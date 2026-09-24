@@ -20,7 +20,6 @@ import { toast } from 'sonner'
 import { fadeUpTight as fadeUp, staggerTight as stagger } from '@/lib/motion/variants'
 import PageHeader from '@/components/admin/PageHeader'
 import SearchInput from '@/components/admin/SearchInput'
-import Modal from '@/components/admin/Modal'
 import ConfirmDialog from '@/components/admin/ConfirmDialog'
 import EmptyState from '@/components/admin/EmptyState'
 import ErrorState from '@/components/admin/ErrorState'
@@ -184,13 +183,32 @@ function SaleEditor({ initial, isDeveloper, myStore, stores, products, onClose }
   }
 
   return (
-    <Modal
-      open
-      onClose={saving ? () => {} : onClose}
-      title={initial ? `Edit sale — ${initial.title}` : 'New sale'}
-      size="lg"
-      footer={
-        <>
+    <div className="max-w-5xl mx-auto px-4 py-8">
+      <div className="mb-6">
+        <button
+          type="button"
+          onClick={onClose}
+          disabled={saving}
+          className="text-sm font-medium text-gray-500 hover:text-gray-800 flex items-center gap-1.5 disabled:opacity-50"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M19 12H5" />
+            <path d="m12 19-7-7 7-7" />
+          </svg>
+          Back to sales
+        </button>
+      </div>
+
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="font-display text-3xl font-bold text-gray-900">
+            {initial ? `Edit sale — ${initial.title}` : 'New sale'}
+          </h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Products, prices, and an optional banner in one flow
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={onClose}
@@ -208,9 +226,9 @@ function SaleEditor({ initial, isDeveloper, myStore, stores, products, onClose }
             {saving && <Loader2 size={14} className="animate-spin" />}
             {initial ? 'Save changes' : 'Create sale'}
           </button>
-        </>
-      }
-    >
+        </div>
+      </div>
+
       <div className="space-y-6">
         {/* Sale details */}
         <section>
@@ -332,7 +350,7 @@ function SaleEditor({ initial, isDeveloper, myStore, stores, products, onClose }
               className="w-full pl-3 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
             />
           </div>
-          <div className="max-h-72 overflow-y-auto border border-gray-200 rounded-lg divide-y">
+          <div className="max-h-[28rem] overflow-y-auto border border-gray-200 rounded-lg divide-y">
             {visibleProducts.length === 0 && (
               <p className="px-3 py-6 text-center text-sm text-gray-400">No products match &ldquo;{productSearch}&rdquo;</p>
             )}
@@ -415,7 +433,7 @@ function SaleEditor({ initial, isDeveloper, myStore, stores, products, onClose }
           </p>
         )}
       </div>
-    </Modal>
+    </div>
   )
 }
 
@@ -446,7 +464,6 @@ export default function SpecialsAdminClient() {
     canManage
   )
   const editing = (showEditor && editingId != null ? editingDetail : null) ?? null
-  const editorReady = !showEditor || editingId == null || editingDetail != null
 
   const filtered = useMemo(
     () => specials.filter((s) => !search.trim() || s.title.toLowerCase().includes(search.toLowerCase())),
@@ -470,6 +487,36 @@ export default function SpecialsAdminClient() {
           }
         />
       </main>
+    )
+  }
+
+  // Editor is a full page view — a 20+ row product picker deserves the
+  // whole canvas (real scroll, no dialog), not a centered modal.
+  if (showEditor) {
+    if (editingId != null && editingDetail == null) {
+      return (
+        <main className="max-w-5xl mx-auto px-4 py-8" aria-busy="true">
+          <div className="space-y-4">
+            <div className="h-4 w-32 bg-gray-100 rounded animate-pulse" />
+            <div className="h-10 w-72 bg-gray-100 rounded-xl animate-pulse" />
+            <div className="h-96 bg-gray-100 rounded-xl animate-pulse" />
+          </div>
+        </main>
+      )
+    }
+    return (
+      <SaleEditor
+        key={editingId ?? 'new'}
+        initial={editing}
+        isDeveloper={isDeveloper}
+        myStore={myStore}
+        stores={stores}
+        products={products}
+        onClose={() => {
+          setShowEditor(false)
+          setEditingId(null)
+        }}
+      />
     )
   }
 
@@ -589,21 +636,6 @@ export default function SpecialsAdminClient() {
           </motion.div>
         )}
       </motion.div>
-
-      {showEditor && editorReady && (
-        <SaleEditor
-          key={editingId ?? 'new'}
-          initial={editing}
-          isDeveloper={isDeveloper}
-          myStore={myStore}
-          stores={stores}
-          products={products}
-          onClose={() => {
-            setShowEditor(false)
-            setEditingId(null)
-          }}
-        />
-      )}
 
       <ConfirmDialog
         open={deleting != null}

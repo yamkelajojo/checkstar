@@ -145,24 +145,16 @@ describe('AdminDashboardClient', () => {
     services: { api: 'ok', database: 'ok', queue: 'warn', storage: 'ok' },
   }
 
-  it('shows a staff dashboard with tools for non-developers', () => {
+  it('shows a graceful state when a staff account has no resolvable store', () => {
+    // Owner without a `store` on /auth/me — must not render a blank dashboard
     setAuth({ id: 2, name: 'Thandi Owner', email: 'owner@x.co.za', role: 'store_owner' })
     apiMocks.getAdminHealth.mockResolvedValue(healthPayload)
     apiMocks.getMessages.mockResolvedValue({ data: [] })
     renderWithProviders(<AdminDashboardClient />)
     expect(screen.getByText('Staff Dashboard')).toBeInTheDocument()
     expect(screen.getByText('Store Owner')).toBeInTheDocument()
-    // Staff see their available tool links — messages is developer-only, owner sees inventory/orders
-    const hrefs = screen.getAllByRole('link').map((a) => a.getAttribute('href'))
-    expect(hrefs).toContain('/admin/banners')
-    expect(hrefs).toContain('/admin/staff')
-    expect(hrefs).toContain('/admin/inventory')
-    expect(hrefs).toContain('/admin/orders')
-    expect(hrefs).toContain('/operations')
-    expect(hrefs).toContain('/account/dispatch')
-    // Sales is a first-class staff tool (owner/manager manage their store's sales)
-    expect(hrefs).toContain('/admin/specials')
-    expect(hrefs).not.toContain('/admin/messages')
+    expect(screen.getByText('No store linked to your account')).toBeInTheDocument()
+    expect(screen.queryByText('Needs Attention')).not.toBeInTheDocument()
   })
 
   it('shows a needs-attention cockpit with the owner store’s orders', async () => {
@@ -219,7 +211,7 @@ describe('AdminDashboardClient', () => {
     expect(orderLink).toHaveAttribute('href', '/admin/orders')
   })
 
-  it('renders overview stats and the real management links for developers', async () => {
+  it('renders overview stats for developers (tool nav lives in the sidebar)', async () => {
     setAuth({ id: 1, name: 'Dev User', email: 'dev@x.co.za', role: 'developer' })
     apiMocks.getAdminHealth.mockResolvedValue(healthPayload)
     apiMocks.getMessages.mockResolvedValue({ data: [{ id: 1 }, { id: 2 }] })
@@ -228,29 +220,13 @@ describe('AdminDashboardClient', () => {
 
     // Stats from the (mocked) queries
     await waitFor(() => expect(screen.getByText('2')).toBeInTheDocument()) // products
-
-    // Every management link resolves to a real page (dead-link fix)
+    // The "right now" pulse and recent orders are the dev's operational view
+    expect(await screen.findByText('Durban Central — right now')).toBeInTheDocument()
+    // The dashboard no longer duplicates the sidebar as an icon-card grid
+    expect(screen.queryByText('Store Management')).not.toBeInTheDocument()
+    expect(screen.queryByText('Catalog & Platform')).not.toBeInTheDocument()
+    // No placeholder # links anywhere on the page
     const hrefs = screen.getAllByRole('link').map((a) => a.getAttribute('href'))
-    expect(hrefs).toContain('/admin/banners')
-    expect(hrefs).toContain('/admin/staff')
-    expect(hrefs).toContain('/admin/inventory')
-    expect(hrefs).toContain('/admin/orders')
-    expect(hrefs).toContain('/admin/products')
-    expect(hrefs).toContain('/admin/categories')
-    expect(hrefs).toContain('/admin/specials')
-    expect(hrefs).toContain('/admin/stores')
-    expect(hrefs).toContain('/admin/users')
-    expect(hrefs).toContain('/admin/riders')
-    expect(hrefs).toContain('/admin/recipes')
-    expect(hrefs).toContain('/admin/community')
-    expect(hrefs).toContain('/admin/careers')
-    expect(hrefs).toContain('/admin/health')
-    expect(hrefs).toContain('/admin/messages')
-    expect(hrefs).toContain('/operations')
-    expect(hrefs).toContain('/operations/analytics')
-    expect(hrefs).toContain('/operations/audit-logs')
-    expect(hrefs).toContain('/account/dispatch')
-    // No placeholder # links
     expect(hrefs.some((h) => h === '#')).toBe(false)
   })
 

@@ -254,7 +254,7 @@ export default function StoreOrdersClient() {
                       <div className="flex flex-wrap items-center gap-3 text-xs text-gray-400 mt-1.5">
                         <span className="flex items-center gap-1"><Calendar size={11} />{new Date(order.created_at).toLocaleString('en-ZA')}</span>
                         <span className="flex items-center gap-1"><Package size={11} />{order.items?.length ?? 0} items</span>
-                        <span className="font-medium text-gray-700">R{Number(order.total).toFixed(2)}</span>
+                        <span className="font-medium text-gray-700 tabular-nums">R{Number(order.total).toFixed(2)}</span>
                         {order.rider?.user?.name && <span className="flex items-center gap-1"><Bike size={11} />{order.rider.user.name}</span>}
                       </div>
                       {order.delivery_address && (

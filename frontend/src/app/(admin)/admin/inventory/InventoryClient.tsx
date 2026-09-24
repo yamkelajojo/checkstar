@@ -253,7 +253,7 @@ export default function InventoryClient() {
                         {isOut && <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-red-100 text-red-700">Out of stock</span>}
                         {!item.is_available && <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Hidden</span>}
                       </div>
-                      <div className="flex items-center gap-3 text-xs text-gray-400 mt-0.5">
+                      <div className="flex items-center gap-3 text-xs text-gray-400 mt-0.5 tabular-nums">
                         <span>ID {item.product_id}</span>
                         <span>·</span>
                         <span>Reserved: {item.reserved_quantity ?? 0}</span>

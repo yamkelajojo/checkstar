@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { motion } from 'motion/react'
 import {
-  Image as ImageIcon, Plus, Trash2, Edit3,
+  Image as ImageIcon, Plus, Trash2, Edit3, X,
   ChevronDown, ChevronUp, Save, Loader2, Sparkles,
 } from 'lucide-react'
 import { useAdminBanners, useCreateBanner, useUpdateBanner, useDeleteBanner } from '@/lib/query'
@@ -106,21 +106,25 @@ function SlideEditor({ slide, index, onChange, onRemove }: {
                     className="w-8 h-8 rounded border border-gray-200 cursor-pointer"
                   />
                   <button
+                    type="button"
                     onClick={() => {
                       const colors = slide.colors.filter((_, i) => i !== ci)
                       if (colors.length > 0) onChange(index, { ...slide, colors })
                     }}
-                    className="text-gray-400 hover:text-red-500 text-xs"
+                    aria-label="Remove colour"
+                    className="text-gray-400 hover:text-red-500"
                   >
-                    ×
+                    <X size={13} />
                   </button>
                 </div>
               ))}
               <button
+                type="button"
                 onClick={() => onChange(index, { ...slide, colors: [...slide.colors, '#000000'] })}
+                aria-label="Add a colour"
                 className="w-8 h-8 rounded border border-dashed border-gray-300 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:border-gray-400"
               >
-                +
+                <Plus size={14} />
               </button>
             </div>
           </div>

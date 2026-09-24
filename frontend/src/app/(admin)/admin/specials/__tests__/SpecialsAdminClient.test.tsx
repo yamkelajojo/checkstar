@@ -172,7 +172,9 @@ describe('create', () => {
     renderWithProviders(<SpecialsClientUnderTest />)
     fireEvent.click(await screen.findByRole('button', { name: 'New sale' }))
 
-    await screen.findByRole('dialog', { name: 'New sale' })
+    // The editor is a full page view (the list is replaced, not covered by a dialog)
+    await screen.findByRole('heading', { name: 'New sale' })
+    expect(screen.getByRole('button', { name: 'Back to sales' })).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Create sale' }))
     expect(await screen.findByText('Title is required')).toBeInTheDocument()
 
@@ -197,7 +199,7 @@ describe('create', () => {
     setAuth(OWNER)
     renderWithProviders(<SpecialsClientUnderTest />)
     fireEvent.click(await screen.findByRole('button', { name: 'New sale' }))
-    await screen.findByRole('dialog', { name: 'New sale' })
+    await screen.findByRole('heading', { name: 'New sale' })
 
     fireEvent.change(screen.getByLabelText('Title *'), { target: { value: 'Autumn Sale' } })
     expect(screen.getByLabelText('Slug')).toHaveValue('autumn-sale')
@@ -234,7 +236,7 @@ describe('create', () => {
     setAuth(OWNER)
     renderWithProviders(<SpecialsClientUnderTest />)
     fireEvent.click(await screen.findByRole('button', { name: 'New sale' }))
-    await screen.findByRole('dialog', { name: 'New sale' })
+    await screen.findByRole('heading', { name: 'New sale' })
 
     fireEvent.change(screen.getByLabelText('Title *'), { target: { value: 'Autumn Sale' } })
     fireEvent.change(screen.getByLabelText('Start date *'), { target: { value: '2026-10-01' } })
@@ -255,7 +257,7 @@ describe('create', () => {
     setAuth(OWNER)
     renderWithProviders(<SpecialsClientUnderTest />)
     fireEvent.click(await screen.findByRole('button', { name: 'New sale' }))
-    await screen.findByRole('dialog', { name: 'New sale' })
+    await screen.findByRole('heading', { name: 'New sale' })
 
     fireEvent.change(screen.getByLabelText('Title *'), { target: { value: 'Autumn Sale' } })
     fireEvent.change(screen.getByLabelText('Start date *'), { target: { value: '2026-10-01' } })
@@ -279,7 +281,7 @@ describe('developer', () => {
     setAuth(DEV)
     renderWithProviders(<SpecialsClientUnderTest />)
     fireEvent.click(await screen.findByRole('button', { name: 'New sale' }))
-    await screen.findByRole('dialog', { name: 'New sale' })
+    await screen.findByRole('heading', { name: 'New sale' })
 
     const storeSelect = screen.getByLabelText('Store')
     expect(storeSelect).toHaveValue('')
@@ -305,16 +307,16 @@ describe('edit & delete', () => {
     await screen.findByText('Spring Freshness')
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit Spring Freshness' }))
-    const dialog = await screen.findByRole('dialog', { name: /Edit sale — Spring Freshness/ })
+    await screen.findByRole('heading', { name: /Edit sale — Spring Freshness/ })
 
     // Prefilled, including the stored special price
-    expect(within(dialog).getByLabelText('Title *')).toHaveValue('Spring Freshness')
-    const springPrice = within(dialog).getByRole('textbox', { name: /Special price for Spring Mix/ })
+    expect(screen.getByLabelText('Title *')).toHaveValue('Spring Freshness')
+    const springPrice = screen.getByRole('textbox', { name: /Special price for Spring Mix/ })
     expect(springPrice).toHaveValue('39.99')
 
     // Remove Wild Honey from the sale (it had no special price of its own)
-    fireEvent.click(within(dialog).getByRole('checkbox', { name: 'Include Wild Honey in the sale' }))
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Save changes' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Include Wild Honey in the sale' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
 
     await waitFor(() => expect(apiMocks.updateAdminSpecial).toHaveBeenCalledTimes(1))
     await waitFor(() => expect(apiMocks.syncSaleProducts).toHaveBeenCalledTimes(1))
