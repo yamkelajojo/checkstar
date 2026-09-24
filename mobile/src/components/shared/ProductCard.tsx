@@ -78,7 +78,7 @@ export function ProductCard({ product, storeProductId = null, style, onRequestSu
       onPress={() => navigation.navigate('ProductDetail', { slug: product.slug, source })}
       accessibilityRole="button"
       accessibilityLabel={product.name}
-      style={[{ borderRadius: semanticRadius.card, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 }, style]}
+      style={[{ borderRadius: semanticRadius.card, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2, width: '100%' }, style]}
     >
       <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: semanticRadius.card, padding: semanticSpacing.cardPadding, gap: semanticSpacing.elementGap, minHeight: 238, borderWidth: 1, borderColor: theme.colors.border.subtle, flexDirection: 'column' }}>
         <View
