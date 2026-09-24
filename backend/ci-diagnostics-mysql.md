@@ -33,66 +33,66 @@
   ✓ customer can place a pickup order without delivery details           0.04s  
   ✓ pickup order does not notify riders and keeps the cart clearing      0.04s  
   ✓ pickup requires a store                                              0.02s  
-  ✓ pickup from a store that cannot fulfil the cart is rejected          0.03s  
+  ✓ pickup from a store that cannot fulfil the cart is rejected          0.02s  
   ✓ store moves a pickup order through ready and the customer confirms…  0.06s  
-  ✓ ready is rejected for delivery orders and out for delivery for pick… 0.02s  
-  ✓ pickup order cannot be manually dispatched to a rider                0.06s  
+  ✓ ready is rejected for delivery orders and out for delivery for pick… 0.03s  
+  ✓ pickup order cannot be manually dispatched to a rider                0.05s  
   ✓ pickup orders do not appear in the store dispatch queue              0.04s  
-  ✓ pickup with stray delivery fields stores nulls                       0.04s  
-  ✓ pickup order money cents mirrors are exact                           0.04s  
+  ✓ pickup with stray delivery fields stores nulls                       0.03s  
+  ✓ pickup order money cents mirrors are exact                           0.03s  
   ✓ pickup orders never appear in rider available orders                 0.03s  
-  ✓ rider cannot claim a pickup order                                    0.03s  
+  ✓ rider cannot claim a pickup order                                    0.02s  
   ✓ customer can cancel a ready pickup order before collecting           0.02s  
 
    PASS  Tests\Feature\ProductCarouselTest
   ✓ trending endpoint is not shadowed by slug route                      0.03s  
-  ✓ popular returns delivered order products                             0.02s  
+  ✓ popular returns delivered order products                             0.03s  
   ✓ new arrivals returns recent products without error                   0.02s  
   ✓ trending returns empty array when no orders                          0.02s  
 
    PASS  Tests\Feature\ProductIndexTest
   ✓ index respects per page param                                        0.05s  
-  ✓ index filters by multiple category slugs                             0.04s  
-  ✓ index defaults to twenty per page                                    0.05s  
-  ✓ index caps per page at one hundred                                   0.15s  
+  ✓ index filters by multiple category slugs                             0.03s  
+  ✓ index defaults to twenty per page                                    0.04s  
+  ✓ index caps per page at one hundred                                   0.13s  
   ✓ index ignores non numeric per page                                   0.05s  
 
    PASS  Tests\Feature\ProfileApiTest
   ✓ customer can update name and phone                                   0.02s  
   ✓ changing email resets verification                                   0.02s  
-  ✓ keeping the same email keeps verification                            0.14s  
-  ✓ email conflicts are 422                                              0.02s  
+  ✓ keeping the same email keeps verification                            0.01s  
+  ✓ email conflicts are 422                                              0.01s  
   ✓ changing email sends a new verification email                        0.02s  
-  ✓ unchanged email sends no verification email                          0.02s  
-  ✓ role is not mass assignable                                          0.02s  
+  ✓ unchanged email sends no verification email                          0.01s  
+  ✓ role is not mass assignable                                          0.01s  
 
    PASS  Tests\Feature\PromotionRedemptionTest
   ✓ validate rejects fully redeemed codes                                0.02s  
-  ✓ validate rejects expired codes                                       0.02s  
-  ✓ validate rejects orders below the minimum                            0.02s  
-  ✓ validate computes percentage discount                                0.02s  
+  ✓ validate rejects expired codes                                       0.01s  
+  ✓ validate rejects orders below the minimum                            0.01s  
+  ✓ validate computes percentage discount                                0.01s  
   ✓ validate caps fixed discounts at the subtotal                        0.02s  
   ✓ apply increments used count                                          0.02s  
-  ✓ apply can never overshoot max uses                                   0.02s  
+  ✓ apply can never overshoot max uses                                   0.01s  
   ✓ apply redeems the final allowed use                                  0.02s  
 
    PASS  Tests\Feature\PublicCatalogueTest
-  ✓ guest can list stores and view one by slug                           0.03s  
+  ✓ guest can list stores and view one by slug                           0.02s  
   ✓ guest can browse categories and products                             0.02s  
-  ✓ guest can read recipes and unpublished are hidden                    0.03s  
-  ✓ guest can read careers and community posts                           0.03s  
+  ✓ guest can read recipes and unpublished are hidden                    0.02s  
+  ✓ guest can read careers and community posts                           0.02s  
   ✓ guest can submit a contact message                                   0.02s  
-  ✓ contact validation rejects garbage                                   0.02s  
+  ✓ contact validation rejects garbage                                   0.01s  
 
    PASS  Tests\Feature\PushNotificationTest
   ✓ cancelled transition pushes notification                             0.02s  
-  ✓ retrying transition pushes notification                              0.02s  
-  ✓ delivered transition pushes notification                             0.02s  
+  ✓ retrying transition pushes notification                              0.01s  
+  ✓ delivered transition pushes notification                             0.01s  
   ✓ notification listener is queued not synchronous                      0.01s  
   ✓ no push without token                                                0.02s  
 
    PASS  Tests\Feature\RecommendationsEndpointTest
-  ✓ cold start returns recommendations for new customer                  0.03s  
+  ✓ cold start returns recommendations for new customer                  0.02s  
   ✓ inactive products are never recommended                              0.02s  
   ✓ guest gets 401                                                       0.01s  
 
@@ -104,26 +104,26 @@
 
    PASS  Tests\Feature\RelatedProductsTest
   ✓ related endpoint returns same category first and excludes self       0.05s  
-  ✓ bought together beats plain category siblings                        0.05s  
-  ✓ sparse results are backfilled with popular products                  0.05s  
+  ✓ bought together beats plain category siblings                        0.04s  
+  ✓ sparse results are backfilled with popular products                  0.04s  
   ✓ related returns 404 for unknown or inactive slug                     0.02s  
 
    PASS  Tests\Feature\RiderLocationTest
   ✓ customer can view rider location for their order                     0.03s  
   ✓ returns null when order has no rider                                 0.02s  
   ✓ returns null when rider has no location                              0.02s  
-  ✓ cannot view other customers order rider location                     0.03s  
-  ✓ returns most recent location when multiple exist                     0.03s  
+  ✓ cannot view other customers order rider location                     0.02s  
+  ✓ returns most recent location when multiple exist                     0.02s  
   ✓ rider can update location                                            0.02s  
   ✓ rider location update sets recorded at                               0.02s  
-  ✓ rider location update overwrites previous                            0.03s  
+  ✓ rider location update overwrites previous                            0.02s  
   ✓ non rider cannot update location                                     0.01s  
   ✓ location update requires valid coordinates                           0.02s  
 
    PASS  Tests\Feature\RiderOrderGuardApiTest
-  ✓ mark items bought returns 422 and keeps stock when order cancelled   0.05s  
-  ✓ out for delivery returns 422 and order stays cancelled               0.04s  
-  ✓ rider cannot advance out for delivery with unbought items            0.03s  
+  ✓ mark items bought returns 422 and keeps stock when order cancelled   0.04s  
+  ✓ out for delivery returns 422 and order stays cancelled               0.03s  
+  ✓ rider cannot advance out for delivery with unbought items            0.02s  
 
    FAIL  Tests\Feature\SalesAndBannersTest
   ⨯ logistics officer is locked out of sales
@@ -142,8 +142,8 @@
   ⨯ owner cannot link another stores sale
 
    PASS  Tests\Feature\SpecialsEndpointTest
-  ✓ index lists only active specials within their window                 0.03s  
-  ✓ products carry availability and effective price                      0.03s  
+  ✓ index lists only active specials within their window                 0.02s  
+  ✓ products carry availability and effective price                      0.02s  
   ✓ inactive products are hidden from specials                           0.02s  
 
    PASS  Tests\Feature\StaffManagementTest
@@ -152,15 +152,15 @@
   ✓ owner can list store roster                                          0.02s  
   ✓ developer can list store roster                                      0.02s  
   ✓ roster is scoped to one store                                        0.02s  
-  ✓ store manager cannot list roster                                     0.03s  
+  ✓ store manager cannot list roster                                     0.02s  
   ✓ store manager cannot hire staff                                      0.02s  
 
    PASS  Tests\Feature\StoreOrderApiTest
   ✓ orders are scoped to the managers store                              0.03s  
-  ✓ per page is capped                                                   0.03s  
+  ✓ per page is capped                                                   0.02s  
   ✓ status update on another stores order is 404                         0.02s  
   ✓ invalid transition is 409                                            0.02s  
-  ✓ valid transition succeeds                                            0.03s  
+  ✓ valid transition succeeds                                            0.02s  
 
    PASS  Tests\Feature\TrackingEndpointTest
   ✓ view endpoint captures behavioral signal                             0.02s  
@@ -169,7 +169,7 @@
   ✓ all tracking endpoints use rate limiting                             0.01s  
   ────────────────────────────────────────────────────────────────────────────  
    FAILED  Tests\Feature\SalesAndBannersTest > logistics off…  QueryException   
-  SQLSTATE[42S22]: Column not found: 1054 Unknown column 'store_id' in 'field list' (Connection: mysql, SQL: insert into `users` (`name`, `email`, `email_verified_at`, `password`, `remember_token`, `is_active`, `role`, `store_id`, `updated_at`, `created_at`) values (Owner A, owner-a@example.com, 2026-09-24 19:44:22, $2y$04$A2lA4QS33usB85zkiQn1Me3YBK79jvF3Iud15DC3sDp7ilkC/iA3q, B0kH0vR7yR, 1, store_owner, 59, 2026-09-24 19:44:22, 2026-09-24 19:44:22))
+  SQLSTATE[42S22]: Column not found: 1054 Unknown column 'store_id' in 'field list' (Connection: mysql, SQL: insert into `users` (`name`, `email`, `email_verified_at`, `password`, `remember_token`, `is_active`, `role`, `store_id`, `updated_at`, `created_at`) values (Owner A, owner-a@example.com, 2026-09-24 21:42:26, $2y$04$C9Rkt9CuA4dPi9zpd7tQb.s1Ri78Mr1BDvbaI3OMM4jYH0v8/USGG, 9np4W5kiia, 1, store_owner, 59, 2026-09-24 21:42:26, 2026-09-24 21:42:26))
 
   at vendor/laravel/framework/src/Illuminate/Database/Connection.php:825
     821▕                     $this->getName(), $query, $this->prepareBindings($bindings), $e
@@ -187,7 +187,7 @@
 
   ────────────────────────────────────────────────────────────────────────────  
    FAILED  Tests\Feature\SalesAndBannersTest > store operato…  QueryException   
-  SQLSTATE[42S22]: Column not found: 1054 Unknown column 'store_id' in 'field list' (Connection: mysql, SQL: insert into `users` (`name`, `email`, `email_verified_at`, `password`, `remember_token`, `is_active`, `role`, `store_id`, `updated_at`, `created_at`) values (Owner A, owner-a@example.com, 2026-09-24 19:44:22, $2y$04$A2lA4QS33usB85zkiQn1Me3YBK79jvF3Iud15DC3sDp7ilkC/iA3q, MM2AZRZyg8, 1, store_owner, 61, 2026-09-24 19:44:22, 2026-09-24 19:44:22))
+  SQLSTATE[42S22]: Column not found: 1054 Unknown column 'store_id' in 'field list' (Connection: mysql, SQL: insert into `users` (`name`, `email`, `email_verified_at`, `password`, `remember_token`, `is_active`, `role`, `store_id`, `updated_at`, `created_at`) values (Owner A, owner-a@example.com, 2026-09-24 21:42:26, $2y$04$C9Rkt9CuA4dPi9zpd7tQb.s1Ri78Mr1BDvbaI3OMM4jYH0v8/USGG, vyDYh3KYnn, 1, store_owner, 61, 2026-09-24 21:42:26, 2026-09-24 21:42:26))
 
   at vendor/laravel/framework/src/Illuminate/Database/Connection.php:825
     821▕                     $this->getName(), $query, $this->prepareBindings($bindings), $e
@@ -205,7 +205,7 @@
 
   ────────────────────────────────────────────────────────────────────────────  
    FAILED  Tests\Feature\SalesAndBannersTest > owner cannot…   QueryException   
-  SQLSTATE[42S22]: Column not found: 1054 Unknown column 'store_id' in 'field list' (Connection: mysql, SQL: insert into `users` (`name`, `email`, `email_verified_at`, `password`, `remember_token`, `is_active`, `role`, `store_id`, `updated_at`, `created_at`) values (Owner A, owner-a@example.com, 2026-09-24 19:44:22, $2y$04$A2lA4QS33usB85zkiQn1Me3YBK79jvF3Iud15DC3sDp7ilkC/iA3q, NT1156Xqbq, 1, store_owner, 63, 2026-09-24 19:44:22, 2026-09-24 19:44:22))
+  SQLSTATE[42S22]: Column not found: 1054 Unknown column 'store_id' in 'field list' (Connection: mysql, SQL: insert into `users` (`name`, `email`, `email_verified_at`, `password`, `remember_token`, `is_active`, `role`, `store_id`, `updated_at`, `created_at`) values (Owner A, owner-a@example.com, 2026-09-24 21:42:26, $2y$04$C9Rkt9CuA4dPi9zpd7tQb.s1Ri78Mr1BDvbaI3OMM4jYH0v8/USGG, 54HUlLMA2u, 1, store_owner, 63, 2026-09-24 21:42:26, 2026-09-24 21:42:26))
 
   at vendor/laravel/framework/src/Illuminate/Database/Connection.php:825
     821▕                     $this->getName(), $query, $this->prepareBindings($bindings), $e
@@ -223,7 +223,7 @@
 
   ────────────────────────────────────────────────────────────────────────────  
    FAILED  Tests\Feature\SalesAndBannersTest > owner create…   QueryException   
-  SQLSTATE[42S22]: Column not found: 1054 Unknown column 'store_id' in 'field list' (Connection: mysql, SQL: insert into `users` (`name`, `email`, `email_verified_at`, `password`, `remember_token`, `is_active`, `role`, `store_id`, `updated_at`, `created_at`) values (Owner A, owner-a@example.com, 2026-09-24 19:44:22, $2y$04$A2lA4QS33usB85zkiQn1Me3YBK79jvF3Iud15DC3sDp7ilkC/iA3q, dhCUTKQMrw, 1, store_owner, 65, 2026-09-24 19:44:22, 2026-09-24 19:44:22))
+  SQLSTATE[42S22]: Column not found: 1054 Unknown column 'store_id' in 'field list' (Connection: mysql, SQL: insert into `users` (`name`, `email`, `email_verified_at`, `password`, `remember_token`, `is_active`, `role`, `store_id`, `updated_at`, `created_at`) values (Owner A, owner-a@example.com, 2026-09-24 21:42:26, $2y$04$C9Rkt9CuA4dPi9zpd7tQb.s1Ri78Mr1BDvbaI3OMM4jYH0v8/USGG, 49PDSTERC2, 1, store_owner, 65, 2026-09-24 21:42:26, 2026-09-24 21:42:26))
 
   at vendor/laravel/framework/src/Illuminate/Database/Connection.php:825
     821▕                     $this->getName(), $query, $this->prepareBindings($bindings), $e
@@ -241,7 +241,7 @@
 
   ────────────────────────────────────────────────────────────────────────────  
    FAILED  Tests\Feature\SalesAndBannersTest > developer can…  QueryException   
-  SQLSTATE[42S22]: Column not found: 1054 Unknown column 'store_id' in 'field list' (Connection: mysql, SQL: insert into `users` (`name`, `email`, `email_verified_at`, `password`, `remember_token`, `is_active`, `role`, `store_id`, `updated_at`, `created_at`) values (Owner A, owner-a@example.com, 2026-09-24 19:44:22, $2y$04$A2lA4QS33usB85zkiQn1Me3YBK79jvF3Iud15DC3sDp7ilkC/iA3q, eplyXRKwOF, 1, store_owner, 67, 2026-09-24 19:44:22, 2026-09-24 19:44:22))
+  SQLSTATE[42S22]: Column not found: 1054 Unknown column 'store_id' in 'field list' (Connection: mysql, SQL: insert into `users` (`name`, `email`, `email_verified_at`, `password`, `remember_token`, `is_active`, `role`, `store_id`, `updated_at`, `created_at`) values (Owner A, owner-a@example.com, 2026-09-24 21:42:26, $2y$04$C9Rkt9CuA4dPi9zpd7tQb.s1Ri78Mr1BDvbaI3OMM4jYH0v8/USGG, pPA0XIoFed, 1, store_owner, 67, 2026-09-24 21:42:26, 2026-09-24 21:42:26))
 
   at vendor/laravel/framework/src/Illuminate/Database/Connection.php:825
     821▕                     $this->getName(), $query, $this->prepareBindings($bindings), $e
@@ -259,7 +259,7 @@
 
   ────────────────────────────────────────────────────────────────────────────  
    FAILED  Tests\Feature\SalesAndBannersTest > product sync…   QueryException   
-  SQLSTATE[42S22]: Column not found: 1054 Unknown column 'store_id' in 'field list' (Connection: mysql, SQL: insert into `users` (`name`, `email`, `email_verified_at`, `password`, `remember_token`, `is_active`, `role`, `store_id`, `updated_at`, `created_at`) values (Owner A, owner-a@example.com, 2026-09-24 19:44:22, $2y$04$A2lA4QS33usB85zkiQn1Me3YBK79jvF3Iud15DC3sDp7ilkC/iA3q, JJFivM4AMU, 1, store_owner, 69, 2026-09-24 19:44:22, 2026-09-24 19:44:22))
+  SQLSTATE[42S22]: Column not found: 1054 Unknown column 'store_id' in 'field list' (Connection: mysql, SQL: insert into `users` (`name`, `email`, `email_verified_at`, `password`, `remember_token`, `is_active`, `role`, `store_id`, `updated_at`, `created_at`) values (Owner A, owner-a@example.com, 2026-09-24 21:42:26, $2y$04$C9Rkt9CuA4dPi9zpd7tQb.s1Ri78Mr1BDvbaI3OMM4jYH0v8/USGG, G2zlanV4Eu, 1, store_owner, 69, 2026-09-24 21:42:26, 2026-09-24 21:42:26))
 
   at vendor/laravel/framework/src/Illuminate/Database/Connection.php:825
     821▕                     $this->getName(), $query, $this->prepareBindings($bindings), $e
@@ -277,7 +277,7 @@
 
   ────────────────────────────────────────────────────────────────────────────  
    FAILED  Tests\Feature\SalesAndBannersTest > product sync…   QueryException   
-  SQLSTATE[42S22]: Column not found: 1054 Unknown column 'store_id' in 'field list' (Connection: mysql, SQL: insert into `users` (`name`, `email`, `email_verified_at`, `password`, `remember_token`, `is_active`, `role`, `store_id`, `updated_at`, `created_at`) values (Owner A, owner-a@example.com, 2026-09-24 19:44:22, $2y$04$A2lA4QS33usB85zkiQn1Me3YBK79jvF3Iud15DC3sDp7ilkC/iA3q, eVFdwL3zfE, 1, store_owner, 71, 2026-09-24 19:44:22, 2026-09-24 19:44:22))
+  SQLSTATE[42S22]: Column not found: 1054 Unknown column 'store_id' in 'field list' (Connection: mysql, SQL: insert into `users` (`name`, `email`, `email_verified_at`, `password`, `remember_token`, `is_active`, `role`, `store_id`, `updated_at`, `created_at`) values (Owner A, owner-a@example.com, 2026-09-24 21:42:26, $2y$04$C9Rkt9CuA4dPi9zpd7tQb.s1Ri78Mr1BDvbaI3OMM4jYH0v8/USGG, uAZYBNYgPh, 1, store_owner, 71, 2026-09-24 21:42:26, 2026-09-24 21:42:26))
 
   at vendor/laravel/framework/src/Illuminate/Database/Connection.php:825
     821▕                     $this->getName(), $query, $this->prepareBindings($bindings), $e
@@ -295,7 +295,7 @@
 
   ────────────────────────────────────────────────────────────────────────────  
    FAILED  Tests\Feature\SalesAndBannersTest > public specia…  QueryException   
-  SQLSTATE[42S22]: Column not found: 1054 Unknown column 'store_id' in 'field list' (Connection: mysql, SQL: insert into `users` (`name`, `email`, `email_verified_at`, `password`, `remember_token`, `is_active`, `role`, `store_id`, `updated_at`, `created_at`) values (Owner A, owner-a@example.com, 2026-09-24 19:44:22, $2y$04$A2lA4QS33usB85zkiQn1Me3YBK79jvF3Iud15DC3sDp7ilkC/iA3q, fLjsgi7c0Y, 1, store_owner, 73, 2026-09-24 19:44:22, 2026-09-24 19:44:22))
+  SQLSTATE[42S22]: Column not found: 1054 Unknown column 'store_id' in 'field list' (Connection: mysql, SQL: insert into `users` (`name`, `email`, `email_verified_at`, `password`, `remember_token`, `is_active`, `role`, `store_id`, `updated_at`, `created_at`) values (Owner A, owner-a@example.com, 2026-09-24 21:42:26, $2y$04$C9Rkt9CuA4dPi9zpd7tQb.s1Ri78Mr1BDvbaI3OMM4jYH0v8/USGG, QQu3Ag3zMc, 1, store_owner, 73, 2026-09-24 21:42:26, 2026-09-24 21:42:26))
 
   at vendor/laravel/framework/src/Illuminate/Database/Connection.php:825
     821▕                     $this->getName(), $query, $this->prepareBindings($bindings), $e
@@ -313,7 +313,7 @@
 
   ────────────────────────────────────────────────────────────────────────────  
    FAILED  Tests\Feature\SalesAndBannersTest > public specia…  QueryException   
-  SQLSTATE[42S22]: Column not found: 1054 Unknown column 'store_id' in 'field list' (Connection: mysql, SQL: insert into `users` (`name`, `email`, `email_verified_at`, `password`, `remember_token`, `is_active`, `role`, `store_id`, `updated_at`, `created_at`) values (Owner A, owner-a@example.com, 2026-09-24 19:44:22, $2y$04$A2lA4QS33usB85zkiQn1Me3YBK79jvF3Iud15DC3sDp7ilkC/iA3q, 389IPkKqLG, 1, store_owner, 75, 2026-09-24 19:44:22, 2026-09-24 19:44:22))
+  SQLSTATE[42S22]: Column not found: 1054 Unknown column 'store_id' in 'field list' (Connection: mysql, SQL: insert into `users` (`name`, `email`, `email_verified_at`, `password`, `remember_token`, `is_active`, `role`, `store_id`, `updated_at`, `created_at`) values (Owner A, owner-a@example.com, 2026-09-24 21:42:26, $2y$04$C9Rkt9CuA4dPi9zpd7tQb.s1Ri78Mr1BDvbaI3OMM4jYH0v8/USGG, l5wB6wcp6L, 1, store_owner, 75, 2026-09-24 21:42:26, 2026-09-24 21:42:26))
 
   at vendor/laravel/framework/src/Illuminate/Database/Connection.php:825
     821▕                     $this->getName(), $query, $this->prepareBindings($bindings), $e
@@ -331,7 +331,7 @@
 
   ────────────────────────────────────────────────────────────────────────────  
    FAILED  Tests\Feature\SalesAndBannersTest > public specia…  QueryException   
-  SQLSTATE[42S22]: Column not found: 1054 Unknown column 'store_id' in 'field list' (Connection: mysql, SQL: insert into `users` (`name`, `email`, `email_verified_at`, `password`, `remember_token`, `is_active`, `role`, `store_id`, `updated_at`, `created_at`) values (Owner A, owner-a@example.com, 2026-09-24 19:44:22, $2y$04$A2lA4QS33usB85zkiQn1Me3YBK79jvF3Iud15DC3sDp7ilkC/iA3q, iIVpb1ZTdy, 1, store_owner, 77, 2026-09-24 19:44:22, 2026-09-24 19:44:22))
+  SQLSTATE[42S22]: Column not found: 1054 Unknown column 'store_id' in 'field list' (Connection: mysql, SQL: insert into `users` (`name`, `email`, `email_verified_at`, `password`, `remember_token`, `is_active`, `role`, `store_id`, `updated_at`, `created_at`) values (Owner A, owner-a@example.com, 2026-09-24 21:42:26, $2y$04$C9Rkt9CuA4dPi9zpd7tQb.s1Ri78Mr1BDvbaI3OMM4jYH0v8/USGG, Vf97Wds51r, 1, store_owner, 77, 2026-09-24 21:42:26, 2026-09-24 21:42:26))
 
   at vendor/laravel/framework/src/Illuminate/Database/Connection.php:825
     821▕                     $this->getName(), $query, $this->prepareBindings($bindings), $e
@@ -349,7 +349,7 @@
 
   ────────────────────────────────────────────────────────────────────────────  
    FAILED  Tests\Feature\SalesAndBannersTest > sale banner g…  QueryException   
-  SQLSTATE[42S22]: Column not found: 1054 Unknown column 'store_id' in 'field list' (Connection: mysql, SQL: insert into `users` (`name`, `email`, `email_verified_at`, `password`, `remember_token`, `is_active`, `role`, `store_id`, `updated_at`, `created_at`) values (Owner A, owner-a@example.com, 2026-09-24 19:44:22, $2y$04$A2lA4QS33usB85zkiQn1Me3YBK79jvF3Iud15DC3sDp7ilkC/iA3q, 4PmgtXukDJ, 1, store_owner, 79, 2026-09-24 19:44:22, 2026-09-24 19:44:22))
+  SQLSTATE[42S22]: Column not found: 1054 Unknown column 'store_id' in 'field list' (Connection: mysql, SQL: insert into `users` (`name`, `email`, `email_verified_at`, `password`, `remember_token`, `is_active`, `role`, `store_id`, `updated_at`, `created_at`) values (Owner A, owner-a@example.com, 2026-09-24 21:42:26, $2y$04$C9Rkt9CuA4dPi9zpd7tQb.s1Ri78Mr1BDvbaI3OMM4jYH0v8/USGG, KeNTDD4cD4, 1, store_owner, 79, 2026-09-24 21:42:26, 2026-09-24 21:42:26))
 
   at vendor/laravel/framework/src/Illuminate/Database/Connection.php:825
     821▕                     $this->getName(), $query, $this->prepareBindings($bindings), $e
@@ -367,7 +367,7 @@
 
   ────────────────────────────────────────────────────────────────────────────  
    FAILED  Tests\Feature\SalesAndBannersTest > standalone ba…  QueryException   
-  SQLSTATE[42S22]: Column not found: 1054 Unknown column 'store_id' in 'field list' (Connection: mysql, SQL: insert into `users` (`name`, `email`, `email_verified_at`, `password`, `remember_token`, `is_active`, `role`, `store_id`, `updated_at`, `created_at`) values (Owner A, owner-a@example.com, 2026-09-24 19:44:22, $2y$04$A2lA4QS33usB85zkiQn1Me3YBK79jvF3Iud15DC3sDp7ilkC/iA3q, IfjRDStWuB, 1, store_owner, 81, 2026-09-24 19:44:22, 2026-09-24 19:44:22))
+  SQLSTATE[42S22]: Column not found: 1054 Unknown column 'store_id' in 'field list' (Connection: mysql, SQL: insert into `users` (`name`, `email`, `email_verified_at`, `password`, `remember_token`, `is_active`, `role`, `store_id`, `updated_at`, `created_at`) values (Owner A, owner-a@example.com, 2026-09-24 21:42:26, $2y$04$C9Rkt9CuA4dPi9zpd7tQb.s1Ri78Mr1BDvbaI3OMM4jYH0v8/USGG, lkA5Rkrlvi, 1, store_owner, 81, 2026-09-24 21:42:26, 2026-09-24 21:42:26))
 
   at vendor/laravel/framework/src/Illuminate/Database/Connection.php:825
     821▕                     $this->getName(), $query, $this->prepareBindings($bindings), $e
@@ -385,7 +385,7 @@
 
   ────────────────────────────────────────────────────────────────────────────  
    FAILED  Tests\Feature\SalesAndBannersTest > public banner…  QueryException   
-  SQLSTATE[42S22]: Column not found: 1054 Unknown column 'store_id' in 'field list' (Connection: mysql, SQL: insert into `users` (`name`, `email`, `email_verified_at`, `password`, `remember_token`, `is_active`, `role`, `store_id`, `updated_at`, `created_at`) values (Owner A, owner-a@example.com, 2026-09-24 19:44:22, $2y$04$A2lA4QS33usB85zkiQn1Me3YBK79jvF3Iud15DC3sDp7ilkC/iA3q, 5ja0yHzQ27, 1, store_owner, 83, 2026-09-24 19:44:22, 2026-09-24 19:44:22))
+  SQLSTATE[42S22]: Column not found: 1054 Unknown column 'store_id' in 'field list' (Connection: mysql, SQL: insert into `users` (`name`, `email`, `email_verified_at`, `password`, `remember_token`, `is_active`, `role`, `store_id`, `updated_at`, `created_at`) values (Owner A, owner-a@example.com, 2026-09-24 21:42:26, $2y$04$C9Rkt9CuA4dPi9zpd7tQb.s1Ri78Mr1BDvbaI3OMM4jYH0v8/USGG, QEKPZxQrDm, 1, store_owner, 83, 2026-09-24 21:42:26, 2026-09-24 21:42:26))
 
   at vendor/laravel/framework/src/Illuminate/Database/Connection.php:825
     821▕                     $this->getName(), $query, $this->prepareBindings($bindings), $e
@@ -403,7 +403,7 @@
 
   ────────────────────────────────────────────────────────────────────────────  
    FAILED  Tests\Feature\SalesAndBannersTest > owner cannot…   QueryException   
-  SQLSTATE[42S22]: Column not found: 1054 Unknown column 'store_id' in 'field list' (Connection: mysql, SQL: insert into `users` (`name`, `email`, `email_verified_at`, `password`, `remember_token`, `is_active`, `role`, `store_id`, `updated_at`, `created_at`) values (Owner A, owner-a@example.com, 2026-09-24 19:44:22, $2y$04$A2lA4QS33usB85zkiQn1Me3YBK79jvF3Iud15DC3sDp7ilkC/iA3q, WcOaPia4dH, 1, store_owner, 85, 2026-09-24 19:44:22, 2026-09-24 19:44:22))
+  SQLSTATE[42S22]: Column not found: 1054 Unknown column 'store_id' in 'field list' (Connection: mysql, SQL: insert into `users` (`name`, `email`, `email_verified_at`, `password`, `remember_token`, `is_active`, `role`, `store_id`, `updated_at`, `created_at`) values (Owner A, owner-a@example.com, 2026-09-24 21:42:26, $2y$04$C9Rkt9CuA4dPi9zpd7tQb.s1Ri78Mr1BDvbaI3OMM4jYH0v8/USGG, 0nKpCyDzkc, 1, store_owner, 85, 2026-09-24 21:42:26, 2026-09-24 21:42:26))
 
   at vendor/laravel/framework/src/Illuminate/Database/Connection.php:825
     821▕                     $this->getName(), $query, $this->prepareBindings($bindings), $e
@@ -421,6 +421,6 @@
 
 
   Tests:    14 failed, 439 passed (1154 assertions)
-  Duration: 27.84s
+  Duration: 26.62s
 
 ```
