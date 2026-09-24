@@ -116,7 +116,7 @@ export function ProductSummaryModal({ product, storeProductId = null, sourceRect
                 }}
               >
                 {imageSource ? (
-                  <Image source={imageSource} style={{ width: 72, height: 72 }} resizeMode="contain" cachePolicy="memory-disk" />
+                  <Image source={imageSource} style={{ width: 72, height: 72 }} contentFit="contain" cachePolicy="memory-disk" />
                 ) : (
                   <Text style={{ color: theme.colors.textFaint, fontSize: 32 }}>🛒</Text>
                 )}

@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { View, Text, ScrollView, RefreshControl, FlatList } from 'react-native';
+import { useState, useCallback } from 'react';
+import { View, Text, ScrollView, RefreshControl, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Search, MapPin, Store, Tag } from 'lucide-react-native';
+import { Search, MapPin, Store, Tag, ChevronDown } from 'lucide-react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -72,9 +72,9 @@ export function HomeScreen() {
   const priceSource = needsAll && allProducts.length > 0 ? allProducts : trending;
   const subtotal = cartSubtotal(cartItems, priceSource);
   const storeName = store?.name ?? 'Choose your store';
+  const deliveryProgress = subtotal > 0 ? Math.min(subtotal / FREE_DELIVERY_THRESHOLD_CENTS, 1) : 0;
 
-  // Helper to get effective storeProductId for a product
-  const getStoreProductId = (product: ProductVO): number | null => {
+  const getStoreProductId = useCallback((product: ProductVO): number | null => {
     const selection = useStoreSelection.getState().getSelection(product.id);
     let effectiveStoreProductId: number | null = null;
     if (selection) {
@@ -85,7 +85,25 @@ export function HomeScreen() {
       effectiveStoreProductId = avail?.storeProductId ?? null;
     }
     return effectiveStoreProductId;
-  };
+  }, [store]);
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.products({}) });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.categories });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.specials({ storeId: store?.id ?? null }) });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.banners });
+    } finally {
+      setRefreshing(false);
+    }
+  }, [queryClient, store?.id]);
+
+  const renderSection = (index: number, children: React.ReactNode, style?: ViewStyle) => (
+    <FadeSlideIn delay={index * 40 + 80} distance={10} style={style}>
+      {children}
+    </FadeSlideIn>
+  );
 
   return (
     <ScrollView
@@ -95,36 +113,24 @@ export function HomeScreen() {
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
-          onRefresh={async () => {
-            setRefreshing(true);
-            try {
-              await queryClient.invalidateQueries({ queryKey: queryKeys.products({}) });
-              await queryClient.invalidateQueries({ queryKey: queryKeys.categories });
-              await queryClient.invalidateQueries({ queryKey: queryKeys.specials({ storeId: store?.id ?? null }) });
-              await queryClient.invalidateQueries({ queryKey: queryKeys.banners });
-            } finally {
-              setRefreshing(false);
-            }
-          }}
+          onRefresh={handleRefresh}
           tintColor={brand.orange}
+          progressBackgroundColor={theme.colors.surface.primary}
         />
       }
     >
-      {/* Hero: atmospheric gradient that melts into the page background —
-          light mode uses the warm peach wash, dark mode a faint ember glow
-          (heroGradient keeps the final stop = background.primary so the
-          header and page read as one continuous surface). */}
+      {/* Hero Gradient Header */}
       <LinearGradient
         colors={heroGradient(theme.name, theme.colors.background.primary)}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={{ paddingBottom: semanticSpacing.sm }}
+        style={{ paddingBottom: semanticSpacing.md }}
       >
-        {/* Header: CheckStar logo + search + delivery Store */}
-        <View style={{ paddingHorizontal: semanticSpacing.screenPadding, paddingTop: topInset, gap: semanticSpacing.xs }}>
+        <View style={{ paddingHorizontal: semanticSpacing.screenPadding, paddingTop: topInset, gap: semanticSpacing.sm }}>
+          {/* Top Row: Logo + Search */}
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <FadeSlideIn delay={60}>
-              <Logo variant="lockup" size={22} tone={theme.name} />
+            <FadeSlideIn delay={40} distance={6}>
+              <Logo variant="lockup" size={24} tone={theme.name} />
             </FadeSlideIn>
             <TactilePressable
               onPress={() => navigation.navigate('Search')}
@@ -138,120 +144,167 @@ export function HomeScreen() {
                 height: 44,
                 alignItems: 'center',
                 justifyContent: 'center',
+                borderWidth: 1,
+                borderColor: theme.colors.border.subtle,
               }}
             >
-              <Search size={20} color={theme.colors.text.secondary} />
+              <Search size={22} color={theme.colors.text.secondary} strokeWidth={2} />
             </TactilePressable>
           </View>
 
-          <TactilePressable
-            onPress={() => navigation.navigate('StorePicker')}
-            haptic="selection"
-            accessibilityRole="button"
-            accessibilityLabel="Choose delivery store"
-            hitSlop={{ top: semanticSpacing.xs, bottom: semanticSpacing.xs }}
-            style={{ flexDirection: 'row', alignItems: 'center', gap: semanticSpacing.xxs, paddingVertical: 2 }}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: semanticSpacing.xxs }}>
-              <MapPin size={16} color={brand.orange} />
-              <Text style={{ fontWeight: fontWeight.semibold, color: theme.colors.text.primary, ...textStyle.body }}>
-                {storeName}
-              </Text>
-            </View>
-          </TactilePressable>
-          {subtotal < FREE_DELIVERY_THRESHOLD_CENTS && subtotal > 0 && (
-            <Text style={{ color: theme.colors.text.secondary, ...textStyle.caption }}>
-              Free delivery over {formatZar(FREE_DELIVERY_THRESHOLD_CENTS)} — add more to qualify.
-            </Text>
-          )}
+          {/* Store Selector with Free Delivery Progress */}
+          <View style={{ gap: semanticSpacing.xs }}>
+            <TactilePressable
+              onPress={() => navigation.navigate('StorePicker')}
+              haptic="selection"
+              accessibilityRole="button"
+              accessibilityLabel="Choose delivery store"
+              hitSlop={{ top: semanticSpacing.xs, bottom: semanticSpacing.xs, left: semanticSpacing.xs, right: semanticSpacing.xs }}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: semanticSpacing.sm,
+                paddingHorizontal: semanticSpacing.sm,
+                paddingVertical: semanticSpacing.xs,
+                backgroundColor: theme.colors.surface.primary,
+                borderRadius: semanticRadius.card,
+                borderWidth: 1,
+                borderColor: theme.colors.border.subtle,
+              }}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: semanticSpacing.xxs, flex: 1, minWidth: 0 }}>
+                <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: brand.orange + '15', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <MapPin size={14} color={brand.orange} strokeWidth={2} />
+                </View>
+                <Text style={{ fontWeight: fontWeight.semibold, color: theme.colors.text.primary, ...textStyle.body, flexShrink: 1 }}>
+                  {storeName}
+                </Text>
+              </View>
+              <ChevronDown size={16} color={theme.colors.text.tertiary} strokeWidth={2} />
+            </TactilePressable>
+
+            {/* Free Delivery Progress Bar */}
+            {subtotal > 0 && (
+              <View style={{ gap: semanticSpacing.xxs }}>
+                <View style={{ height: 4, borderRadius: 2, backgroundColor: theme.colors.border.subtle, overflow: 'hidden' }}>
+                  <View
+                    style={{
+                      width: `${deliveryProgress * 100}%`,
+                      height: '100%',
+                      backgroundColor: deliveryProgress >= 1 ? brand.success : brand.orange,
+                      borderRadius: 2,
+                    }}
+                  />
+                </View>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                  <Text style={{ color: theme.colors.text.tertiary, ...textStyle.caption }}>
+                    {deliveryProgress >= 1 ? '🎉 Free delivery unlocked!' : `Add ${formatZar(Math.max(0, FREE_DELIVERY_THRESHOLD_CENTS - subtotal))} for free delivery`}
+                  </Text>
+                  <Text style={{ color: theme.colors.text.tertiary, ...textStyle.caption }}>
+                    {formatZar(subtotal)} / {formatZar(FREE_DELIVERY_THRESHOLD_CENTS)}
+                  </Text>
+                </View>
+              </View>
+            )}
+          </View>
         </View>
       </LinearGradient>
 
-      {/* First-run / unseeded catalogue: one coherent empty state */}
+      {/* Content Sections */}
       {!trendingLoading && trending.length === 0 && specials.length === 0 && categories.length === 0 && banners.length === 0 ? (
-        <FadeSlideIn delay={120} style={{ marginTop: semanticSpacing.sectionGap }}>
+        /* Empty State */
+        <FadeSlideIn delay={120} style={{ marginTop: semanticSpacing.sectionGap, paddingHorizontal: semanticSpacing.screenPadding }}>
           <EmptyState
             icon={Store}
             title="The shelves are being stocked"
             caption="Products will appear here as soon as the store catalogue is ready. Pull down to refresh."
+            action={
+              <TactilePressable onPress={handleRefresh} haptic="selection" style={{ marginTop: semanticSpacing.sm, paddingHorizontal: 20, paddingVertical: 10, backgroundColor: theme.colors.surface.primary, borderRadius: 999, borderWidth: 1, borderColor: theme.colors.border.subtle }}>
+                <Text style={{ color: theme.colors.text.primary, fontWeight: '600', fontSize: 12 }}>Retry</Text>
+              </TactilePressable>
+            }
           />
         </FadeSlideIn>
       ) : (
         <>
-          {/* Banner carousel */}
-          <FadeSlideIn delay={80}>
-            <BannerCarousel banners={banners} />
-          </FadeSlideIn>
+          {/* Banner Carousel */}
+          {banners.length > 0 && renderSection(0, <BannerCarousel banners={banners} />, { marginTop: semanticSpacing.md })}
 
-          {/* Picked for You recommendations */}
-          <FadeSlideIn delay={120}>
-            <RecommendationsSection />
-          </FadeSlideIn>
+          {/* Picked for You Recommendations */}
+          {renderSection(1, <RecommendationsSection />, { marginTop: semanticSpacing.sectionGap })}
 
-          {/* Best Deals — the current sale products, as a product rail */}
-          <ErrorBoundary fallback={<View style={{ marginTop: semanticSpacing.lg, paddingHorizontal: semanticSpacing.screenPadding }}>
-            <View style={{ backgroundColor: theme.colors.surface.elevated, borderRadius: 16, padding: 20, alignItems: 'center', borderWidth: 1, borderColor: theme.colors.border.subtle }}>
-              <Text style={{ color: theme.colors.text.secondary, fontSize: 13, fontWeight: '500' }}>Specials unavailable</Text>
+          {/* Best Deals — Sale Products Rail */}
+          {renderSection(2, (
+            <ErrorBoundary fallback={<View style={{ marginTop: semanticSpacing.lg, paddingHorizontal: semanticSpacing.screenPadding }}>
+              <View style={{ backgroundColor: theme.colors.surface.elevated, borderRadius: semanticRadius.card, padding: 20, alignItems: 'center', borderWidth: 1, borderColor: theme.colors.border.subtle }}>
+                <Text style={{ color: theme.colors.text.secondary, fontSize: 13, fontWeight: '500' }}>Specials unavailable</Text>
+              </View>
+            </View>}>
+              <View style={{ marginTop: semanticSpacing.lg }}>
+                <SectionHeader title="Best Deals" icon={<Tag size={16} color={brand.orange} />} />
+                {specials.length > 0 ? (
+                  <ProductCarousel
+                    data={specials}
+                    getStoreProductId={getStoreProductId}
+                    source="home"
+                  />
+                ) : (
+                  <Text style={{ color: theme.colors.text.secondary, paddingHorizontal: semanticSpacing.screenPadding, fontSize: 13 }}>No specials right now — new deals land every week.</Text>
+                )}
+              </View>
+            </ErrorBoundary>
+          ))}
+
+          {/* Categories — Horizontal Pills */}
+          {categories.length > 0 && renderSection(3, (
+            <View style={{ marginTop: semanticSpacing.sectionGap }}>
+              <SectionHeader title="Shop by category" icon={<Store size={16} color={brand.orange} />} />
+              <FadeEdgeScroll
+                fadeWidth={32}
+                contentPaddingLeft={semanticSpacing.screenPadding}
+                contentPaddingRight={semanticSpacing.screenPadding}
+                backgroundColor={theme.colors.background.primary}
+              >
+                {categories.map((c, idx) => (
+                  <FadeSlideIn key={c.id} delay={idx * 15} distance={6}>
+                    <CollectionPill
+                      label={c.name}
+                      onPress={() => navigation.navigate('Tabs', { screen: 'Browse', params: { category: c.slug } })}
+                    />
+                  </FadeSlideIn>
+                ))}
+              </FadeEdgeScroll>
             </View>
-          </View>}>
-            <FadeSlideIn delay={160} style={{ marginTop: semanticSpacing.lg }}>
-              <SectionHeader title="Best Deals" icon={<Tag size={16} color={brand.orange} />} />
-              {specials.length > 0 ? (
-                <ProductCarousel
-                  data={specials}
-                  getStoreProductId={getStoreProductId}
-                  source="home"
-                />
-              ) : (
-                <Text style={{ color: theme.colors.text.secondary, paddingHorizontal: semanticSpacing.screenPadding, fontSize: 13 }}>No specials right now — new deals land every week.</Text>
-              )}
-            </FadeSlideIn>
-          </ErrorBoundary>
+          ))}
 
-          {/* Categories — with soft edge fades */}
-          <FadeSlideIn delay={200} style={{ marginTop: semanticSpacing.xl }}>
-            <SectionHeader title="Shop by category" icon={<Store size={16} color={brand.orange} />} />
-            <FadeEdgeScroll
-              fadeWidth={32}
-              contentPaddingLeft={semanticSpacing.screenPadding}
-              contentPaddingRight={semanticSpacing.screenPadding}
-              backgroundColor={theme.colors.background.primary}
-            >
-              {categories.map((c, idx) => (
-                <FadeSlideIn key={c.id} delay={idx * 20} distance={8}>
-                  <CollectionPill label={c.name} onPress={() => navigation.navigate('Tabs', { screen: 'Browse', params: { category: c.slug } })} />
-                </FadeSlideIn>
-              ))}
-            </FadeEdgeScroll>
-          </FadeSlideIn>
-
-          {/* Trending Now — product rail (same card size as the grid) */}
-          {trending.length > 0 && (
-            <FadeSlideIn delay={240} style={{ marginTop: semanticSpacing.xl }}>
+          {/* Trending Now — Product Rail */}
+          {trending.length > 0 && renderSection(4, (
+            <View style={{ marginTop: semanticSpacing.sectionGap }}>
               <SectionHeader title="Trending Now" icon={<Tag size={16} color={brand.orange} />} />
               <ProductCarousel
                 data={trending}
                 getStoreProductId={getStoreProductId}
                 source="home"
               />
-            </FadeSlideIn>
-          )}
+            </View>
+          ))}
 
-          {/* Popular — product rail */}
-          {popular.length > 0 && (
-            <FadeSlideIn delay={280} style={{ marginTop: semanticSpacing.xl }}>
+          {/* Popular — Product Rail */}
+          {popular.length > 0 && renderSection(5, (
+            <View style={{ marginTop: semanticSpacing.sectionGap }}>
               <SectionHeader title="Popular" icon={<Tag size={16} color={brand.orange} />} />
               <ProductCarousel
                 data={popular}
                 getStoreProductId={getStoreProductId}
                 source="home"
               />
-            </FadeSlideIn>
-          )}
+            </View>
+          ))}
 
-          {/* New Arrivals — the canonical 2-col grid */}
-          {newArrivals.length > 0 && (
-            <FadeSlideIn delay={320} style={{ marginTop: semanticSpacing.xl }}>
+          {/* New Arrivals — 2-Col Grid */}
+          {newArrivals.length > 0 && renderSection(6, (
+            <View style={{ marginTop: semanticSpacing.sectionGap }}>
               <SectionHeader
                 title="New Arrivals"
                 trailing={
@@ -265,19 +318,19 @@ export function HomeScreen() {
                 getStoreProductId={getStoreProductId}
                 source="home"
               />
-            </FadeSlideIn>
-          )}
+            </View>
+          ))}
 
-          {/* Trending Now — loading shimmer */}
-          {trendingLoading && (
-            <FadeSlideIn delay={200} style={{ marginTop: semanticSpacing.xl }}>
+          {/* Loading Shimmer for Trending */}
+          {trendingLoading && renderSection(7, (
+            <View style={{ marginTop: semanticSpacing.sectionGap }}>
               <SectionHeader title="Trending Now" />
               <View style={{ flexDirection: 'row', gap: semanticSpacing.inlineGap, paddingHorizontal: semanticSpacing.screenPadding }}>
                 <ProductCardSkeleton />
                 <ProductCardSkeleton />
               </View>
-            </FadeSlideIn>
-          )}
+            </View>
+          ))}
         </>
       )}
     </ScrollView>
@@ -288,3 +341,6 @@ function cartSubtotal(items: { productId: string; quantity: number }[], products
   const priceOf = (id: string) => products.find((p) => p.id === Number(id))?.effectivePriceCents ?? 0;
   return items.reduce((sum, i) => sum + priceOf(i.productId) * i.quantity, 0);
 }
+
+// Type for renderSection style parameter
+type ViewStyle = import('react-native').ViewStyle;

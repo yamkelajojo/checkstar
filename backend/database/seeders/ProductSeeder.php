@@ -4,6 +4,8 @@ namespace Database\Seeders;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\Store;
+use App\Models\StoreProduct;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\File;
 
@@ -32,10 +34,12 @@ class ProductSeeder extends Seeder
             $categoryIds[$datasetCategory['id']] = $category->id;
         }
 
+        $stores = Store::where('is_active', true)->get();
+
         foreach ($dataset['products'] as $product) {
             $image = 'products/'.ltrim(str_replace('images/', '', $product['image']), '/');
 
-            Product::updateOrCreate(
+            $createdProduct = Product::updateOrCreate(
                 ['slug' => $product['slug']],
                 [
                 'category_id' => $categoryIds[$product['category_id']],
@@ -51,6 +55,18 @@ class ProductSeeder extends Seeder
                 'is_active' => true,
                 ]
             );
+
+            // Ensure stock at all active stores
+            foreach ($stores as $store) {
+                StoreProduct::firstOrCreate(
+                    ['product_id' => $createdProduct->id, 'store_id' => $store->id],
+                    [
+                        'stock_quantity' => rand(200, 500),
+                        'reserved_quantity' => 0,
+                        'is_available' => true,
+                    ]
+                );
+            }
         }
     }
 }

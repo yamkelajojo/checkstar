@@ -2,6 +2,8 @@ import { View, Text, ScrollView, Pressable, useWindowDimensions, Image as RNImag
 import { Image } from 'expo-image';
 import { useEffect, useRef, useState } from 'react';
 import { useRoute, useNavigation } from '@react-navigation/native';
+import type { RootStackParamList } from '../../navigation/types';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../theme';
 import { brand } from '../../theme/colors';
@@ -63,7 +65,7 @@ function RelatedCard({ item, index }: { item: ProductVO; index: number }) {
 
 export function ProductDetailScreen() {
   const theme = useTheme();
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute();
   const insets = useSafeAreaInsets();
   const { slug, source = 'direct' } = route.params as { slug: string; source?: string };
@@ -162,31 +164,36 @@ export function ProductDetailScreen() {
         <Pressable
           onPress={() => {
             haptic.selection();
-            navigation.goBack();
+            if (navigation.canGoBack()) {
+              navigation.goBack();
+            } else {
+              navigation.navigate('Tabs');
+            }
           }}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           style={{
             position: 'absolute',
             top: insets.top + 12,
             left: 12,
-            zIndex: 10,
-            backgroundColor: 'rgba(255,255,255,0.92)',
+            zIndex: 100,
+            backgroundColor: theme.colors.surface.primary,
             paddingHorizontal: 14,
-            paddingVertical: 8,
+            paddingVertical: 10,
             borderRadius: 999,
             flexDirection: 'row',
             alignItems: 'center',
-            gap: 4,
+            gap: 6,
             borderWidth: 1,
-            borderColor: 'rgba(0,0,0,0.06)',
+            borderColor: theme.colors.border.subtle,
             shadowColor: '#000',
             shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.08,
-            shadowRadius: 8,
-            elevation: 2,
+            shadowOpacity: 0.1,
+            shadowRadius: 10,
+            elevation: 4,
           }}
         >
-          <ChevronLeft size={16} color={theme.colors.text.primary} strokeWidth={2.2} />
-          <Text style={{ fontSize: 12, fontWeight: '600', letterSpacing: 0.2, color: theme.colors.text.primary }}>Back</Text>
+          <ChevronLeft size={18} color={theme.colors.text.primary} strokeWidth={2.5} />
+          <Text style={{ fontSize: 13, fontWeight: '700', letterSpacing: 0.1, color: theme.colors.text.primary }}>Back</Text>
         </Pressable>
       </FadeSlideIn>
 

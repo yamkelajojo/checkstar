@@ -77,33 +77,10 @@ function getMetroHostIp(): string | null {
  * If EXPO_PUBLIC_API_URL is a LAN IP (192.168.x.x) it will still be used as fallback.
  */
 async function getConfiguredApiUrl(): Promise<string> {
-  // 1. Check stored preference (the debug section in Account can override)
-  try {
-    const stored = await storage.get<string>(STORAGE_KEYS.apiBaseUrl);
-    if (stored) return stored;
-  } catch {}
-
-  // 2. Auto-detect from Metro host (physical device) — must run before env var
-  const metroIp = getMetroHostIp();
-  if (metroIp) {
-    return `http://${metroIp}:8000/api`;
-  }
-
-  // 3. Check env var (fallback if auto-detect failed)
-  if (process.env.EXPO_PUBLIC_API_URL) {
-    return process.env.EXPO_PUBLIC_API_URL;
-  }
-
-  // 4. Platform-specific defaults
-  if (Platform.OS === 'android') {
-    return 'http://10.0.2.2:8000/api'; // Android emulator
-  }
-  if (Platform.OS === 'ios') {
-    return 'http://localhost:8000/api'; // iOS simulator
-  }
-
-  // 5. Fallback
-  return DEFAULT_API_URL;
+  // TEMP: Hardcode for physical device testing
+  const hardcoded = 'http://192.168.0.108:8000/api';
+  console.log('[API] Using hardcoded URL:', hardcoded);
+  return hardcoded;
 }
 
 export async function setApiBaseUrl(url: string): Promise<void> {

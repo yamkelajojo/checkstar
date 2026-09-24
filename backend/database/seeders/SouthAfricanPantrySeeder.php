@@ -287,7 +287,7 @@ class SouthAfricanPantrySeeder extends Seeder
                 StoreProduct::firstOrCreate(
                     ['product_id' => $product->id, 'store_id' => $store->id],
                     [
-                        'stock_quantity' => rand(30, 90),
+                        'stock_quantity' => rand(200, 500),
                         'reserved_quantity' => 0,
                         'is_available' => true,
                     ]

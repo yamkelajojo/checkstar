@@ -80,7 +80,7 @@ export function ProductCard({ product, storeProductId = null, style, onRequestSu
       accessibilityLabel={product.name}
       style={[{ borderRadius: semanticRadius.card, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 }, style]}
     >
-      <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: semanticRadius.card, padding: semanticSpacing.cardPadding, gap: semanticSpacing.elementGap, minHeight: 238, borderWidth: 1, borderColor: theme.colors.border.subtle }}>
+      <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: semanticRadius.card, padding: semanticSpacing.cardPadding, gap: semanticSpacing.elementGap, minHeight: 238, borderWidth: 1, borderColor: theme.colors.border.subtle, flexDirection: 'column' }}>
         <View
           style={{
             height: 132,
@@ -106,7 +106,7 @@ export function ProductCard({ product, storeProductId = null, style, onRequestSu
               <Image
                 source={imageSource}
                 style={{ width: 86, height: 86, transform: [{ rotate: '-12deg' }] }}
-                resizeMode="contain"
+                contentFit="contain"
                 cachePolicy="memory-disk"
                 onError={() => setImageSource(null)}
               />
@@ -135,10 +135,12 @@ export function ProductCard({ product, storeProductId = null, style, onRequestSu
           )}
         </View>
 
-        <View style={{ gap: 2 }}>
-          <Text numberOfLines={2} style={{ ...textStyle.title, color: theme.colors.text.primary }}>
-            {product.name}
-          </Text>
+        <View style={{ gap: 2, flex: 1, justifyContent: 'flex-start' }}>
+          <View style={{ minHeight: 44 }}>
+            <Text numberOfLines={2} style={{ ...textStyle.title, color: theme.colors.text.primary }}>
+              {product.name}
+            </Text>
+          </View>
           {onRequestSummary ? (
             <Pressable
               ref={badgeRef}
@@ -182,7 +184,7 @@ export function ProductCard({ product, storeProductId = null, style, onRequestSu
           )}
         </View>
 
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto' }}>
           {quantity === 0 ? (
             <TactilePressable
               onPress={() => add(String(product.id), 1, storeProductId)}
