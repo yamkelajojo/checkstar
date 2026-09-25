@@ -26,6 +26,7 @@ import { Logo } from '../../components/shared/Logo';
 import { useStoreSelection } from '../catalog/storeSelection';
 import { useTopSafeArea } from '../../components/shared/ScreenHeader';
 import type { ProductVO } from '../../lib/product';
+import type { ApiBannerSlide } from '../../lib/types';
 import { findStoreAvailability } from '../../lib/product';
 import { ErrorBoundary } from '../../components/shared/ErrorBoundary';
 import { FREE_DELIVERY_THRESHOLD_CENTS } from '../../lib/constants';
@@ -104,6 +105,15 @@ export function HomeScreen() {
       {children}
     </FadeSlideIn>
   );
+
+  // Backend normalises linked banner slide CTAs to `/specials/<slug>` (or
+  // plain `/specials`). Map both onto the SaleDetail modal.
+  const handleBannerSlidePress = (slide: ApiBannerSlide) => {
+    const url = slide.url ?? '';
+    if (!url.startsWith('/specials')) return;
+    const slug = url.replace(/^\/specials\/?/, '');
+    navigation.navigate('SaleDetail', { slug: slug || 'all' });
+  };
 
   return (
     <ScrollView
@@ -229,7 +239,7 @@ export function HomeScreen() {
       ) : (
         <>
           {/* Banner Carousel */}
-          {banners.length > 0 && renderSection(0, <BannerCarousel banners={banners} />, { marginTop: semanticSpacing.md })}
+          {banners.length > 0 && renderSection(0, <BannerCarousel banners={banners} onSlidePress={handleBannerSlidePress} />, { marginTop: semanticSpacing.md })}
 
           {/* Picked for You Recommendations */}
           {renderSection(1, <RecommendationsSection />, { marginTop: semanticSpacing.sectionGap })}

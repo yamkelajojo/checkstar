@@ -81,6 +81,8 @@ export function AddressesSection() {
               flexDirection: 'row',
               alignItems: 'center',
               gap: 4,
+              flexShrink: 0,
+              maxWidth: 140,
               paddingVertical: 6,
               paddingHorizontal: 12,
               borderRadius: 999,
