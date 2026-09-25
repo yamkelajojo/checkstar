@@ -46,7 +46,7 @@ function getLocalIp(): string {
       if (host && host !== 'localhost' && host !== '127.0.0.1' && host.includes('.')) return host;
     }
   } catch {}
-  return '192.168.0.108';
+  return '';
 }
 
 /**
@@ -449,7 +449,8 @@ function DebugSection({ theme, toast, getLocalIp }: { theme: ReturnType<typeof u
     }
   };
 
-  const suggestedUrl = `http://${getLocalIp()}:8000/api`;
+  const localIp = getLocalIp();
+  const suggestedUrl = localIp ? `http://${localIp}:8000/api` : 'http://<your-machine-ip>:8000/api';
 
   return (
     <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: semanticRadius.card, padding: semanticSpacing.md, gap: semanticSpacing.md, borderWidth: 1, borderColor: theme.colors.border.subtle }}>

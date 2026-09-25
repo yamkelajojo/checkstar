@@ -130,11 +130,20 @@ describe('architecture guard — no scroll-motion machinery in the shared produc
   });
 
   it('no momentum / scroll-worklet helpers survive anywhere in src', () => {
-    const { execSync } = require('child_process');
-    const out = execSync(
-      "grep -rn --include='*.ts' --include='*.tsx' -E 'useAnimatedScrollHandler|onMomentumScrollEnd|PhysicsCarousel' src | grep -v 'ProductGrid.test' || true",
-      { cwd: root, encoding: 'utf8' },
-    );
-    expect(out.trim()).toBe('');
+    // Portable scan (no shell tools): walk src and flag banned patterns.
+    const banned = /useAnimatedScrollHandler|onMomentumScrollEnd|PhysicsCarousel/;
+    const hits: string[] = [];
+    const walk = (dir: string) => {
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+          walk(full);
+        } else if (/\.tsx?$/.test(entry.name) && !entry.name.includes('ProductGrid.test')) {
+          if (banned.test(fs.readFileSync(full, 'utf8'))) hits.push(full);
+        }
+      }
+    };
+    walk(path.join(root, 'src'));
+    expect(hits).toEqual([]);
   });
 });

@@ -3,7 +3,7 @@ import { useTheme } from '../../theme';
 import { semanticSpacing, semanticRadius, hitTarget } from '../../theme/spacing';
 import { TactilePressable } from './TactilePressable';
 
-type BackButtonVariant = 'back' | 'close';
+export type BackButtonVariant = 'back' | 'close';
 
 interface BackButtonProps {
   variant?: BackButtonVariant;
@@ -27,7 +27,7 @@ export function BackButton({
   style 
 }: BackButtonProps) {
   const theme = useTheme();
-  const icon = variant === 'close' ? X : ChevronLeft;
+  const Icon = variant === 'close' ? X : ChevronLeft;
   const label = accessibilityLabel ?? (variant === 'close' ? 'Close' : 'Back');
 
   return (
@@ -50,7 +50,7 @@ export function BackButton({
       }}
       hitSlop={{ top: HIT_SLOP, bottom: HIT_SLOP, left: HIT_SLOP, right: HIT_SLOP }}
     >
-      <icon size={ICON_SIZE} color={theme.colors.text.primary} strokeWidth={ICON_STROKE_WIDTH} />
+      <Icon size={ICON_SIZE} color={theme.colors.text.primary} strokeWidth={ICON_STROKE_WIDTH} />
     </TactilePressable>
   );
 }

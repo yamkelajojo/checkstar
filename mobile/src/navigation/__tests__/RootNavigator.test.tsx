@@ -96,6 +96,7 @@ const CUSTOMER_STACK = [
   'Tabs',
   'ProductDetail',
   'Search',
+  'SaleDetail',
   'Auth',
   'StorePicker',
   'Checkout',
