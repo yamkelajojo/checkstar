@@ -29,10 +29,15 @@ class SalesAndBannersTest extends TestCase
     use RefreshDatabase;
 
     private Store $storeA;
+
     private Store $storeB;
+
     private User $ownerA;
+
     private User $managerA;
+
     private User $developer;
+
     private User $logistics;
 
     protected function setUp(): void
@@ -42,13 +47,15 @@ class SalesAndBannersTest extends TestCase
         $this->storeA = $this->makeStore('store-a', 'Durban');
         $this->storeB = $this->makeStore('store-b', 'Pretoria');
 
+        // Owners resolve their Store through stores.owner_id (see StoreContext
+        // / User::store) — users has no store_id column.
         $this->ownerA = User::factory()->create([
             'name' => 'Owner A',
             'email' => 'owner-a@example.com',
             'role' => UserRole::StoreOwner,
-            'store_id' => $this->storeA->id,
             'is_active' => true,
         ]);
+        $this->storeA->update(['owner_id' => $this->ownerA->id]);
 
         $this->managerA = User::factory()->create([
             'name' => 'Manager A',
@@ -192,7 +199,10 @@ class SalesAndBannersTest extends TestCase
             ->assertStatus(200)
             ->assertJsonCount(2, 'data.products');
 
-        $prices = collect($sale->fresh()->products)->pluck('special_price', 'id');
+        // The stored price lives on the product_special pivot, not the product.
+        $prices = $sale->fresh()->products->mapWithKeys(
+            fn (Product $p) => [$p->id => $p->pivot->special_price],
+        );
         $this->assertEqualsWithDelta(19.99, (float) $prices[$a->id], 0.001);
         $this->assertNull($prices[$b->id]);
 
@@ -206,9 +216,22 @@ class SalesAndBannersTest extends TestCase
             ->assertStatus(200)
             ->assertJsonCount(1, 'data.products');
 
-        $after = $sale->fresh()->products()->pluck('special_price', 'id');
-        $this->assertSame(1, $after->count());
+        // Load the rows (not an unqualified pluck: `id` is ambiguous across
+        // products and product_special).
+        $after = $sale->fresh()->products()->get()->mapWithKeys(
+            fn (Product $p) => [$p->id => $p->pivot->special_price],
+        );
+        $this->assertCount(1, $after);
         $this->assertEqualsWithDelta(17.50, (float) $after[$a->id], 0.001);
+
+        // The admin sale editor prefills from a top-level `special_price` on
+        // the product (frontend Product type), so the API must lift the pivot.
+        $returned = $this->actingAs($this->ownerA)
+            ->getJson('/api/admin/specials/'.$sale->id)
+            ->assertOk()
+            ->json('data.products.0');
+        $this->assertEqualsWithDelta(17.50, (float) $returned['special_price'], 0.001);
+        $this->assertEqualsWithDelta(17.50, (float) $returned['pivot']['special_price'], 0.001);
     }
 
     public function test_product_sync_cannot_touch_foreign_store_sale(): void

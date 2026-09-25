@@ -39,6 +39,10 @@ class SpecialController extends Controller
         $perPage = $request->has('per_page') ? max(1, min((int) $request->query('per_page'), 100)) : 50;
         $paginator = $query->orderByDesc('created_at')->paginate($perPage);
 
+        foreach ($paginator->items() as $item) {
+            $this->liftPivotPrices($item);
+        }
+
         if ($request->has('per_page') || $request->has('page')) {
             return response()->json($paginator);
         }
@@ -70,6 +74,7 @@ class SpecialController extends Controller
 
         $special = Special::create($validated);
         $special->load(['products', 'store:id,name,slug']);
+        $this->liftPivotPrices($special);
 
         return response()->json(['data' => $special], 201);
     }
@@ -78,6 +83,7 @@ class SpecialController extends Controller
     {
         $special = $this->own($request, Special::findOrFail($id));
         $special->load(['products', 'store:id,name,slug', 'banner:id,name,status']);
+        $this->liftPivotPrices($special);
 
         return response()->json(['data' => $special]);
     }
@@ -102,6 +108,7 @@ class SpecialController extends Controller
 
         $special->update($validated);
         $special->load(['products:id,name,slug,price,sale_price,unit', 'store:id,name,slug']);
+        $this->liftPivotPrices($special);
 
         return response()->json(['data' => $special]);
     }
@@ -162,6 +169,7 @@ class SpecialController extends Controller
         });
 
         $special->load('products');
+        $this->liftPivotPrices($special);
 
         return response()->json(['data' => $special]);
     }
@@ -169,6 +177,19 @@ class SpecialController extends Controller
     // ------------------------------------------------------------------
     // Internals
     // ------------------------------------------------------------------
+
+    /**
+     * product_special.special_price only rides along as $product->pivot->…,
+     * but the admin editor's prefill (and the Product type) read it as a
+     * top-level product field — same shape the public controller uses for
+     * effective_price. Copy it up so the sale editor can show existing prices.
+     */
+    private function liftPivotPrices(Special $special): void
+    {
+        foreach ($special->products as $product) {
+            $product->setAttribute('special_price', $product->pivot->special_price ?? null);
+        }
+    }
 
     /**
      * store_id handling: developers may omit it (chain-wide) or target any
