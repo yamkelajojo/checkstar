@@ -38,7 +38,12 @@ class RoutingController extends Controller
     }
 
     /**
-     * Get route geometry (polyline) for map display.
+     * Get route geometry (polyline) plus distance, duration and source.
+     *
+     * calculateRoute() already returns the geometry from the same OSRM call,
+     * so one request covers both the polyline and the metrics. When OSRM is
+     * unavailable the metrics still come back as a Haversine estimate with
+     * geometry: null, so clients always get a usable distance/duration.
      *
      * GET /api/routing/geometry?from_lat=...&from_lng=...&to_lat=...&to_lng=...
      */
@@ -51,15 +56,13 @@ class RoutingController extends Controller
             'to_lng' => 'required|numeric|between:-180,180',
         ]);
 
-        $geometry = $this->routingService->getRouteGeometry(
+        $result = $this->routingService->calculateRoute(
             (float) $validated['from_lat'],
             (float) $validated['from_lng'],
             (float) $validated['to_lat'],
             (float) $validated['to_lng'],
         );
 
-        return response()->json([
-            'geometry' => $geometry,
-        ]);
+        return response()->json($result->toArray());
     }
 }

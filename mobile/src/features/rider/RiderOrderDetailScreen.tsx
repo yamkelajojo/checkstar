@@ -111,7 +111,7 @@ export function RiderOrderDetailScreen() {
           </FadeSlideIn>
 
           <FadeSlideIn delay={140} distance={12}>
-            <RouteMap storeName={order.store?.name ?? 'Checkstar'} storeLat={order.store?.latitude ?? undefined} storeLng={order.store?.longitude ?? undefined} deliveryAddress={order.delivery_address} deliveryLat={order.delivery_latitude ?? undefined} deliveryLng={order.delivery_longitude ?? undefined} distanceKm={routeGeometry?.distance_km ?? (hasRouteCoords ? 3.2 : undefined)} durationMinutes={routeGeometry?.duration_minutes ?? (hasRouteCoords ? 15 : undefined)} source={routeGeometry?.source ?? 'mock_fallback'} geometry={routeGeometry?.geometry ?? null} />
+            <RouteMap storeName={order.store?.name ?? 'Checkstar'} storeLat={order.store?.latitude ?? undefined} storeLng={order.store?.longitude ?? undefined} deliveryAddress={order.delivery_address} deliveryLat={order.delivery_latitude ?? undefined} deliveryLng={order.delivery_longitude ?? undefined} distanceKm={routeGeometry?.distance_km} durationMinutes={routeGeometry?.duration_minutes} source={routeGeometry?.source ?? 'haversine_fallback'} geometry={routeGeometry?.geometry ?? null} />
           </FadeSlideIn>
 
           {hasRouteCoords ? (
@@ -126,9 +126,9 @@ export function RiderOrderDetailScreen() {
                     deliveryAddress: order.delivery_address ?? null,
                     deliveryLat: order.delivery_latitude ?? undefined,
                     deliveryLng: order.delivery_longitude ?? undefined,
-                    distanceKm: routeGeometry?.distance_km ?? 3.2,
-                    durationMinutes: routeGeometry?.duration_minutes ?? 15,
-                    source: routeGeometry?.source ?? 'osrm',
+                    distanceKm: routeGeometry?.distance_km,
+                    durationMinutes: routeGeometry?.duration_minutes,
+                    source: routeGeometry?.source ?? 'haversine_fallback',
                     geometry: routeGeometry?.geometry ?? null,
                   });
                 }}
