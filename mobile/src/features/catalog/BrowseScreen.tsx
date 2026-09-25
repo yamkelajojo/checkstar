@@ -1,8 +1,9 @@
-import { useState } from 'react';
-import { View, Text, FlatList } from 'react-native';
+import { useEffect, useState } from 'react';
+import { View, Text, FlatList, TextInput, Pressable } from 'react-native';
+import { Search, SearchX } from 'lucide-react-native';
 import { useTheme } from '../../theme';
 import { textStyle } from '../../theme/typography';
-import { semanticSpacing } from '../../theme/spacing';
+import { semanticSpacing, semanticRadius } from '../../theme/spacing';
 import { useCategories, useInfiniteProducts } from './hooks';
 import { ProductCard } from '../../components/shared/ProductCard';
 import { CollectionPill } from '../../components/shared/CollectionPill';
@@ -15,19 +16,35 @@ import { useDeliveryStore } from '../../stores/deliveryStore';
 import type { ProductVO, StoreAvailabilityVO } from '../../lib/product';
 import { findStoreAvailability } from '../../lib/product';
 
+const SEARCH_DEBOUNCE_MS = 400;
+
 export function BrowseScreen() {
   const theme = useTheme();
   const store = useDeliveryStore((s) => s.fulfillmentStore);
   const { data: categories = [] } = useCategories();
   const [activeCategory, setActiveCategory] = useState<string | undefined>(undefined);
+  const [term, setTerm] = useState('');
+  const [debounced, setDebounced] = useState('');
   const [summaryState, setSummaryState] = useState<{ product: ProductVO; rect: SourceRect | null } | null>(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebounced(term), SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [term]);
+
+  const searching = debounced.length >= 2;
   const { 
     data, 
     isLoading, 
     isFetchingNextPage, 
     hasNextPage, 
     fetchNextPage 
-  } = useInfiniteProducts({ category: activeCategory, storeId: store?.id ?? null });
+  } = useInfiniteProducts({ 
+    category: activeCategory, 
+    search: searching ? debounced : undefined,
+    storeId: store?.id ?? null,
+    enabled: true,
+  });
 
   // Flatten all pages into a single array
   const products = data?.pages.flatMap((page) => page.products) ?? [];
@@ -51,9 +68,42 @@ export function BrowseScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background.primary }}>
-      <Text style={{ paddingTop: 56, paddingHorizontal: semanticSpacing.screenPadding, ...textStyle.h1, color: theme.colors.text.primary }}>
-        Browse
-      </Text>
+      {/* Sticky Search Bar */}
+      <View style={{ paddingTop: 56, paddingHorizontal: semanticSpacing.screenPadding, paddingBottom: semanticSpacing.xs }}>
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: semanticSpacing.inlineGap,
+            backgroundColor: theme.colors.surface.primary,
+            borderRadius: semanticRadius.buttonPill,
+            paddingHorizontal: semanticSpacing.md,
+            height: 44,
+            borderWidth: 1,
+            borderColor: theme.colors.border.subtle,
+          }}
+        >
+          <Search size={18} color={theme.colors.text.tertiary} strokeWidth={2} />
+          <TextInput
+            autoFocus={false}
+            value={term}
+            onChangeText={setTerm}
+            placeholder="Search products..."
+            placeholderTextColor={theme.colors.text.tertiary}
+            accessibilityLabel="Search products"
+            style={{ flex: 1, color: theme.colors.text.primary, fontSize: 14 }}
+          />
+          {term.length > 0 && (
+            <Pressable
+              onPress={() => setTerm('')}
+              accessibilityLabel="Clear search"
+              style={{ width: 24, height: 24, alignItems: 'center', justifyContent: 'center' }}
+            >
+              <SearchX size={16} color={theme.colors.text.tertiary} />
+            </Pressable>
+          )}
+        </View>
+      </View>
 
       {/* Horizontal category filter — GreenBidder pattern: scrollable pills with fade edge, no desktop sidebar leak */}
       <View style={{ marginTop: semanticSpacing.xs }}>

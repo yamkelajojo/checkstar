@@ -12,6 +12,7 @@ import { OrderPlacedScreen } from '../features/orders/OrderPlacedScreen';
 import { OrderDetailScreen } from '../features/orders/OrderDetailScreen';
 import { ProductDetailScreen } from '../features/product/ProductDetailScreen';
 import { SearchScreen } from '../features/search/SearchScreen';
+import { SaleDetailScreen } from '../features/catalog/SaleDetailScreen';
 import { RiderHomeScreen } from '../features/rider/RiderHomeScreen';
 import { RiderOrderDetailScreen } from '../features/rider/RiderOrderDetailScreen';
 import { RouteExplorerScreen } from '../features/route-explorer/RouteExplorerScreen';
@@ -63,6 +64,7 @@ export function RootNavigator() {
           <Stack.Screen name="Tabs" component={CustomerTabs} />
           <Stack.Screen name="ProductDetail" component={ProductDetailScreen} />
           <Stack.Screen name="Search" component={SearchScreen} />
+          <Stack.Screen name="SaleDetail" component={SaleDetailScreen} options={{ presentation: 'modal', animation: 'slide_from_bottom', animationDuration: 340 }} />
           <Stack.Screen name="Auth" component={AuthScreen} options={{ presentation: 'modal' }} />
           <Stack.Screen name="StorePicker" component={StorePickerScreen} options={{ presentation: 'modal' }} />
           <Stack.Screen name="Checkout" component={CheckoutScreen} options={{ presentation: 'modal' }} />

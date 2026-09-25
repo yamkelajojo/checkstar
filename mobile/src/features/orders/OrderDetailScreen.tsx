@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { View, Text, ScrollView, Pressable, Alert, TextInput } from 'react-native';
-import { Check, Star } from 'lucide-react-native';
+import { Check, Star, ChevronLeft } from 'lucide-react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as Notifications from 'expo-notifications';
@@ -140,8 +140,37 @@ export function OrderDetailScreen() {
   const awaitingConfirm = isAwaitingDeliveryConfirmation(order.status);
   const reviewable = canReview(order.status, order.rider_rating);
 
+  const handleBack = () => {
+    navigation.goBack();
+  };
+
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background.primary }}>
+      {/* Back button - top left with safe area */}
+      <TactilePressable
+        onPress={handleBack}
+        haptic="selection"
+        accessibilityRole="button"
+        accessibilityLabel="Back"
+        style={{
+          position: 'absolute',
+          top: 56 + semanticSpacing.md,
+          left: semanticSpacing.md,
+          zIndex: 10,
+          width: 36,
+          height: 36,
+          borderRadius: 18,
+          backgroundColor: theme.colors.surface.elevated,
+          borderWidth: 1,
+          borderColor: theme.colors.border.subtle,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+        hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+      >
+        <ChevronLeft size={18} color={theme.colors.text.primary} strokeWidth={2.2} />
+      </TactilePressable>
+
       <ScrollView contentContainerStyle={{ paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
         <View style={{ paddingTop: 56, paddingHorizontal: semanticSpacing.screenPadding, gap: semanticSpacing.lg }}>
           <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' }}>

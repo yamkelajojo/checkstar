@@ -75,28 +75,29 @@ export function ProductDetailScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background.primary }}>
       {/* Back button - top left with safe area */}
-      <Pressable
+      <TactilePressable
         onPress={handleBack}
+        haptic="selection"
+        accessibilityRole="button"
+        accessibilityLabel="Back"
         style={{
           position: 'absolute',
           top: insets.top + semanticSpacing.md,
           left: semanticSpacing.md,
           zIndex: 10,
-          backgroundColor: 'rgba(255,255,255,0.9)',
-          paddingHorizontal: semanticSpacing.md,
-          paddingVertical: semanticSpacing.sm,
-          borderRadius: semanticRadius.buttonPill,
-          flexDirection: 'row',
+          width: 36,
+          height: 36,
+          borderRadius: 18,
+          backgroundColor: theme.colors.surface.elevated,
+          borderWidth: 1,
+          borderColor: theme.colors.border.subtle,
           alignItems: 'center',
-          gap: 4,
+          justifyContent: 'center',
         }}
-        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
       >
-        <ChevronLeft size={20} color={theme.colors.text.primary} />
-        <Text style={{ ...textStyle.caption, fontWeight: fontWeight.semibold, color: theme.colors.text.primary }}>
-          Back
-        </Text>
-      </Pressable>
+        <ChevronLeft size={18} color={theme.colors.text.primary} strokeWidth={2.2} />
+      </TactilePressable>
 
       <ScrollView contentContainerStyle={{ paddingBottom: 140 }} showsVerticalScrollIndicator={false}>
         <View style={{ paddingTop: insets.top + 56, paddingHorizontal: semanticSpacing.screenPadding, gap: semanticSpacing.inlineGap }}>

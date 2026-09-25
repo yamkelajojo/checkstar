@@ -1,6 +1,6 @@
 import { View, Text, FlatList, ScrollView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Search, MapPin, Store } from 'lucide-react-native';
+import { Search, MapPin, Store, ChevronDown } from 'lucide-react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -112,14 +112,29 @@ export function HomeScreen() {
             haptic="selection"
             accessibilityRole="button"
             accessibilityLabel="Choose delivery store"
-            style={{ flexDirection: 'row', alignItems: 'center', gap: semanticSpacing.xxs }}
+            hitSlop={{ top: semanticSpacing.xs, bottom: semanticSpacing.xs, left: semanticSpacing.xs, right: semanticSpacing.xs }}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: semanticSpacing.sm,
+              paddingHorizontal: semanticSpacing.sm,
+              paddingVertical: semanticSpacing.xs,
+              backgroundColor: theme.colors.surface.primary,
+              borderRadius: semanticRadius.card,
+              borderWidth: 1,
+              borderColor: theme.colors.border.subtle,
+            }}
           >
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: semanticSpacing.xxs }}>
-              <MapPin size={16} color={brand.orange} />
-              <Text style={{ fontWeight: fontWeight.semibold, color: theme.colors.text.primary, ...textStyle.body }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: semanticSpacing.xxs, flex: 1, minWidth: 0 }}>
+              <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: brand.orange + '15', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <MapPin size={14} color={brand.orange} />
+              </View>
+              <Text style={{ fontWeight: fontWeight.semibold, color: theme.colors.text.primary, ...textStyle.body, flexShrink: 1 }}>
                 {storeName}
               </Text>
             </View>
+            <ChevronDown size={16} color={theme.colors.text.tertiary} strokeWidth={2} />
           </TactilePressable>
           {subtotal < FREE_DELIVERY_THRESHOLD_CENTS && subtotal > 0 && (
             <Text style={{ color: theme.colors.text.secondary, ...textStyle.caption }}>
@@ -131,7 +146,22 @@ export function HomeScreen() {
 
       {/* Specials carousel */}
       <View style={{ marginTop: semanticSpacing.lg }}>
-        <SectionTitle title="Best Deals" icon={<Tag size={16} color={brand.orange} />} />
+        <SectionTitle
+          title="Best Deals"
+          icon={<Tag size={16} color={brand.orange} />}
+          trailing={
+            specials.length > 0 && (
+              <TactilePressable
+                onPress={() => navigation.navigate('SaleDetail', { slug: 'all' })}
+                haptic="selection"
+                accessibilityRole="button"
+                accessibilityLabel="View all specials"
+              >
+                <Text style={{ color: brand.orange, fontWeight: fontWeight.semibold, ...textStyle.caption }}>View all</Text>
+              </TactilePressable>
+            )
+          }
+        />
         {specials.length > 0 ? (
           <FlatList
             horizontal
@@ -197,12 +227,15 @@ export function HomeScreen() {
   );
 }
 
-function SectionTitle({ title, icon }: { title: string; icon: React.ReactNode | null }) {
+function SectionTitle({ title, icon, trailing }: { title: string; icon: React.ReactNode | null; trailing?: React.ReactNode }) {
   const theme = useTheme();
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: semanticSpacing.inlineGap, paddingHorizontal: semanticSpacing.screenPadding, marginBottom: semanticSpacing.inlineGap }}>
-      {icon}
-      <Text style={{ ...textStyle.h3, fontWeight: fontWeight.bold, color: theme.colors.text.primary }}>{title}</Text>
+    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: semanticSpacing.inlineGap, paddingHorizontal: semanticSpacing.screenPadding, marginBottom: semanticSpacing.inlineGap }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: semanticSpacing.inlineGap }}>
+        {icon}
+        <Text style={{ ...textStyle.h3, fontWeight: fontWeight.bold, color: theme.colors.text.primary }}>{title}</Text>
+      </View>
+      {trailing}
     </View>
   );
 }

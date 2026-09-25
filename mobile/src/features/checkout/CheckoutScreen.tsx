@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { View, Text, TextInput, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
-import { Store, Lock, CheckCircle2, AlertCircle, MapPin } from 'lucide-react-native';
+import { Store, Lock, CheckCircle2, AlertCircle, MapPin, X } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTheme } from '../../theme';
@@ -196,16 +196,20 @@ export function CheckoutScreen() {
   if (items.length === 0) {
     return (
       <View style={{ flex: 1, backgroundColor: theme.colors.background.primary }}>
-        <ScreenTitle title={copy.checkout.title} />
+        <ScreenTitle title={copy.checkout.title} onClose={handleClose} />
         <EmptyState icon={Store} title="Nothing to check out" caption="Your cart is empty." />
       </View>
     );
   }
 
+  const handleClose = () => {
+    navigation.goBack();
+  };
+
   return (
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: theme.colors.background.primary }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={{ paddingBottom: 140 }} keyboardShouldPersistTaps="handled">
-        <ScreenTitle title={copy.checkout.title} />
+        <ScreenTitle title={copy.checkout.title} onClose={handleClose} />
 
         <View style={{ padding: 16, gap: 14 }}>
           {validatingFulfillment && (
@@ -376,11 +380,34 @@ export function CheckoutScreen() {
   );
 }
 
-function ScreenTitle({ title }: { title: string }) {
+function ScreenTitle({ title, onClose }: { title: string; onClose?: () => void }) {
   const theme = useTheme();
   return (
-    <Text style={{ paddingTop: 56, paddingHorizontal: 16, fontSize: typeScale.title, fontWeight: weights.extrabold, color: theme.colors.text.primary }}>
-      {title}
-    </Text>
+    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 56, paddingHorizontal: 16 }}>
+      <Text style={{ fontSize: typeScale.title, fontWeight: weights.extrabold, color: theme.colors.text.primary }}>
+        {title}
+      </Text>
+      {onClose && (
+        <TactilePressable
+          onPress={onClose}
+          haptic="selection"
+          accessibilityRole="button"
+          accessibilityLabel="Close"
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 18,
+            backgroundColor: theme.colors.surface.elevated,
+            borderWidth: 1,
+            borderColor: theme.colors.border.subtle,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+        >
+          <X size={18} color={theme.colors.text.primary} strokeWidth={2.2} />
+        </TactilePressable>
+      )}
+    </View>
   );
 }

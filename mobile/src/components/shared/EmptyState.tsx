@@ -22,7 +22,8 @@ interface EmptyStateProps {
   action?: React.ReactNode;
 }
 
-/** Shared empty state: centered glyph → title → one caption, delayed rise+scale. */
+/** Shared empty state: bare glyph (44px, text.tertiary, strokeWidth 1.75) → title → caption.
+ * Gentle fade + 8px rise on mount. No chip, no border/shadow, no rotation. */
 export function EmptyState({ icon: Icon, title, caption, action }: EmptyStateProps) {
   const theme = useTheme();
   const reduceMotion = useReducedMotion();
@@ -33,18 +34,18 @@ export function EmptyState({ icon: Icon, title, caption, action }: EmptyStatePro
       progress.value = 1;
       return;
     }
-    progress.value = withDelay(200, withTiming(1, { duration: 600, easing: EASE_SETTLE }));
+    progress.value = withDelay(120, withTiming(1, { duration: 280, easing: EASE_SETTLE }));
   }, [reduceMotion, progress]);
 
   const style = useAnimatedStyle(() => ({
     opacity: progress.value,
-    transform: [{ translateY: 20 * (1 - progress.value) }, { scale: 0.95 + 0.05 * progress.value }],
+    transform: [{ translateY: 8 * (1 - progress.value) }],
   }));
 
   return (
     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: semanticSpacing.screenPadding }}>
       <Animated.View style={[{ alignItems: 'center', gap: semanticSpacing.tightGap }, style]}>
-        <Icon size={44} color={theme.colors.text.tertiary} />
+        <Icon size={44} color={theme.colors.text.tertiary} strokeWidth={1.75} />
         <Text style={{ ...semanticText.sectionTitle, color: theme.colors.text.primary, textAlign: 'center' }}>
           {title}
         </Text>

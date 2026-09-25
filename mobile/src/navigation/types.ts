@@ -11,6 +11,7 @@ export type RootStackParamList = {
   Checkout: undefined;
   OrderPlaced: { orderId: number; dispatch?: ApiDispatchOutcome };
   OrderDetail: { orderId: number; fromNotification?: boolean };
+  SaleDetail: { slug: string };
   RiderHome: undefined;
   RiderOrderDetail: { orderId: number; fromNotification?: boolean };
   RouteExplorer: {
