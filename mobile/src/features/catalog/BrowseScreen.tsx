@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, TextInput, Pressable } from 'react-native';
 import { useRoute } from '@react-navigation/native';
+import { PackageSearch, Search, SearchX } from 'lucide-react-native';
 import { useTheme } from '../../theme';
-import { semanticSpacing } from '../../theme/spacing';
+import { semanticSpacing, semanticRadius } from '../../theme/spacing';
 import { useCategories, useInfiniteProducts } from './hooks';
 import { ProductGrid } from '../../components/shared/ProductGrid';
 import { CollectionPill } from '../../components/shared/CollectionPill';
@@ -12,11 +13,12 @@ import { SkeletonCard } from '../../components/shared/SkeletonCard';
 import { ProductCardSkeleton } from '../../components/shared/ProductCardSkeleton';
 import { ScreenHeader } from '../../components/shared/ScreenHeader';
 import { EmptyState } from '../../components/shared/EmptyState';
-import { PackageSearch } from 'lucide-react-native';
 import { useDeliveryStore } from '../../stores/deliveryStore';
 import type { ProductVO } from '../../lib/product';
 import { findStoreAvailability } from '../../lib/product';
 import { trackCategoryFilterTap } from '../../services/trackingService';
+
+const SEARCH_DEBOUNCE_MS = 300;
 
 export function BrowseScreen() {
   const theme = useTheme();
@@ -25,18 +27,32 @@ export function BrowseScreen() {
   const { data: categories = [] } = useCategories();
   const routeCategory = (route.params as { category?: string } | undefined)?.category;
   const [activeCategory, setActiveCategory] = useState<string | undefined>(routeCategory);
+  const [term, setTerm] = useState('');
+  const [debounced, setDebounced] = useState('');
   const [summaryState, setSummaryState] = useState<{ product: ProductVO; rect: SourceRect | null } | null>(null);
 
   useEffect(() => {
     if (routeCategory !== undefined) setActiveCategory(routeCategory);
   }, [routeCategory]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebounced(term), SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [term]);
+
+  const searching = debounced.trim().length >= 2;
   const {
     data,
     isLoading,
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,
-  } = useInfiniteProducts({ category: activeCategory, storeId: store?.id ?? null });
+  } = useInfiniteProducts({
+    category: activeCategory,
+    search: searching ? debounced.trim() : undefined,
+    storeId: store?.id ?? null,
+    enabled: true,
+  });
 
   // Flatten all pages into a single array
   const products = data?.pages.flatMap((page) => page.products) ?? [];
@@ -61,6 +77,48 @@ export function BrowseScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background.primary }}>
       <ScreenHeader title="Browse" />
+
+      {/* Sticky Search Bar */}
+      <View
+        style={{
+          paddingHorizontal: semanticSpacing.screenPadding,
+          paddingBottom: semanticSpacing.xs,
+        }}
+      >
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: semanticSpacing.inlineGap,
+            backgroundColor: theme.colors.surface.primary,
+            borderRadius: semanticRadius.buttonPill,
+            paddingHorizontal: semanticSpacing.md,
+            height: 44,
+            borderWidth: 1,
+            borderColor: theme.colors.border.subtle,
+          }}
+        >
+          <Search size={18} color={theme.colors.text.tertiary} strokeWidth={2} />
+          <TextInput
+            autoFocus={false}
+            value={term}
+            onChangeText={setTerm}
+            placeholder="Search products..."
+            placeholderTextColor={theme.colors.text.tertiary}
+            accessibilityLabel="Search products"
+            style={{ flex: 1, color: theme.colors.text.primary, fontSize: 14 }}
+          />
+          {term.length > 0 && (
+            <Pressable
+              onPress={() => setTerm('')}
+              accessibilityLabel="Clear search"
+              style={{ width: 24, height: 24, alignItems: 'center', justifyContent: 'center' }}
+            >
+              <SearchX size={16} color={theme.colors.text.tertiary} />
+            </Pressable>
+          )}
+        </View>
+      </View>
 
       {/* Horizontal category filter — scrollable pills with soft edge fades */}
       <View style={{ marginTop: semanticSpacing.xs }}>
@@ -97,11 +155,19 @@ export function BrowseScreen() {
           <ProductCardSkeleton />
         </View>
       ) : products.length === 0 ? (
-        <EmptyState
-          icon={PackageSearch}
-          title="No products here yet."
-          caption="This shelf is empty for now — try another category."
-        />
+        searching ? (
+          <EmptyState
+            icon={SearchX}
+            title="No matches found."
+            caption="Try a shorter search term, or clear it to browse everything."
+          />
+        ) : (
+          <EmptyState
+            icon={PackageSearch}
+            title="No products here yet."
+            caption="This shelf is empty for now — try another category."
+          />
+        )
       ) : (
         <ProductGrid
           data={products}

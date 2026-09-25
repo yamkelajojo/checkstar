@@ -4,7 +4,6 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
-  withDelay,
   Easing,
 } from 'react-native-reanimated';
 import type { LucideIcon } from 'lucide-react-native';
@@ -22,13 +21,9 @@ interface EmptyStateProps {
   action?: React.ReactNode;
 }
 
-/**
- * Shared empty state — the plain, consistent look across every screen:
- * centered glyph → title → one caption, with a gentle fade + rise.
- *
- * No chip background, no rotation, no springs — just calm. One component
- * for all empty and error-with-retry states.
- */
+/** Shared empty state — bare glyph (44px, text.tertiary, strokeWidth 1.75) →
+ * title → caption, with a gentle fade + 8px rise on mount (280ms).
+ * No chip background, no border/shadow, no rotation, no delay. */
 export function EmptyState({ icon: Icon, title, caption, action }: EmptyStateProps) {
   const theme = useTheme();
   const reduceMotion = useReducedMotion();
@@ -39,15 +34,12 @@ export function EmptyState({ icon: Icon, title, caption, action }: EmptyStatePro
       progress.value = 1;
       return;
     }
-    progress.value = withDelay(150, withTiming(1, { duration: 500, easing: EASE_SETTLE }));
+    progress.value = withTiming(1, { duration: 280, easing: EASE_SETTLE });
   }, [reduceMotion, progress]);
 
   const style = useAnimatedStyle(() => ({
     opacity: progress.value,
-    transform: [
-      { translateY: 20 * (1 - progress.value) },
-      { scale: 0.95 + 0.05 * progress.value },
-    ],
+    transform: [{ translateY: 8 * (1 - progress.value) }],
   }));
 
   return (

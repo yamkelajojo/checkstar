@@ -242,7 +242,23 @@ export function HomeScreen() {
               </View>
             </View>}>
               <View style={{ marginTop: semanticSpacing.lg }}>
-                <SectionHeader title="Best Deals" icon={<Tag size={16} color={brand.orange} />} />
+                <SectionHeader
+                  title="Best Deals"
+                  icon={<Tag size={16} color={brand.orange} />}
+                  trailing={
+                    specials.length > 0 ? (
+                      <TactilePressable
+                        onPress={() => navigation.navigate('SaleDetail', { slug: 'all' })}
+                        haptic="selection"
+                        accessibilityRole="button"
+                        accessibilityLabel="View all specials"
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      >
+                        <Text style={{ color: brand.orange, fontWeight: fontWeight.semibold, ...textStyle.caption }}>View all</Text>
+                      </TactilePressable>
+                    ) : null
+                  }
+                />
                 {specials.length > 0 ? (
                   <ProductCarousel
                     data={specials}
