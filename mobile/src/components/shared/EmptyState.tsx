@@ -34,7 +34,7 @@ export function EmptyState({ icon: Icon, title, caption, action }: EmptyStatePro
       progress.value = 1;
       return;
     }
-    progress.value = withDelay(120, withTiming(1, { duration: 280, easing: EASE_SETTLE }));
+    progress.value = withTiming(1, { duration: 280, easing: EASE_SETTLE });
   }, [reduceMotion, progress]);
 
   const style = useAnimatedStyle(() => ({

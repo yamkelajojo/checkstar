@@ -1,11 +1,12 @@
 import { useEffect, useState, useRef } from 'react';
 import { View, Text, TextInput, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
-import { Store, Lock, CheckCircle2, AlertCircle, MapPin, X } from 'lucide-react-native';
+import { Store, Lock, CheckCircle2, AlertCircle, MapPin } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTheme } from '../../theme';
 import { brand } from '../../theme/colors';
 import { typeScale, weights, letterSpacing } from '../../theme/typography';
+import { semanticSpacing, semanticRadius } from '../../theme/spacing';
 import { useCart } from '../cart/store';
 import { cartRules } from '../cart/model';
 import { useAllProducts } from '../catalog/hooks';
@@ -21,6 +22,7 @@ import { queryClient, queryKeys } from '../../lib/queryKeys';
 import { useToast } from '../../components/shared/GlassToast';
 import type { RootStackParamList } from '../../navigation/types';
 import { canSubmit, MIN_ORDER_CENTS } from './model';
+import { ModalHeader } from '../../components/shared/ScreenHeader';
 
 const EST_DELIVERY_FEE_CENTS = 0;
 const VALIDATION_DEBOUNCE_MS = 500;
@@ -196,7 +198,7 @@ export function CheckoutScreen() {
   if (items.length === 0) {
     return (
       <View style={{ flex: 1, backgroundColor: theme.colors.background.primary }}>
-        <ScreenTitle title={copy.checkout.title} onClose={handleClose} />
+        <ModalHeader title={copy.checkout.title} onClose={handleClose} />
         <EmptyState icon={Store} title="Nothing to check out" caption="Your cart is empty." />
       </View>
     );
@@ -209,19 +211,19 @@ export function CheckoutScreen() {
   return (
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: theme.colors.background.primary }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={{ paddingBottom: 140 }} keyboardShouldPersistTaps="handled">
-        <ScreenTitle title={copy.checkout.title} onClose={handleClose} />
+        <ModalHeader title={copy.checkout.title} onClose={handleClose} />
 
-        <View style={{ padding: 16, gap: 14 }}>
+        <View style={{ padding: semanticSpacing.screenPadding, gap: semanticSpacing.md }}>
           {validatingFulfillment && (
-            <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: 16, padding: 16, gap: 8 }}>
+            <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: semanticRadius.card, padding: semanticSpacing.screenPadding, gap: semanticSpacing.inlineGap }}>
               <Text style={{ fontWeight: weights.bold, color: theme.colors.text.primary }}>Finding best fulfillment store...</Text>
               <Text style={{ color: theme.colors.text.secondary, fontSize: typeScale.body }}>We're checking which store can fulfill your complete order</Text>
             </View>
           )}
 
           {fulfillmentError && (
-            <View style={{ backgroundColor: theme.colors.status.error.soft, borderRadius: 16, padding: 16, gap: 8, borderWidth: 1, borderColor: theme.colors.status.error.primary }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <View style={{ backgroundColor: theme.colors.status.error.soft, borderRadius: semanticRadius.card, padding: semanticSpacing.screenPadding, gap: semanticSpacing.inlineGap, borderWidth: 1, borderColor: theme.colors.status.error.primary }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: semanticSpacing.inlineGap }}>
                 <AlertCircle size={20} color={theme.colors.status.error.strong} />
                 <Text style={{ color: theme.colors.status.error.strong, fontWeight: weights.semibold, fontSize: typeScale.body }}>
                   Cannot fulfill order
@@ -234,8 +236,8 @@ export function CheckoutScreen() {
           )}
 
           {fulfillmentStore && !fulfillmentError && (
-            <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: 16, padding: 16, gap: 8 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: semanticRadius.card, padding: semanticSpacing.screenPadding, gap: semanticSpacing.inlineGap }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: semanticSpacing.inlineGap }}>
                 <MapPin size={18} color={brand.primary} />
                 <Text style={{ color: theme.colors.text.secondary, fontSize: typeScale.body }}>
                   Your full order will be fulfilled from <Text style={{ fontWeight: weights.bold, color: theme.colors.text.primary }}>{fulfillmentStore.name}</Text>
@@ -248,13 +250,13 @@ export function CheckoutScreen() {
           )}
 
           {!validatingFulfillment && !fulfillmentStore && !fulfillmentError && (
-            <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: 16, padding: 16, gap: 8 }}>
+            <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: semanticRadius.card, padding: semanticSpacing.screenPadding, gap: semanticSpacing.inlineGap }}>
               <Text style={{ fontWeight: weights.bold, color: theme.colors.text.primary }}>Unable to determine fulfillment store</Text>
               <Text style={{ color: theme.colors.text.secondary, fontSize: typeScale.body }}>Please enter your delivery address to continue</Text>
             </View>
           )}
 
-          <View style={{ gap: 6 }}>
+          <View style={{ gap: semanticSpacing.xxs }}>
             <Text style={{ fontWeight: weights.semibold, color: theme.colors.text.primary }}>{copy.checkout.deliveryAddress}</Text>
             <TextInput
               value={address}
@@ -265,9 +267,9 @@ export function CheckoutScreen() {
               numberOfLines={2}
               style={{
                 backgroundColor: theme.colors.surface.sunken,
-                borderRadius: 14,
-                paddingHorizontal: 16,
-                paddingVertical: 14,
+                borderRadius: semanticRadius.input,
+                paddingHorizontal: semanticSpacing.screenPadding,
+                paddingVertical: semanticSpacing.md,
                 color: theme.colors.text.primary,
                 fontSize: typeScale.body,
                 minHeight: 64,
@@ -276,7 +278,7 @@ export function CheckoutScreen() {
             />
           </View>
 
-          <View style={{ gap: 6 }}>
+          <View style={{ gap: semanticSpacing.xxs }}>
             <Text style={{ fontWeight: weights.semibold, color: theme.colors.text.primary }}>{copy.checkout.deliveryNotes}</Text>
             <TextInput
               value={notes}
@@ -287,9 +289,9 @@ export function CheckoutScreen() {
               numberOfLines={2}
               style={{
                 backgroundColor: theme.colors.surface.sunken,
-                borderRadius: 14,
-                paddingHorizontal: 16,
-                paddingVertical: 14,
+                borderRadius: semanticRadius.input,
+                paddingHorizontal: semanticSpacing.screenPadding,
+                paddingVertical: semanticSpacing.md,
                 color: theme.colors.text.primary,
                 fontSize: typeScale.body,
                 minHeight: 64,
@@ -303,31 +305,31 @@ export function CheckoutScreen() {
             )}
           </View>
 
-          <View style={{ gap: 6 }}>
+          <View style={{ gap: semanticSpacing.xxs }}>
             <Text style={{ fontWeight: weights.semibold, color: theme.colors.text.primary }}>{copy.checkout.paymentMethod}</Text>
             <View
               accessibilityRole="radio"
               accessibilityState={{ selected: true }}
               style={{
                 backgroundColor: theme.colors.surface.primary,
-                borderRadius: 14,
-                padding: 14,
+                borderRadius: semanticRadius.input,
+                padding: semanticSpacing.md,
                 flexDirection: 'row',
                 alignItems: 'center',
-                gap: 10,
+                gap: semanticSpacing.inlineGap,
                 borderWidth: 1,
                 borderColor: brand.primary,
               }}
             >
               <CheckCircle2 size={20} color={brand.primary} />
-              <View style={{ flex: 1, gap: 2 }}>
+              <View style={{ flex: 1, gap: semanticSpacing.xxs }}>
                 <Text style={{ fontWeight: weights.semibold, color: theme.colors.text.primary }}>{copy.checkout.cashOnDelivery}</Text>
                 <Text style={{ color: theme.colors.text.secondary, fontSize: typeScale.caption }}>{copy.checkout.cashOnDeliveryNote}</Text>
               </View>
             </View>
           </View>
 
-          <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: 16, padding: 16, gap: 10 }}>
+          <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: semanticRadius.card, padding: semanticSpacing.screenPadding, gap: semanticSpacing.inlineGap }}>
             <Text style={{ fontWeight: weights.bold, color: theme.colors.text.primary }}>{copy.checkout.summary}</Text>
             {row(`${cartRules.totalQuantity(items)} items`, formatZar(subtotal))}
             {row(copy.checkout.estimatedDelivery, formatZar(EST_DELIVERY_FEE_CENTS))}
@@ -336,7 +338,7 @@ export function CheckoutScreen() {
           </View>
 
           {status !== 'authenticated' && (
-            <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: 16, padding: 16, gap: 8, alignItems: 'center' }}>
+            <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: semanticRadius.card, padding: semanticSpacing.screenPadding, gap: semanticSpacing.inlineGap, alignItems: 'center' }}>
               <Lock size={20} color={theme.colors.text.secondary} />
               <Text style={{ color: theme.colors.text.secondary, fontSize: typeScale.body, textAlign: 'center' }}>
                 {copy.checkout.signInPrompt}
@@ -344,7 +346,7 @@ export function CheckoutScreen() {
               <TactilePressable
                 onPress={() => navigation.navigate('Auth', { intent: 'checkout' })}
                 haptic="commit"
-                style={{ backgroundColor: brand.primary, borderRadius: 999, alignSelf: 'stretch' }}
+                style={{ backgroundColor: brand.primary, borderRadius: semanticRadius.buttonPill, alignSelf: 'stretch' }}
               >
                 <Text style={{ color: '#fff', textAlign: 'center', fontWeight: weights.bold }}>{copy.checkout.signInToContinue}</Text>
               </TactilePressable>
@@ -357,57 +359,25 @@ export function CheckoutScreen() {
         </View>
       </ScrollView>
 
-      <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: 16, borderTopWidth: 1, borderTopColor: theme.colors.border.subtle, backgroundColor: theme.colors.background.primary }}>
+      <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: semanticSpacing.screenPadding, borderTopWidth: 1, borderTopColor: theme.colors.border.subtle, backgroundColor: theme.colors.background.primary }}>
         <TactilePressable
           onPress={submit}
           haptic="commit"
           disabled={!canSubmitOrder}
           accessibilityRole="button"
           accessibilityState={{ disabled: !canSubmitOrder }}
-          style={{ backgroundColor: canSubmitOrder ? brand.primary : theme.colors.surface.primary, borderRadius: 999, opacity: canSubmitOrder ? 1 : 0.6 }}
+          style={{ backgroundColor: canSubmitOrder ? brand.primary : theme.colors.surface.primary, borderRadius: semanticRadius.buttonPill, opacity: canSubmitOrder ? 1 : 0.6 }}
         >
           <Text style={{ color: canSubmitOrder ? '#fff' : theme.colors.text.secondary, textAlign: 'center', fontWeight: weights.bold, textTransform: 'uppercase', letterSpacing: letterSpacing.wide }}>
             {submitting ? copy.checkout.placingOrder : `${copy.checkout.placeOrder} · ${formatZar(total)}`}
           </Text>
         </TactilePressable>
         {subtotal < MIN_ORDER_CENTS && (
-          <Text style={{ textAlign: 'center', marginTop: 8, color: theme.colors.status.error.strong, fontSize: typeScale.caption }}>
+          <Text style={{ textAlign: 'center', marginTop: semanticSpacing.xs, color: theme.colors.status.error.strong, fontSize: typeScale.caption }}>
             {formatString(copy.cart.minOrder, { minCents: formatZar(MIN_ORDER_CENTS) })}
           </Text>
         )}
       </View>
     </KeyboardAvoidingView>
-  );
-}
-
-function ScreenTitle({ title, onClose }: { title: string; onClose?: () => void }) {
-  const theme = useTheme();
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 56, paddingHorizontal: 16 }}>
-      <Text style={{ fontSize: typeScale.title, fontWeight: weights.extrabold, color: theme.colors.text.primary }}>
-        {title}
-      </Text>
-      {onClose && (
-        <TactilePressable
-          onPress={onClose}
-          haptic="selection"
-          accessibilityRole="button"
-          accessibilityLabel="Close"
-          style={{
-            width: 36,
-            height: 36,
-            borderRadius: 18,
-            backgroundColor: theme.colors.surface.elevated,
-            borderWidth: 1,
-            borderColor: theme.colors.border.subtle,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-        >
-          <X size={18} color={theme.colors.text.primary} strokeWidth={2.2} />
-        </TactilePressable>
-      )}
-    </View>
   );
 }

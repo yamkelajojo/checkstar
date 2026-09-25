@@ -16,7 +16,7 @@ import { useDeliveryStore } from '../../stores/deliveryStore';
 import type { ProductVO, StoreAvailabilityVO } from '../../lib/product';
 import { findStoreAvailability } from '../../lib/product';
 
-const SEARCH_DEBOUNCE_MS = 400;
+const SEARCH_DEBOUNCE_MS = 300;
 
 export function BrowseScreen() {
   const theme = useTheme();

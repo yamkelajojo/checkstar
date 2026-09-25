@@ -62,7 +62,10 @@ export function ProductCard({ product, storeProductId = null, style, onRequestSu
   }, [product.images]);
 
   const onSale = product.salePriceCents != null && product.salePriceCents < product.basePriceCents;
-  const pctOff = onSale ? savingsPercent(product.basePriceCents, product.effectivePriceCents) : 0;
+  const onSpecial = product.collectionPriceCents != null && product.collectionPriceCents < product.basePriceCents;
+  const isOnSaleOrSpecial = onSale || onSpecial;
+  const effectiveSalePrice = onSale ? product.salePriceCents : (onSpecial ? product.collectionPriceCents : null);
+  const pctOff = isOnSaleOrSpecial ? savingsPercent(product.basePriceCents, effectiveSalePrice!) : 0;
   const imageTint = theme.name === 'dark' ? 'rgba(27,24,22,0.4)' : 'rgba(255,255,255,0.9)';
 
   return (
@@ -106,7 +109,7 @@ export function ProductCard({ product, storeProductId = null, style, onRequestSu
               <Text style={{ color: theme.colors.text.tertiary, fontSize: 40 }}>🛒</Text>
             )}
           </View>
-          {onSale && (
+          {isOnSaleOrSpecial && (
             <View
               style={{
                 position: 'absolute',

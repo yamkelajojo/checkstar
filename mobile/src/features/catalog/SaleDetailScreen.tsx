@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { View, Text, ScrollView, FlatList, RefreshControl, Image } from 'react-native';
-import { ChevronLeft, Tag, ArrowLeft } from 'lucide-react-native';
+import { ChevronLeft, Tag } from 'lucide-react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
@@ -12,7 +12,6 @@ import { useDeliveryStore } from '../../stores/deliveryStore';
 import { ProductCard } from '../../components/shared/ProductCard';
 import { ProductCardSkeleton } from '../../components/shared/ProductCardSkeleton';
 import { EmptyState } from '../../components/shared/EmptyState';
-import { TactilePressable } from '../../components/shared/TactilePressable';
 import { FadeSlideIn } from '../../components/shared/FadeSlideIn';
 import { haptic } from '../../lib/haptics';
 import { formatZar } from '../../lib/currency';
@@ -20,6 +19,7 @@ import { fetchProducts, fetchSpecials } from '../../lib/apiClient';
 import type { ProductVO, StoreAvailabilityVO } from '../../lib/product';
 import { findStoreAvailability, mapProduct } from '../../lib/product';
 import type { RootStackParamList } from '../../navigation/types';
+import { ScreenHeader } from '../../components/shared/ScreenHeader';
 
 type SaleDetailScreenRouteProp = RouteProp<RootStackParamList, 'SaleDetail'>;
 
@@ -92,7 +92,7 @@ export function SaleDetailScreen() {
   if (isLoading) {
     return (
       <View style={{ flex: 1, backgroundColor: theme.colors.background.primary }}>
-        <Header />
+        <ScreenHeader title="Sale" showBackButton onBackPress={() => navigation.goBack()} />
         <View style={{ flexDirection: 'row', gap: semanticSpacing.inlineGap, paddingHorizontal: semanticSpacing.screenPadding, marginTop: semanticSpacing.md }}>
           <ProductCardSkeleton />
           <ProductCardSkeleton />
@@ -104,7 +104,7 @@ export function SaleDetailScreen() {
   if (!special) {
     return (
       <View style={{ flex: 1, backgroundColor: theme.colors.background.primary }}>
-        <Header />
+        <ScreenHeader title="Sale" showBackButton onBackPress={() => navigation.goBack()} />
         <EmptyState
           icon={Tag}
           title="Sale not found"
@@ -126,6 +126,12 @@ export function SaleDetailScreen() {
         />
       }
     >
+      <ScreenHeader
+        title={special.name}
+        showBackButton={true}
+        backButtonVariant="back"
+        onBackPress={() => navigation.goBack()}
+      />
       {/* Sale Header */}
       <View style={{ paddingHorizontal: semanticSpacing.screenPadding, paddingBottom: semanticSpacing.lg }}>
         {special.banner_image && (
@@ -141,7 +147,7 @@ export function SaleDetailScreen() {
           <Text style={{ ...textStyle.h2, fontWeight: fontWeight.bold, color: theme.colors.text.primary }}>
             {special.name}
           </Text>
-          <View style={{ backgroundColor: isActive ? brand.success + '15' : theme.colors.text.tertiary + '15', borderRadius: semanticRadius.smallControl, paddingHorizontal: 8, paddingVertical: 2 }}>
+          <View style={{ backgroundColor: isActive ? brand.success + '15' : theme.colors.text.tertiary + '15', borderRadius: semanticRadius.smallControl, paddingHorizontal: semanticSpacing.inlineGap, paddingVertical: semanticSpacing.xxs }}>
             <Text style={{ fontSize: 10, fontWeight: '700', color: isActive ? brand.success : theme.colors.text.tertiary, letterSpacing: 0.5 }}>
               {isActive ? 'ACTIVE' : 'ENDED'}
             </Text>
@@ -164,6 +170,13 @@ export function SaleDetailScreen() {
       {/* Products Grid */}
       {products.length > 0 ? (
         <View style={{ paddingHorizontal: semanticSpacing.screenPadding, paddingBottom: semanticSpacing.xl }}>
+          {!store && (
+            <View style={{ marginBottom: semanticSpacing.md, padding: semanticSpacing.md, backgroundColor: theme.colors.surface.primary, borderRadius: semanticRadius.card, borderWidth: 1, borderColor: theme.colors.border.subtle }}>
+              <Text style={{ color: theme.colors.text.secondary, ...textStyle.caption, textAlign: 'center' }}>
+                Select a delivery store to see accurate stock and add items to cart.
+              </Text>
+            </View>
+          )}
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: semanticSpacing.md }}>
             <Text style={{ ...textStyle.h3, fontWeight: fontWeight.bold, color: theme.colors.text.primary }}>
               {products.length} {products.length === 1 ? 'Product' : 'Products'}
@@ -193,36 +206,5 @@ export function SaleDetailScreen() {
         </View>
       )}
     </ScrollView>
-  );
-}
-
-function Header() {
-  const theme = useTheme();
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  
-  return (
-    <View style={{ paddingTop: 56, paddingHorizontal: semanticSpacing.screenPadding, flexDirection: 'row', alignItems: 'center', gap: semanticSpacing.inlineGap }}>
-      <TactilePressable
-        onPress={() => navigation.goBack()}
-        haptic="selection"
-        accessibilityRole="button"
-        accessibilityLabel="Back"
-        style={{
-          width: 40,
-          height: 40,
-          borderRadius: 20,
-          backgroundColor: theme.colors.surface.primary,
-          borderWidth: 1,
-          borderColor: theme.colors.border.subtle,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <ArrowLeft size={20} color={theme.colors.text.primary} strokeWidth={2.2} />
-      </TactilePressable>
-      <Text style={{ ...textStyle.h2, fontWeight: fontWeight.bold, color: theme.colors.text.primary, flex: 1 }}>
-        Sale
-      </Text>
-    </View>
   );
 }

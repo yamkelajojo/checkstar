@@ -1,5 +1,5 @@
 import { View, Text, FlatList } from 'react-native';
-import { Store, X } from 'lucide-react-native';
+import { Store } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../../theme';
 import { brand } from '../../theme/colors';
@@ -9,6 +9,7 @@ import { useDeliveryStore } from '../../stores/deliveryStore';
 import { TactilePressable } from '../../components/shared/TactilePressable';
 import { EmptyState } from '../../components/shared/EmptyState';
 import { haptic } from '../../lib/haptics';
+import { ModalHeader } from '../../components/shared/ScreenHeader';
 
 export function StorePickerScreen() {
   const theme = useTheme();
@@ -29,31 +30,8 @@ export function StorePickerScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: theme.colors.background.primary, paddingTop: 56 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: semanticSpacing.screenPadding }}>
-        <Text style={{ ...textStyle.h1, color: theme.colors.text.primary }}>
-          Checkstar Stores
-        </Text>
-        <TactilePressable
-          onPress={handleClose}
-          haptic="selection"
-          accessibilityRole="button"
-          accessibilityLabel="Close"
-          style={{
-            width: 36,
-            height: 36,
-            borderRadius: 18,
-            backgroundColor: theme.colors.surface.elevated,
-            borderWidth: 1,
-            borderColor: theme.colors.border.subtle,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-        >
-          <X size={18} color={theme.colors.text.primary} strokeWidth={2.2} />
-        </TactilePressable>
-      </View>
+    <View style={{ flex: 1, backgroundColor: theme.colors.background.primary }}>
+      <ModalHeader title="Checkstar Stores" onClose={handleClose} />
       <Text style={{ paddingHorizontal: semanticSpacing.screenPadding, marginTop: semanticSpacing.xs, color: theme.colors.text.secondary, ...textStyle.body }}>
         Delivery orders are automatically fulfilled from the nearest store that has all your items in stock.
       </Text>

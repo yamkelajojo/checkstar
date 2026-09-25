@@ -6,6 +6,7 @@ import { fetchOrder, cancelOrder, confirmDelivery, reviewOrder } from '../../../
 import { ApiError } from '../../../lib/api';
 import type { ApiOrder } from '../../../lib/types';
 import { copy } from '../../../lib/strings';
+import { TestWrapper } from '../../../test/utils';
 
 jest.mock('../../../lib/apiClient', () => ({
   fetchOrder: jest.fn(),
@@ -54,7 +55,9 @@ function renderOrder(overrides: Partial<ApiOrder>) {
   clients.push(client);
   return render(
     <QueryClientProvider client={client}>
-      <OrderDetailScreen />
+      <TestWrapper>
+        <OrderDetailScreen />
+      </TestWrapper>
     </QueryClientProvider>,
   );
 }
