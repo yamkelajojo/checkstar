@@ -60,19 +60,19 @@ Zend Engine v4.3.35, Copyright (c) Zend Technologies
   ✓ pickup from a store that cannot fulfil the cart is rejected          0.02s  
   ✓ store moves a pickup order through ready and the customer confirms…  0.03s  
   ✓ ready is rejected for delivery orders and out for delivery for pick… 0.02s  
-  ✓ pickup order cannot be manually dispatched to a rider                0.02s  
+  ✓ pickup order cannot be manually dispatched to a rider                0.03s  
   ✓ pickup orders do not appear in the store dispatch queue              0.02s  
   ✓ pickup with stray delivery fields stores nulls                       0.02s  
   ✓ pickup order money cents mirrors are exact                           0.02s  
   ✓ pickup orders never appear in rider available orders                 0.02s  
   ✓ rider cannot claim a pickup order                                    0.02s  
-  ✓ customer can cancel a ready pickup order before collecting           0.02s  
+  ✓ customer can cancel a ready pickup order before collecting           0.01s  
 
    PASS  Tests\Feature\ProductCarouselTest
-  ✓ trending endpoint is not shadowed by slug route                      0.03s  
-  ✓ popular returns delivered order products                             0.02s  
+  ✓ trending endpoint is not shadowed by slug route                      0.02s  
+  ✓ popular returns delivered order products                             0.01s  
   ✓ new arrivals returns recent products without error                   0.01s  
-  ✓ trending returns empty array when no orders                          0.01s  
+  ✓ trending returns empty array when no orders                          0.02s  
 
    PASS  Tests\Feature\ProductIndexTest
   ✓ index respects per page param                                        0.03s  
@@ -86,7 +86,7 @@ Zend Engine v4.3.35, Copyright (c) Zend Technologies
   ✓ changing email resets verification                                   0.02s  
   ✓ keeping the same email keeps verification                            0.01s  
   ✓ email conflicts are 422                                              0.01s  
-  ✓ changing email sends a new verification email                        0.01s  
+  ✓ changing email sends a new verification email                        0.02s  
   ✓ unchanged email sends no verification email                          0.01s  
   ✓ role is not mass assignable                                          0.01s  
 
@@ -96,7 +96,7 @@ Zend Engine v4.3.35, Copyright (c) Zend Technologies
   ✓ validate rejects orders below the minimum                            0.01s  
   ✓ validate computes percentage discount                                0.01s  
   ✓ validate caps fixed discounts at the subtotal                        0.01s  
-  ✓ apply increments used count                                          0.02s  
+  ✓ apply increments used count                                          0.01s  
   ✓ apply can never overshoot max uses                                   0.01s  
   ✓ apply redeems the final allowed use                                  0.01s  
 
@@ -111,7 +111,7 @@ Zend Engine v4.3.35, Copyright (c) Zend Technologies
    PASS  Tests\Feature\PushNotificationTest
   ✓ cancelled transition pushes notification                             0.02s  
   ✓ retrying transition pushes notification                              0.01s  
-  ✓ delivered transition pushes notification                             0.02s  
+  ✓ delivered transition pushes notification                             0.01s  
   ✓ notification listener is queued not synchronous                      0.01s  
   ✓ no push without token                                                0.01s  
 
@@ -128,24 +128,24 @@ Zend Engine v4.3.35, Copyright (c) Zend Technologies
 
    PASS  Tests\Feature\RelatedProductsTest
   ✓ related endpoint returns same category first and excludes self       0.03s  
-  ✓ bought together beats plain category siblings                        0.03s  
+  ✓ bought together beats plain category siblings                        0.02s  
   ✓ sparse results are backfilled with popular products                  0.02s  
-  ✓ related returns 404 for unknown or inactive slug                     0.01s  
+  ✓ related returns 404 for unknown or inactive slug                     0.02s  
 
    PASS  Tests\Feature\RiderLocationTest
   ✓ customer can view rider location for their order                     0.02s  
   ✓ returns null when order has no rider                                 0.01s  
-  ✓ returns null when rider has no location                              0.02s  
+  ✓ returns null when rider has no location                              0.01s  
   ✓ cannot view other customers order rider location                     0.02s  
   ✓ returns most recent location when multiple exist                     0.02s  
   ✓ rider can update location                                            0.01s  
   ✓ rider location update sets recorded at                               0.01s  
-  ✓ rider location update overwrites previous                            0.02s  
+  ✓ rider location update overwrites previous                            0.01s  
   ✓ non rider cannot update location                                     0.01s  
-  ✓ location update requires valid coordinates                           0.01s  
+  ✓ location update requires valid coordinates                           0.02s  
 
    PASS  Tests\Feature\RiderOrderGuardApiTest
-  ✓ mark items bought returns 422 and keeps stock when order cancelled   0.02s  
+  ✓ mark items bought returns 422 and keeps stock when order cancelled   0.04s  
   ✓ out for delivery returns 422 and order stays cancelled               0.02s  
   ✓ rider cannot advance out for delivery with unbought items            0.01s  
 
@@ -173,18 +173,18 @@ Zend Engine v4.3.35, Copyright (c) Zend Technologies
    PASS  Tests\Feature\StaffManagementTest
   ✓ owner can hire store staff                                           0.02s  
   ✓ owner can fire store staff                                           0.01s  
-  ✓ owner can list store roster                                          0.02s  
+  ✓ owner can list store roster                                          0.01s  
   ✓ developer can list store roster                                      0.01s  
   ✓ roster is scoped to one store                                        0.01s  
-  ✓ store manager cannot list roster                                     0.01s  
+  ✓ store manager cannot list roster                                     0.02s  
   ✓ store manager cannot hire staff                                      0.01s  
 
    PASS  Tests\Feature\StoreOrderApiTest
   ✓ orders are scoped to the managers store                              0.02s  
-  ✓ per page is capped                                                   0.01s  
+  ✓ per page is capped                                                   0.02s  
   ✓ status update on another stores order is 404                         0.01s  
   ✓ invalid transition is 409                                            0.01s  
-  ✓ valid transition succeeds                                            0.01s  
+  ✓ valid transition succeeds                                            0.02s  
 
    PASS  Tests\Feature\TrackingEndpointTest
   ✓ view endpoint captures behavioral signal                             0.02s  
@@ -193,7 +193,7 @@ Zend Engine v4.3.35, Copyright (c) Zend Technologies
   ✓ all tracking endpoints use rate limiting                             0.01s  
   ────────────────────────────────────────────────────────────────────────────  
    FAILED  Tests\Feature\SalesAndBannersTest > logistics off…  QueryException   
-  SQLSTATE[HY000]: General error: 1 table users has no column named store_id (Connection: sqlite, SQL: insert into "users" ("name", "email", "email_verified_at", "password", "remember_token", "is_active", "role", "store_id", "updated_at", "created_at") values (Owner A, owner-a@example.com, 2026-09-25 07:18:49, $2y$04$NBDj8bYs2iWF0E/risQX9.Z.iJ4YnqNlY7eGzcmMtru/v/rCcDkpG, MVxWn9ruhU, 1, store_owner, 1, 2026-09-25 07:18:49, 2026-09-25 07:18:49))
+  SQLSTATE[HY000]: General error: 1 table users has no column named store_id (Connection: sqlite, SQL: insert into "users" ("name", "email", "email_verified_at", "password", "remember_token", "is_active", "role", "store_id", "updated_at", "created_at") values (Owner A, owner-a@example.com, 2026-09-25 08:32:11, $2y$04$SYRs/v7BsdDDCAQ.OSbZ2.WT/LdAE7o3hjrX./JU.8FBigxTmFWvO, JoXHN4lwfu, 1, store_owner, 1, 2026-09-25 08:32:11, 2026-09-25 08:32:11))
 
   at vendor/laravel/framework/src/Illuminate/Database/Connection.php:825
     821▕                     $this->getName(), $query, $this->prepareBindings($bindings), $e
@@ -211,7 +211,7 @@ Zend Engine v4.3.35, Copyright (c) Zend Technologies
 
   ────────────────────────────────────────────────────────────────────────────  
    FAILED  Tests\Feature\SalesAndBannersTest > store operato…  QueryException   
-  SQLSTATE[HY000]: General error: 1 table users has no column named store_id (Connection: sqlite, SQL: insert into "users" ("name", "email", "email_verified_at", "password", "remember_token", "is_active", "role", "store_id", "updated_at", "created_at") values (Owner A, owner-a@example.com, 2026-09-25 07:18:49, $2y$04$NBDj8bYs2iWF0E/risQX9.Z.iJ4YnqNlY7eGzcmMtru/v/rCcDkpG, hPmvye3Dim, 1, store_owner, 1, 2026-09-25 07:18:49, 2026-09-25 07:18:49))
+  SQLSTATE[HY000]: General error: 1 table users has no column named store_id (Connection: sqlite, SQL: insert into "users" ("name", "email", "email_verified_at", "password", "remember_token", "is_active", "role", "store_id", "updated_at", "created_at") values (Owner A, owner-a@example.com, 2026-09-25 08:32:11, $2y$04$SYRs/v7BsdDDCAQ.OSbZ2.WT/LdAE7o3hjrX./JU.8FBigxTmFWvO, NOdSu6HfHG, 1, store_owner, 1, 2026-09-25 08:32:11, 2026-09-25 08:32:11))
 
   at vendor/laravel/framework/src/Illuminate/Database/Connection.php:825
     821▕                     $this->getName(), $query, $this->prepareBindings($bindings), $e
@@ -229,7 +229,7 @@ Zend Engine v4.3.35, Copyright (c) Zend Technologies
 
   ────────────────────────────────────────────────────────────────────────────  
    FAILED  Tests\Feature\SalesAndBannersTest > owner cannot…   QueryException   
-  SQLSTATE[HY000]: General error: 1 table users has no column named store_id (Connection: sqlite, SQL: insert into "users" ("name", "email", "email_verified_at", "password", "remember_token", "is_active", "role", "store_id", "updated_at", "created_at") values (Owner A, owner-a@example.com, 2026-09-25 07:18:49, $2y$04$NBDj8bYs2iWF0E/risQX9.Z.iJ4YnqNlY7eGzcmMtru/v/rCcDkpG, WntWvFeviU, 1, store_owner, 1, 2026-09-25 07:18:49, 2026-09-25 07:18:49))
+  SQLSTATE[HY000]: General error: 1 table users has no column named store_id (Connection: sqlite, SQL: insert into "users" ("name", "email", "email_verified_at", "password", "remember_token", "is_active", "role", "store_id", "updated_at", "created_at") values (Owner A, owner-a@example.com, 2026-09-25 08:32:11, $2y$04$SYRs/v7BsdDDCAQ.OSbZ2.WT/LdAE7o3hjrX./JU.8FBigxTmFWvO, yVUxEs1bAs, 1, store_owner, 1, 2026-09-25 08:32:11, 2026-09-25 08:32:11))
 
   at vendor/laravel/framework/src/Illuminate/Database/Connection.php:825
     821▕                     $this->getName(), $query, $this->prepareBindings($bindings), $e
@@ -247,7 +247,7 @@ Zend Engine v4.3.35, Copyright (c) Zend Technologies
 
   ────────────────────────────────────────────────────────────────────────────  
    FAILED  Tests\Feature\SalesAndBannersTest > owner create…   QueryException   
-  SQLSTATE[HY000]: General error: 1 table users has no column named store_id (Connection: sqlite, SQL: insert into "users" ("name", "email", "email_verified_at", "password", "remember_token", "is_active", "role", "store_id", "updated_at", "created_at") values (Owner A, owner-a@example.com, 2026-09-25 07:18:49, $2y$04$NBDj8bYs2iWF0E/risQX9.Z.iJ4YnqNlY7eGzcmMtru/v/rCcDkpG, SH3XC7mFFm, 1, store_owner, 1, 2026-09-25 07:18:49, 2026-09-25 07:18:49))
+  SQLSTATE[HY000]: General error: 1 table users has no column named store_id (Connection: sqlite, SQL: insert into "users" ("name", "email", "email_verified_at", "password", "remember_token", "is_active", "role", "store_id", "updated_at", "created_at") values (Owner A, owner-a@example.com, 2026-09-25 08:32:11, $2y$04$SYRs/v7BsdDDCAQ.OSbZ2.WT/LdAE7o3hjrX./JU.8FBigxTmFWvO, 9Ve0YBs4pI, 1, store_owner, 1, 2026-09-25 08:32:11, 2026-09-25 08:32:11))
 
   at vendor/laravel/framework/src/Illuminate/Database/Connection.php:825
     821▕                     $this->getName(), $query, $this->prepareBindings($bindings), $e
@@ -265,7 +265,7 @@ Zend Engine v4.3.35, Copyright (c) Zend Technologies
 
   ────────────────────────────────────────────────────────────────────────────  
    FAILED  Tests\Feature\SalesAndBannersTest > developer can…  QueryException   
-  SQLSTATE[HY000]: General error: 1 table users has no column named store_id (Connection: sqlite, SQL: insert into "users" ("name", "email", "email_verified_at", "password", "remember_token", "is_active", "role", "store_id", "updated_at", "created_at") values (Owner A, owner-a@example.com, 2026-09-25 07:18:49, $2y$04$NBDj8bYs2iWF0E/risQX9.Z.iJ4YnqNlY7eGzcmMtru/v/rCcDkpG, HSIeLu32fR, 1, store_owner, 1, 2026-09-25 07:18:49, 2026-09-25 07:18:49))
+  SQLSTATE[HY000]: General error: 1 table users has no column named store_id (Connection: sqlite, SQL: insert into "users" ("name", "email", "email_verified_at", "password", "remember_token", "is_active", "role", "store_id", "updated_at", "created_at") values (Owner A, owner-a@example.com, 2026-09-25 08:32:11, $2y$04$SYRs/v7BsdDDCAQ.OSbZ2.WT/LdAE7o3hjrX./JU.8FBigxTmFWvO, EyTXqTSOFL, 1, store_owner, 1, 2026-09-25 08:32:11, 2026-09-25 08:32:11))
 
   at vendor/laravel/framework/src/Illuminate/Database/Connection.php:825
     821▕                     $this->getName(), $query, $this->prepareBindings($bindings), $e
@@ -283,7 +283,7 @@ Zend Engine v4.3.35, Copyright (c) Zend Technologies
 
   ────────────────────────────────────────────────────────────────────────────  
    FAILED  Tests\Feature\SalesAndBannersTest > product sync…   QueryException   
-  SQLSTATE[HY000]: General error: 1 table users has no column named store_id (Connection: sqlite, SQL: insert into "users" ("name", "email", "email_verified_at", "password", "remember_token", "is_active", "role", "store_id", "updated_at", "created_at") values (Owner A, owner-a@example.com, 2026-09-25 07:18:49, $2y$04$NBDj8bYs2iWF0E/risQX9.Z.iJ4YnqNlY7eGzcmMtru/v/rCcDkpG, 6OPDYod1Py, 1, store_owner, 1, 2026-09-25 07:18:49, 2026-09-25 07:18:49))
+  SQLSTATE[HY000]: General error: 1 table users has no column named store_id (Connection: sqlite, SQL: insert into "users" ("name", "email", "email_verified_at", "password", "remember_token", "is_active", "role", "store_id", "updated_at", "created_at") values (Owner A, owner-a@example.com, 2026-09-25 08:32:11, $2y$04$SYRs/v7BsdDDCAQ.OSbZ2.WT/LdAE7o3hjrX./JU.8FBigxTmFWvO, kJaooEAvI5, 1, store_owner, 1, 2026-09-25 08:32:11, 2026-09-25 08:32:11))
 
   at vendor/laravel/framework/src/Illuminate/Database/Connection.php:825
     821▕                     $this->getName(), $query, $this->prepareBindings($bindings), $e
@@ -301,7 +301,7 @@ Zend Engine v4.3.35, Copyright (c) Zend Technologies
 
   ────────────────────────────────────────────────────────────────────────────  
    FAILED  Tests\Feature\SalesAndBannersTest > product sync…   QueryException   
-  SQLSTATE[HY000]: General error: 1 table users has no column named store_id (Connection: sqlite, SQL: insert into "users" ("name", "email", "email_verified_at", "password", "remember_token", "is_active", "role", "store_id", "updated_at", "created_at") values (Owner A, owner-a@example.com, 2026-09-25 07:18:49, $2y$04$NBDj8bYs2iWF0E/risQX9.Z.iJ4YnqNlY7eGzcmMtru/v/rCcDkpG, Yrw50pTGZg, 1, store_owner, 1, 2026-09-25 07:18:49, 2026-09-25 07:18:49))
+  SQLSTATE[HY000]: General error: 1 table users has no column named store_id (Connection: sqlite, SQL: insert into "users" ("name", "email", "email_verified_at", "password", "remember_token", "is_active", "role", "store_id", "updated_at", "created_at") values (Owner A, owner-a@example.com, 2026-09-25 08:32:11, $2y$04$SYRs/v7BsdDDCAQ.OSbZ2.WT/LdAE7o3hjrX./JU.8FBigxTmFWvO, PbOeC6wern, 1, store_owner, 1, 2026-09-25 08:32:11, 2026-09-25 08:32:11))
 
   at vendor/laravel/framework/src/Illuminate/Database/Connection.php:825
     821▕                     $this->getName(), $query, $this->prepareBindings($bindings), $e
@@ -319,7 +319,7 @@ Zend Engine v4.3.35, Copyright (c) Zend Technologies
 
   ────────────────────────────────────────────────────────────────────────────  
    FAILED  Tests\Feature\SalesAndBannersTest > public specia…  QueryException   
-  SQLSTATE[HY000]: General error: 1 table users has no column named store_id (Connection: sqlite, SQL: insert into "users" ("name", "email", "email_verified_at", "password", "remember_token", "is_active", "role", "store_id", "updated_at", "created_at") values (Owner A, owner-a@example.com, 2026-09-25 07:18:49, $2y$04$NBDj8bYs2iWF0E/risQX9.Z.iJ4YnqNlY7eGzcmMtru/v/rCcDkpG, sYuciVv6kb, 1, store_owner, 1, 2026-09-25 07:18:49, 2026-09-25 07:18:49))
+  SQLSTATE[HY000]: General error: 1 table users has no column named store_id (Connection: sqlite, SQL: insert into "users" ("name", "email", "email_verified_at", "password", "remember_token", "is_active", "role", "store_id", "updated_at", "created_at") values (Owner A, owner-a@example.com, 2026-09-25 08:32:11, $2y$04$SYRs/v7BsdDDCAQ.OSbZ2.WT/LdAE7o3hjrX./JU.8FBigxTmFWvO, WgFeyndxGI, 1, store_owner, 1, 2026-09-25 08:32:11, 2026-09-25 08:32:11))
 
   at vendor/laravel/framework/src/Illuminate/Database/Connection.php:825
     821▕                     $this->getName(), $query, $this->prepareBindings($bindings), $e
@@ -337,7 +337,7 @@ Zend Engine v4.3.35, Copyright (c) Zend Technologies
 
   ────────────────────────────────────────────────────────────────────────────  
    FAILED  Tests\Feature\SalesAndBannersTest > public specia…  QueryException   
-  SQLSTATE[HY000]: General error: 1 table users has no column named store_id (Connection: sqlite, SQL: insert into "users" ("name", "email", "email_verified_at", "password", "remember_token", "is_active", "role", "store_id", "updated_at", "created_at") values (Owner A, owner-a@example.com, 2026-09-25 07:18:49, $2y$04$NBDj8bYs2iWF0E/risQX9.Z.iJ4YnqNlY7eGzcmMtru/v/rCcDkpG, IBl7ZZ4Nae, 1, store_owner, 1, 2026-09-25 07:18:49, 2026-09-25 07:18:49))
+  SQLSTATE[HY000]: General error: 1 table users has no column named store_id (Connection: sqlite, SQL: insert into "users" ("name", "email", "email_verified_at", "password", "remember_token", "is_active", "role", "store_id", "updated_at", "created_at") values (Owner A, owner-a@example.com, 2026-09-25 08:32:11, $2y$04$SYRs/v7BsdDDCAQ.OSbZ2.WT/LdAE7o3hjrX./JU.8FBigxTmFWvO, wzQSPdZy0Z, 1, store_owner, 1, 2026-09-25 08:32:11, 2026-09-25 08:32:11))
 
   at vendor/laravel/framework/src/Illuminate/Database/Connection.php:825
     821▕                     $this->getName(), $query, $this->prepareBindings($bindings), $e
@@ -355,7 +355,7 @@ Zend Engine v4.3.35, Copyright (c) Zend Technologies
 
   ────────────────────────────────────────────────────────────────────────────  
    FAILED  Tests\Feature\SalesAndBannersTest > public specia…  QueryException   
-  SQLSTATE[HY000]: General error: 1 table users has no column named store_id (Connection: sqlite, SQL: insert into "users" ("name", "email", "email_verified_at", "password", "remember_token", "is_active", "role", "store_id", "updated_at", "created_at") values (Owner A, owner-a@example.com, 2026-09-25 07:18:49, $2y$04$NBDj8bYs2iWF0E/risQX9.Z.iJ4YnqNlY7eGzcmMtru/v/rCcDkpG, nQpfsKeLX9, 1, store_owner, 1, 2026-09-25 07:18:49, 2026-09-25 07:18:49))
+  SQLSTATE[HY000]: General error: 1 table users has no column named store_id (Connection: sqlite, SQL: insert into "users" ("name", "email", "email_verified_at", "password", "remember_token", "is_active", "role", "store_id", "updated_at", "created_at") values (Owner A, owner-a@example.com, 2026-09-25 08:32:11, $2y$04$SYRs/v7BsdDDCAQ.OSbZ2.WT/LdAE7o3hjrX./JU.8FBigxTmFWvO, p9ZUOySQSV, 1, store_owner, 1, 2026-09-25 08:32:11, 2026-09-25 08:32:11))
 
   at vendor/laravel/framework/src/Illuminate/Database/Connection.php:825
     821▕                     $this->getName(), $query, $this->prepareBindings($bindings), $e
@@ -373,7 +373,7 @@ Zend Engine v4.3.35, Copyright (c) Zend Technologies
 
   ────────────────────────────────────────────────────────────────────────────  
    FAILED  Tests\Feature\SalesAndBannersTest > sale banner g…  QueryException   
-  SQLSTATE[HY000]: General error: 1 table users has no column named store_id (Connection: sqlite, SQL: insert into "users" ("name", "email", "email_verified_at", "password", "remember_token", "is_active", "role", "store_id", "updated_at", "created_at") values (Owner A, owner-a@example.com, 2026-09-25 07:18:49, $2y$04$NBDj8bYs2iWF0E/risQX9.Z.iJ4YnqNlY7eGzcmMtru/v/rCcDkpG, GviKLFUsg8, 1, store_owner, 1, 2026-09-25 07:18:49, 2026-09-25 07:18:49))
+  SQLSTATE[HY000]: General error: 1 table users has no column named store_id (Connection: sqlite, SQL: insert into "users" ("name", "email", "email_verified_at", "password", "remember_token", "is_active", "role", "store_id", "updated_at", "created_at") values (Owner A, owner-a@example.com, 2026-09-25 08:32:11, $2y$04$SYRs/v7BsdDDCAQ.OSbZ2.WT/LdAE7o3hjrX./JU.8FBigxTmFWvO, BeMqMcOdP1, 1, store_owner, 1, 2026-09-25 08:32:11, 2026-09-25 08:32:11))
 
   at vendor/laravel/framework/src/Illuminate/Database/Connection.php:825
     821▕                     $this->getName(), $query, $this->prepareBindings($bindings), $e
@@ -391,7 +391,7 @@ Zend Engine v4.3.35, Copyright (c) Zend Technologies
 
   ────────────────────────────────────────────────────────────────────────────  
    FAILED  Tests\Feature\SalesAndBannersTest > standalone ba…  QueryException   
-  SQLSTATE[HY000]: General error: 1 table users has no column named store_id (Connection: sqlite, SQL: insert into "users" ("name", "email", "email_verified_at", "password", "remember_token", "is_active", "role", "store_id", "updated_at", "created_at") values (Owner A, owner-a@example.com, 2026-09-25 07:18:49, $2y$04$NBDj8bYs2iWF0E/risQX9.Z.iJ4YnqNlY7eGzcmMtru/v/rCcDkpG, XKLVzdjsz1, 1, store_owner, 1, 2026-09-25 07:18:49, 2026-09-25 07:18:49))
+  SQLSTATE[HY000]: General error: 1 table users has no column named store_id (Connection: sqlite, SQL: insert into "users" ("name", "email", "email_verified_at", "password", "remember_token", "is_active", "role", "store_id", "updated_at", "created_at") values (Owner A, owner-a@example.com, 2026-09-25 08:32:11, $2y$04$SYRs/v7BsdDDCAQ.OSbZ2.WT/LdAE7o3hjrX./JU.8FBigxTmFWvO, OGp0qu8FRN, 1, store_owner, 1, 2026-09-25 08:32:11, 2026-09-25 08:32:11))
 
   at vendor/laravel/framework/src/Illuminate/Database/Connection.php:825
     821▕                     $this->getName(), $query, $this->prepareBindings($bindings), $e
@@ -409,7 +409,7 @@ Zend Engine v4.3.35, Copyright (c) Zend Technologies
 
   ────────────────────────────────────────────────────────────────────────────  
    FAILED  Tests\Feature\SalesAndBannersTest > public banner…  QueryException   
-  SQLSTATE[HY000]: General error: 1 table users has no column named store_id (Connection: sqlite, SQL: insert into "users" ("name", "email", "email_verified_at", "password", "remember_token", "is_active", "role", "store_id", "updated_at", "created_at") values (Owner A, owner-a@example.com, 2026-09-25 07:18:49, $2y$04$NBDj8bYs2iWF0E/risQX9.Z.iJ4YnqNlY7eGzcmMtru/v/rCcDkpG, o4k4GVvRqX, 1, store_owner, 1, 2026-09-25 07:18:49, 2026-09-25 07:18:49))
+  SQLSTATE[HY000]: General error: 1 table users has no column named store_id (Connection: sqlite, SQL: insert into "users" ("name", "email", "email_verified_at", "password", "remember_token", "is_active", "role", "store_id", "updated_at", "created_at") values (Owner A, owner-a@example.com, 2026-09-25 08:32:11, $2y$04$SYRs/v7BsdDDCAQ.OSbZ2.WT/LdAE7o3hjrX./JU.8FBigxTmFWvO, RiYmjDlYbs, 1, store_owner, 1, 2026-09-25 08:32:11, 2026-09-25 08:32:11))
 
   at vendor/laravel/framework/src/Illuminate/Database/Connection.php:825
     821▕                     $this->getName(), $query, $this->prepareBindings($bindings), $e
@@ -427,7 +427,7 @@ Zend Engine v4.3.35, Copyright (c) Zend Technologies
 
   ────────────────────────────────────────────────────────────────────────────  
    FAILED  Tests\Feature\SalesAndBannersTest > owner cannot…   QueryException   
-  SQLSTATE[HY000]: General error: 1 table users has no column named store_id (Connection: sqlite, SQL: insert into "users" ("name", "email", "email_verified_at", "password", "remember_token", "is_active", "role", "store_id", "updated_at", "created_at") values (Owner A, owner-a@example.com, 2026-09-25 07:18:49, $2y$04$NBDj8bYs2iWF0E/risQX9.Z.iJ4YnqNlY7eGzcmMtru/v/rCcDkpG, ZwtT6m5Bjl, 1, store_owner, 1, 2026-09-25 07:18:49, 2026-09-25 07:18:49))
+  SQLSTATE[HY000]: General error: 1 table users has no column named store_id (Connection: sqlite, SQL: insert into "users" ("name", "email", "email_verified_at", "password", "remember_token", "is_active", "role", "store_id", "updated_at", "created_at") values (Owner A, owner-a@example.com, 2026-09-25 08:32:11, $2y$04$SYRs/v7BsdDDCAQ.OSbZ2.WT/LdAE7o3hjrX./JU.8FBigxTmFWvO, A0Eqi9zIW7, 1, store_owner, 1, 2026-09-25 08:32:11, 2026-09-25 08:32:11))
 
   at vendor/laravel/framework/src/Illuminate/Database/Connection.php:825
     821▕                     $this->getName(), $query, $this->prepareBindings($bindings), $e
@@ -445,15 +445,15 @@ Zend Engine v4.3.35, Copyright (c) Zend Technologies
 
 
   Tests:    14 failed, 439 passed (1154 assertions)
-  Duration: 10.30s
+  Duration: 10.26s
 
 ```
 ### bootstrap/cache
 ```
 total 40
-drwxr-xr-x 2 runner runner  4096 Sep 25 07:18 .
-drwxr-xr-x 3 runner runner  4096 Sep 25 07:18 ..
--rw-r--r-- 1 runner runner    14 Sep 25 07:18 .gitignore
--rwxr-xr-x 1 runner runner   960 Sep 25 07:18 packages.php
--rwxr-xr-x 1 runner runner 21492 Sep 25 07:18 services.php
+drwxr-xr-x 2 runner runner  4096 Sep 25 08:32 .
+drwxr-xr-x 3 runner runner  4096 Sep 25 08:31 ..
+-rw-r--r-- 1 runner runner    14 Sep 25 08:31 .gitignore
+-rwxr-xr-x 1 runner runner   960 Sep 25 08:32 packages.php
+-rwxr-xr-x 1 runner runner 21492 Sep 25 08:32 services.php
 ```
