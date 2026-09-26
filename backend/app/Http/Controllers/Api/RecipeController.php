@@ -9,6 +9,15 @@ use Illuminate\Http\Request;
 
 class RecipeController extends Controller
 {
+    private function absolutizeImage(Recipe $recipe): Recipe
+    {
+        if ($recipe->image !== null) {
+            $recipe->image = rtrim(request()->getSchemeAndHttpHost(), '/').'/'.ltrim($recipe->image, '/');
+        }
+
+        return $recipe;
+    }
+
     public function index(Request $request): JsonResponse
     {
         $query = Recipe::where('is_published', true);
@@ -17,7 +26,8 @@ class RecipeController extends Controller
             $query->where('category', $request->category);
         }
 
-        $recipes = $query->orderByDesc('created_at')->get();
+        $recipes = $query->orderByDesc('created_at')->get()
+            ->each(fn (Recipe $recipe) => $this->absolutizeImage($recipe));
 
         return response()->json(['data' => $recipes]);
     }
@@ -28,6 +38,6 @@ class RecipeController extends Controller
             ->where('is_published', true)
             ->firstOrFail();
 
-        return response()->json(['data' => $recipe]);
+        return response()->json(['data' => $this->absolutizeImage($recipe)]);
     }
 }

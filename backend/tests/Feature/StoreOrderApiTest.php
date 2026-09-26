@@ -4,8 +4,12 @@ namespace Tests\Feature;
 
 use App\Enums\StaffRole;
 use App\Enums\UserRole;
+use App\Models\Category;
 use App\Models\Order;
+use App\Models\OrderItem;
+use App\Models\Product;
 use App\Models\Store;
+use App\Models\StoreProduct;
 use App\Models\StoreStaff;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -78,6 +82,69 @@ class StoreOrderApiTest extends TestCase
 
         $this->assertCount(1, $data);
         $this->assertSame('SO-A-1', $data[0]['order_number']);
+    }
+
+    public function test_store_inventory_returns_root_relative_product_image_paths(): void
+    {
+        $category = Category::create(['name' => 'Inventory Cat', 'slug' => 'inventory-cat']);
+        $product = Product::create([
+            'category_id' => $category->id,
+            'name' => 'Test Product',
+            'slug' => 'test-product',
+            'unit' => 'each',
+            'price' => 10,
+            'image' => 'products/inventory-cat/test-product.jpg',
+            'is_active' => true,
+        ]);
+        StoreProduct::create([
+            'store_id' => $this->storeA->id,
+            'product_id' => $product->id,
+            'stock_quantity' => 5,
+            'is_available' => true,
+        ]);
+
+        $this->actingAs($this->managerA)
+            ->getJson('/api/store/inventory')
+            ->assertStatus(200)
+            ->assertJsonPath('data.0.product.image', '/products/inventory-cat/test-product.jpg');
+    }
+
+    public function test_store_orders_include_every_product_snapshot(): void
+    {
+        $category = Category::create(['name' => 'Order Cat', 'slug' => 'order-cat']);
+        $product = Product::create([
+            'category_id' => $category->id,
+            'name' => 'Test Product',
+            'slug' => 'test-product',
+            'unit' => 'each',
+            'price' => 10,
+            'is_active' => true,
+        ]);
+        $order = $this->makeOrder($this->storeA, 'SO-A-MANY');
+
+        foreach (range(1, 8) as $number) {
+            OrderItem::create([
+                'order_id' => $order->id,
+                'product_id' => $product->id,
+                'quantity' => $number,
+                'unit_price' => 10,
+                'total_price' => 10 * $number,
+                'product_snapshot' => [
+                    'name' => "Product {$number}",
+                    'image' => '/products/order-cat/test-product.jpg',
+                    'unit' => 'each',
+                    'slug' => 'test-product',
+                ],
+            ]);
+        }
+
+        $items = $this->actingAs($this->managerA)
+            ->getJson('/api/store/orders')
+            ->assertStatus(200)
+            ->json('data.data.0.items');
+
+        $this->assertCount(8, $items);
+        $this->assertSame('Product 8', $items[7]['product_snapshot']['name']);
     }
 
     public function test_per_page_is_capped(): void

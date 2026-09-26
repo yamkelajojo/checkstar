@@ -21,6 +21,10 @@ class ProductCarouselController extends Controller
             return null;
         }
 
+        if (! is_file(public_path(ltrim($path, '/')))) {
+            return rtrim(request()->getSchemeAndHttpHost(), '/').'/products/product-placeholder.svg';
+        }
+
         return rtrim(request()->getSchemeAndHttpHost(), '/').'/'.ltrim($path, '/');
     }
 

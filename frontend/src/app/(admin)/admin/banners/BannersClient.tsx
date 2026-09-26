@@ -1,41 +1,62 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { motion } from 'motion/react'
+import { useState } from "react";
+import { motion } from "motion/react";
 import {
-  Image as ImageIcon, Plus, Trash2, Edit3, X,
-  ChevronDown, ChevronUp, Save, Loader2, Sparkles,
-} from 'lucide-react'
-import { useAdminBanners, useCreateBanner, useUpdateBanner, useDeleteBanner } from '@/lib/query'
-import Link from 'next/link'
-import { useAuthStore } from '@/stores/auth-store'
-import { toast } from 'sonner'
-import { fadeUpTight as fadeUp, staggerTight as stagger } from '@/lib/motion/variants'
-import PageHeader from '@/components/admin/PageHeader'
-import Modal from '@/components/admin/Modal'
-import ConfirmDialog from '@/components/admin/ConfirmDialog'
-import EmptyState from '@/components/admin/EmptyState'
-import ErrorState from '@/components/admin/ErrorState'
-import { BannerStatusBadge } from '@/components/admin/StatusBadge'
-import type { Banner, BannerSlide } from '@/types'
+  Image as ImageIcon,
+  Plus,
+  Trash2,
+  Edit3,
+  X,
+  ChevronDown,
+  ChevronUp,
+  Save,
+  Loader2,
+  Sparkles,
+} from "lucide-react";
+import {
+  useAdminBanners,
+  useCreateBanner,
+  useUpdateBanner,
+  useDeleteBanner,
+} from "@/lib/query";
+import Link from "next/link";
+import { useAuthStore } from "@/stores/auth-store";
+import { toast } from "sonner";
+import {
+  fadeUpTight as fadeUp,
+  staggerTight as stagger,
+} from "@/lib/motion/variants";
+import PageHeader from "@/components/admin/PageHeader";
+import Modal from "@/components/admin/Modal";
+import ConfirmDialog from "@/components/admin/ConfirmDialog";
+import EmptyState from "@/components/admin/EmptyState";
+import ErrorState from "@/components/admin/ErrorState";
+import { BannerStatusBadge } from "@/components/admin/StatusBadge";
+import type { Banner, BannerSlide } from "@/types";
 
 const EMPTY_SLIDE: BannerSlide = {
-  title: '',
-  subtitle: '',
-  ctaLabel: '',
-  url: '',
-  bgType: 'gradient',
-  colors: ['#EB6522', '#CC4400'],
-  pattern: '',
-}
+  title: "",
+  subtitle: "",
+  ctaLabel: "",
+  url: "",
+  bgType: "gradient",
+  colors: ["#EB6522", "#CC4400"],
+  pattern: "",
+};
 
-function SlideEditor({ slide, index, onChange, onRemove }: {
-  slide: BannerSlide
-  index: number
-  onChange: (index: number, slide: BannerSlide) => void
-  onRemove: (index: number) => void
+function SlideEditor({
+  slide,
+  index,
+  onChange,
+  onRemove,
+}: {
+  slide: BannerSlide;
+  index: number;
+  onChange: (index: number, slide: BannerSlide) => void;
+  onRemove: (index: number) => void;
 }) {
-  const [expanded, setExpanded] = useState(true)
+  const [expanded, setExpanded] = useState(true);
 
   return (
     <div className="border border-gray-200 rounded-lg overflow-hidden">
@@ -43,50 +64,89 @@ function SlideEditor({ slide, index, onChange, onRemove }: {
         className="flex items-center justify-between px-4 py-3 bg-gray-50 cursor-pointer"
         onClick={() => setExpanded(!expanded)}
       >
-        <span className="text-sm font-medium text-gray-700">Slide {index + 1}: {slide.title || 'Untitled'}</span>
+        <span className="text-sm font-medium text-gray-700">
+          Slide {index + 1}: {slide.title || "Untitled"}
+        </span>
         <div className="flex items-center gap-2">
-          <button onClick={(e) => { e.stopPropagation(); onRemove(index) }} className="text-red-400 hover:text-red-600">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemove(index);
+            }}
+            className="text-red-400 hover:text-red-600"
+          >
             <Trash2 size={14} />
           </button>
           {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
         </div>
       </div>
       {expanded && (
-        <div className="p-4 space-y-3">
-          <div className="grid grid-cols-2 gap-3">
+        <div className="p-4 space-y-4">
+          <div className="space-y-3">
+            <label className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500">
+              Slide content
+            </label>
             <input
               placeholder="Title *"
               value={slide.title}
-              onChange={(e) => onChange(index, { ...slide, title: e.target.value })}
-              className="col-span-2 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+              onChange={(e) =>
+                onChange(index, { ...slide, title: e.target.value })
+              }
+              className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
             />
-            <input
-              placeholder="Subtitle"
-              value={slide.subtitle ?? ''}
-              onChange={(e) => onChange(index, { ...slide, subtitle: e.target.value || undefined })}
-              className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-            />
-            <input
-              placeholder="CTA Label"
-              value={slide.ctaLabel ?? ''}
-              onChange={(e) => onChange(index, { ...slide, ctaLabel: e.target.value || undefined })}
-              className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-            />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <input
+                placeholder="Subtitle"
+                value={slide.subtitle ?? ""}
+                onChange={(e) =>
+                  onChange(index, {
+                    ...slide,
+                    subtitle: e.target.value || undefined,
+                  })
+                }
+                className="border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+              />
+              <input
+                placeholder="CTA Label"
+                value={slide.ctaLabel ?? ""}
+                onChange={(e) =>
+                  onChange(index, {
+                    ...slide,
+                    ctaLabel: e.target.value || undefined,
+                  })
+                }
+                className="border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+              />
+            </div>
             <input
               placeholder="CTA URL"
-              value={slide.url ?? ''}
-              onChange={(e) => onChange(index, { ...slide, url: e.target.value || undefined })}
-              className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+              value={slide.url ?? ""}
+              onChange={(e) =>
+                onChange(index, { ...slide, url: e.target.value || undefined })
+              }
+              className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
             />
-            <select
-              value={slide.bgType}
-              onChange={(e) => onChange(index, { ...slide, bgType: e.target.value as BannerSlide['bgType'] })}
-              className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-            >
-              <option value="solid">Solid</option>
-              <option value="gradient">Gradient</option>
-              <option value="radial">Radial</option>
-            </select>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500">
+                  Theme
+                </label>
+                <select
+                  value={slide.bgType}
+                  onChange={(e) =>
+                    onChange(index, {
+                      ...slide,
+                      bgType: e.target.value as BannerSlide["bgType"],
+                    })
+                  }
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                >
+                  <option value="solid">Solid</option>
+                  <option value="gradient">Gradient</option>
+                  <option value="radial">Radial</option>
+                </select>
+              </div>
+            </div>
           </div>
 
           {/* Colors */}
@@ -99,17 +159,18 @@ function SlideEditor({ slide, index, onChange, onRemove }: {
                     type="color"
                     value={color}
                     onChange={(e) => {
-                      const colors = [...slide.colors]
-                      colors[ci] = e.target.value
-                      onChange(index, { ...slide, colors })
+                      const colors = [...slide.colors];
+                      colors[ci] = e.target.value;
+                      onChange(index, { ...slide, colors });
                     }}
                     className="w-8 h-8 rounded border border-gray-200 cursor-pointer"
                   />
                   <button
                     type="button"
                     onClick={() => {
-                      const colors = slide.colors.filter((_, i) => i !== ci)
-                      if (colors.length > 0) onChange(index, { ...slide, colors })
+                      const colors = slide.colors.filter((_, i) => i !== ci);
+                      if (colors.length > 0)
+                        onChange(index, { ...slide, colors });
                     }}
                     aria-label="Remove colour"
                     className="text-gray-400 hover:text-red-500"
@@ -120,7 +181,12 @@ function SlideEditor({ slide, index, onChange, onRemove }: {
               ))}
               <button
                 type="button"
-                onClick={() => onChange(index, { ...slide, colors: [...slide.colors, '#000000'] })}
+                onClick={() =>
+                  onChange(index, {
+                    ...slide,
+                    colors: [...slide.colors, "#000000"],
+                  })
+                }
                 aria-label="Add a colour"
                 className="w-8 h-8 rounded border border-dashed border-gray-300 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:border-gray-400"
               >
@@ -131,8 +197,13 @@ function SlideEditor({ slide, index, onChange, onRemove }: {
 
           {/* Pattern */}
           <select
-            value={slide.pattern ?? ''}
-            onChange={(e) => onChange(index, { ...slide, pattern: e.target.value || undefined })}
+            value={slide.pattern ?? ""}
+            onChange={(e) =>
+              onChange(index, {
+                ...slide,
+                pattern: e.target.value || undefined,
+              })
+            }
             className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
           >
             <option value="">No pattern</option>
@@ -145,51 +216,62 @@ function SlideEditor({ slide, index, onChange, onRemove }: {
           <div
             className="h-20 rounded-lg flex items-center justify-center text-white font-semibold text-sm"
             style={{
-              background: slide.bgType === 'gradient'
-                ? `linear-gradient(135deg, ${slide.colors.join(', ')})`
-                : slide.bgType === 'radial'
-                ? `radial-gradient(circle, ${slide.colors.join(', ')})`
-                : slide.colors[0],
+              background:
+                slide.bgType === "gradient"
+                  ? `linear-gradient(135deg, ${slide.colors.join(", ")})`
+                  : slide.bgType === "radial"
+                    ? `radial-gradient(circle, ${slide.colors.join(", ")})`
+                    : slide.colors[0],
             }}
           >
-            {slide.title || 'Slide Preview'}
+            {slide.title || "Slide Preview"}
           </div>
         </div>
       )}
     </div>
-  )
+  );
 }
 
-function BannerForm({ banner, onClose }: { banner?: Banner | null; onClose: () => void }) {
-  const [name, setName] = useState(banner?.name ?? '')
-  const [slides, setSlides] = useState<BannerSlide[]>(banner?.slides?.length ? banner.slides : [{ ...EMPTY_SLIDE }])
-  const [status, setStatus] = useState<string>(banner?.status ?? 'draft')
-  const [startDate, setStartDate] = useState(banner?.start_date?.slice(0, 10) ?? '')
-  const [endDate, setEndDate] = useState(banner?.end_date?.slice(0, 10) ?? '')
-  const [formError, setFormError] = useState<string | null>(null)
+function BannerForm({
+  banner,
+  onClose,
+}: {
+  banner?: Banner | null;
+  onClose: () => void;
+}) {
+  const [name, setName] = useState(banner?.name ?? "");
+  const [slides, setSlides] = useState<BannerSlide[]>(
+    banner?.slides?.length ? banner.slides : [{ ...EMPTY_SLIDE }],
+  );
+  const [status, setStatus] = useState<string>(banner?.status ?? "draft");
+  const [startDate, setStartDate] = useState(
+    banner?.start_date?.slice(0, 10) ?? "",
+  );
+  const [endDate, setEndDate] = useState(banner?.end_date?.slice(0, 10) ?? "");
+  const [formError, setFormError] = useState<string | null>(null);
 
-  const createBanner = useCreateBanner()
-  const updateBanner = useUpdateBanner()
+  const createBanner = useCreateBanner();
+  const updateBanner = useUpdateBanner();
 
-  const isEditing = !!banner
-  const isLoading = createBanner.isPending || updateBanner.isPending
+  const isEditing = !!banner;
+  const isLoading = createBanner.isPending || updateBanner.isPending;
 
   const handleSave = () => {
-    setFormError(null)
+    setFormError(null);
 
-    const trimmedName = name.trim()
+    const trimmedName = name.trim();
     if (!trimmedName) {
-      setFormError('Banner name is required')
-      return
+      setFormError("Banner name is required");
+      return;
     }
-    const untitled = slides.findIndex((s) => !s.title?.trim())
+    const untitled = slides.findIndex((s) => !s.title?.trim());
     if (untitled !== -1) {
-      setFormError(`Slide ${untitled + 1} needs a title`)
-      return
+      setFormError(`Slide ${untitled + 1} needs a title`);
+      return;
     }
     if (startDate && endDate && endDate < startDate) {
-      setFormError('End date cannot be before the start date')
-      return
+      setFormError("End date cannot be before the start date");
+      return;
     }
 
     const data = {
@@ -198,38 +280,51 @@ function BannerForm({ banner, onClose }: { banner?: Banner | null; onClose: () =
       status,
       start_date: startDate || undefined,
       end_date: endDate || undefined,
-    }
+    };
 
     const onError = (err: unknown) => {
-      setFormError(err instanceof Error ? err.message : 'Could not save the banner — please try again')
-    }
+      setFormError(
+        err instanceof Error
+          ? err.message
+          : "Could not save the banner — please try again",
+      );
+    };
 
     if (isEditing) {
-      updateBanner.mutate({ id: banner.id, ...data }, {
-        onSuccess: () => { toast.success('Banner updated'); onClose() },
-        onError,
-      })
+      updateBanner.mutate(
+        { id: banner.id, ...data },
+        {
+          onSuccess: () => {
+            toast.success("Banner updated");
+            onClose();
+          },
+          onError,
+        },
+      );
     } else {
       createBanner.mutate(data, {
-        onSuccess: () => { toast.success('Banner created'); onClose() },
+        onSuccess: () => {
+          toast.success("Banner created");
+          onClose();
+        },
         onError,
-      })
+      });
     }
-  }
+  };
 
   const updateSlide = (index: number, slide: BannerSlide) => {
-    setSlides((prev) => prev.map((s, i) => (i === index ? slide : s)))
-  }
+    setSlides((prev) => prev.map((s, i) => (i === index ? slide : s)));
+  };
 
   const removeSlide = (index: number) => {
-    setSlides((prev) => prev.filter((_, i) => i !== index))
-  }
+    setSlides((prev) => prev.filter((_, i) => i !== index));
+  };
 
   return (
     <Modal
       open
       onClose={isLoading ? () => {} : onClose}
-      title={isEditing ? 'Edit Banner' : 'New Banner'}
+      title={isEditing ? "Edit Banner" : "New Banner"}
       size="lg"
       footer={
         <>
@@ -249,89 +344,120 @@ function BannerForm({ banner, onClose }: { banner?: Banner | null; onClose: () =
           >
             {isLoading && <Loader2 size={14} className="animate-spin" />}
             <Save size={14} />
-            {isEditing ? 'Update' : 'Create'}
+            {isEditing ? "Update" : "Create"}
           </button>
         </>
       }
     >
       <div className="space-y-6">
-        {/* Name */}
-        <input
+        <div className="space-y-2">
+          <label className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500">
+            Banner name
+          </label>
+          <input
             placeholder="Banner name *"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
           />
+        </div>
 
-          {/* Status + dates */}
-          <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="space-y-2">
+            <label className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500">
+              Status
+            </label>
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
-              className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
             >
               <option value="draft">Draft</option>
               <option value="published">Published</option>
             </select>
+          </div>
+          <div className="space-y-2">
+            <label className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500">
+              Start date
+            </label>
             <input
               type="date"
               placeholder="Start date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
             />
+          </div>
+          <div className="space-y-2">
+            <label className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500">
+              End date
+            </label>
             <input
               type="date"
               placeholder="End date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
             />
-          </div>
-
-          {/* Slides */}
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-medium text-gray-700">Slides</h3>
-              <button
-                onClick={() => setSlides((prev) => [...prev, { ...EMPTY_SLIDE }])}
-                className="text-primary text-sm font-medium hover:underline flex items-center gap-1"
-              >
-                <Plus size={14} /> Add Slide
-              </button>
-            </div>
-            <div className="space-y-3">
-              {slides.map((slide, i) => (
-                <SlideEditor key={i} slide={slide} index={i} onChange={updateSlide} onRemove={removeSlide} />
-              ))}
-            </div>
           </div>
         </div>
 
-        {formError && (
-          <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2" role="alert">
-            {formError}
-          </p>
-        )}
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-gray-700">Slides</h3>
+            <button
+              onClick={() => setSlides((prev) => [...prev, { ...EMPTY_SLIDE }])}
+              className="text-primary text-sm font-medium hover:underline flex items-center gap-1"
+            >
+              <Plus size={14} /> Add Slide
+            </button>
+          </div>
+          <div className="space-y-3">
+            {slides.map((slide, i) => (
+              <SlideEditor
+                key={i}
+                slide={slide}
+                index={i}
+                onChange={updateSlide}
+                onRemove={removeSlide}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {formError && (
+        <p
+          className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2"
+          role="alert"
+        >
+          {formError}
+        </p>
+      )}
     </Modal>
-  )
+  );
 }
 
-const BANNER_ROLES = ['developer', 'store_owner', 'store_manager']
+const BANNER_ROLES = ["developer", "store_owner", "store_manager"];
 
 export default function BannersClient() {
-  const { user } = useAuthStore()
+  const { user } = useAuthStore();
   // Banner routes are role:developer,store_owner,store_manager — the (admin)
   // layout also admits logistics officers to /admin/*, so gate here rather
   // than rendering a page whose every API call 403s.
-  const canManage = !!user && BANNER_ROLES.includes(user.role)
+  const canManage = !!user && BANNER_ROLES.includes(user.role);
 
-  const { data: banners = [], isLoading, error, refetch } = useAdminBanners({ enabled: canManage })
-  const deleteBanner = useDeleteBanner()
+  const {
+    data: banners = [],
+    isLoading,
+    error,
+    refetch,
+  } = useAdminBanners({ enabled: canManage });
+  const deleteBanner = useDeleteBanner();
 
-  const [showForm, setShowForm] = useState(false)
-  const [editingBanner, setEditingBanner] = useState<Banner | null>(null)
-  const [deleting, setDeleting] = useState<Banner | null>(null)
+  const [showForm, setShowForm] = useState(false);
+  const [editingBanner, setEditingBanner] = useState<Banner | null>(null);
+  const [deleting, setDeleting] = useState<Banner | null>(null);
 
   if (!canManage) {
     return (
@@ -341,13 +467,16 @@ export default function BannersClient() {
           title="Banner access only"
           hint="Banners are managed by store owners and managers. Ask an owner for access."
           action={
-            <Link href="/admin/dashboard" className="px-4 py-2 text-sm font-medium text-primary hover:underline">
+            <Link
+              href="/admin/dashboard"
+              className="px-4 py-2 text-sm font-medium text-primary hover:underline"
+            >
               Back to Dashboard
             </Link>
           }
         />
       </main>
-    )
+    );
   }
 
   return (
@@ -357,10 +486,13 @@ export default function BannersClient() {
         <motion.div variants={fadeUp} className="mb-6">
           <PageHeader
             title="Banners"
-            subtitle={`Create and manage promotional banners displayed on the home page · ${banners.length} banner${banners.length !== 1 ? 's' : ''}`}
+            subtitle={`Create and manage promotional banners displayed on the home page · ${banners.length} banner${banners.length !== 1 ? "s" : ""}`}
             actions={
               <button
-                onClick={() => { setEditingBanner(null); setShowForm(true) }}
+                onClick={() => {
+                  setEditingBanner(null);
+                  setShowForm(true);
+                }}
                 className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 flex items-center gap-2"
               >
                 <Plus size={16} /> New Banner
@@ -380,7 +512,10 @@ export default function BannersClient() {
         {isLoading ? (
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-white border border-gray-100 rounded-xl p-5">
+              <div
+                key={i}
+                className="bg-white border border-gray-100 rounded-xl p-5"
+              >
                 <div className="animate-pulse space-y-3">
                   <div className="h-4 w-48 bg-gray-100 rounded" />
                   <div className="h-3 w-32 bg-gray-100 rounded" />
@@ -396,7 +531,10 @@ export default function BannersClient() {
               hint="Create your first promotional banner to display on the home page — or create one from a sale."
               action={
                 <button
-                  onClick={() => { setEditingBanner(null); setShowForm(true) }}
+                  onClick={() => {
+                    setEditingBanner(null);
+                    setShowForm(true);
+                  }}
                   className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90"
                 >
                   Create Banner
@@ -407,11 +545,16 @@ export default function BannersClient() {
         ) : (
           <motion.div variants={fadeUp} className="space-y-4">
             {banners.map((banner) => (
-              <div key={banner.id} className="bg-white border border-gray-100 rounded-xl p-5 hover:shadow-md transition-shadow">
+              <div
+                key={banner.id}
+                className="bg-white border border-gray-100 rounded-xl p-5 hover:shadow-md transition-shadow"
+              >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex flex-wrap items-center gap-2 mb-1">
-                      <h3 className="font-medium text-gray-900">{banner.name}</h3>
+                      <h3 className="font-medium text-gray-900">
+                        {banner.name}
+                      </h3>
                       <BannerStatusBadge status={banner.status} />
                       {banner.special && (
                         <Link
@@ -420,15 +563,19 @@ export default function BannersClient() {
                           rel="noreferrer"
                           className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
                         >
-                          <Sparkles size={11} /> Fronts sale: {banner.special.title}
+                          <Sparkles size={11} /> Fronts sale:{" "}
+                          {banner.special.title}
                         </Link>
                       )}
                     </div>
                     <p className="text-sm text-gray-500 mb-2">
-                      {banner.slides.length} slide{banner.slides.length !== 1 ? 's' : ''}
+                      {banner.slides.length} slide
+                      {banner.slides.length !== 1 ? "s" : ""}
                       {banner.store && ` · ${banner.store.name}`}
-                      {banner.start_date && ` · From ${new Date(banner.start_date).toLocaleDateString()}`}
-                      {banner.end_date && ` · Until ${new Date(banner.end_date).toLocaleDateString()}`}
+                      {banner.start_date &&
+                        ` · From ${new Date(banner.start_date).toLocaleDateString()}`}
+                      {banner.end_date &&
+                        ` · Until ${new Date(banner.end_date).toLocaleDateString()}`}
                     </p>
 
                     {/* Slide preview thumbnails */}
@@ -438,11 +585,12 @@ export default function BannersClient() {
                           key={i}
                           className="h-10 w-20 rounded-md flex items-center justify-center text-white text-xs font-medium truncate px-2"
                           style={{
-                            background: slide.bgType === 'gradient'
-                              ? `linear-gradient(135deg, ${slide.colors.join(', ')})`
-                              : slide.bgType === 'radial'
-                              ? `radial-gradient(circle, ${slide.colors.join(', ')})`
-                              : slide.colors[0],
+                            background:
+                              slide.bgType === "gradient"
+                                ? `linear-gradient(135deg, ${slide.colors.join(", ")})`
+                                : slide.bgType === "radial"
+                                  ? `radial-gradient(circle, ${slide.colors.join(", ")})`
+                                  : slide.colors[0],
                           }}
                           title={slide.title}
                         >
@@ -460,7 +608,10 @@ export default function BannersClient() {
                   {/* Actions */}
                   <div className="flex items-center gap-2 ml-4">
                     <button
-                      onClick={() => { setEditingBanner(banner); setShowForm(true) }}
+                      onClick={() => {
+                        setEditingBanner(banner);
+                        setShowForm(true);
+                      }}
                       className="p-2 text-gray-400 hover:text-primary rounded-lg hover:bg-primary/5 transition-colors"
                       title="Edit"
                     >
@@ -486,7 +637,10 @@ export default function BannersClient() {
       {showForm && (
         <BannerForm
           banner={editingBanner}
-          onClose={() => { setShowForm(false); setEditingBanner(null) }}
+          onClose={() => {
+            setShowForm(false);
+            setEditingBanner(null);
+          }}
         />
       )}
 
@@ -494,22 +648,26 @@ export default function BannersClient() {
       <ConfirmDialog
         open={deleting != null}
         title="Delete this banner?"
-        body={deleting ? `“${deleting.name}” will be removed from the home page rotation. This cannot be undone.` : ''}
+        body={
+          deleting
+            ? `“${deleting.name}” will be removed from the home page rotation. This cannot be undone.`
+            : ""
+        }
         confirmLabel="Delete banner"
         loading={deleteBanner.isPending}
         onConfirm={() => {
           if (deleting) {
             deleteBanner.mutate(deleting.id, {
               onSuccess: () => {
-                toast.success('Banner deleted')
-                setDeleting(null)
+                toast.success("Banner deleted");
+                setDeleting(null);
               },
               onError: (e) => toast.error((e as Error).message),
-            })
+            });
           }
         }}
         onClose={() => setDeleting(null)}
       />
     </main>
-  )
+  );
 }

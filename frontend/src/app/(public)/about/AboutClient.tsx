@@ -2,9 +2,10 @@
 
 import { useRef } from "react";
 import { motion, useScroll, useSpring, type Variants } from "motion/react";
-import { Store, Bike, Users, ShoppingBag, Award, Heart } from "lucide-react";
+import { Heart } from "lucide-react";
 import WritingText from "@/components/WritingText";
 import CurvyUnderline from "@/components/CurvyUnderline";
+import CommunitySection from "@/components/CommunitySection";
 import { fadeUp, stagger } from "@/lib/motion/variants";
 
 const timelineCard: Variants = {
@@ -37,29 +38,6 @@ const timeline = [
     year: "2025",
     title: "Delivery Launch",
     desc: "Launched grocery delivery — bringing fresh food to doorsteps across the city.",
-  },
-];
-
-const stakeholders = [
-  {
-    icon: Store,
-    title: "Store Owners",
-    desc: "Local entrepreneurs who own and operate each Checkstar location.",
-  },
-  {
-    icon: Users,
-    title: "Store Managers",
-    desc: "Day-to-day operations, inventory, and staff management at each store.",
-  },
-  {
-    icon: Bike,
-    title: "Riders",
-    desc: "Riders who deliver orders fresh and fast to customers.",
-  },
-  {
-    icon: ShoppingBag,
-    title: "Suppliers",
-    desc: "Trusted local and national suppliers who stock our shelves daily.",
   },
 ];
 
@@ -126,44 +104,6 @@ export default function AboutClient() {
           </div>
         </section>
 
-        <section className="bg-gray-50 py-16">
-          <div className="max-w-4xl mx-auto px-4">
-            <motion.h2
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="font-display text-lg sm:text-2xl font-bold text-center mb-12"
-            >
-              Our Stakeholders
-            </motion.h2>
-            <motion.div
-              variants={stagger}
-              initial="hidden"
-              whileInView="show"
-              viewport={{ once: true }}
-              className="grid grid-cols-1 md:grid-cols-2 gap-6"
-            >
-              {stakeholders.map((s, i) => (
-                <motion.div
-                  key={i}
-                  variants={fadeUp}
-                  className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm"
-                >
-                  <div className="w-12 h-12 bg-primary-light rounded-xl flex items-center justify-center mb-4">
-                    <s.icon className="text-primary" size={24} />
-                  </div>
-                  <h3 className="font-display text-base sm:text-lg font-semibold mb-2">
-                    {s.title}
-                  </h3>
-                  <p className="text-sm text-gray-500 leading-relaxed">
-                    {s.desc}
-                  </p>
-                </motion.div>
-              ))}
-            </motion.div>
-          </div>
-        </section>
-
         <section className="max-w-4xl mx-auto px-4 py-16">
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
@@ -175,6 +115,8 @@ export default function AboutClient() {
           </motion.h2>
           <Timeline />
         </section>
+
+        <CommunitySection />
 
         <section className="bg-primary text-white py-16 text-center">
           <motion.div

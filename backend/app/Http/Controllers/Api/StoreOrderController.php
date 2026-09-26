@@ -76,6 +76,12 @@ class StoreOrderController extends Controller
             ->with('product')
             ->get();
 
+        $items->each(function (StoreProduct $item): void {
+            if ($item->product?->image && ! preg_match('/^https?:\/\//i', $item->product->image)) {
+                $item->product->image = '/'.ltrim($item->product->image, '/');
+            }
+        });
+
         return response()->json(['data' => $items]);
     }
 

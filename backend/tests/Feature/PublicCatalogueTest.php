@@ -74,15 +74,21 @@ class PublicCatalogueTest extends TestCase
     {
         Recipe::create([
             'title' => 'Toast', 'slug' => 'toast', 'ingredients' => [['name' => 'Bread', 'quantity' => '1']],
-            'method' => 'Toast it', 'is_published' => true,
+            'method' => 'Toast it', 'image' => 'recipes/toast.jpg', 'is_published' => true,
         ]);
         Recipe::create([
             'title' => 'Secret Dish', 'slug' => 'secret-dish', 'ingredients' => [],
             'method' => 'Hide it', 'is_published' => false,
         ]);
 
-        $this->getJson('/api/recipes')->assertStatus(200)->assertJsonPath('data.0.slug', 'toast');
-        $this->getJson('/api/recipes/toast')->assertStatus(200)->assertJsonPath('data.title', 'Toast');
+        $this->getJson('/api/recipes')
+            ->assertStatus(200)
+            ->assertJsonPath('data.0.slug', 'toast')
+            ->assertJsonPath('data.0.image', url('/recipes/toast.jpg'));
+        $this->getJson('/api/recipes/toast')
+            ->assertStatus(200)
+            ->assertJsonPath('data.title', 'Toast')
+            ->assertJsonPath('data.image', url('/recipes/toast.jpg'));
         $this->getJson('/api/recipes/secret-dish')->assertStatus(404);
     }
 

@@ -38,6 +38,7 @@ class RecipeSeeder extends Seeder
                 'slug' => 'classic-sa-braai',
                 'title' => 'Classic South African Braai',
                 'description' => 'The ultimate South African braai experience — juicy chicken, fresh bread and a fruit platter to share.',
+                'image' => 'recipes/Classic-South-African-Braai.webp',
                 'ingredients' => [
                     '4 chicken thighs, skin on',
                     '2 tbsp butter, softened',
@@ -57,6 +58,7 @@ class RecipeSeeder extends Seeder
                 'slug' => 'creamy-chicken-pasta',
                 'title' => 'Creamy Chicken Pasta',
                 'description' => 'A weeknight winner: tender chicken in a creamy mozzarella sauce.',
+                'image' => 'recipes/Creamy-Chicken-Pasta.jpg',
                 'ingredients' => [
                     '4 chicken thighs, sliced',
                     '250 ml full cream milk',
@@ -76,6 +78,7 @@ class RecipeSeeder extends Seeder
                 'slug' => 'banana-apple-smoothie',
                 'title' => 'Banana & Apple Smoothie',
                 'description' => 'A refreshing fruit smoothie to start the day.',
+                'image' => 'recipes/Apple-Banana-Smoothie-1.jpg',
                 'ingredients' => [
                     '2 bananas, peeled and sliced',
                     '2 red apples, cored and chopped',

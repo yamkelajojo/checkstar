@@ -41,6 +41,7 @@ class SouthAfricanRecipeSeeder extends Seeder
                 'slug' => 'vetkoek-fat-cakes',
                 'title' => 'Vetkoek (South African Fat Cakes)',
                 'description' => 'Pillowy golden vetkoek — “fat cakes” — crisp outside, fluffy inside. The ultimate South African street food, perfect split and filled with curried mince, cheese, or jam. Makes 12.',
+                'image' => 'recipes/Vetkoek.jpg',
                 'ingredients' => [
                     '4 cups cake flour',
                     '1 sachet instant yeast (10g)',
@@ -67,6 +68,7 @@ class SouthAfricanRecipeSeeder extends Seeder
                 'slug' => 'malva-pudding',
                 'title' => 'Malva Pudding',
                 'description' => 'South Africa’s most beloved baked pudding — soft, spongy, caramelised, soaked in buttery cream sauce. Cape Dutch roots, best served warm with custard or ice cream. Serves 8.',
+                'image' => 'recipes/Malva-Pudding.jpg',
                 'ingredients' => [
                     '1 cup white sugar',
                     '2 large free range eggs',
@@ -95,6 +97,7 @@ class SouthAfricanRecipeSeeder extends Seeder
                 'slug' => 'peppermint-crisp-tart',
                 'title' => 'Peppermint Crisp Tart',
                 'description' => 'The iconic no-bake South African fridge tart — layers of Tennis biscuits, caramel cream and crunchy Peppermint Crisp. 20 mins to assemble, then chill overnight. Pure nostalgia in a dish.',
+                'image' => 'recipes/Peppermint-Crisp-Tart.png',
                 'ingredients' => [
                     '2 packets Tennis biscuits (200g each)',
                     '1 tin caramel treat (360g)',
@@ -115,6 +118,7 @@ class SouthAfricanRecipeSeeder extends Seeder
                 'slug' => 'durban-chicken-curry',
                 'title' => 'Durban Chicken Curry',
                 'description' => 'Hot, red, aromatic Durban curry — 12-spice masala, slow-cooked chicken, potatoes and tomatoes. The curry that made Durban famous. Best with rice, roti and sambals. Serves 4.',
+                'image' => 'recipes/Durban-Chicken-Curry.jpg',
                 'ingredients' => [
                     '1 kg chicken thighs, skinless (or Grain Field Chickens drumsticks & thighs)',
                     '2 tbsp sunflower oil',
@@ -143,6 +147,7 @@ class SouthAfricanRecipeSeeder extends Seeder
                 'slug' => 'koeksisters',
                 'title' => 'Koeksisters',
                 'description' => 'Sticky, syrupy, plaited koeksisters — crunchy outside, juicy inside. The trick: ice-cold syrup, hot fried dough. A true South African tea-time legend. Makes 24.',
+                'image' => 'recipes/Koeksister.png',
                 'ingredients' => [
                     '2 cups cake flour',
                     '2 tbsp baking powder',
