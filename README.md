@@ -18,9 +18,30 @@ Durban supermarket chain — web (Next.js) + delivery (Laravel) + mobile (Expo).
 
 ## Quick start
 
+Everything below works on Windows (PowerShell or cmd) and on macOS/Linux. Node 18+
+and PHP 8.2+ must be on PATH; Composer is needed once for the backend.
+
+```bash
+# 1. install everything and prepare the backend (.env, key, migrated + seeded sqlite)
+npm run setup
+
+# 2. start the whole stack: api :8000, web :3000, mobile QR (Expo Go 57.0.0)
+npm run dev
+
+#    ...or just the parts you need
+npm run dev:web        # api + web
+npm run dev:api        # api only
+```
+
+`npm run setup` is idempotent: it skips installs and seeding that already exist and
+prints the exact command for anything it cannot do (e.g. missing PHP or Composer).
+
+### Manual equivalent (if you prefer separate terminals)
+
 ```bash
 # backend (Laravel)
-cd backend && composer install && php artisan migrate && php artisan serve
+cd backend && composer install && cp .env.example .env && php artisan key:generate
+php artisan migrate --seed --force && php artisan serve
 
 # frontend (Next.js)
 cd frontend && npm ci && npm run dev
@@ -28,3 +49,15 @@ cd frontend && npm ci && npm run dev
 # mobile (Expo Go 57.0.0)
 cd mobile && npm ci && npx expo start --clear --tunnel
 ```
+
+### Tests
+
+```bash
+npm test               # backend + frontend + mobile, one summary
+npm run typecheck      # tsc --noEmit for frontend + mobile
+npm run test:backend   # or any single suite
+```
+
+Gate evidence and the exact reproduction commands for each acceptance gate live in
+[`GATES.md`](./GATES.md).
+
