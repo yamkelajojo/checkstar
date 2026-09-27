@@ -55,7 +55,16 @@ export function computeBoundingRegion(
   points: LatLng[],
   paddingFactor = 1.3,
 ): { latitude: number; longitude: number; latitudeDelta: number; longitudeDelta: number } {
-  if (points.length === 0) {
+  // Coordinates reach here straight off the API, where Laravel's `decimal:7`
+  // cast serialises them as strings ("-29.8350000") even though LatLng is typed
+  // numeric. Coerce first: string + string concatenates instead of adding, so
+  // the midpoint below would otherwise be NaN, and a native MapView handed a
+  // non-numeric region renders nothing at all.
+  const numeric = (points ?? [])
+    .map((p) => ({ lat: Number(p?.lat), lng: Number(p?.lng) }))
+    .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng));
+
+  if (numeric.length === 0) {
     return { latitude: -29.8587, longitude: 31.0218, latitudeDelta: 0.1, longitudeDelta: 0.1 };
   }
 
@@ -64,7 +73,7 @@ export function computeBoundingRegion(
   let minLng = Infinity;
   let maxLng = -Infinity;
 
-  for (const p of points) {
+  for (const p of numeric) {
     if (p.lat < minLat) minLat = p.lat;
     if (p.lat > maxLat) maxLat = p.lat;
     if (p.lng < minLng) minLng = p.lng;

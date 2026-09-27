@@ -40,9 +40,15 @@ export function decodePolyline(encoded: string): LatLng[] {
 }
 
 export function computeBounds(points: LatLng[]): [[number, number], [number, number]] | null {
-  if (points.length === 0) return null
+  // Coordinates reach here straight from the API, where Laravel's `decimal:7`
+  // casts serialise them as strings ("-29.8350000"). Compare as numbers, or the
+  // bounds come back lexicographic (and mixed-sign values sort wrongly).
+  const numeric = points
+    .map((p) => ({ lat: Number(p?.lat), lng: Number(p?.lng) }))
+    .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng))
+  if (numeric.length === 0) return null
   let minLat = Infinity, maxLat = -Infinity, minLng = Infinity, maxLng = -Infinity
-  for (const p of points) {
+  for (const p of numeric) {
     if (p.lat < minLat) minLat = p.lat
     if (p.lat > maxLat) maxLat = p.lat
     if (p.lng < minLng) minLng = p.lng

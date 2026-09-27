@@ -48,6 +48,11 @@ class StoreController extends Controller
         return response()->json(['data' => Store::create($validated)], 201);
     }
 
+    public function show(int $id): JsonResponse
+    {
+        return response()->json(['data' => Store::with('owner:id,name,email')->findOrFail($id)]);
+    }
+
     public function update(Request $request, int $id): JsonResponse
     {
         $store = Store::findOrFail($id);

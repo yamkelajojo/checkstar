@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { View, Text, ScrollView, FlatList, RefreshControl, Image } from 'react-native';
+import { mediaUri } from '../../lib/media';
 import { ChevronLeft, Tag } from 'lucide-react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -137,7 +138,7 @@ export function SaleDetailScreen() {
         {special.banner_image && (
           <View style={{ marginBottom: semanticSpacing.md, borderRadius: semanticRadius.card, overflow: 'hidden' }}>
             <Image
-              source={{ uri: special.banner_image }}
+              source={{ uri: mediaUri(special.banner_image) }}
               style={{ width: '100%', height: 180, resizeMode: 'cover' }}
               resizeMode="cover"
             />

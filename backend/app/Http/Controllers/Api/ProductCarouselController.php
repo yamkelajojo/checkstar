@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Product;
+use App\Services\MediaService;
 use App\Services\PricingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Carbon;
@@ -13,30 +14,9 @@ class ProductCarouselController extends Controller
 {
     public function __construct(
         private PricingService $pricingService,
+        private MediaService $media,
     ) {}
 
-    private function imageUrl(?string $path): ?string
-    {
-        if ($path === null) {
-            return null;
-        }
-
-        if (! is_file(public_path(ltrim($path, '/')))) {
-            return rtrim(request()->getSchemeAndHttpHost(), '/').'/products/product-placeholder.svg';
-        }
-
-        return rtrim(request()->getSchemeAndHttpHost(), '/').'/'.ltrim($path, '/');
-    }
-
-    private function absolutizeImages(Product $product): Product
-    {
-        $product->image = $this->imageUrl($product->image);
-        if ($product->images !== null) {
-            $product->images = array_map(fn (?string $img) => $this->imageUrl($img), $product->images);
-        }
-
-        return $product;
-    }
 
     private function getPopularProductIds(int $days, int $limit): array
     {
@@ -73,7 +53,7 @@ class ProductCarouselController extends Controller
     private function enrichProducts($products)
     {
         foreach ($products as $product) {
-            $this->absolutizeImages($product);
+            $this->media->applyToProduct($product);
             $product->effective_price = $this->pricingService->effectivePrice($product, $product->specials ?? collect());
         }
 

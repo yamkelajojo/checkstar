@@ -22,6 +22,7 @@ import { springs } from '../../theme/motion';
 import { fetchOrderRiderLocation, fetchRouteGeometry } from '../../lib/apiClient';
 import { queryKeys } from '../../lib/queryKeys';
 import { decodePolyline, computeBoundingRegion, type LatLng } from '../../lib/polyline';
+import { toLatLng, formatNumeric, type Numeric } from '../../lib/numbers';
 import { useReducedMotion } from './useReducedMotion';
 
 const DURBAN_CBD: LatLng = { lat: -29.8587, lng: 31.0218 };
@@ -33,13 +34,18 @@ interface LiveDeliveryMapProps {
   orderId: number;
   orderStatus?: string;
   storeName: string;
-  storeLat?: number;
-  storeLng?: number;
+  /**
+   * Coordinates, distance and duration come from the API as Laravel
+   * `decimal:N` casts — i.e. strings like "-29.8350000". They are coerced to
+   * numbers before reaching react-native-maps, whose native side reads doubles.
+   */
+  storeLat?: Numeric;
+  storeLng?: Numeric;
   deliveryAddress?: string | null;
-  deliveryLat?: number;
-  deliveryLng?: number;
-  distanceKm?: number;
-  durationMinutes?: number;
+  deliveryLat?: Numeric;
+  deliveryLng?: Numeric;
+  distanceKm?: Numeric;
+  durationMinutes?: Numeric;
   geometry?: string | null;
   riderName?: string | null;
   mapHeight?: number;
@@ -65,6 +71,12 @@ export function LiveDeliveryMap({
   const mapRef = useRef<MapView>(null);
   const [hasFitted, setHasFitted] = useState(false);
 
+  // Normalise the two fixed endpoints once. Everything downstream (geometry
+  // fetch, bounding region, markers, polylines) uses these numeric pairs, so a
+  // decimal string can never reach the native map or a region midpoint.
+  const storePoint = toLatLng({ lat: storeLat, lng: storeLng });
+  const deliveryPoint = toLatLng({ lat: deliveryLat, lng: deliveryLng });
+
   // Poll rider location — stop when screen loses focus
   const { data: riderLocation } = useQuery({
     queryKey: [...queryKeys.order(orderId), 'rider-location'],
@@ -75,17 +87,17 @@ export function LiveDeliveryMap({
 
   // Fetch route geometry if not provided — store -> delivery
   const { data: fetchedGeometry } = useQuery({
-    queryKey: [...queryKeys.order(orderId), 'route-geometry', storeLat, storeLng, deliveryLat, deliveryLng],
+    queryKey: [...queryKeys.order(orderId), 'route-geometry', storePoint?.lat, storePoint?.lng, deliveryPoint?.lat, deliveryPoint?.lng],
     queryFn: async () => {
-      if (storeLat == null || storeLng == null || deliveryLat == null || deliveryLng == null) return null
+      if (!storePoint || !deliveryPoint) return null
       try {
-        const res = await fetchRouteGeometry(storeLat, storeLng, deliveryLat, deliveryLng)
+        const res = await fetchRouteGeometry(storePoint.lat, storePoint.lng, deliveryPoint.lat, deliveryPoint.lng)
         return res.geometry || null
       } catch {
         return null
       }
     },
-    enabled: !geometry && storeLat != null && storeLng != null && deliveryLat != null && deliveryLng != null,
+    enabled: !geometry && storePoint != null && deliveryPoint != null,
     staleTime: 5 * 60 * 1000,
   });
 
@@ -151,15 +163,19 @@ export function LiveDeliveryMap({
     }
   }, [effectiveGeometry]);
 
+  // The rider's live position is polled from the API, so it carries the same
+  // decimal-string coordinates; normalise it the same way.
+  const riderPoint = toLatLng({ lat: riderLocation?.latitude, lng: riderLocation?.longitude });
+
   // All points for bounding region
   const allPoints = useMemo<LatLng[]>(() => {
     const pts: LatLng[] = [];
-    if (storeLat != null && storeLng != null) pts.push({ lat: storeLat, lng: storeLng });
-    if (deliveryLat != null && deliveryLng != null) pts.push({ lat: deliveryLat, lng: deliveryLng });
-    if (riderLocation) pts.push({ lat: riderLocation.latitude, lng: riderLocation.longitude });
+    if (storePoint) pts.push(storePoint);
+    if (deliveryPoint) pts.push(deliveryPoint);
+    if (riderPoint) pts.push(riderPoint);
     pts.push(...routePoints);
     return pts;
-  }, [storeLat, storeLng, deliveryLat, deliveryLng, riderLocation, routePoints]);
+  }, [storePoint, deliveryPoint, riderPoint, routePoints]);
 
   const region = useMemo(() => {
     if (allPoints.length >= 2) return computeBoundingRegion(allPoints);
@@ -183,7 +199,7 @@ export function LiveDeliveryMap({
     }
   }, [allPoints, hasFitted]);
 
-  const hasCoords = storeLat != null && storeLng != null && deliveryLat != null && deliveryLng != null;
+  const hasCoords = storePoint != null && deliveryPoint != null;
   const isPreparing = orderStatus === 'confirmed' || orderStatus === 'preparing';
   const isWaitingForRider = isPreparing && !hasRider;
 
@@ -233,7 +249,7 @@ export function LiveDeliveryMap({
           >
             {/* Store marker */}
             <Marker
-              coordinate={{ latitude: storeLat!, longitude: storeLng! }}
+              coordinate={{ latitude: storePoint!.lat, longitude: storePoint!.lng }}
               anchor={{ x: 0.5, y: 1 }}
               accessibilityLabel={`${storeName} store`}
             >
@@ -242,7 +258,7 @@ export function LiveDeliveryMap({
 
             {/* Delivery marker */}
             <Marker
-              coordinate={{ latitude: deliveryLat!, longitude: deliveryLng! }}
+              coordinate={{ latitude: deliveryPoint!.lat, longitude: deliveryPoint!.lng }}
               anchor={{ x: 0.5, y: 0.5 }}
               accessibilityLabel={`Delivery: ${deliveryAddress || 'address'}`}
             >
@@ -252,11 +268,11 @@ export function LiveDeliveryMap({
             </Marker>
 
             {/* Rider marker — animated */}
-            {hasRider && (
+            {hasRider && riderPoint && (
               <Marker
                 coordinate={{
-                  latitude: riderLocation!.latitude,
-                  longitude: riderLocation!.longitude,
+                  latitude: riderPoint.lat,
+                  longitude: riderPoint.lng,
                 }}
                 anchor={{ x: 0.5, y: 0.5 }}
                 accessibilityLabel={`Rider location: ${riderName || 'rider'}`}
@@ -283,11 +299,11 @@ export function LiveDeliveryMap({
             {routePoints.length === 0 && hasCoords && (
               <Polyline
                 coordinates={[
-                  { latitude: storeLat!, longitude: storeLng! },
-                  ...(hasRider
-                    ? [{ latitude: riderLocation!.latitude, longitude: riderLocation!.longitude }]
+                  { latitude: storePoint!.lat, longitude: storePoint!.lng },
+                  ...(hasRider && riderPoint
+                    ? [{ latitude: riderPoint.lat, longitude: riderPoint.lng }]
                     : []),
-                  { latitude: deliveryLat!, longitude: deliveryLng! },
+                  { latitude: deliveryPoint!.lat, longitude: deliveryPoint!.lng },
                 ]}
                 strokeColor={brand.primary}
                 strokeWidth={2}
@@ -310,7 +326,7 @@ export function LiveDeliveryMap({
             <View style={[styles.metricChip, { backgroundColor: 'rgba(0,0,0,0.75)' }]}>
               <MapPin size={12} color={brand.success} />
               <Text style={[textStyle.micro, { color: '#fff', fontWeight: weights.semibold }]}>
-                {distanceKm.toFixed(1)} km
+                {formatNumeric(distanceKm, 1)} km
               </Text>
             </View>
           )}

@@ -40,6 +40,11 @@ class CommunityPostController extends Controller
         return response()->json(['data' => CommunityPost::create($validated)], 201);
     }
 
+    public function show(int $id): JsonResponse
+    {
+        return response()->json(['data' => CommunityPost::findOrFail($id)]);
+    }
+
     public function update(Request $request, int $id): JsonResponse
     {
         $post = CommunityPost::findOrFail($id);

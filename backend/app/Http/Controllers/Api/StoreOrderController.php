@@ -6,6 +6,7 @@ use App\Enums\OrderStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\StoreProduct;
+use App\Services\MediaService;
 use App\Services\OrderStateMachine;
 use App\Services\StoreContext;
 use Illuminate\Http\JsonResponse;
@@ -17,10 +18,13 @@ class StoreOrderController extends Controller
 
     private StoreContext $storeContext;
 
-    public function __construct(OrderStateMachine $stateMachine, StoreContext $storeContext)
+    private MediaService $media;
+
+    public function __construct(OrderStateMachine $stateMachine, StoreContext $storeContext, MediaService $media)
     {
         $this->stateMachine = $stateMachine;
         $this->storeContext = $storeContext;
+        $this->media = $media;
     }
 
     public function orders(Request $request): JsonResponse
@@ -76,9 +80,15 @@ class StoreOrderController extends Controller
             ->with('product')
             ->get();
 
+        // Root-relative (the inventory grid renders same-origin) but always
+        // verified: a stale stored path must degrade to the placeholder, not
+        // to a 404 that leaves the row imageless.
         $items->each(function (StoreProduct $item): void {
-            if ($item->product?->image && ! preg_match('/^https?:\/\//i', $item->product->image)) {
-                $item->product->image = '/'.ltrim($item->product->image, '/');
+            if ($item->product !== null) {
+                $item->product->image = $this->media->relative($item->product->image);
+                $item->product->images = $item->product->images === null
+                    ? [$item->product->image]
+                    : array_map(fn (?string $img) => $this->media->relative($img), $item->product->images);
             }
         });
 

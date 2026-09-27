@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Product;
+use App\Services\MediaService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -12,6 +13,10 @@ use Illuminate\Support\Facades\DB;
 class CartController extends Controller
 {
     private const MAX_QUANTITY = 8;
+
+    public function __construct(
+        private MediaService $media,
+    ) {}
 
     public function show(Request $request): JsonResponse
     {
@@ -23,7 +28,7 @@ class CartController extends Controller
         $result = $items->map(function ($ci) {
             return [
                 'product_id' => $ci->product_id,
-                'product' => $ci->product,
+                'product' => $ci->product === null ? null : $this->media->applyToProduct($ci->product),
                 'quantity' => $ci->quantity,
             ];
         });
@@ -91,7 +96,7 @@ class CartController extends Controller
             return $user->cartItems()->with('product')->get()->map(function ($ci) {
                 return [
                     'product_id' => $ci->product_id,
-                    'product' => $ci->product,
+                    'product' => $ci->product === null ? null : $this->media->applyToProduct($ci->product),
                     'quantity' => $ci->quantity,
                 ];
             })->values();

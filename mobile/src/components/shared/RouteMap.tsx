@@ -8,16 +8,22 @@ import { brand } from '../../theme/colors';
 import { textStyle, weights } from '../../theme/typography';
 import { semanticSpacing, semanticRadius } from '../../theme/spacing';
 import { decodePolyline, computeBoundingRegion, type LatLng } from '../../lib/polyline';
+import { toLatLng, formatNumeric, type Numeric } from '../../lib/numbers';
 
 interface RouteMapProps {
   storeName: string;
-  storeLat?: number;
-  storeLng?: number;
+  /**
+   * Coordinates and distance arrive from the API as Laravel `decimal:N` casts,
+   * which serialise as strings ("-29.8350000"). They are normalised to numbers
+   * before anything is handed to react-native-maps.
+   */
+  storeLat?: Numeric;
+  storeLng?: Numeric;
   deliveryAddress?: string | null;
-  deliveryLat?: number;
-  deliveryLng?: number;
-  distanceKm?: number;
-  durationMinutes?: number;
+  deliveryLat?: Numeric;
+  deliveryLng?: Numeric;
+  distanceKm?: Numeric;
+  durationMinutes?: Numeric;
   source?: string;
   geometry?: string | null;
   /** Height of the map container in pixels. */
@@ -41,7 +47,12 @@ export function RouteMap({
 }: RouteMapProps) {
   const theme = useTheme();
 
-  const hasCoords = storeLat != null && storeLng != null && deliveryLat != null && deliveryLng != null;
+  // react-native-maps reads coordinates as native doubles: a decimal string
+  // ("-29.8350000") makes the marker/polyline fail, and string arithmetic in
+  // the bounding-region midpoint produced NaN. Coerce once, use everywhere.
+  const storePoint = toLatLng({ lat: storeLat, lng: storeLng });
+  const deliveryPoint = toLatLng({ lat: deliveryLat, lng: deliveryLng });
+  const hasCoords = storePoint != null && deliveryPoint != null;
 
   // Decode geometry from the backend if available
   const routePoints = useMemo<LatLng[]>(() => {
@@ -56,11 +67,11 @@ export function RouteMap({
   // Build coordinate list for map fitting
   const allPoints = useMemo<LatLng[]>(() => {
     const pts: LatLng[] = [];
-    if (storeLat != null && storeLng != null) pts.push({ lat: storeLat, lng: storeLng });
-    if (deliveryLat != null && deliveryLng != null) pts.push({ lat: deliveryLat, lng: deliveryLng });
+    if (storePoint) pts.push(storePoint);
+    if (deliveryPoint) pts.push(deliveryPoint);
     pts.push(...routePoints);
     return pts;
-  }, [storeLat, storeLng, deliveryLat, deliveryLng, routePoints]);
+  }, [storePoint, deliveryPoint, routePoints]);
 
   // Compute region that fits all points
   const region = useMemo(() => {
@@ -119,7 +130,7 @@ export function RouteMap({
       >
         {/* Store marker — branded checkstar pin */}
         <Marker
-          coordinate={{ latitude: storeLat!, longitude: storeLng! }}
+          coordinate={{ latitude: storePoint!.lat, longitude: storePoint!.lng }}
           anchor={{ x: 0.5, y: 1 }}
         >
           <StorePin size={28} />
@@ -127,7 +138,7 @@ export function RouteMap({
 
         {/* Delivery marker */}
         <Marker
-          coordinate={{ latitude: deliveryLat!, longitude: deliveryLng! }}
+          coordinate={{ latitude: deliveryPoint!.lat, longitude: deliveryPoint!.lng }}
           anchor={{ x: 0.5, y: 0.5 }}
         >
           <View style={[styles.markerDot, { backgroundColor: brand.success }]} />
@@ -146,8 +157,8 @@ export function RouteMap({
         {routePoints.length === 0 && (
           <Polyline
             coordinates={[
-              { latitude: storeLat!, longitude: storeLng! },
-              { latitude: deliveryLat!, longitude: deliveryLng! },
+              { latitude: storePoint!.lat, longitude: storePoint!.lng },
+              { latitude: deliveryPoint!.lat, longitude: deliveryPoint!.lng },
             ]}
             strokeColor={brand.primary}
             strokeWidth={2}
@@ -172,7 +183,7 @@ function InfoBox({ label, value, theme }: { label: string; value: string; theme:
   );
 }
 
-function MetricsRow({ distanceKm, durationMinutes, source, theme }: { distanceKm?: number; durationMinutes?: number; source?: string; theme: ReturnType<typeof useTheme> }) {
+function MetricsRow({ distanceKm, durationMinutes, source, theme }: { distanceKm?: Numeric; durationMinutes?: Numeric; source?: string; theme: ReturnType<typeof useTheme> }) {
   return (
     <>
       <View style={styles.metricsRow}>
@@ -180,14 +191,14 @@ function MetricsRow({ distanceKm, durationMinutes, source, theme }: { distanceKm
           <MapPin size={16} color={brand.success} />
           <Text style={[textStyle.caption, { color: theme.colors.text.secondary }]}>Distance</Text>
           <Text style={[textStyle.body, { fontWeight: weights.bold, color: theme.colors.text.primary }]}>
-            {distanceKm != null ? `${distanceKm.toFixed(1)} km` : '—'}
+            {distanceKm != null ? `${formatNumeric(distanceKm, 1)} km` : '—'}
           </Text>
         </View>
         <View style={styles.metric}>
           <Navigation size={16} color={brand.orange} />
           <Text style={[textStyle.caption, { color: theme.colors.text.secondary }]}>Duration</Text>
           <Text style={[textStyle.body, { fontWeight: weights.bold, color: theme.colors.text.primary }]}>
-            {durationMinutes != null ? `${durationMinutes} min` : '—'}
+            {durationMinutes != null ? `${formatNumeric(durationMinutes, 0)} min` : '—'}
           </Text>
         </View>
       </View>

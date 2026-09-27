@@ -42,6 +42,11 @@ class CareerController extends Controller
         return response()->json(['data' => CareerListing::create($validated)], 201);
     }
 
+    public function show(int $id): JsonResponse
+    {
+        return response()->json(['data' => CareerListing::findOrFail($id)]);
+    }
+
     public function update(Request $request, int $id): JsonResponse
     {
         $listing = CareerListing::findOrFail($id);

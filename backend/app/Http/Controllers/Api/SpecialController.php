@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Special;
+use App\Services\MediaService;
 use App\Services\PricingService;
 use Illuminate\Http\JsonResponse;
 
@@ -11,6 +12,7 @@ class SpecialController extends Controller
 {
     public function __construct(
         private PricingService $pricingService,
+        private MediaService $media,
     ) {}
 
     public function index(): JsonResponse
@@ -65,12 +67,7 @@ class SpecialController extends Controller
         foreach ($special->products as $product) {
             $product->effective_price = $this->pricingService->effectivePrice($product, $product->specials ?? collect());
 
-            if ($product->image !== null) {
-                $product->image = $this->absolutize($product->image);
-            }
-            if ($product->images !== null) {
-                $product->images = array_map(fn (?string $img) => $img === null ? null : $this->absolutize($img), $product->images);
-            }
+            $this->media->applyToProduct($product);
 
             // Same `stores` shape the catalogue emits (mobile's mapper and
             // add-to-cart read it): only in-stock, available rows.
@@ -92,8 +89,4 @@ class SpecialController extends Controller
         }
     }
 
-    private function absolutize(string $path): string
-    {
-        return rtrim(request()->getSchemeAndHttpHost(), '/').'/'.ltrim($path, '/');
-    }
 }

@@ -1,5 +1,6 @@
 import { View, Text, ScrollView, Pressable, useWindowDimensions, Image as RNImage } from 'react-native';
 import { Image } from 'expo-image';
+import { mediaSource, mediaUri } from '../../lib/media';
 import { useEffect, useRef, useState } from 'react';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import type { RootStackParamList } from '../../navigation/types';
@@ -52,7 +53,7 @@ function RelatedCard({ item, index }: { item: ProductVO; index: number }) {
         }}
       >
         <View style={{ width: '100%', aspectRatio: 1, borderRadius: 12, backgroundColor: theme.colors.background.secondary, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-          {item.images[0] ? <RNImage source={{ uri: item.images[0] }} style={{ width: '100%', height: '100%' }} resizeMode="cover" /> : <Text style={{ fontSize: 28 }}>🛒</Text>}
+          {item.images[0] ? <RNImage source={{ uri: mediaUri(item.images[0]) }} style={{ width: '100%', height: '100%' }} resizeMode="cover" /> : <Text style={{ fontSize: 28 }}>🛒</Text>}
         </View>
         <Text numberOfLines={2} style={{ fontSize: 11, color: theme.colors.text.primary, fontWeight: '600', minHeight: 28, letterSpacing: -0.1, lineHeight: 13 }}>
           {item.name}
@@ -76,7 +77,7 @@ export function ProductDetailScreen() {
 
   useEffect(() => {
     setImageError(false);
-    setImageSource(product && product.images[0] ? { uri: product.images[0] } : null);
+    setImageSource(product ? mediaSource(product.images[0]) : null);
   }, [product]);
 
   const startTime = useRef(Date.now());

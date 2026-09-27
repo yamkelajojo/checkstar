@@ -114,11 +114,14 @@ class RecommendationService
 
     private function buildCategoryAffinity(int $customerId): array
     {
+        // Both tables carry `created_at`, so every column reference has to be
+        // qualified or SQLite/MySQL reject the query as ambiguous (the
+        // personalised path 500'd for any customer with real history).
         $events = DB::table('user_tracking_events')
             ->join('products', 'user_tracking_events.product_id', '=', 'products.id')
-            ->where('customer_id', $customerId)
+            ->where('user_tracking_events.customer_id', $customerId)
             ->select('products.category_id', 'user_tracking_events.created_at')
-            ->orderByDesc('created_at')
+            ->orderByDesc('user_tracking_events.created_at')
             ->limit(50)
             ->get();
 

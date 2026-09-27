@@ -266,13 +266,21 @@ class SouthAfricanPantrySeeder extends Seeder
 
         foreach ($products as $data) {
             $catId = $categories[$data['category']] ?? $categories['pantry-staples'];
-            $product = Product::firstOrCreate(
+            // Media lives in the same category folder as the rest of the
+            // catalogue (`products/<category>/<slug>.webp`). `updateOrCreate`
+            // (not firstOrCreate) so a re-seed repairs rows written by the
+            // older flat `products/<slug>.jpg` convention instead of leaving
+            // them pointing at files that never existed.
+            $categorySlug = $data['category'];
+            $image = 'products/'.$categorySlug.'/'.$data['slug'].'.webp';
+
+            $product = Product::updateOrCreate(
                 ['slug' => $data['slug']],
                 [
                     'category_id' => $catId,
                     'name' => $data['name'],
-                    'image' => 'products/' . $data['slug'] . '.jpg',
-                    'images' => ['products/' . $data['slug'] . '.jpg'],
+                    'image' => $image,
+                    'images' => [$image],
                     'unit' => $data['unit'],
                     'price' => $data['price'],
                     'sale_price' => null,
