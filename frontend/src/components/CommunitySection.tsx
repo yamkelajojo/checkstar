@@ -6,6 +6,7 @@ import { Calendar, Heart } from "lucide-react";
 import SafeImage from "@/components/SafeImage";
 import { useCommunityPosts } from "@/lib/query";
 import { fadeUp } from "@/lib/motion/variants";
+import { formatDate } from '@/lib/dates'
 
 const tabs = [
   { value: null, label: "All" },
@@ -127,9 +128,7 @@ export default function CommunitySection() {
                         {post.event_date && (
                           <span className="text-xs text-gray-500 flex items-center gap-1">
                             <Calendar size={12} />
-                            {new Date(post.event_date).toLocaleDateString(
-                              "en-ZA",
-                            )}
+                            {formatDate(post.event_date)}
                           </span>
                         )}
                       </div>
@@ -173,9 +172,7 @@ export default function CommunitySection() {
                         {post.event_date && (
                           <span className="text-xs text-gray-500 flex items-center gap-1">
                             <Calendar size={12} />
-                            {new Date(post.event_date).toLocaleDateString(
-                              "en-ZA",
-                            )}
+                            {formatDate(post.event_date)}
                           </span>
                         )}
                       </div>

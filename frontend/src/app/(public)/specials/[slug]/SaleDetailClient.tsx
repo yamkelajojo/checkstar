@@ -6,10 +6,11 @@ import { Calendar, MapPin, Clock, Sparkles, ChevronLeft } from 'lucide-react'
 import ProductCard from '@/components/ProductCard'
 import { useSaleDetail } from '@/lib/query'
 import { fadeUp, stagger } from '@/lib/motion/variants'
+import { formatLongDate } from '@/lib/dates'
 
 function fmtDate(d: string | null | undefined) {
   if (!d) return ''
-  return new Date(d).toLocaleDateString('en-ZA', { day: 'numeric', month: 'long', year: 'numeric' })
+  return formatLongDate(d)
 }
 
 /**

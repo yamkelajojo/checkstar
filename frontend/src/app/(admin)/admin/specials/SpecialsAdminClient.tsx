@@ -43,6 +43,7 @@ import {
   type Store,
 } from "@/types";
 import { formatZar } from '@/lib/money';
+import { formatDate } from '@/lib/dates'
 
 const SALE_ROLES = ["developer", "store_owner", "store_manager"];
 
@@ -55,12 +56,9 @@ function slugify(s: string) {
 }
 
 function fmtDate(d: string | null | undefined) {
+  // An unset date in an admin form stays empty; a set one uses the house format.
   if (!d) return "";
-  return new Date(d).toLocaleDateString("en-ZA", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
+  return formatDate(d);
 }
 
 // ---------------------------------------------------------------------------

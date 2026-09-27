@@ -12,6 +12,7 @@ import { fetchOrder, cancelOrder, confirmDelivery, reviewOrder } from '../../lib
 import { apiErrorReason } from '../../lib/api';
 import { queryKeys } from '../../lib/queryKeys';
 import { formatZar } from '../../lib/currency';
+import { formatDate } from '../../lib/formatters';
 import { TactilePressable } from '../../components/shared/TactilePressable';
 import { SkeletonCard } from '../../components/shared/SkeletonCard';
 import { haptic } from '../../lib/haptics';
@@ -155,7 +156,7 @@ export function OrderDetailScreen() {
                 Order #{order.id}
               </Text>
               <Text style={[textStyle.caption, { color: theme.colors.text.secondary }]}>
-                {new Date(order.created_at).toLocaleDateString()}
+                {formatDate(order.created_at)}
               </Text>
             </View>
           </FadeSlideIn>

@@ -23,6 +23,7 @@ import { fetchOrderRiderLocation, fetchRouteGeometry } from '../../lib/apiClient
 import { queryKeys } from '../../lib/queryKeys';
 import { decodePolyline, computeBoundingRegion, type LatLng } from '../../lib/polyline';
 import { toLatLng, formatNumeric, type Numeric } from '../../lib/numbers';
+import { formatTime } from '../../lib/formatters';
 import { useReducedMotion } from './useReducedMotion';
 
 const DURBAN_CBD: LatLng = { lat: -29.8587, lng: 31.0218 };
@@ -378,7 +379,7 @@ export function LiveDeliveryMap({
       {/* Last updated */}
       {hasRider && riderLocation!.recorded_at && (
         <Text style={[textStyle.micro, { color: theme.colors.text.tertiary, textAlign: 'center', paddingBottom: semanticSpacing.xs }]}>
-          Updated {new Date(riderLocation!.recorded_at).toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' })}
+          Updated {formatTime(riderLocation!.recorded_at)}
         </Text>
       )}
     </View>

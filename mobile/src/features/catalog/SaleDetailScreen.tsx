@@ -16,6 +16,7 @@ import { EmptyState } from '../../components/shared/EmptyState';
 import { FadeSlideIn } from '../../components/shared/FadeSlideIn';
 import { haptic } from '../../lib/haptics';
 import { formatZar } from '../../lib/currency';
+import { formatDate } from '../../lib/formatters';
 import { fetchProducts, fetchSpecials } from '../../lib/apiClient';
 import type { ProductVO, StoreAvailabilityVO } from '../../lib/product';
 import { findStoreAvailability, mapProduct } from '../../lib/product';
@@ -161,9 +162,9 @@ export function SaleDetailScreen() {
         )}
         {(special.start_date || special.end_date) && (
           <Text style={{ color: theme.colors.text.tertiary, ...textStyle.caption }}>
-            {special.start_date && `From ${new Date(special.start_date).toLocaleDateString()}`}
+            {special.start_date && `From ${formatDate(special.start_date)}`}
             {special.start_date && special.end_date ? ' • ' : ''}
-            {special.end_date && `Ends ${new Date(special.end_date).toLocaleDateString()}`}
+            {special.end_date && `Ends ${formatDate(special.end_date)}`}
           </Text>
         )}
       </View>

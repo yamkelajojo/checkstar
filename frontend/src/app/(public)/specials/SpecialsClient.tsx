@@ -7,10 +7,7 @@ import { Calendar, Clock, Tag } from 'lucide-react'
 import ProductCard from '@/components/ProductCard'
 import { useSpecials } from '@/lib/query'
 import { fadeUp, stagger } from '@/lib/motion/variants'
-
-function formatDate(d: string) {
-  return new Date(d).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' })
-}
+import { formatDate } from '@/lib/dates'
 
 export default function SpecialsClient() {
   const { data: specials = [], isLoading: loading, error } = useSpecials()

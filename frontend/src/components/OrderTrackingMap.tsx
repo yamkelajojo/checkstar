@@ -7,6 +7,7 @@ import { Navigation, MapPin, Clock, WifiOff, Hourglass } from 'lucide-react'
 import { useOrderRiderLocation, useRouteGeometry } from '@/lib/query'
 import { decodePolyline, type LatLng } from '@/lib/polyline'
 import { spring, ease } from '@/lib/motion/tokens'
+import { formatTime } from '@/lib/dates'
 
 const MapContainer = dynamic(() => import('@/components/MapContainer'), {
   ssr: false,
@@ -226,7 +227,7 @@ export default function OrderTrackingMap({
               className="bg-black/75 backdrop-blur-md text-white text-[11px] px-2.5 py-1.5 rounded-full flex items-center gap-1.5 border border-white/10 shadow-[0_2px_8px_rgba(0,0,0,0.2)]"
             >
               <Clock size={12} className="text-primary" strokeWidth={2.5} />
-              <span className="tabular-nums font-medium">{new Date(riderLocation.recorded_at).toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' })}</span>
+              <span className="tabular-nums font-medium">{formatTime(riderLocation.recorded_at)}</span>
             </motion.div>
           )}
         </div>

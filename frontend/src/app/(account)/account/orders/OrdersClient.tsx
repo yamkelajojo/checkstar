@@ -8,6 +8,7 @@ import { useAuthStore } from '@/stores/auth-store'
 import { useOrders } from '@/lib/query'
 import { statusConfig } from '@/lib/motion/variants'
 import { formatZar } from '@/lib/money'
+import { formatDate } from '@/lib/dates'
 
 export default function OrdersClient() {
   // Auth bootstrap + redirect live in the (account) layout AuthGuard.
@@ -91,7 +92,7 @@ export default function OrdersClient() {
                           </div>
                           <div>
                             <p className="font-mono text-sm font-semibold">#{order.order_number}</p>
-                            <p className="text-xs text-gray-400">{new Date(order.created_at).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                            <p className="text-xs text-gray-400">{formatDate(order.created_at)}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-3">

@@ -40,6 +40,7 @@ import {
 import { api } from "@/lib/api";
 import EmptyState from "@/components/admin/EmptyState";
 import { formatZar } from '@/lib/money'
+import { formatDate } from '@/lib/dates'
 
 const SERVICE_ORDER: Array<{ key: string; label: string }> = [
   { key: "api", label: "API" },
@@ -320,7 +321,7 @@ function OrderRow({ order }: { order: Order }) {
       </div>
       <div className="flex items-center justify-between text-sm">
         <span className="text-gray-400">
-          {new Date(order.created_at).toLocaleDateString("en-ZA")}
+          {formatDate(order.created_at)}
         </span>
         <span className="font-semibold text-gray-700">
           {formatZar(order.total)}
