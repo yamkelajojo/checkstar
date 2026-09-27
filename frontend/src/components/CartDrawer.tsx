@@ -24,6 +24,17 @@ export default function CartDrawer({ open, onClose }: Props) {
     return () => { if (timerRef.current) clearTimeout(timerRef.current) }
   }, [])
 
+  // A slide-over that traps the keyboard is a modal in everything but name:
+  // Escape has to close it, and assistive tech has to be told what it is.
+  useEffect(() => {
+    if (!open) return
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [open, onClose])
+
   const removeWithUndo = (item: CartItem) => {
     removeItem(item.product.id)
     setToast({ item })
@@ -63,6 +74,9 @@ export default function CartDrawer({ open, onClose }: Props) {
             animate={{ x: 0, filter: 'blur(0px)' }}
             exit={{ x: '100%', filter: 'blur(6px)' }}
             transition={{ type: 'spring', stiffness: 380, damping: 30, mass: 0.8 }}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Your cart"
             className="fixed right-0 top-0 bottom-0 w-full max-w-md bg-white/95 backdrop-blur-xl z-50 shadow-[-8px_0_32px_rgba(0,0,0,0.12),0_0_0_1px_rgba(0,0,0,0.04)] border-l border-gray-100/50 flex flex-col"
           >
             <div className="flex items-center justify-between p-5 border-b border-gray-100/80 backdrop-blur-sm">
