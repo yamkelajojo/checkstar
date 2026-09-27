@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import ErrorNotice from '@/components/ErrorNotice'
 import { motion } from 'motion/react'
 import { ArrowLeft, Loader2, MapPin, CreditCard, Star, AlertCircle, XCircle, CheckCircle, User, Package, Bike, Clock, Navigation } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth-store'
@@ -139,7 +140,7 @@ export default function OrderDetailClient({ id }: { id: string }) {
     return (
       <>
         <main className="max-w-4xl mx-auto px-4 py-16">
-          <div className="bg-accent/10 border border-accent/30 text-accent text-sm rounded-lg px-4 py-3">{error?.message || 'Something went wrong'}</div>
+          <ErrorNotice title="We couldn't load this order" error={error} />
           <Link href="/account/orders" className="mt-4 inline-flex items-center gap-1 text-sm text-primary hover:underline">
             <ArrowLeft size={14} /> Back to orders
           </Link>

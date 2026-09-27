@@ -10,6 +10,7 @@ import { usePendingDispatch, useDispatchRiders } from '@/lib/query'
 import { useQueryClient } from '@tanstack/react-query'
 import { formatDateTime } from '@/lib/dates'
 import { orderStatusLabel, riderLabel, riderName } from '@/lib/labels'
+import ErrorState from '@/components/admin/ErrorState'
 
 const allowedRoles = ['store_manager', 'logistics_officer', 'store_owner', 'developer']
 
@@ -131,7 +132,9 @@ export default function DispatchConsoleClient() {
         )}
 
         {error && (
-          <div className="bg-accent/10 border border-accent/20 text-accent text-sm rounded-lg px-4 py-3 mb-6">{(error as Error).message}</div>
+          <div className="mb-6">
+            <ErrorState message={(error as Error).message} onRetry={() => refetch()} />
+          </div>
         )}
 
         {isLoading ? (

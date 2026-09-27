@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { motion } from 'motion/react'
 import { User, Mail, Phone, Loader2, Save, CheckCircle, MailCheck } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth-store'
+import ErrorNotice from '@/components/ErrorNotice'
 import { api } from '@/lib/api'
 import AddressBookSection from './AddressBookSection'
 import { roleLabel } from '@/lib/labels'
@@ -79,7 +80,7 @@ export default function ProfileClient() {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
-                <div className="bg-accent/10 border border-accent/30 text-accent text-sm rounded-lg px-4 py-3">{error}</div>
+                <ErrorNotice compact title="We couldn't save your profile" message={error} />
               )}
 
               {success && (

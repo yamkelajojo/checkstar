@@ -6,6 +6,7 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination } from 'swiper/modules';
 import { ProductCarouselSkeleton } from '@/components/Skeleton';
 import { ErrorFallback } from '@/components/ErrorFallback';
+import EmptyState from '@/components/EmptyState';
 import ProductCard from '@/components/ProductCard';
 import type { Product } from '@/types';
 import type { UseQueryResult } from '@tanstack/react-query';
@@ -47,8 +48,8 @@ export function ProductCarousel({ title, products, href, queryResult }: ProductC
         className="py-6"
       >
         <h2 className="text-[18px] font-bold tracking-tight text-foreground mb-3">{title}</h2>
-        <div className="py-10 text-center bg-white rounded-[16px] border border-gray-100 shadow-sm">
-          <p className="text-[13px] text-gray-400">Nothing here yet — check back soon.</p>
+        <div className="bg-white rounded-[16px] border border-gray-100 shadow-sm">
+          <EmptyState compact title="Nothing here yet" caption="Check back soon." />
         </div>
       </motion.section>
     );

@@ -6,6 +6,8 @@ import { motion } from 'motion/react'
 import { ChevronRight, Loader2, ShoppingBag, Package } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth-store'
 import { useOrders } from '@/lib/query'
+import EmptyState from '@/components/EmptyState'
+import ErrorNotice from '@/components/ErrorNotice'
 import { statusConfig } from '@/lib/motion/variants'
 import { formatZar } from '@/lib/money'
 import { formatDate } from '@/lib/dates'
@@ -18,7 +20,7 @@ export default function OrdersClient() {
   const queryParams: Record<string, string> = {}
   if (statusFilter) queryParams.status = statusFilter
   if (sortOrder === 'oldest') queryParams.sort = 'oldest'
-  const { data: orders = [], isLoading: loading, error } = useOrders(Object.keys(queryParams).length ? queryParams : undefined)
+  const { data: orders = [], isLoading: loading, error, refetch, isFetching } = useOrders(Object.keys(queryParams).length ? queryParams : undefined)
 
   if (authLoading || loading) {
     return (
@@ -54,20 +56,31 @@ export default function OrdersClient() {
           </div>
 
           {error && (
-            <div className="bg-accent/10 border border-accent/30 text-accent text-sm rounded-lg px-4 py-3 mb-6">{error.message}</div>
+            <div className="mb-6">
+              <ErrorNotice
+                title="We couldn't load your orders"
+                error={error}
+                onRetry={() => refetch()}
+                retrying={isFetching}
+              />
+            </div>
           )}
 
           {orders.length === 0 ? (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-20">
-              <Package size={48} className="mx-auto text-gray-200 mb-4" />
-              <h2 className="text-lg font-semibold text-gray-600 mb-2">No orders yet</h2>
-              <p className="text-sm text-gray-400 mb-6">Place your first order to see it here.</p>
-              <Link
-                href="/products"
-                className="inline-flex items-center gap-2 bg-primary text-white px-6 py-2.5 rounded-lg font-medium hover:bg-primary-dark transition-colors"
-              >
-                Start Shopping
-              </Link>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              <EmptyState
+                icon={Package}
+                title="No orders yet"
+                caption="Place your first order and it will show up here."
+                action={
+                  <Link
+                    href="/products"
+                    className="inline-flex items-center gap-2 bg-primary text-white px-6 py-2.5 rounded-lg font-medium hover:bg-primary-dark transition-colors"
+                  >
+                    Start shopping
+                  </Link>
+                }
+              />
             </motion.div>
           ) : (
             <div className="space-y-4">

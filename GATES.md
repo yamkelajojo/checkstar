@@ -90,7 +90,7 @@ Scope: resolve the approved manager QA issues without breaking Store Context, gu
       EVIDENCE: 2026-09-27 — `npm run build` compiled successfully (Next.js 15.5.25, 24.5 s),
       emitting every route (admin, account, auth, dashboard, operations, public, rider, stores)
       with no type or lint failures; `npm run lint` reports "No ESLint warnings or errors";
-      full vitest run: **Test Files 56 passed, Tests 523 passed** (was 43 / 305 at the start of
+      full vitest run: **Test Files 57 passed, Tests 540 passed** (was 43 / 305 at the start of
       this session) and `npx tsc --noEmit` clean.
 
 - [x] G10: Money, dates and status vocabulary are single-sourced and identical on both clients
@@ -151,6 +151,32 @@ Scope: resolve the approved manager QA issues without breaking Store Context, gu
       never render (its test asserted a state the API cannot produce). `vocabulary-guard.test.ts`
       fails if any component hand-rolls `status.replace(/_/g, " ")` again. 5 new StoreOrdersClient
       tests; suite 56 files / 523 tests; tsc + lint + build clean.
+
+- [x] G16: The storefront has one empty state and one error notice
+      CHECK: npm --prefix frontend test -- EmptyState
+      EXPECT: /Tests\s+\d+\s+passed/
+      EVIDENCE: 2026-09-27 — `components/EmptyState.tsx` (bare glyph → title → caption → one
+      action, `h1` variant for page-level states) and `components/ErrorNotice.tsx` (`role="alert"`,
+      takes the query error object, offers a retry only when there is something to retry) replace
+      four dialects of "No orders yet" / "Nothing here yet" and the `bg-accent/10 border-accent/30`
+      error divs. Adopted on orders, favorites, sale detail, product carousels, order detail,
+      profile and the dispatch console. `ErrorFallback` stays as the whole-region failure card and
+      the split is documented in both headers. 17 tests; suite 57 files / 540 tests; tsc + lint +
+      build clean.
+
+## CI blocked by account billing (2026-09-27, from run 36307187979 onward)
+
+GitHub Actions now refuses to **start** any job on this repository: every one of the six
+checks fails in ~2 s with the annotation *"The job was not started because recent account
+payments have failed or your spending limit needs to be increased."* This is not a code
+failure — the same commits pass locally. Until billing is fixed in the account's
+**Billing & plans** settings, the evidence channel is local runs, recorded here:
+
+- Frontend: `cd frontend && npx vitest run` → **57 files / 540 tests passed**; `npm run lint`
+  → no warnings or errors; `npm run build` → compiled successfully; `npx tsc --noEmit` → clean.
+- Mobile: `cd mobile && npm test` → **71 suites, 670 passed / 3 skipped**.
+- Backend: **not verifiable in this sandbox** (no PHP toolchain). The last green run remains
+  `36287076597`; nothing since then touched `backend/`, so the risk is confined to CI itself.
 
 ## CI cross-check (2026-09-27)
 

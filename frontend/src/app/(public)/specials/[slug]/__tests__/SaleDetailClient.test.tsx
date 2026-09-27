@@ -145,7 +145,9 @@ describe('SaleDetailClient', () => {
     apiMocks.getSaleBySlug.mockRejectedValue(new Error('404'))
     renderWithProviders(<SaleDetailClient slug="ghost-sale" />)
 
-    expect(await screen.findByText('This sale isn’t available')).toBeInTheDocument()
+    // Straight apostrophe: 13 of the app's 16 contractions use `&apos;`, and the
+    // shared EmptyState renders the title string as written.
+    expect(await screen.findByText("This sale isn't available")).toBeInTheDocument()
     const back = screen.getByRole('link', { name: /All specials/ })
     expect(back).toHaveAttribute('href', '/specials')
   })

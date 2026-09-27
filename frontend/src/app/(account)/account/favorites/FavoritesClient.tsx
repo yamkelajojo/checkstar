@@ -4,6 +4,8 @@ import { motion } from 'motion/react'
 import { Heart, ShoppingBag, Trash2, Search, AlertCircle, Loader2 } from 'lucide-react'
 import { useFavorites, useRemoveFavorite } from '@/lib/query'
 import { useAuthStore } from '@/stores/auth-store'
+import EmptyState from '@/components/EmptyState'
+import ErrorNotice from '@/components/ErrorNotice'
 import { useCartStore } from '@/stores/cart-store'
 import { toast } from 'sonner'
 import { fadeUpTight as fadeUp, staggerTight as stagger } from '@/lib/motion/variants'
@@ -46,16 +48,33 @@ export default function FavoritesClient() {
           <p className="text-sm text-gray-500 mt-1">{favorites.length} saved {favorites.length === 1 ? 'product' : 'products'}</p>
         </motion.div>
 
-        {error && <motion.div variants={fadeUp} className="mb-6 bg-accent/5 border border-accent/20 rounded-xl p-4 flex items-center gap-2"><AlertCircle size={16} className="text-accent" /><span className="text-sm">{(error as Error).message}</span><button onClick={() => refetch()} className="ml-auto text-primary text-sm">Retry</button></motion.div>}
+        {error && (
+          <motion.div variants={fadeUp} className="mb-6">
+            <ErrorNotice
+              title="We couldn't load your favorites"
+              error={error}
+              onRetry={() => refetch()}
+            />
+          </motion.div>
+        )}
 
         {isLoading ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">{[1,2,3,4,5,6].map(i => <div key={i} className="bg-white border rounded-xl p-4 animate-pulse h-48" />)}</div>
         ) : favorites.length === 0 ? (
-          <motion.div variants={fadeUp} className="bg-white border border-gray-100 rounded-xl p-12 text-center">
-            <Heart size={40} className="text-gray-200 mx-auto mb-3" />
-            <p className="font-medium text-gray-600">No favorites yet</p>
-            <p className="text-sm text-gray-400 mt-1">Tap the heart on any product to save it.</p>
-            <Link href="/products" className="inline-flex items-center gap-2 mt-4 px-5 py-2.5 bg-primary text-white rounded-lg text-sm">Browse Products</Link>
+          <motion.div variants={fadeUp} className="bg-white border border-gray-100 rounded-xl">
+            <EmptyState
+              icon={Heart}
+              title="No favorites yet"
+              caption="Tap the heart on any product to save it for later."
+              action={
+                <Link
+                  href="/products"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors"
+                >
+                  Browse products
+                </Link>
+              }
+            />
           </motion.div>
         ) : (
           <motion.div variants={fadeUp} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">

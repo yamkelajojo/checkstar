@@ -21,12 +21,19 @@ Levels follow the V-model: the left side is requirement/design decomposition, th
 | Suite | Command | Scale | Runs in CI |
 |---|---|---|---|
 | Backend (Laravel 11, PHPUnit) | `npm run test:backend` / `cd backend && php artisan test` | 477 tests, 3100+ assertions | ✅ PHP 8.2, 8.3, 8.4 (SQLite) + PHP 8.3 (MySQL 8) |
-| Web unit + component (Vitest, jsdom, RTL) | `cd frontend && npx vitest run` | 56 files / 523 tests | ✅ (with `tsc --noEmit`, `next lint`, `next build`) |
+| Web unit + component (Vitest, jsdom, RTL) | `cd frontend && npx vitest run` | 57 files / 540 tests | ✅ (with `tsc --noEmit`, `next lint`, `next build`) |
 | Web end-to-end (Playwright) | `cd frontend && npx playwright test` | 12 specs / 32 tests | ❌ **gap** — needs a live API + web server; see G-1 |
 | Mobile unit + screen (Jest, RNTL) | `cd mobile && npm test` | 71 suites / 670 passed / 3 skipped | ✅ (with `tsc --noEmit` and the Expo SDK pin check) |
 | Live Mapbox tile check (web, real token) | `cd frontend && npm run check:mapbox` | 1 tile over Durban CBD; exit 0 also when no token is set | ⚠️ manual, on the operator's machine — see G-4 |
 
 CI workflow: `.github/workflows/tests.yml` → six jobs (Backend PHP 8.2 / 8.3 / 8.4, Backend MySQL 8, Frontend, Mobile). Last all-green run: `36287076597` (PR #2).
+
+**CI is currently blocked by account billing, not by code.** From run `36307187979` onward every
+job fails in ~2 s with *"The job was not started because recent account payments have failed or
+your spending limit needs to be increased."* The Frontend and Mobile rows above are therefore
+verified locally (both green); the Backend row cannot be re-verified in this sandbox at all and
+rests on the last green run — no commit since then touched `backend/`. Fixing it is an account
+setting (**Billing & plans**), recorded as gap G-8.
 
 ---
 
@@ -129,6 +136,7 @@ CI workflow: `.github/workflows/tests.yml` → six jobs (Backend PHP 8.2 / 8.3 /
 - **G-3 — Real-device mobile testing is manual.** RNTL covers rendering and behaviour; GPS, camera, push and Expo Go's own runtime are verified on the device fleet. *Close it by:* an EAS build + a device checklist per release.
 - **G-4 — Mapbox tiles are verified by contract, not by pixels.** Without a token in CI (deliberately — ADR 0003), tests assert the provider selection and the exact `L.tileLayer` arguments, not a rendered Mapbox tile. On 2026-09-27 that contract caught a real defect: the endpoint in use (`api.mapbox.com/v4/mapbox.streets/…`) is deprecated by Mapbox and answers `410 Gone`, so it was replaced test-first with the documented Styles Static Tiles API (`api.mapbox.com/styles/v1/{style}/tiles/256/{z}/{x}/{y}@2x`, tileSize 512, zoomOffset −1, maxZoom 19). *What still needs a human:* the live fetch. `cd frontend && npm run check:mapbox` proves a given token works and reports per-status-code hints; this sandbox cannot reach `api.mapbox.com` (probe returned `000`), so that one command is the operator's, and it is documented in README, ADR 0003 and GATES G14.
 - **G-5 — Performance is not measured yet.** `docs/manager-qa-refactor-plan.md` requires measurement-led performance work; no budget or Lighthouse/CI timing gate exists. *Close it by:* a build-size + LCP budget assertion in the Frontend job.
+- **G-8 — GitHub Actions will not start jobs (account billing).** Every check fails in ~2 s with a payments/spending-limit annotation, so CI provides no signal at all until it is fixed in the account's **Billing & plans** settings. *Mitigation meanwhile:* frontend and mobile suites run locally on every commit (57 files / 540 tests and 71 suites / 670 tests, both green on 2026-09-27); the backend has no local toolchain in this sandbox, so backend assurance rests on the last green run `36287076597` plus the fact that no later commit touched `backend/`. *Close it by:* fixing billing, then re-running the workflow on the branch head.
 - **G-6 — Backend diagnostics files lag CI.** `backend/ci-diagnostics-*.md` are written by a bot on failure and can be one commit behind GitHub Actions. Trust the check statuses (`gh pr checks`), not the files.
 
 ---
@@ -141,7 +149,7 @@ npm run setup                 # backend .env, key, migrated + seeded sqlite
 npm test                      # backend + frontend + mobile, one summary
 npm run typecheck             # tsc --noEmit for frontend + mobile
 
-cd frontend && npx vitest run                      # 56 files / 523 tests
+cd frontend && npx vitest run                      # 57 files / 540 tests
 cd frontend && npx playwright test                 # 32 e2e tests (needs api + web running)
 cd mobile && npm test                              # 71 suites / 670 passed / 3 skipped
 cd backend && php artisan test                     # 477 tests
