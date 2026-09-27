@@ -90,6 +90,16 @@ Scope: resolve the approved manager QA issues without breaking Store Context, gu
       (admin, account, public, operations) with no type or lint failures; followed by the
       full vitest run: Test Files 43 passed, Tests 305 passed, and `npx tsc --noEmit` clean.
 
+## CI cross-check (2026-09-27)
+
+The repository's CI diagnostics bot publishes full PHPUnit output for every push to
+`backend/ci-diagnostics-{php8.2,php8.3,php8.4,mysql}.md`. At commit `07ab538` all four
+matrices agree: **Tests: 2 failed, 475 passed (3121 assertions)**, and both failures are
+`SeededCatalogueMediaTest > every seeded product image…` listing exactly the nine
+packshots that had not been generated yet (pantry-staples ×6, snacks-treats ×3). Every
+other backend gate (G1, G2 and the media/route-contract suites) is green on every matrix,
+so the backend side of this work is verified on PHP 8.2–8.4 and MySQL, not only sqlite.
+
 ## Reproducing the whole gate set
 
 ```bash
