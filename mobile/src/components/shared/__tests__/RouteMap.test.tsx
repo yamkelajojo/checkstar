@@ -1,60 +1,119 @@
 /**
- * RouteMap component test.
+ * RouteMap component test — renders the real component.
  *
- * NOTE: RTL v14 + jest-expo has a known render() issue in isolated component files.
- * RouteMap is already covered by integration tests (OrderDetailScreen, RiderOrderDetailScreen).
- * This test verifies the component contract without rendering.
+ * The previous version only asserted that the module exports a function and
+ * that a props object literal has the right typeofs; it never touched the
+ * component. react-native-maps is swapped for the passthrough mock in
+ * __mocks__/react-native-maps.js, which keeps every prop we hand the native
+ * module inspectable via testID.
+ *
+ * NOTE: RNTL v14 + React 19 renders asynchronously — `screen` is only usable
+ * after the promise returned by render() settles, hence the awaits.
  */
+import { render, screen } from '@testing-library/react-native';
 import { describe, test, expect } from '@jest/globals';
+import { RouteMap } from '../RouteMap';
 
-// Verify the polyline decoder (used by RouteMap) works correctly
-import { decodePolyline, computeBoundingRegion } from '../../../lib/polyline';
+// Canonical Google encoded-polyline example: three points.
+const GEOMETRY = '_p~iF~ps|U_ulLnnqC_mqNvxq`@';
 
-describe('RouteMap contract', () => {
-  test('exports a React component', () => {
-    const { RouteMap } = require('../RouteMap');
-    expect(typeof RouteMap).toBe('function');
+describe('RouteMap', () => {
+  test('renders store and delivery markers for numeric coordinates', async () => {
+    await render(
+      <RouteMap
+        storeName="Checkstar Durban Central"
+        storeLat={-29.8167}
+        storeLng={30.8833}
+        deliveryAddress="12 Berea Road"
+        deliveryLat={-29.835}
+        deliveryLng={30.972}
+      />,
+    );
+
+    const markers = screen.getAllByTestId('map-marker');
+    expect(markers).toHaveLength(2);
+    expect(markers[0].props.coordinate).toEqual({ latitude: -29.8167, longitude: 30.8833 });
+    expect(markers[1].props.coordinate).toEqual({ latitude: -29.835, longitude: 30.972 });
   });
 
-  test('polyline decoder produces valid coordinates from geometry', () => {
-    const geometry = '_p~iF~ps|U_ulLnnqC_mqNvxq`@';
-    const points = decodePolyline(geometry);
-    expect(points.length).toBe(3);
-    for (const p of points) {
-      expect(typeof p.lat).toBe('number');
-      expect(typeof p.lng).toBe('number');
-      expect(isFinite(p.lat)).toBe(true);
-      expect(isFinite(p.lng)).toBe(true);
+  test('draws the decoded OSRM geometry as a polyline', async () => {
+    await render(
+      <RouteMap
+        storeName="Checkstar Musgrave"
+        storeLat={-29.84}
+        storeLng={30.99}
+        deliveryAddress="1 Main Road"
+        deliveryLat={-29.86}
+        deliveryLng={31.0}
+        geometry={GEOMETRY}
+        source="osrm"
+      />,
+    );
+
+    const coordinates = screen.getByTestId('map-polyline').props.coordinates;
+    expect(coordinates).toHaveLength(3);
+    for (const point of coordinates) {
+      expect(Number.isFinite(point.latitude)).toBe(true);
+      expect(Number.isFinite(point.longitude)).toBe(true);
     }
+    expect(screen.getByText('Live OSRM routing')).toBeTruthy();
   });
 
-  test('bounding region computed correctly for store+delivery points', () => {
-    const points = [
-      { lat: -29.85, lng: 31.02 },
-      { lat: -29.86, lng: 31.03 },
-    ];
-    const region = computeBoundingRegion(points);
-    expect(region.latitudeDelta).toBeGreaterThan(0);
-    expect(region.longitudeDelta).toBeGreaterThan(0);
+  test('falls back to a straight dashed line when there is no geometry', async () => {
+    await render(
+      <RouteMap
+        storeName="Checkstar Musgrave"
+        storeLat={-29.84}
+        storeLng={30.99}
+        deliveryAddress="1 Main Road"
+        deliveryLat={-29.86}
+        deliveryLng={31.0}
+        source="haversine_fallback"
+      />,
+    );
+
+    const coordinates = screen.getByTestId('map-polyline').props.coordinates;
+    expect(coordinates).toHaveLength(2);
+    expect(screen.getByText('Haversine estimate')).toBeTruthy();
   });
 
-  test('RouteMap accepts all documented props', () => {
-    // Props interface contract — these props must be accepted
-    const props = {
-      storeName: 'Store',
-      storeLat: -29.85,
-      storeLng: 31.02,
-      deliveryAddress: 'Addr',
-      deliveryLat: -29.86,
-      deliveryLng: 31.03,
-      distanceKm: 1.5,
-      durationMinutes: 10,
-      source: 'osrm',
-      geometry: '_p~iF~ps|U',
-      mapHeight: 300,
-    };
-    expect(props.storeName).toBeTruthy();
-    expect(typeof props.storeLat).toBe('number');
-    expect(typeof props.mapHeight).toBe('number');
+  test('degrades to the info card when coordinates are unavailable', async () => {
+    await render(
+      <RouteMap storeName="Checkstar Umgeni" deliveryAddress={null} distanceKm={2.3} />,
+    );
+
+    expect(screen.queryByTestId('map-view')).toBeNull();
+    expect(screen.getByText('Checkstar Umgeni')).toBeTruthy();
+    expect(screen.getByText('Delivery address not set')).toBeTruthy();
+    // Metrics still render without a map.
+    expect(screen.getByText('2.3 km')).toBeTruthy();
+  });
+
+  test('never hands the map NaN, even for malformed geometry', async () => {
+    await render(
+      <RouteMap
+        storeName="Checkstar Musgrave"
+        storeLat={-29.84}
+        storeLng={30.99}
+        deliveryAddress="1 Main Road"
+        deliveryLat={-29.86}
+        deliveryLng={31.0}
+        geometry={'not a polyline !!!'}
+      />,
+    );
+
+    // Whatever the decoder makes of garbage, the region, markers and polyline
+    // must all stay finite — a NaN region renders a blank map on device.
+    const region = screen.getByTestId('map-view').props.initialRegion;
+    expect(Number.isFinite(region.latitude)).toBe(true);
+    expect(Number.isFinite(region.longitude)).toBe(true);
+    for (const marker of screen.getAllByTestId('map-marker')) {
+      expect(Number.isFinite(marker.props.coordinate.latitude)).toBe(true);
+      expect(Number.isFinite(marker.props.coordinate.longitude)).toBe(true);
+    }
+    for (const point of screen.getByTestId('map-polyline').props.coordinates) {
+      expect(Number.isFinite(point.latitude)).toBe(true);
+      expect(Number.isFinite(point.longitude)).toBe(true);
+    }
   });
 });
