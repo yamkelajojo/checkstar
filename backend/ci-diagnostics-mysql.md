@@ -23,16 +23,16 @@
 ```
 #### phpunit.log
 ```
-  ✓ partial batch can be continued in a later call                       0.03s  
+  ✓ partial batch can be continued in a later call                       0.04s  
   ✓ mark items bought ignores unknown item ids                           0.02s  
   ✓ mark items bought throws when insufficient stock                     0.03s  
   ✓ mark items bought does not decrement stock on failure                0.03s  
   ✓ mark items bought throws when product not available                  0.03s  
-  ✓ mark items bought is idempotent                                      0.03s  
+  ✓ mark items bought is idempotent                                      0.04s  
   ✓ mark items bought creates activity log                               0.03s  
   ✓ mark items bought throws when order is cancelled                     0.03s  
   ✓ mark items bought rejects order that is no longer preparing          0.03s  
-  ✓ mark items bought rejects delivered order                            0.02s  
+  ✓ mark items bought rejects delivered order                            0.03s  
   ✓ order cancellation releases reserved quantity                        0.03s  
   ✓ order cancellation does not affect stock quantity                    0.03s  
   ✓ lost cancel race does not release reservations                       0.03s  
@@ -42,11 +42,11 @@
   ✓ reservation counts against availability during placement             0.03s  
   ✓ reservation prevents fulfillment when stock is reserved              0.03s  
   ✓ store product not available prevents order placement                 0.02s  
-  ✓ insufficient stock prevents order placement                          0.02s  
+  ✓ insufficient stock prevents order placement                          0.03s  
   ✓ order placement rejects when stock insufficient                      0.02s  
   ✓ multiple orders decrement stock independently                        0.04s  
   ✓ second order fails when stock depleted by first                      0.04s  
-  ✓ mark items bought uses lock for update                               0.04s  
+  ✓ mark items bought uses lock for update                               0.05s  
   ✓ concurrent mark items bought results are consistent                  0.04s  
 
    PASS  Tests\Unit\StoreContextTest
@@ -63,7 +63,7 @@
   ✓ customer can save list update and delete addresses                   0.06s  
   ✓ exactly one default is kept and reassignment demotes the previous h… 0.04s  
   ✓ addresses require coordinates because checkout resolves stores from… 0.02s  
-  ✓ addresses are scoped to their owner                                  0.03s  
+  ✓ addresses are scoped to their owner                                  0.04s  
 
    PASS  Tests\Feature\AdminMessageReplyTest
   ✓ developer can reply to contact message                               0.03s  
@@ -78,23 +78,23 @@
   ✓ product without history is deleted                                   0.02s  
 
    PASS  Tests\Feature\ApiRouteContractTest
-  ✓ every api route points at an existing controller method              0.01s  
+  ✓ every api route points at an existing controller method              0.02s  
   ✓ no api route is registered twice for the same method                 0.01s  
 
    PASS  Tests\Feature\AuditLogScopingTest
   ✓ store manager sees only their stores audit logs                      0.03s  
   ✓ entity audit endpoint hides cross store entities                     0.03s  
-  ✓ rider audits are scoped by store                                     0.03s  
+  ✓ rider audits are scoped by store                                     0.04s  
 
    PASS  Tests\Feature\AuthSecurityTest
   ✓ suspended user is rejected with a live token                         0.03s  
   ✓ suspended rider cannot claim orders                                  0.02s  
   ✓ forgot password response does not reveal account existence           0.42s  
-  ✓ password reset revokes all existing tokens                           0.03s  
-  ✓ refresh rotates the token                                            0.02s  
+  ✓ password reset revokes all existing tokens                           0.04s  
+  ✓ refresh rotates the token                                            0.03s  
 
    PASS  Tests\Feature\AuthTest
-  ✓ user can register                                                    0.03s  
+  ✓ user can register                                                    0.04s  
   ✓ user can login                                                       0.02s  
   ✓ login fails with invalid credentials                                 0.01s  
   ✓ authenticated user can access user endpoint                          0.02s  
@@ -112,8 +112,8 @@
   ✓ sync returns merged cart so device can replace draft                 0.02s  
 
    PASS  Tests\Feature\DatabaseSeedingTest
-  ✓ seed creates demo logins for every console                           3.98s  
-  ✓ seeding twice is idempotent                                          4.81s  
+  ✓ seed creates demo logins for every console                           4.35s  
+  ✓ seeding twice is idempotent                                          4.53s  
 
    PASS  Tests\Feature\EmailVerificationFlowTest
   ✓ registration sends the verification email with an spa link           0.02s  
@@ -124,7 +124,7 @@
   ✓ the application returns a successful response                        0.01s  
 
    PASS  Tests\Feature\FavoritesApiTest
-  ✓ customer can favorite and list                                       0.02s  
+  ✓ customer can favorite and list                                       0.03s  
   ✓ duplicate favorite is 409 not 500                                    0.02s  
   ✓ unfavorite is idempotent                                             0.02s  
   ✓ check endpoint reports favorited state                               0.02s  
@@ -137,43 +137,43 @@
   ✓ nearest store endpoint reports a store or null                       0.02s  
 
    PASS  Tests\Feature\HistoryCascadeGuardsTest
-  ✓ category with products cannot be deleted                             0.03s  
+  ✓ category with products cannot be deleted                             0.02s  
   ✓ empty category can be deleted                                        0.02s  
   ✓ store with delivered order history cannot be deleted                 0.02s  
   ✓ store without history can be deleted                                 0.02s  
-  ✓ rider with reviews cannot be deleted                                 0.12s  
+  ✓ rider with reviews cannot be deleted                                 0.02s  
   ✓ product stock rows are not orphaned by category delete guard         0.02s  
 
    PASS  Tests\Feature\ManualDispatchTest
   ✓ manager can list pending dispatch orders for their store             0.03s  
   ✓ manager can manually dispatch order to specific rider                0.04s  
   ✓ operations assign rejects order from another store                   0.03s  
-  ✓ operations suggestion hides other stores orders                      0.02s  
+  ✓ operations suggestion hides other stores orders                      0.03s  
   ✓ dispatch allows rider from another store                             0.04s  
   ✓ manager can reassign already claimed order                           0.06s  
   ✓ dispatch rejects rider with deactivated account                      0.03s  
   ✓ reassign rejects rider already at concurrent cap                     0.07s  
   ✓ pending list applies exact radius within the search box              0.03s  
-  ✓ reassign rejects order from different store                          0.07s  
-  ✓ developer requires explicit store id                                 0.03s  
+  ✓ reassign rejects order from different store                          0.05s  
+  ✓ developer requires explicit store id                                 0.02s  
 
    PASS  Tests\Feature\MigrationRollbackTest
-  ✓ nullable store id migration can roll back                            0.25s  
+  ✓ nullable store id migration can roll back                            0.28s  
 
    PASS  Tests\Feature\OrderLifecycleApiTest
-  ✓ customer order journey list show cancel                              3.11s  
+  ✓ customer order journey list show cancel                              3.19s  
   ✓ customer cannot view another customers order                         0.05s  
   ✓ cancelling twice is rejected                                         0.06s  
 
    PASS  Tests\Feature\OrderPlacementTest
   ✓ customer can place an order                                          0.06s  
-  ✓ order with no available rider enters retrying and keeps cart         0.04s  
+  ✓ order with no available rider enters retrying and keeps cart         0.05s  
   ✓ order defaults to cash on delivery                                   0.06s  
-  ✓ placing an order clears the server cart                              0.06s  
+  ✓ placing an order clears the server cart                              0.07s  
   ✓ failed placement leaves server cart intact                           0.02s  
   ✓ order requires delivery coordinates                                  0.02s  
   ✓ customer can view own order                                          0.02s  
-  ✓ customer cannot view others order                                    0.02s  
+  ✓ customer cannot view others order                                    0.03s  
   ✓ customer can cancel own order                                        0.02s  
   ✓ customer cannot cancel others order                                  0.02s  
   ✓ customer cannot cancel out for delivery order                        0.02s  
@@ -197,21 +197,21 @@
   ✓ pickup orders do not appear in the store dispatch queue              0.04s  
   ✓ pickup with stray delivery fields stores nulls                       0.04s  
   ✓ pickup order money cents mirrors are exact                           0.04s  
-  ✓ pickup orders never appear in rider available orders                 0.04s  
+  ✓ pickup orders never appear in rider available orders                 0.03s  
   ✓ rider cannot claim a pickup order                                    0.03s  
   ✓ customer can cancel a ready pickup order before collecting           0.02s  
 
    PASS  Tests\Feature\ProductCarouselTest
   ✓ trending endpoint is not shadowed by slug route                      0.03s  
-  ✓ popular returns delivered order products                             0.02s  
+  ✓ popular returns delivered order products                             0.03s  
   ✓ new arrivals returns recent products without error                   0.02s  
   ✓ trending returns empty array when no orders                          0.01s  
 
    PASS  Tests\Feature\ProductIndexTest
-  ✓ index respects per page param                                        0.06s  
+  ✓ index respects per page param                                        0.05s  
   ✓ index filters by multiple category slugs                             0.04s  
   ✓ index defaults to twenty per page                                    0.05s  
-  ✓ index caps per page at one hundred                                   0.15s  
+  ✓ index caps per page at one hundred                                   0.16s  
   ✓ index ignores non numeric per page                                   0.05s  
 
    PASS  Tests\Feature\ProfileApiTest
@@ -228,7 +228,7 @@
   ✓ validate rejects expired codes                                       0.02s  
   ✓ validate rejects orders below the minimum                            0.01s  
   ✓ validate computes percentage discount                                0.02s  
-  ✓ validate caps fixed discounts at the subtotal                        0.02s  
+  ✓ validate caps fixed discounts at the subtotal                        0.01s  
   ✓ apply increments used count                                          0.02s  
   ✓ apply can never overshoot max uses                                   0.02s  
   ✓ apply redeems the final allowed use                                  0.02s  
@@ -244,7 +244,7 @@
    PASS  Tests\Feature\PushNotificationTest
   ✓ cancelled transition pushes notification                             0.02s  
   ✓ retrying transition pushes notification                              0.02s  
-  ✓ delivered transition pushes notification                             0.02s  
+  ✓ delivered transition pushes notification                             0.01s  
   ✓ notification listener is queued not synchronous                      0.01s  
   ✓ no push without token                                                0.02s  
 
@@ -256,11 +256,11 @@
    PASS  Tests\Feature\ReconcileReservationsTest
   ✓ consistent ledger is left alone                                      0.03s  
   ✓ drift is corrected                                                   0.02s  
-  ✓ oversubscribed stock reconciles to clamped value without failing     0.02s  
+  ✓ oversubscribed stock reconciles to clamped value without failing     0.03s  
   ✓ bought items and terminal orders do not count                        0.02s  
 
    PASS  Tests\Feature\RelatedProductsTest
-  ✓ related endpoint returns same category first and excludes self       0.06s  
+  ✓ related endpoint returns same category first and excludes self       0.05s  
   ✓ bought together beats plain category siblings                        0.05s  
   ✓ sparse results are backfilled with popular products                  0.05s  
   ✓ related returns 404 for unknown or inactive slug                     0.02s  
@@ -268,24 +268,24 @@
    PASS  Tests\Feature\RiderLocationTest
   ✓ customer can view rider location for their order                     0.03s  
   ✓ returns null when order has no rider                                 0.02s  
-  ✓ returns null when rider has no location                              0.03s  
+  ✓ returns null when rider has no location                              0.02s  
   ✓ cannot view other customers order rider location                     0.03s  
   ✓ returns most recent location when multiple exist                     0.03s  
   ✓ rider can update location                                            0.02s  
   ✓ rider location update sets recorded at                               0.02s  
-  ✓ rider location update overwrites previous                            0.03s  
-  ✓ non rider cannot update location                                     0.01s  
+  ✓ rider location update overwrites previous                            0.02s  
+  ✓ non rider cannot update location                                     0.02s  
   ✓ location update requires valid coordinates                           0.02s  
 
    PASS  Tests\Feature\RiderOrderGuardApiTest
-  ✓ mark items bought returns 422 and keeps stock when order cancelled   0.05s  
+  ✓ mark items bought returns 422 and keeps stock when order cancelled   0.04s  
   ✓ out for delivery returns 422 and order stays cancelled               0.04s  
-  ✓ rider cannot advance out for delivery with unbought items            0.02s  
+  ✓ rider cannot advance out for delivery with unbought items            0.03s  
 
    PASS  Tests\Feature\RoutingEndpointTest
   ✓ geometry returns metrics even when osrm is unavailable               0.02s  
-  ✓ geometry returns osrm geometry and metrics                           0.02s  
-  ✓ route endpoint shape is unchanged                                    0.02s  
+  ✓ geometry returns osrm geometry and metrics                           0.01s  
+  ✓ route endpoint shape is unchanged                                    0.01s  
   ✓ geometry rejects out of range coordinates                            0.01s  
 
    PASS  Tests\Feature\SalesAndBannersTest
@@ -293,22 +293,22 @@
   ✓ store operator sees only own store sales                             0.04s  
   ✓ owner cannot touch another store sale                                0.03s  
   ✓ owner create forces own store                                        0.03s  
-  ✓ developer can create chain wide sale                                 0.02s  
+  ✓ developer can create chain wide sale                                 0.03s  
   ✓ product sync attaches and detaches                                   0.06s  
   ✓ product sync cannot touch foreign store sale                         0.03s  
-  ✓ public special show returns sale with products                       0.03s  
+  ✓ public special show returns sale with products                       0.04s  
   ✓ public special show 404 for unknown slug                             0.02s  
-  ✓ public special show includes ended sale with flag                    0.02s  
+  ✓ public special show includes ended sale with flag                    0.03s  
   ✓ sale banner gets sale cta on every slide                             0.03s  
   ✓ standalone banner stays standalone                                   0.03s  
-  ✓ public banners expose special summary for sale banners               0.02s  
+  ✓ public banners expose special summary for sale banners               0.03s  
   ✓ owner cannot link another stores sale                                0.03s  
 
    FAIL  Tests\Feature\SeededCatalogueMediaTest
-  ⨯ every seeded product image resolves to a real file                   2.22s  
-  ⨯ every seeded product images array resolves to real files             2.23s  
-  ✓ no catalogue endpoint emits a dead or svg media url                  2.36s  
-  ✓ store inventory emits only resolvable media urls                     2.29s  
+  ⨯ every seeded product image resolves to a real file                   2.24s  
+  ⨯ every seeded product images array resolves to real files             2.26s  
+  ✓ no catalogue endpoint emits a dead or svg media url                  2.38s  
+  ✓ store inventory emits only resolvable media urls                     2.32s  
 
    PASS  Tests\Feature\SpecialsEndpointTest
   ✓ index lists only active specials within their window                 0.02s  
@@ -421,6 +421,6 @@ Failed asserting that two arrays are identical.
 
 
   Tests:    2 failed, 475 passed (3121 assertions)
-  Duration: 37.02s
+  Duration: 37.14s
 
 ```
