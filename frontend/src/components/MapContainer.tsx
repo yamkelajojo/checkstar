@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import "./MapContainer.css";
+import { getTileProvider, tileLayerOptions } from "@/lib/mapTiles";
 
 export interface MapMarker {
   position: [number, number];
@@ -18,9 +19,6 @@ export interface MapContainerProps {
   onMapReady?: (map: any) => void;
   fitBounds?: [number, number][];
 }
-
-const TILE_URL = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
-const TILE_ATTRIBUTION = "&copy; OpenStreetMap contributors";
 
 const DURBAN_CENTER: [number, number] = [-29.825, 31.0];
 const DEFAULT_ZOOM = 12.5;
@@ -112,13 +110,12 @@ export default function MapContainer({
         attributionControl: true,
       });
 
-      const tileUrl = TILE_URL;
-      const tileAttr = TILE_ATTRIBUTION;
+      // Resolved per mount (not at module scope) so the provider follows the
+      // environment the app actually boots in — and so an operator can add a
+      // token without a rebuild touching this component.
+      const provider = getTileProvider();
 
-      const tileLayer = L.tileLayer(tileUrl, {
-        attribution: tileAttr,
-        maxZoom: 18,
-      });
+      const tileLayer = L.tileLayer(provider.url, tileLayerOptions(provider));
 
       // Graceful degradation: if tiles keep failing (offline, blocked hosts,
       // firewall) say so on the map instead of leaving a black rectangle.

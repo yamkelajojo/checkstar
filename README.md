@@ -15,6 +15,9 @@ Durban supermarket chain — web (Next.js) + delivery (Laravel) + mobile (Expo).
 - `CONTEXT.md` — ubiquitous language (Customer, Rider, Store, Dispatch, etc.)
 - `mobile/README.md` — run instructions, UX map + SDK pin changelog
 - `mobile/AGENTS.md` — versioned Expo docs link
+- `docs/adr/` — architecture decision records (Expo SDK, Tamagui, map providers)
+- `docs/design-critique-2026-09-27.md` — whole-system cohesion critique + fix log
+- `docs/test-traceability.md` — requirement → test traceability matrix (V-model)
 
 ## Quick start
 
@@ -60,4 +63,16 @@ npm run test:backend   # or any single suite
 
 Gate evidence and the exact reproduction commands for each acceptance gate live in
 [`GATES.md`](./GATES.md).
+
+### Optional environment (nothing here is required to run the prototype)
+
+| Variable | Where | Default | Effect |
+| --- | --- | --- | --- |
+| `NEXT_PUBLIC_API_URL` | `frontend/.env.local` | `http://localhost:8000` | Backend origin the web client calls (also used to rewrite media URLs to same-origin paths). |
+| `NEXT_PUBLIC_MAPBOX_TOKEN` | `frontend/.env.local` | *(unset)* | When set, web maps switch from OpenStreetMap to Mapbox raster tiles. Unset = OSM, no account needed. See [`docs/adr/0003-map-providers.md`](./docs/adr/0003-map-providers.md). |
+
+Mapbox on **mobile** is deliberately not offered: `@rnmapbox/maps` cannot run in
+Expo Go, and the fleet is pinned to Expo Go 57. If you do add a token, restrict it
+to your deployment origin in the Mapbox dashboard — `NEXT_PUBLIC_*` values ship in
+the browser bundle.
 
