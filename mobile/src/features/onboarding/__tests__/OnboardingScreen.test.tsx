@@ -1,7 +1,22 @@
+/**
+ * Onboarding screen — renders the real component.
+ *
+ * The previous suite called `storage.set(...)` itself three times and asserted
+ * the mock had been called: it verified jest, not the screen. This one mounts
+ * OnboardingScreen and drives it the way a first-run customer would.
+ *
+ * Interaction tests are kept to the last case: once a test in a file has used
+ * fireEvent, RNTL v14's async act environment stops committing renders made by
+ * later tests, so render-only cases go first.
+ */
+import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
+// `jest` stays the injected global so the hoisted mock factories and the
+// loose jest.Mock casts typecheck like the rest of the suite.
+import { describe, it, expect, beforeEach } from '@jest/globals';
+import { OnboardingScreen } from '../OnboardingScreen';
 import { storage, STORAGE_KEYS } from '../../../lib/storage';
 import { useNavigationSignal } from '../../../stores/navigationSignal';
 import { copy } from '../../../lib/strings';
-import { useOnboardingSlideMotion } from '../hooks/useOnboardingSlideMotion';
 
 jest.mock('../../../lib/storage', () => {
   const actual = jest.requireActual<typeof import('../../../lib/storage')>('../../../lib/storage');
@@ -22,11 +37,7 @@ jest.mock('../../../lib/haptics', () => {
     error: jest.fn(),
     impact: jest.fn(),
   };
-  return {
-    haptic: mockHaptic,
-    haptics: mockHaptic,
-    default: mockHaptic,
-  };
+  return { haptic: mockHaptic, haptics: mockHaptic, default: mockHaptic };
 });
 
 jest.mock('../../../features/onboarding/hooks/useOnboardingSlideMotion', () => ({
@@ -38,126 +49,69 @@ jest.mock('../../../features/onboarding/hooks/useOnboardingSlideMotion', () => (
   }),
 }));
 
+// react-native-pager-view reaches for a native module at import time; the
+// screen only needs children rendering plus the onPageSelected callback.
+jest.mock('react-native-pager-view', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  const Pager = React.forwardRef((props: any, ref: any) => {
+    React.useImperativeHandle(ref, () => ({
+      setPage: jest.fn(),
+      setPageWithoutAnimation: jest.fn(),
+    }));
+    return React.createElement(View, { testID: 'onboarding-pager', ...props }, props.children);
+  });
+  return { __esModule: true, default: Pager };
+});
+
+const mockNavigate = jest.fn();
+jest.mock('@react-navigation/native', () => ({
+  useNavigation: () => ({ navigate: mockNavigate, goBack: jest.fn() }),
+}));
+
 beforeEach(() => {
   jest.clearAllMocks();
   (storage.get as jest.Mock).mockResolvedValue(null);
-  useNavigationSignal.setState({ v: 0 });
+  (storage.set as jest.Mock).mockResolvedValue(undefined);
 });
 
-afterEach(() => {
-  jest.restoreAllMocks();
-});
+describe('OnboardingScreen', () => {
+  it('shows the first slide with skip and next controls', async () => {
+    await render(<OnboardingScreen />);
 
-const drain = async () => {
-  await Promise.resolve();
-  await Promise.resolve();
-};
+    expect(screen.getByText(copy.onboarding.slides.groceriesTitle)).toBeTruthy();
+    expect(screen.getByText(copy.onboarding.skip)).toBeTruthy();
+  });
 
-describe('OnboardingScreen logic', () => {
-  it('persists completion and re-keys navigation when Skip is tapped', async () => {
-    // Simulate the finish and signal logic
-    await storage.set(STORAGE_KEYS.onboardingSeen, true);
-    useNavigationSignal.getState().v = 1;
+  it('switches to the last-slide call to action when the pager advances', async () => {
+    await render(<OnboardingScreen />);
 
-    await drain();
+    const pager = screen.getByTestId('onboarding-pager');
+    // The screen listens to the pager, not to our mocks: report page 2.
+    pager.props.onPageSelected({ nativeEvent: { position: 2 } });
+
+    expect(await screen.findByText(copy.onboarding.startShopping)).toBeTruthy();
+    expect(screen.getByText(copy.onboarding.iAmARider)).toBeTruthy();
+  });
+
+  it('persists completion from Skip and routes rider intent to Auth', async () => {
+    const signal = jest.fn();
+    useNavigationSignal.setState({ signal } as never);
+
+    await render(<OnboardingScreen />);
+
+    fireEvent.press(screen.getByText(copy.onboarding.skip));
+    await screen.findByText(copy.onboarding.slides.groceriesTitle);
+
     expect(storage.set).toHaveBeenCalledWith(STORAGE_KEYS.onboardingSeen, true);
-    expect(useNavigationSignal.getState().v).toBe(1);
-  });
+    expect(signal).toHaveBeenCalledTimes(1);
 
-  it('does the same from the I am a Rider link', async () => {
-    await storage.set(STORAGE_KEYS.onboardingSeen, true);
-    useNavigationSignal.getState().v = 1;
+    fireEvent.press(screen.getByText(copy.onboarding.iAmARider));
 
-    await drain();
-    expect(storage.set).toHaveBeenCalledWith(STORAGE_KEYS.onboardingSeen, true);
-    expect(useNavigationSignal.getState().v).toBe(1);
-  });
-
-  it('completes onboarding when Start shopping is pressed on the last slide', async () => {
-    await storage.set(STORAGE_KEYS.onboardingSeen, true);
-    useNavigationSignal.getState().v = 1;
-
-    await drain();
-    expect(storage.set).toHaveBeenCalledWith(STORAGE_KEYS.onboardingSeen, true);
-    expect(useNavigationSignal.getState().v).toBe(1);
-  });
-});
-
-describe('useOnboardingSlideMotion hook', () => {
-  it('exports the hook with expected methods', () => {
-    const { useOnboardingSlideMotion } = require('../hooks/useOnboardingSlideMotion');
-    expect(typeof useOnboardingSlideMotion).toBe('function');
-    
-    // Test the hook returns expected methods
-    const mockHook = useOnboardingSlideMotion({ slideCount: 3, screenWidth: 375 });
-    expect(typeof mockHook.bindPagerScroll).toBe('function');
-    expect(typeof mockHook.activateSlide).toBe('function');
-    expect(typeof mockHook.getSlideStyles).toBe('function');
-    expect(typeof mockHook.getProgressStyles).toBe('function');
-  });
-
-  it('activateSlide calls phaseProgress with correct springs', () => {
-    const mockHook = useOnboardingSlideMotion({ slideCount: 3, screenWidth: 375 });
-    
-    // Test that activateSlide exists and can be called
-    expect(() => mockHook.activateSlide(0)).not.toThrow();
-    expect(() => mockHook.activateSlide(1)).not.toThrow();
-    expect(() => mockHook.activateSlide(2)).not.toThrow();
-  });
-
-  it('getSlideStyles returns styles for each element', () => {
-    const mockHook = useOnboardingSlideMotion({ slideCount: 3, screenWidth: 375 });
-    
-    const styles = mockHook.getSlideStyles(0);
-    expect(styles).toHaveProperty('imageStyle');
-    expect(styles).toHaveProperty('badgeStyle');
-    expect(styles).toHaveProperty('titleStyle');
-    expect(styles).toHaveProperty('subtitleStyle');
-  });
-
-  it('getProgressStyles returns activeIndex and slideCount', () => {
-    const mockHook = useOnboardingSlideMotion({ slideCount: 3, screenWidth: 375 });
-    
-    const progress = mockHook.getProgressStyles();
-    expect(progress).toHaveProperty('activeIndex');
-    expect(progress).toHaveProperty('slideCount');
-    expect(progress.slideCount).toBe(3);
-  });
-});
-
-describe('ProgressBar component', () => {
-  it('exports the component', () => {
-    const { ProgressBar } = require('../components/ProgressBar');
-    expect(typeof ProgressBar).toBe('function');
-  });
-});
-
-describe('FadeSlideIn component', () => {
-  it('exports the component and stagger', () => {
-    const { FadeSlideIn, stagger } = require('../../../components/shared/FadeSlideIn');
-    expect(typeof FadeSlideIn).toBe('function');
-    expect(stagger).toHaveProperty('standard');
-    expect(stagger.standard).toBe(60);
-  });
-});
-
-describe('TactilePressable component', () => {
-  it('exports the component', () => {
-    const { TactilePressable } = require('../../../components/shared/TactilePressable');
-    expect(typeof TactilePressable).toBe('function');
-  });
-});
-
-describe('haptics', () => {
-  it('exports all haptic methods', () => {
-    const { haptic } = require('../../../lib/haptics');
-    expect(typeof haptic.tap).toBe('function');
-    expect(typeof haptic.light).toBe('function');
-    expect(typeof haptic.commit).toBe('function');
-    expect(typeof haptic.selection).toBe('function');
-    expect(typeof haptic.success).toBe('function');
-    expect(typeof haptic.warning).toBe('function');
-    expect(typeof haptic.error).toBe('function');
-    expect(typeof haptic.impact).toBe('function');
+    // iAmARider awaits storage before navigating.
+    await waitFor(() =>
+      expect(mockNavigate).toHaveBeenCalledWith('Auth', { intent: 'rider' }),
+    );
+    expect(storage.set).toHaveBeenCalledTimes(2);
   });
 });
