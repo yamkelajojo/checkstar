@@ -12,11 +12,13 @@ import type { Order, OrderActivityLog } from '@/types'
 import { statusConfig, paymentStatusConfig } from '@/lib/motion/variants'
 import OrderTrackingMap from '@/components/OrderTrackingMap'
 import { formatZar } from '@/lib/money'
+import { formatDateTime } from '@/lib/dates'
+import { humanize } from '@/lib/labels'
 
 function cancelReasonLabel(reason: string | null): string {
   if (reason === 'order_not_cancellable') return "Can't cancel — order already out for delivery"
   if (reason === 'order_not_claimable' || reason === 'rider_not_eligible') return 'Dispatch failed — check rider eligibility'
-  if (reason) return reason.replace(/_/g, ' ')
+  if (reason) return humanize(reason)
   return "This order can't be cancelled right now."
 }
 
@@ -34,9 +36,9 @@ function OrderTimeline({ logs }: { logs?: OrderActivityLog[] }) {
             </div>
             <div className={`pb-4 ${isLast ? '' : ''}`}>
               <p className="text-sm text-gray-700">
-                {log.event_type.replace(/_/g, ' ')}
+                {humanize(log.event_type)}
               </p>
-              <p className="text-xs text-gray-400">{new Date(log.created_at).toLocaleString('en-ZA')}</p>
+              <p className="text-xs text-gray-400">{formatDateTime(log.created_at)}</p>
             </div>
           </div>
         )
@@ -181,7 +183,7 @@ export default function OrderDetailClient({ id }: { id: string }) {
             <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
               <div>
                 <h1 className="font-display text-2xl font-bold">Order #{order.order_number}</h1>
-                <p className="text-sm text-gray-400">{new Date(order.created_at).toLocaleString('en-ZA')}</p>
+                <p className="text-sm text-gray-400">{formatDateTime(order.created_at)}</p>
               </div>
               <div className="flex gap-2">
                 <span className={`text-xs font-medium px-3 py-1.5 rounded-full ${statusCfg.bg} ${statusCfg.color} flex items-center gap-1.5`}>

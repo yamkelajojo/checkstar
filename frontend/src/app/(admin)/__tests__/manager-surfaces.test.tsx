@@ -209,7 +209,7 @@ describe("AdminDashboardClient", () => {
     apiMocks.getMessages.mockResolvedValue({ data: [] });
     renderWithProviders(<AdminDashboardClient />);
     expect(screen.getByText("Staff Dashboard")).toBeInTheDocument();
-    expect(screen.getByText("Store Owner")).toBeInTheDocument();
+    expect(screen.getByText("Store owner")).toBeInTheDocument();
     expect(
       screen.getByText("No store linked to your account"),
     ).toBeInTheDocument();

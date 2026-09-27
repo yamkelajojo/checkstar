@@ -8,6 +8,8 @@ import { useAuthStore } from '@/stores/auth-store'
 import { api } from '@/lib/api'
 import { usePendingDispatch, useDispatchRiders } from '@/lib/query'
 import { useQueryClient } from '@tanstack/react-query'
+import { formatDateTime } from '@/lib/dates'
+import { orderStatusLabel } from '@/lib/labels'
 
 const allowedRoles = ['store_manager', 'logistics_officer', 'store_owner', 'developer']
 
@@ -167,13 +169,13 @@ export default function DispatchConsoleClient() {
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
                     <p className="font-mono text-sm font-semibold">#{order.order_number}</p>
-                    <p className="text-xs text-gray-400">{new Date(order.created_at).toLocaleString('en-ZA')} · {order.status} · {order.items?.length ?? 0} items</p>
+                    <p className="text-xs text-gray-400">{formatDateTime(order.created_at)} · {orderStatusLabel(order.status)} · {order.items?.length ?? 0} items</p>
                     <p className="text-xs text-gray-500 mt-1 flex items-center gap-1"><Bike size={12} /> {order.delivery_address ?? 'No address'}</p>
                     {order.rider_id ? (
                       <p className="text-xs text-gray-400 mt-0.5">Current rider: #{order.rider_id}</p>
                     ) : null}
                   </div>
-                  <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${order.status === 'retrying' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}`}>{order.status}</span>
+                  <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${order.status === 'retrying' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}`}>{orderStatusLabel(order.status)}</span>
                 </div>
                 <div className="mt-4 flex flex-wrap gap-3">
                   {order.rider_id ? (

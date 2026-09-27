@@ -41,6 +41,7 @@ import { api } from "@/lib/api";
 import EmptyState from "@/components/admin/EmptyState";
 import { formatZar } from '@/lib/money'
 import { formatDate } from '@/lib/dates'
+import { roleLabel } from '@/lib/labels'
 
 const SERVICE_ORDER: Array<{ key: string; label: string }> = [
   { key: "api", label: "API" },
@@ -84,9 +85,9 @@ function StaffDashboard({
 }) {
   const myStore = resolveUserStore(user);
   const storeId = myStore?.id ?? null;
-  const roleLabel = user.role
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+  // lib/labels owns role vocabulary (was an inline snake_case transform that
+  // produced "Logistics Officer" here and "logistics officer" elsewhere).
+  const role = roleLabel(user.role);
 
   const { data: pending = [], isLoading: pendingLoading } = usePendingDispatch(
     storeId ?? undefined,
@@ -153,7 +154,7 @@ function StaffDashboard({
               Staff Dashboard
             </h1>
             <span className="inline-flex items-center gap-1 px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium">
-              {roleLabel}
+              {role}
             </span>
           </div>
           <p className="text-gray-500 text-sm">
@@ -180,7 +181,7 @@ function StaffDashboard({
               Staff Dashboard
             </h1>
             <span className="inline-flex items-center gap-1 px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium">
-              {roleLabel}
+              {role}
             </span>
           </div>
           <p className="text-gray-500 text-sm">

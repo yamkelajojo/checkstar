@@ -33,6 +33,7 @@ import {
 import Link from "next/link";
 import type { Order } from "@/types";
 import { formatZar } from '@/lib/money'
+import { formatDateTime } from '@/lib/dates'
 
 type StatusFilter = "" | Order["status"];
 
@@ -397,7 +398,7 @@ export default function StoreOrdersClient() {
                       <div className="flex flex-wrap items-center gap-3 text-xs text-gray-400 mt-1.5">
                         <span className="flex items-center gap-1">
                           <Calendar size={11} />
-                          {new Date(order.created_at).toLocaleString("en-ZA")}
+                          {formatDateTime(order.created_at)}
                         </span>
                         <span className="flex items-center gap-1">
                           <Package size={11} />

@@ -7,6 +7,7 @@
  */
 
 import type { Variants, Transition } from 'motion/react'
+import { customerStatusLabel } from '@/lib/labels'
 import { ease, time, shift, opacity, spring, stagger as staggerToken } from './tokens'
 
 
@@ -242,15 +243,18 @@ import {
 } from 'lucide-react'
 
 export const statusConfig: Record<string, { color: string; bg: string; icon: typeof ClockIcon; label: string }> = {
-  pending: { color: 'text-yellow-600', bg: 'bg-yellow-100', icon: ClockIcon, label: 'Pending' },
-  confirmed: { color: 'text-blue-600', bg: 'bg-blue-100', icon: AlertCircle, label: 'Confirmed' },
-  retrying: { color: 'text-amber-600', bg: 'bg-amber-100', icon: ClockIcon, label: 'Finding Rider' },
-  preparing: { color: 'text-indigo-600', bg: 'bg-indigo-100', icon: Package, label: 'Preparing' },
+  // Labels come from lib/labels so the customer register is defined once and
+  // matches the mobile app word for word (was 'Out for Delivery', 'Finding
+  // Rider' here and 'Out for delivery' everywhere else).
+  pending: { color: 'text-yellow-600', bg: 'bg-yellow-100', icon: ClockIcon, label: customerStatusLabel('pending') },
+  confirmed: { color: 'text-blue-600', bg: 'bg-blue-100', icon: AlertCircle, label: customerStatusLabel('confirmed') },
+  retrying: { color: 'text-amber-600', bg: 'bg-amber-100', icon: ClockIcon, label: customerStatusLabel('retrying') },
+  preparing: { color: 'text-indigo-600', bg: 'bg-indigo-100', icon: Package, label: customerStatusLabel('preparing') },
   // Pickup fulfilment only: order packed, waiting at the store for collection.
-  ready: { color: 'text-orange-600', bg: 'bg-orange-100', icon: ShoppingBag, label: 'Ready for Pickup' },
-  out_for_delivery: { color: 'text-purple-600', bg: 'bg-purple-100', icon: Bike, label: 'Out for Delivery' },
-  delivered: { color: 'text-green-600', bg: 'bg-green-100', icon: CheckCircle, label: 'Delivered' },
-  cancelled: { color: 'text-red-600', bg: 'bg-red-100', icon: XCircle, label: 'Cancelled' },
+  ready: { color: 'text-orange-600', bg: 'bg-orange-100', icon: ShoppingBag, label: customerStatusLabel('ready') },
+  out_for_delivery: { color: 'text-purple-600', bg: 'bg-purple-100', icon: Bike, label: customerStatusLabel('out_for_delivery') },
+  delivered: { color: 'text-green-600', bg: 'bg-green-100', icon: CheckCircle, label: customerStatusLabel('delivered') },
+  cancelled: { color: 'text-red-600', bg: 'bg-red-100', icon: XCircle, label: customerStatusLabel('cancelled') },
 }
 
 export const paymentStatusConfig: Record<string, { color: string; bg: string; label: string }> = {
