@@ -45,7 +45,8 @@ Scope: resolve the approved manager QA issues without breaking Store Context, gu
       CHECK: npm --prefix mobile test -- --runInBand src/components/shared/__tests__/RouteMap.test.tsx src/components/__tests__/LiveDeliveryMap.test.tsx
       EXPECT: /Tests:\s+\d+\s+passed/
       EVIDENCE: 2026-09-27 — Test Suites: 2 passed, Tests: 14 passed. Both files are also
-      green inside the full mobile run (70 suites / 659 passed).
+      green inside the full mobile run (70 suites / 650 passed after the theatre-test
+      replacements in 2b87b1d/ad2e222).
 
 - [x] G6: Web Live Operations map renders with tiles and operational layers; mobile map renders with markers on a supported device
       EVIDENCE: 2026-09-27 —
