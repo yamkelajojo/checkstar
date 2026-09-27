@@ -2,10 +2,7 @@ import { render, screen } from '@testing-library/react'
 import { describe, it, expect } from 'vitest'
 import React from 'react'
 
-vi.mock('motion/react', () => ({
-  motion: new Proxy({}, { get: (_t, tag) => tag }),
-  useReducedMotion: () => false,
-}))
+vi.mock('motion/react', async () => (await import('@/test/motion-mock')).default)
 
 const addItem = vi.fn()
 

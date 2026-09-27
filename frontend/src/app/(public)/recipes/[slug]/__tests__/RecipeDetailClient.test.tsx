@@ -41,11 +41,7 @@ vi.mock('@/stores/cart-store', () => ({
     selector({ addItem }),
 }))
 
-vi.mock('motion/react', () => ({
-  motion: new Proxy({}, { get: (_t, tag) => tag }),
-  AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  useReducedMotion: () => false,
-}))
+vi.mock('motion/react', async () => (await import('@/test/motion-mock')).default)
 
 import RecipeDetailClient from '../RecipeDetailClient'
 

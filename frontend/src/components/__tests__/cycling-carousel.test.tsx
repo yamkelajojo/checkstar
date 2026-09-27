@@ -13,15 +13,7 @@ import React from 'react'
  * fake timers advance the clock to reach every item.
  */
 
-vi.mock('motion/react', async () => {
-  const React = await Promise.resolve(import('react'))
-  return {
-    motion: new Proxy({}, { get: (_t, tag) => tag }),
-    AnimatePresence: ({ children }: { children: React.ReactNode }) =>
-      React.createElement(React.Fragment, null, children),
-    useReducedMotion: () => false,
-  }
-})
+vi.mock('motion/react', async () => (await import('@/test/motion-mock')).default)
 
 import CyclingCarousel from '../ui/cycling-carousel'
 import type { CycleItem } from '../ui/cycling-carousel'

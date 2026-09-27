@@ -35,6 +35,7 @@ const ANIMATION_PROPS = [
   "drag",
   "dragConstraints",
   "onAnimationComplete",
+  "custom",
 ] as const;
 
 function createMotionComponent(tag: string) {

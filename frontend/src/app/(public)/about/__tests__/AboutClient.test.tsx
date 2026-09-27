@@ -1,34 +1,14 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { createElement, type ReactNode } from "react";
 
-const motionProps = new Set([
-  "custom",
-  "initial",
-  "whileInView",
-  "animate",
-  "variants",
-  "viewport",
-  "transition",
-]);
-
-function motionElement(tag: string) {
-  return function MotionElementMock({
-    children,
-    ...props
-  }: Record<string, unknown> & { children?: ReactNode }) {
-    const domProps = Object.fromEntries(
-      Object.entries(props).filter(([key]) => !motionProps.has(key)),
-    );
-    return createElement(tag, domProps, children);
+vi.mock("motion/react", async () => {
+  const mock = (await import("@/test/motion-mock")).default;
+  return {
+    ...mock,
+    useScroll: () => ({ scrollYProgress: 0 }),
+    useSpring: (value: number) => value,
   };
-}
-
-vi.mock("motion/react", () => ({
-  motion: new Proxy({}, { get: (_target, tag: string) => motionElement(tag) }),
-  useScroll: () => ({ scrollYProgress: 0 }),
-  useSpring: (value: number) => value,
-}));
+});
 
 vi.mock("@/components/WritingText", () => ({
   default: ({ text }: { text: string }) => <span>{text}</span>,

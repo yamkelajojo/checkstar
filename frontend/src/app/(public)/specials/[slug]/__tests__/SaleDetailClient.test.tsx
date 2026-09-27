@@ -27,12 +27,8 @@ vi.mock('@/stores/cart-store', () => ({
 }))
 vi.mock('@/components/FavoriteHeart', () => ({ default: () => null }))
 
-// Same motion mock the ProductCard tests use: motion.div → plain div, which
-// sidesteps IntersectionObserver (whileInView) — absent from jsdom.
-vi.mock('motion/react', () => ({
-  motion: new Proxy({}, { get: (_t, tag) => tag }),
-  useReducedMotion: () => false,
-}))
+// Shared mock strips motion props so they never leak to the DOM.
+vi.mock('motion/react', async () => (await import('@/test/motion-mock')).default)
 
 import SaleDetailClient from '../SaleDetailClient'
 

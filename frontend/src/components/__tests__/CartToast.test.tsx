@@ -7,10 +7,7 @@ import { emitCartAdded } from '@/lib/cart-events'
 // AnimatePresence retains the exiting node through its animation, which never
 // completes under fake timers; the behaviour under test here is the
 // announce/dismiss cycle, not the exit animation (pinned visually elsewhere).
-vi.mock('motion/react', () => ({
-  motion: new Proxy({}, { get: (_t, tag) => (tag === 'div' ? 'div' : tag) }),
-  AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}))
+vi.mock('motion/react', async () => (await import('@/test/motion-mock')).default)
 
 describe('CartToast', () => {
   beforeEach(() => {

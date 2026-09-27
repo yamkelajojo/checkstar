@@ -47,12 +47,9 @@ vi.mock('next/navigation', () => ({
 }))
 
 vi.mock('motion/react', async () => {
-  const React = await Promise.resolve(import('react'))
+  const mock = (await import('@/test/motion-mock')).default
   return {
-    motion: new Proxy({}, { get: (_t, tag) => tag }),
-    AnimatePresence: ({ children }: { children: React.ReactNode }) =>
-      React.createElement(React.Fragment, null, children),
-    useReducedMotion: () => false,
+    ...mock,
     useSpring: (v: number) => ({ set: () => {}, on: () => () => {}, get: () => v, stop: () => {} }),
     useTransform: (mv: { get: () => number }, fn: (v: number) => string) => fn(mv.get()),
   }

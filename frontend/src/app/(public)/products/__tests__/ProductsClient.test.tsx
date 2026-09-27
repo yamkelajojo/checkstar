@@ -20,10 +20,7 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn() }),
 }))
 
-vi.mock('motion/react', () => ({
-  motion: new Proxy({}, { get: (_t, tag) => tag }),
-  useReducedMotion: () => false,
-}))
+vi.mock('motion/react', async () => (await import('@/test/motion-mock')).default)
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import ProductsClient from '../ProductsClient'

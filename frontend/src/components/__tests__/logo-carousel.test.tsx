@@ -16,11 +16,9 @@ import React from 'react'
 const mockReduce = vi.hoisted(() => vi.fn(() => false))
 
 vi.mock('motion/react', async () => {
-  const React = await Promise.resolve(import('react'))
+  const mock = (await import('@/test/motion-mock')).default
   return {
-    motion: new Proxy({}, { get: (_t, tag) => tag }),
-    AnimatePresence: ({ children }: { children: React.ReactNode }) =>
-      React.createElement(React.Fragment, null, children),
+    ...mock,
     useReducedMotion: () => mockReduce(),
   }
 })

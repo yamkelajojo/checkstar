@@ -14,8 +14,10 @@ import React from "react";
 vi.mock("motion/react", async () => (await import("@/test/motion-mock")).default);
 
 vi.mock("next/image", () => ({
-  default: (props: any) =>
-    React.createElement("img", { ...props, "data-next-image": "true" }),
+  default: (props: Record<string, unknown>) => {
+    const { fill, priority, sizes, quality, loader, unoptimized, placeholder, blurDataURL, ...domProps } = props as Record<string, unknown>
+    return React.createElement("img", { ...domProps, "data-next-image": "true" })
+  },
 }));
 
 const cart = vi.hoisted(() => ({

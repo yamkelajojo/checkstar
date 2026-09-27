@@ -11,15 +11,12 @@ import React from 'react'
 const mockReduce = vi.hoisted(() => vi.fn(() => false))
 
 vi.mock('motion/react', async () => {
-  const React = await Promise.resolve(import('react'))
+  const mock = (await import('@/test/motion-mock')).default
   return {
-    motion: new Proxy({}, { get: (_t, tag) => tag }),
+    ...mock,
     useReducedMotion: () => mockReduce(),
     useSpring: (v: number) => ({ set: () => {}, on: () => () => {}, get: () => v, stop: () => {} }),
     useTransform: (mv: { get: () => number }, fn: (v: number) => string) => fn(mv.get()),
-    // AnimatePresence passthrough so the static path stays simple too
-    AnimatePresence: ({ children }: { children: React.ReactNode }) =>
-      React.createElement(React.Fragment, null, children),
   }
 })
 

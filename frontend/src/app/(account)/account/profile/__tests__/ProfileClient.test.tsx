@@ -52,11 +52,7 @@ vi.mock('@/lib/api', () => ({
   },
 }))
 
-vi.mock('motion/react', () => ({
-  // Map motion.<tag> to the plain tag so buttons stay buttons.
-  motion: new Proxy({}, { get: (_t, tag) => tag }),
-  AnimatePresence: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
-}))
+vi.mock('motion/react', async () => (await import('@/test/motion-mock')).default)
 
 vi.mock('@/lib/delivery-coords', () => ({
   getDeliveryCoords: vi.fn().mockResolvedValue({ latitude: -29.85, longitude: 31.02, usedFallback: false }),
