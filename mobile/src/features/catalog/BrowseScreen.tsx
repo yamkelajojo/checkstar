@@ -3,6 +3,7 @@ import { View, Text, TextInput, Pressable } from 'react-native';
 import { useRoute } from '@react-navigation/native';
 import { PackageSearch, Search, SearchX, WifiOff, RefreshCw } from 'lucide-react-native';
 import { useTheme } from '../../theme';
+import { brand } from '../../theme/colors';
 import { semanticSpacing, semanticRadius } from '../../theme/spacing';
 import { useCategories, useInfiniteProducts } from './hooks';
 import { ProductGrid } from '../../components/shared/ProductGrid';
@@ -169,7 +170,7 @@ export function BrowseScreen() {
               disabled={isFetching}
               accessibilityLabel="Retry loading products"
               style={{
-                backgroundColor: theme.colors.interactive?.primary ?? '#EB6522',
+                backgroundColor: brand.orange,
                 paddingHorizontal: semanticSpacing.lg,
                 paddingVertical: semanticSpacing.sm,
                 borderRadius: semanticRadius.buttonPill,

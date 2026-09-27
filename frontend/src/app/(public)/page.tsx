@@ -91,7 +91,7 @@ export default function HomePage() {
                 >
                   <Link
                     href="/products"
-                    className="inline-flex items-center gap-2 bg-gray-900 text-white px-7 py-3.5 rounded-[14px] font-semibold hover:bg-black transition-all shadow-[0_4px_12px_rgba(0,0,0,0.15),0_0_0_1px_rgba(0,0,0,0.05)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.2)] duration-200"
+                    className="inline-flex items-center gap-2 bg-gray-900 text-white px-7 py-3.5 rounded-button font-semibold hover:bg-black transition-all shadow-[0_4px_12px_rgba(0,0,0,0.15),0_0_0_1px_rgba(0,0,0,0.05)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.2)] duration-200"
                   >
                     Shop Now <ArrowRight size={18} strokeWidth={2.5} />
                   </Link>
@@ -106,7 +106,7 @@ export default function HomePage() {
                 >
                   <Link
                     href="/stores"
-                    className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-md border border-gray-200 text-gray-700 px-6 py-3.5 rounded-[14px] font-semibold hover:bg-white hover:border-gray-300 transition-all shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)]"
+                    className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-md border border-gray-200 text-gray-700 px-6 py-3.5 rounded-button font-semibold hover:bg-white hover:border-gray-300 transition-all shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)]"
                   >
                     <MapPin size={16} strokeWidth={2} />
                     Find a Store
@@ -171,7 +171,7 @@ export default function HomePage() {
               const q = searchValue.trim()
               router.push(q ? `/products?search=${encodeURIComponent(q)}` : '/products')
             }}
-            className="flex items-center gap-3 w-full max-w-xl mx-auto px-5 py-3.5 rounded-[14px] border border-gray-200/80 bg-white/90 backdrop-blur-sm hover:border-gray-300 hover:shadow-[0_2px_12px_rgba(0,0,0,0.06)] transition-all shadow-[0_1px_4px_rgba(0,0,0,0.04)] group"
+            className="flex items-center gap-3 w-full max-w-xl mx-auto px-5 py-3.5 rounded-button border border-gray-200/80 bg-white/90 backdrop-blur-sm hover:border-gray-300 hover:shadow-[0_2px_12px_rgba(0,0,0,0.06)] transition-all shadow-[0_1px_4px_rgba(0,0,0,0.04)] group"
           >
             <Search size={18} className="text-gray-400 group-focus-within:text-primary transition-colors shrink-0" strokeWidth={2} />
             <input
@@ -187,7 +187,7 @@ export default function HomePage() {
             {categoriesLoading ? (
               <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
                 {Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} className="h-20 rounded-[14px] shimmer border border-gray-100" />
+                  <div key={i} className="h-20 rounded-card shimmer border border-gray-100" />
                 ))}
               </div>
             ) : (
@@ -249,7 +249,7 @@ export default function HomePage() {
                       whileInView={{ scale: 1, rotate: 0 }}
                       viewport={{ once: true }}
                       transition={{ type: 'spring', ...spring.appleBounce, delay: i * 0.08 + 0.2 }}
-                      className={`w-12 h-12 rounded-[14px] ${item.light} border border-gray-100 flex items-center justify-center mx-auto md:mx-0 mb-4 shadow-[0_2px_8px_rgba(0,0,0,0.04)] group-hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-shadow`}
+                      className={`w-12 h-12 rounded-button ${item.light} border border-gray-100 flex items-center justify-center mx-auto md:mx-0 mb-4 shadow-[0_2px_8px_rgba(0,0,0,0.04)] group-hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-shadow`}
                     >
                       <item.icon className={i === 1 ? 'text-primary' : i === 2 ? 'text-success' : 'text-gray-900'} size={20} strokeWidth={2} />
                     </motion.div>

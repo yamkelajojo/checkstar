@@ -131,7 +131,7 @@ export default function CartDrawer({ open, onClose }: Props) {
                         visible: { opacity: 1, y: 0, filter: 'blur(0px)', scale: 1, transition: { type: 'spring', stiffness: 400, damping: 28 } },
                       }}
                       layout
-                      className="flex items-center gap-3 bg-white rounded-[14px] p-3 border border-gray-100/80 shadow-[0_1px_4px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] transition-shadow"
+                      className="flex items-center gap-3 bg-white rounded-button p-3 border border-gray-100/80 shadow-[0_1px_4px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] transition-shadow"
                     >
                       <div className="relative w-14 h-14 bg-gradient-to-br from-gray-50 to-white rounded-[10px] flex items-center justify-center overflow-hidden border border-gray-100/50 shrink-0">
                         {item.product.image && <SafeImage src={item.product.image} alt={item.product.name} fill sizes="56px" className="object-contain p-1" />}
@@ -195,7 +195,7 @@ export default function CartDrawer({ open, onClose }: Props) {
             animate={{ y: 0, opacity: 1, scale: 1, filter: 'blur(0px)' }}
             exit={{ y: 12, opacity: 0, scale: 0.98, filter: 'blur(2px)' }}
             transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] flex items-center gap-3 bg-gray-900/90 backdrop-blur-xl text-white px-4 py-3 rounded-[14px] shadow-[0_8px_24px_rgba(0,0,0,0.2),0_0_0_1px_rgba(255,255,255,0.1)] border border-white/10 text-[13px]"
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] flex items-center gap-3 bg-gray-900/90 backdrop-blur-xl text-white px-4 py-3 rounded-button shadow-[0_8px_24px_rgba(0,0,0,0.2),0_0_0_1px_rgba(255,255,255,0.1)] border border-white/10 text-[13px]"
           >
             <span className="font-medium">Removed</span>
             <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={undo} className="font-semibold underline underline-offset-2 hover:opacity-80 px-2 py-0.5 rounded-full bg-white/10" style={{ color: '#EB6522' }}>
