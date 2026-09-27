@@ -124,6 +124,15 @@ class MediaService
 
     private function requestOrigin(): string
     {
+        // Behind an HTTPS-terminating proxy (the usual production) the
+        // request host is the edge (http://localhost:8000) while the browser
+        // needs the public origin (https://api.checkstar… ). Prefer APP_URL
+        // when it is configured, so a product image never 404s only in prod.
+        $appUrl = config('app.url');
+        if (is_string($appUrl) && $appUrl !== '') {
+            return rtrim($appUrl, '/');
+        }
+
         return rtrim(request()->getSchemeAndHttpHost(), '/');
     }
 }

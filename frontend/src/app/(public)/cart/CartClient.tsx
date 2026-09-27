@@ -130,7 +130,15 @@ export default function CartClient() {
         setAuthModalOpen(true)
         return
       }
-      setPlaceError(err.message || 'Failed to place order.')
+      const msg = err.message || 'Failed to place order.'
+      if (/insufficient stock/i.test(msg)) {
+        setPlaceError('Some items just sold out — we’ve updated your cart. Please review and try again.')
+        // Re-sync cart from server so the UI reflects the real availability
+        try { await api.syncCart(items.map(i => ({ product_id: i.product.id, quantity: i.quantity }))) } catch {}
+        queryClient.invalidateQueries({ queryKey: ['products'] })
+      } else {
+        setPlaceError(msg)
+      }
     }
   }
 
@@ -244,9 +252,9 @@ export default function CartClient() {
                                 transition={{ type: 'spring', ...spring.press }}
                                 onClick={() => decrementItem(item.product.id)}
                                 aria-label={`Decrease quantity of ${item.product.name}`}
-                                className="w-7 h-7 flex items-center justify-center rounded-full bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors"
+                                className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors touch-manipulation"
                               >
-                                <Minus size={12} strokeWidth={2} />
+                                <Minus size={13} strokeWidth={2.2} />
                               </motion.button>
                               <span className="w-7 text-center text-[13px] font-semibold tabular-nums">
                                 <AnimatedNumber value={item.quantity} precision={0} stiffness={260} damping={26} />
@@ -256,9 +264,9 @@ export default function CartClient() {
                                 transition={{ type: 'spring', ...spring.press }}
                                 onClick={() => addItem(item.product, 1)}
                                 aria-label={`Increase quantity of ${item.product.name}`}
-                                className="w-7 h-7 flex items-center justify-center rounded-full bg-gray-900 text-white hover:bg-black transition-colors shadow-sm"
+                                className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-900 text-white hover:bg-black transition-colors shadow-sm touch-manipulation"
                               >
-                                <Plus size={12} strokeWidth={2} />
+                                <Plus size={13} strokeWidth={2.2} />
                               </motion.button>
                             </div>
 
@@ -339,7 +347,7 @@ export default function CartClient() {
                             type="button"
                             whileTap={{ scale: 0.96 }}
                             aria-pressed={fulfilment === method}
-                            onClick={() => setFulfilment(method)}
+                            onClick={() => { setFulfilment(method); setPlaceError('') }}
                             className={`flex items-center justify-center gap-1.5 py-2 rounded-full text-[12px] font-semibold tracking-wide transition-all ${
                               fulfilment === method ? 'bg-white text-gray-900 shadow-[0_1px_4px_rgba(0,0,0,0.08)]' : 'text-gray-500 hover:text-gray-700'
                             }`}

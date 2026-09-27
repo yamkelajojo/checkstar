@@ -2,6 +2,31 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from './api'
 import type { Category, Product, Store, Order, Rider, Special, Recipe, CommunityPost, CareerListing, User, CartItem, Banner, Paginated } from '@/types'
 
+/**
+ * Why this file has a single normalizePaginated helper:
+ *  - GET /products, /store/inventory, /admin/* → Laravel paginator JSON {data, current_page, …}
+ *  - GET /orders (no per_page) → {data: Order[], meta: …} wrapper for legacy mobile
+ * Both shapes are live. One helper papers the split so a new endpoint guessed
+ * wrong surfaces as a typed [] rather than a silent “empty list”.
+ */
+function normalizePaginated<T>(res: unknown): T[] {
+  if (!res) return []
+  if (Array.isArray(res)) return res as T[]
+  const anyRes = res as Record<string, unknown>
+  if (anyRes.data) {
+    if (Array.isArray(anyRes.data)) return anyRes.data as T[]
+    const inner = anyRes.data as Record<string, unknown>
+    if (inner && Array.isArray(inner.data)) return inner.data as T[]
+  }
+  return []
+}
+
+/** Deterministic JSON for a Record<string,string> — key order does not matter to the cache. */
+function stableKey(params?: Record<string, string>): string {
+  if (!params || Object.keys(params).length === 0) return ''
+  return JSON.stringify(Object.keys(params).sort().reduce((o, k) => ((o as Record<string,string>)[k] = params[k], o), {} as Record<string,string>))
+}
+
 export function useTrendingProducts() {
   return useQuery({
     queryKey: ['products', 'trending'],
@@ -32,7 +57,7 @@ export function useCategories() {
 
 export function useAllProducts(params?: Record<string, string>) {
   return useQuery({
-    queryKey: ['products', 'all', params],
+    queryKey: ['products', 'all', stableKey(params)],
     queryFn: () => api.getAllProducts(params),
   })
 }
@@ -158,14 +183,14 @@ export function useCareers() {
 
 export function useOrders(params?: Record<string, string>) {
   return useQuery({
-    queryKey: ['orders', params],
+    queryKey: ['orders', stableKey(params)],
     queryFn: () => api.getOrders(params).then(r => r.data),
   })
 }
 
 export function useStoreOrders(storeId?: number, params?: Record<string, string>, options?: { enabled?: boolean }) {
   return useQuery({
-    queryKey: ['store-orders', storeId, params],
+    queryKey: ['store-orders', storeId, stableKey(params)],
     queryFn: async () => {
       const res = await api.getStoreOrders(storeId, params)
       const data = res.data
@@ -303,14 +328,14 @@ export function useOperationsAlerts(storeId?: number) {
 
 export function useOperationsEvents(params?: Record<string, string>, storeId?: number) {
   return useQuery({
-    queryKey: ['operations-events', params, storeId],
+    queryKey: ['operations-events', stableKey(params), storeId],
     queryFn: () => api.getOperationsEvents(params, storeId),
   })
 }
 
 export function useOperationsAuditLogs(params?: Record<string, string>, storeId?: number) {
   return useQuery({
-    queryKey: ['operations-audit-logs', params, storeId],
+    queryKey: ['operations-audit-logs', stableKey(params), storeId],
     queryFn: () => api.getOperationsAuditLogs(params, storeId),
   })
 }
@@ -356,42 +381,10 @@ export function useAssignRider() {
 }
 
 // ---- Admin CRUD hooks (developer) ----
-function extractPaginatedData<T>(res: { data: T[] } | { data: { data: T[] } } | Paginated<T> | { data: Paginated<T> }): T[] {
-  // Handles both {data: []} and Paginated and {data: Paginated}
-  const anyRes = res as any
-  if (Array.isArray(anyRes.data)) {
-    // Could be {data: []} or {data: Paginated}
-    if (anyRes.data.length > 0 && typeof anyRes.data[0] === 'object' && 'data' in anyRes.data[0]) {
-      // Actually {data: Paginated} where Paginated.data is array
-    }
-    // Check if it's Paginated inside data
-    if (anyRes.data && typeof anyRes.data === 'object' && !Array.isArray(anyRes.data) && 'data' in anyRes.data) {
-      return anyRes.data.data as T[]
-    }
-    // If data is array of T
-    if (anyRes.data.length === 0 || 'id' in anyRes.data[0]) {
-      return anyRes.data as T[]
-    }
-  }
-  if (anyRes.data && Array.isArray(anyRes.data.data)) return anyRes.data.data as T[]
-  if (Array.isArray(anyRes.data)) return anyRes.data as T[]
-  if (anyRes.data && Array.isArray(anyRes.data)) return anyRes.data as T[]
-  return []
-}
-
-function normalizePaginated<T>(res: any): T[] {
-  if (!res) return []
-  if (Array.isArray(res)) return res as T[]
-  if (res.data) {
-    if (Array.isArray(res.data)) return res.data as T[]
-    if (res.data.data && Array.isArray(res.data.data)) return res.data.data as T[]
-  }
-  return []
-}
 
 export function useAdminProducts(params?: Record<string, string>) {
   return useQuery({
-    queryKey: ['admin-products', params],
+    queryKey: ['admin-products', stableKey(params)],
     queryFn: async () => {
       const res = await api.getAdminProducts(params)
       return normalizePaginated<Product>(res as any)
