@@ -124,8 +124,8 @@ describe('ProductDetailClient related shelf', () => {
     renderDetail()
     // The heading confirms the section is about suggestions, the price next
     // to the CTA must stay the current product's price.
-    expect(screen.getAllByText('R24.99').length).toBeGreaterThan(0)
-    expect(screen.queryByText('R39.99 /')).toBeNull()
+    expect(screen.getAllByText('R 24.99').length).toBeGreaterThan(0)
+    expect(screen.queryByText('R 39.99 /')).toBeNull()
   })
 })
 
@@ -148,7 +148,7 @@ describe('ProductDetailClient scroll-morphing add-to-cart', () => {
     expect(floating.className).toContain('fixed')
     expect(floating.className).toContain('bottom-6')
     expect(floating.className).toContain('right-6')
-    expect(floating.textContent).toContain('R24.99')
+    expect(floating.textContent).toContain('R 24.99')
 
     // Scroll back to the inline CTA → inline returns, floating disappears.
     await act(async () => {

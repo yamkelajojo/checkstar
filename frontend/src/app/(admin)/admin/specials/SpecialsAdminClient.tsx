@@ -42,6 +42,7 @@ import {
   type Special,
   type Store,
 } from "@/types";
+import { formatZar } from '@/lib/money';
 
 const SALE_ROLES = ["developer", "store_owner", "store_manager"];
 
@@ -478,7 +479,7 @@ function SaleEditor({
                       {p.name}
                     </p>
                     <p className="text-[11px] text-gray-400">
-                      {p.unit} · R{formatMoney(base)}
+                      {p.unit} · {formatZar(base)}
                     </p>
                   </div>
                   {isSel && (
@@ -494,7 +495,7 @@ function SaleEditor({
                         }
                         inputMode="decimal"
                         placeholder={formatMoney(base)}
-                        aria-label={`Special price for ${p.name} (empty keeps R${formatMoney(base)})`}
+                        aria-label={`Special price for ${p.name} (empty keeps ${formatZar(base)})`}
                         className="w-20 px-2 py-1.5 border border-gray-200 rounded-lg text-sm text-right tabular-nums focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                       />
                     </label>

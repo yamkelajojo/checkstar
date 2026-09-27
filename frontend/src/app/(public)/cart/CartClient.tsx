@@ -17,6 +17,7 @@ import LocationFallbackNotice from '@/components/LocationFallbackNotice'
 import type { Dispatch, FulfilmentMethod, Store as StoreType, UserAddress } from '@/types'
 import OrderConfirmation from './OrderConfirmation'
 import { spring, ease } from '@/lib/motion/tokens'
+import { formatAmount, formatZar } from '@/lib/money'
 
 export default function CartClient() {
   const queryClient = useQueryClient()
@@ -226,14 +227,14 @@ export default function CartClient() {
                             <p className="text-[13px] font-semibold tracking-tight line-clamp-2 sm:truncate text-gray-900">{item.product.name}</p>
                             {item.product.unit && <p className="text-[11px] text-gray-500 mt-0.5 tracking-wide">{item.product.unit}</p>}
                             <p className="text-[13px] font-bold text-primary mt-1 sm:mt-0.5 tabular-nums">
-                              R{price.toFixed(2)}
+                              {formatZar(price)}
                             </p>
                           </div>
 
                           <div className="flex flex-col items-end gap-2 sm:flex-row sm:items-center sm:gap-4">
                             <p className="order-1 text-right text-sm sm:w-20 text-[14px] font-bold tabular-nums tracking-tight sm:order-2">
                               <span className="tabular-nums">
-                                R<AnimatedNumber value={price * item.quantity} precision={2} format={(n) => n.toFixed(2)} />
+                                {'R '}<AnimatedNumber value={price * item.quantity} precision={2} format={formatAmount} />
                               </span>
                             </p>
 
@@ -292,19 +293,19 @@ export default function CartClient() {
                     <div className="flex justify-between text-gray-500">
                       <span>Subtotal</span>
                       <span className="tabular-nums font-medium text-gray-900">
-                        R<AnimatedNumber value={subtotal} precision={2} format={(n) => n.toFixed(2)} />
+                        {'R '}<AnimatedNumber value={subtotal} precision={2} format={formatAmount} />
                       </span>
                     </div>
                     <div className="flex justify-between text-gray-500">
                       <span>{fulfilment === 'pickup' ? 'Pickup' : 'Delivery'}</span>
                       <span className={deliveryFee === 0 ? 'text-green-600 font-semibold' : 'font-medium'}>
-                        {deliveryFee === 0 ? 'Free' : `R${deliveryFee.toFixed(2)}`}
+                        {deliveryFee === 0 ? 'Free' : formatZar(deliveryFee)}
                       </span>
                     </div>
                     <div className="border-t border-gray-100 pt-3 mt-3 flex justify-between font-bold text-[15px] tracking-tight">
                       <span>Total</span>
                       <span className="tabular-nums">
-                        R<AnimatedNumber value={subtotal + deliveryFee} precision={2} format={(n) => n.toFixed(2)} />
+                        {'R '}<AnimatedNumber value={subtotal + deliveryFee} precision={2} format={formatAmount} />
                       </span>
                     </div>
                   </div>

@@ -3,6 +3,7 @@
 import { useMemo } from 'react'
 import { Bar } from 'react-chartjs-2'
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Tooltip, Legend } from 'chart.js'
+import { formatZar } from '@/lib/money'
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend)
 
@@ -33,7 +34,7 @@ export default function TopProductsChart({ data }: { data: Product[] }) {
       legend: { display: false },
       tooltip: {
         callbacks: {
-          label: (ctx: any) => `R${ctx.parsed.x.toLocaleString()}`,
+          label: (ctx: any) => formatZar(ctx.parsed.x),
         },
       },
     },
@@ -42,7 +43,7 @@ export default function TopProductsChart({ data }: { data: Product[] }) {
         ticks: {
           color: '#94A3B8',
           font: { size: 10 },
-          callback: (v: any) => `R${v.toLocaleString()}`,
+          callback: (v: any) => formatZar(v),
         },
         grid: { color: 'rgba(0,0,0,0.04)' },
       },

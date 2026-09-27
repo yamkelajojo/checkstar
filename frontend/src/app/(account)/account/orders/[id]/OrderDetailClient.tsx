@@ -11,6 +11,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import type { Order, OrderActivityLog } from '@/types'
 import { statusConfig, paymentStatusConfig } from '@/lib/motion/variants'
 import OrderTrackingMap from '@/components/OrderTrackingMap'
+import { formatZar } from '@/lib/money'
 
 function cancelReasonLabel(reason: string | null): string {
   if (reason === 'order_not_cancellable') return "Can't cancel — order already out for delivery"
@@ -195,15 +196,15 @@ export default function OrderDetailClient({ id }: { id: string }) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               <div>
                 <span className="text-gray-400">Subtotal</span>
-                <p className="font-medium">R{Number(order.subtotal).toFixed(2)}</p>
+                <p className="font-medium">{formatZar(order.subtotal)}</p>
               </div>
               <div>
                 <span className="text-gray-400">{isPickup ? 'Pickup' : 'Delivery Fee'}</span>
-                <p className="font-medium">{Number(order.delivery_fee) === 0 ? 'Free' : `R${Number(order.delivery_fee).toFixed(2)}`}</p>
+                <p className="font-medium">{Number(order.delivery_fee) === 0 ? 'Free' : formatZar(order.delivery_fee)}</p>
               </div>
               <div>
                 <span className="text-gray-400">Total</span>
-                <p className="font-semibold text-lg">R{Number(order.total).toFixed(2)}</p>
+                <p className="font-semibold text-lg">{formatZar(order.total)}</p>
               </div>
               <div>
                 <span className="text-gray-400">{isPickup ? 'Collect From' : 'Delivery Address'}</span>
@@ -311,7 +312,7 @@ export default function OrderDetailClient({ id }: { id: string }) {
                       <span className="text-gray-400 w-6 text-right">{item.quantity}x</span>
                       <span>{item.product_snapshot?.name || `Product #${item.product_id}`}</span>
                     </div>
-                    <span className="font-medium">R{Number(item.total_price).toFixed(2)}</span>
+                    <span className="font-medium">{formatZar(item.total_price)}</span>
                   </div>
                 ))}
               </div>

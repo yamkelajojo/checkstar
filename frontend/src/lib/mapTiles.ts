@@ -63,7 +63,14 @@ const OSM_PROVIDER: TileProvider = {
  * so a blank or whitespace-only token (a pasted `.env` line with nothing after
  * the `=`) falls back to OSM instead of requesting tiles that 401.
  */
-export function getTileProvider(env: TileEnv = process.env): TileProvider {
+export function getTileProvider(
+  // The literal `process.env.NEXT_PUBLIC_MAPBOX_TOKEN` expression matters:
+  // Next.js inlines NEXT_PUBLIC_* values at build time by textual replacement,
+  // so passing the whole `process.env` object would ship nothing to the browser.
+  env: TileEnv = {
+    NEXT_PUBLIC_MAPBOX_TOKEN: process.env.NEXT_PUBLIC_MAPBOX_TOKEN,
+  },
+): TileProvider {
   const token = (env?.NEXT_PUBLIC_MAPBOX_TOKEN ?? "").trim();
   if (!token) return OSM_PROVIDER;
 

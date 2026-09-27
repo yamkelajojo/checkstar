@@ -93,7 +93,7 @@ describe('loaded product', () => {
       screen.getByRole('button', { name: 'Add Baby Spinach to cart' }),
     ).toBeTruthy();
     // PriceLabel renders price and unit as separate styled nodes.
-    expect(screen.getByText('R 25,00')).toBeTruthy();
+    expect(screen.getByText('R 25.00')).toBeTruthy();
     expect(screen.getByText('/ kg')).toBeTruthy();
   });
 

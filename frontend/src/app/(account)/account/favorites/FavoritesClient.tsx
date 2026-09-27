@@ -10,6 +10,7 @@ import { fadeUpTight as fadeUp, staggerTight as stagger } from '@/lib/motion/var
 import Link from 'next/link'
 import SafeImage from '@/components/SafeImage'
 import type { Product } from '@/types'
+import { formatZar } from '@/lib/money'
 
 export default function FavoritesClient() {
   const { user } = useAuthStore()
@@ -69,7 +70,7 @@ export default function FavoritesClient() {
                   </Link>
                   <div className="p-3">
                     <Link href={`/products/${p.slug}`}><p className="text-sm font-medium line-clamp-2 hover:text-primary">{p.name}</p></Link>
-                    <p className="text-sm font-semibold text-primary mt-1">R{Number(p.effective_price ?? p.sale_price ?? p.price).toFixed(2)}</p>
+                    <p className="text-sm font-semibold text-primary mt-1">{formatZar(p.effective_price ?? p.sale_price ?? p.price)}</p>
                     <div className="flex gap-1.5 mt-3">
                       <button onClick={() => handleAddToCart(p)} className="flex-1 px-3 py-1.5 bg-primary text-white rounded-lg text-xs font-medium hover:bg-primary-dark">Add</button>
                       <button onClick={() => handleRemove(p.id)} disabled={removeMut.isPending} className="p-1.5 border border-gray-200 rounded-lg hover:bg-red-50 hover:text-red-600 hover:border-red-200 disabled:opacity-50"><Trash2 size={14} /></button>

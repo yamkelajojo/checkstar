@@ -108,7 +108,7 @@ describe('Full Customer Journey: Checkout → OrderPlaced → OrderDetail', () =
     await renderPlaced({ orderId: 9, dispatch: { status: 'assigned' } });
     await screen.findByText(copy.orders.placedTitle);
     // The summary card renders once the fetchOrder query resolves — await it.
-    await screen.findByText(/R 85,00/);
+    await screen.findByText(/R 85.00/);
   });
 
   test('dispatch store name is displayed when available', async () => {

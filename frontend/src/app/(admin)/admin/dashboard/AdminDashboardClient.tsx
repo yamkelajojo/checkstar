@@ -39,6 +39,7 @@ import {
 } from "@/lib/motion/variants";
 import { api } from "@/lib/api";
 import EmptyState from "@/components/admin/EmptyState";
+import { formatZar } from '@/lib/money'
 
 const SERVICE_ORDER: Array<{ key: string; label: string }> = [
   { key: "api", label: "API" },
@@ -322,7 +323,7 @@ function OrderRow({ order }: { order: Order }) {
           {new Date(order.created_at).toLocaleDateString("en-ZA")}
         </span>
         <span className="font-semibold text-gray-700">
-          R{Number(order.total).toFixed(2)}
+          {formatZar(order.total)}
         </span>
       </div>
     </>

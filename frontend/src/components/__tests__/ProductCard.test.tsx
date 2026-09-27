@@ -78,7 +78,7 @@ describe('ProductCard', () => {
 
   it('announces the special in the text sections too — Save pill with the rand amount', () => {
     render(<ProductCard product={product({ sale_price: 29.99, effective_price: 29.99 })} />)
-    expect(screen.getByText('Save R10.00')).toBeTruthy()
+    expect(screen.getByText('Save R 10.00')).toBeTruthy()
   })
 
   it('omits the Save pill for non-sale products', () => {
@@ -94,9 +94,21 @@ describe('ProductCard', () => {
     expect(container.querySelector('img')).toBeTruthy()
   })
 
-  it('shows the placeholder for missing images', () => {
-    render(<ProductCard product={product({ image: null })} />)
-    expect(screen.getByText('No image')).toBeTruthy()
+  it('shows the branded placeholder for missing images, never developer copy', () => {
+    // SafeImage owns the failure path for every other image surface in the app
+    // (MEDIA_FALLBACK_PATH). A card that prints "No image" is the one place a
+    // customer would read our internals — and the one place the placeholder was
+    // not used. Same degraded image everywhere = one visual language.
+    const { container } = render(<ProductCard product={product({ image: null })} />)
+
+    expect(screen.queryByText('No image')).toBeNull()
+    const img = container.querySelector('img')
+    expect(img).toBeTruthy()
+    const src = decodeURIComponent(img!.getAttribute('src') ?? '') + decodeURIComponent(img!.getAttribute('srcset') ?? '')
+    expect(src).toContain('product-placeholder.webp')
+    // Alt text stays the product name: a screen reader announces the product,
+    // not the fact that our catalogue has a hole in it.
+    expect(img!.getAttribute('alt')).toBe('Fresh Spinach')
   })
 
   it('links the card to the product detail page', () => {

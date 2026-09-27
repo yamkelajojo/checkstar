@@ -3,6 +3,7 @@
 import { useMemo } from 'react'
 import { Line } from 'react-chartjs-2'
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend, Filler } from 'chart.js'
+import { formatZar } from '@/lib/money'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend, Filler)
 
@@ -36,7 +37,7 @@ export default function RevenueChart({ data }: { data: RevenuePoint[] }) {
       legend: { display: false },
       tooltip: {
         callbacks: {
-          label: (ctx: any) => `R${ctx.parsed.y.toLocaleString()}`,
+          label: (ctx: any) => formatZar(ctx.parsed.y),
         },
       },
     },
@@ -49,7 +50,7 @@ export default function RevenueChart({ data }: { data: RevenuePoint[] }) {
         ticks: {
           color: '#94A3B8',
           font: { size: 10 },
-          callback: (v: any) => `R${v.toLocaleString()}`,
+          callback: (v: any) => formatZar(v),
         },
         grid: { color: 'rgba(0,0,0,0.04)' },
       },

@@ -7,6 +7,7 @@ import { ChevronRight, Loader2, ShoppingBag, Package } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth-store'
 import { useOrders } from '@/lib/query'
 import { statusConfig } from '@/lib/motion/variants'
+import { formatZar } from '@/lib/money'
 
 export default function OrdersClient() {
   // Auth bootstrap + redirect live in the (account) layout AuthGuard.
@@ -97,7 +98,7 @@ export default function OrdersClient() {
                           <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${cfg.bg} ${cfg.color}`}>
                             {cfg.label}
                           </span>
-                          <span className="text-sm font-semibold">R{Number(order.total).toFixed(2)}</span>
+                          <span className="text-sm font-semibold">{formatZar(order.total)}</span>
                           <ChevronRight size={16} className="text-gray-300" />
                         </div>
                       </div>

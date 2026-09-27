@@ -97,11 +97,11 @@ describe('SaleDetailClient', () => {
     // Both products, at the special price with the struck-through base price
     expect(screen.getByText('Spring Mix')).toBeInTheDocument()
     expect(screen.getByText('Wild Honey')).toBeInTheDocument()
-    expect(screen.getAllByText('R39.99').length).toBe(2)
-    expect(screen.getAllByText('R45.00').length).toBe(2)
+    expect(screen.getAllByText('R 39.99').length).toBe(2)
+    expect(screen.getAllByText('R 45.00').length).toBe(2)
     // Special badge + save pill
     expect(screen.getAllByText('Special').length).toBe(2)
-    expect(screen.getAllByText('Save R5.01').length).toBe(2)
+    expect(screen.getAllByText('Save R 5.01').length).toBe(2)
     // Add-to-cart buttons are named per product
     expect(screen.getByRole('button', { name: 'Add Spring Mix to cart' })).toBeInTheDocument()
   })

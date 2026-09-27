@@ -9,6 +9,7 @@ import dynamic from 'next/dynamic'
 import ChartCard from '@/components/operations/charts/ChartCard'
 import { useAnalyticsSales, useAnalyticsProducts, useAnalyticsRiders, useStores } from '@/lib/query'
 import { useAuthStore } from '@/stores/auth-store'
+import { formatZar } from '@/lib/money'
 
 const RevenueChart = dynamic(() => import('@/components/operations/charts/RevenueChart'), { ssr: false, loading: () => <div className="h-64 bg-gray-100 rounded animate-pulse" /> })
 const OrdersByHourChart = dynamic(() => import('@/components/operations/charts/OrdersByHourChart'), { ssr: false, loading: () => <div className="h-64 bg-gray-100 rounded animate-pulse" /> })
@@ -30,9 +31,9 @@ export default function AnalyticsPage() {
   const loading = salesLoading || productsLoading || ridersLoading
 
   const kpis = [
-    { label: 'Total Revenue', value: sales ? `R${sales.total_revenue.toLocaleString()}` : '—', icon: DollarSign },
+    { label: 'Total Revenue', value: sales ? formatZar(sales.total_revenue) : '—', icon: DollarSign },
     { label: 'Total Orders', value: sales?.total_orders?.toLocaleString() ?? '—', icon: ShoppingBag },
-    { label: 'Avg Order Value', value: sales ? `R${sales.avg_order_value.toLocaleString()}` : '—', icon: TrendingUp },
+    { label: 'Avg Order Value', value: sales ? formatZar(sales.avg_order_value) : '—', icon: TrendingUp },
     { label: 'Active Riders', value: riders?.fleet_summary?.active_riders?.toString() ?? '—', icon: Users },
   ]
 

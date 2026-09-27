@@ -32,6 +32,7 @@ import {
 } from "@/lib/motion/variants";
 import Link from "next/link";
 import type { Order } from "@/types";
+import { formatZar } from '@/lib/money'
 
 type StatusFilter = "" | Order["status"];
 
@@ -403,7 +404,7 @@ export default function StoreOrdersClient() {
                           {order.items?.length ?? 0} items
                         </span>
                         <span className="font-medium text-gray-700 tabular-nums">
-                          R{Number(order.total).toFixed(2)}
+                          {formatZar(order.total)}
                         </span>
                         {order.rider?.user?.name && (
                           <span className="flex items-center gap-1">

@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from '@/lib/motion'
 import { spring } from '@/lib/motion/tokens'
 import { X, Navigation, Clock, User, ChevronRight } from 'lucide-react'
 import { api, ApiError } from '@/lib/api'
+import { formatZar } from '@/lib/money'
 
 interface Rider {
   id: number
@@ -117,7 +118,7 @@ export default function DispatchPanel({ orderId, onClose, onAssigned }: Dispatch
                 <h2 className="text-sm font-semibold text-gray-900">Dispatch</h2>
                 {suggestion?.order && (
                   <p className="text-xs text-gray-400 mt-0.5">
-                    Order {suggestion.order.order_number} — R{suggestion.order.total}
+                    Order {suggestion.order.order_number} — {formatZar(suggestion.order.total)}
                   </p>
                 )}
               </div>

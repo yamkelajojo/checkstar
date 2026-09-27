@@ -7,6 +7,7 @@ import Link from 'next/link'
 import SafeImage from '@/components/SafeImage'
 import { useCartStore } from '@/stores/cart-store'
 import type { CartItem } from '@/types'
+import { formatZar } from '@/lib/money'
 
 interface Props {
   open: boolean
@@ -126,7 +127,7 @@ export default function CartDrawer({ open, onClose }: Props) {
                         <p className="text-[13px] font-semibold truncate tracking-tight text-gray-900">{item.product.name}</p>
                         <p className="text-[11px] text-gray-500 mt-0.5">{item.product.unit}</p>
                         <p className="text-[13px] font-bold text-primary mt-1 tabular-nums">
-                          R{(Number(item.product.effective_price ?? item.product.sale_price ?? item.product.price) * item.quantity).toFixed(2)}
+                          {formatZar(Number(item.product.effective_price ?? item.product.sale_price ?? item.product.price) * item.quantity)}
                         </p>
                       </div>
                       <div className="flex items-center gap-1 bg-gray-50 rounded-full p-0.5 border border-gray-100">
@@ -156,7 +157,7 @@ export default function CartDrawer({ open, onClose }: Props) {
               >
                 <div className="flex items-center justify-between mb-4">
                   <span className="text-[13px] font-medium text-gray-500">Total</span>
-                  <span className="font-bold text-[20px] tracking-tight tabular-nums">R{total.toFixed(2)}</span>
+                  <span className="font-bold text-[20px] tracking-tight tabular-nums">{formatZar(total)}</span>
                 </div>
                 <div className="flex gap-2.5">
                   <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={clearCart} className="flex-1 px-4 py-3 text-[13px] font-medium border border-gray-200 rounded-[12px] hover:bg-gray-50 transition-colors">
