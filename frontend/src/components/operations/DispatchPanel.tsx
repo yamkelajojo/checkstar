@@ -123,7 +123,9 @@ export default function DispatchPanel({ orderId, onClose, onAssigned }: Dispatch
               </div>
               <button
                 onClick={onClose}
-                className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+                aria-label="Close dispatch suggestions"
+                title="Close"
+                className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
               >
                 <X size={16} />
               </button>

@@ -119,6 +119,7 @@ export default function RiderDashboardClient() {
             <button
               onClick={handleToggleAvailability}
               disabled={loading.toggle}
+              aria-pressed={!!rider?.is_available}
               className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all ${
                 rider?.is_available
                   ? 'bg-success/10 text-success border border-success/20 hover:bg-success/20'
