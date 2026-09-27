@@ -21,9 +21,10 @@ Levels follow the V-model: the left side is requirement/design decomposition, th
 | Suite | Command | Scale | Runs in CI |
 |---|---|---|---|
 | Backend (Laravel 11, PHPUnit) | `npm run test:backend` / `cd backend && php artisan test` | 477 tests, 3100+ assertions | ✅ PHP 8.2, 8.3, 8.4 (SQLite) + PHP 8.3 (MySQL 8) |
-| Web unit + component (Vitest, jsdom, RTL) | `cd frontend && npx vitest run` | 53 files / 466 tests | ✅ (with `tsc --noEmit`, `next lint`, `next build`) |
+| Web unit + component (Vitest, jsdom, RTL) | `cd frontend && npx vitest run` | 53 files / 469 tests | ✅ (with `tsc --noEmit`, `next lint`, `next build`) |
 | Web end-to-end (Playwright) | `cd frontend && npx playwright test` | 12 specs / 32 tests | ❌ **gap** — needs a live API + web server; see G-1 |
 | Mobile unit + screen (Jest, RNTL) | `cd mobile && npm test` | 71 suites / 670 passed / 3 skipped | ✅ (with `tsc --noEmit` and the Expo SDK pin check) |
+| Live Mapbox tile check (web, real token) | `cd frontend && npm run check:mapbox` | 1 tile over Durban CBD; exit 0 also when no token is set | ⚠️ manual, on the operator's machine — see G-4 |
 
 CI workflow: `.github/workflows/tests.yml` → six jobs (Backend PHP 8.2 / 8.3 / 8.4, Backend MySQL 8, Frontend, Mobile). Last all-green run: `36287076597` (PR #2).
 
@@ -126,7 +127,7 @@ CI workflow: `.github/workflows/tests.yml` → six jobs (Backend PHP 8.2 / 8.3 /
 - **G-1 — Web Playwright e2e is not in CI.** 32 tests across 12 specs (`frontend/e2e/`) cover home, products, product detail, cart, quick-add, recipes, store locator, navigation (desktop + mobile viewports), manager surfaces and the API contract. They need a seeded API and a running web server, which the current workflow does not boot. *Close it by:* adding a job that runs `php artisan migrate --seed && php artisan serve` + `next start`, then `playwright test`. Until then, web end-to-end assurance comes from component tests plus the backend's own HTTP-level feature tests.
 - **G-2 — Windows acceptance is manual.** `npm run setup` / `npm run dev` are exercised by hand on the user's machine; CI runs on Ubuntu. *Close it by:* a `windows-latest` job running `npm run setup` and `npm run typecheck` (no browser needed).
 - **G-3 — Real-device mobile testing is manual.** RNTL covers rendering and behaviour; GPS, camera, push and Expo Go's own runtime are verified on the device fleet. *Close it by:* an EAS build + a device checklist per release.
-- **G-4 — Mapbox tiles are verified by contract, not by pixels.** Without a token in CI (deliberately — ADR 0003), tests assert the provider selection and the `L.tileLayer` arguments, not a rendered Mapbox tile.
+- **G-4 — Mapbox tiles are verified by contract, not by pixels.** Without a token in CI (deliberately — ADR 0003), tests assert the provider selection and the exact `L.tileLayer` arguments, not a rendered Mapbox tile. On 2026-09-27 that contract caught a real defect: the endpoint in use (`api.mapbox.com/v4/mapbox.streets/…`) is deprecated by Mapbox and answers `410 Gone`, so it was replaced test-first with the documented Styles Static Tiles API (`api.mapbox.com/styles/v1/{style}/tiles/256/{z}/{x}/{y}@2x`, tileSize 512, zoomOffset −1, maxZoom 19). *What still needs a human:* the live fetch. `cd frontend && npm run check:mapbox` proves a given token works and reports per-status-code hints; this sandbox cannot reach `api.mapbox.com` (probe returned `000`), so that one command is the operator's, and it is documented in README, ADR 0003 and GATES G14.
 - **G-5 — Performance is not measured yet.** `docs/manager-qa-refactor-plan.md` requires measurement-led performance work; no budget or Lighthouse/CI timing gate exists. *Close it by:* a build-size + LCP budget assertion in the Frontend job.
 - **G-6 — Backend diagnostics files lag CI.** `backend/ci-diagnostics-*.md` are written by a bot on failure and can be one commit behind GitHub Actions. Trust the check statuses (`gh pr checks`), not the files.
 

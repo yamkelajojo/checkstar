@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "test": "vitest run",
+    "check:mapbox": "node scripts/check-mapbox-tiles.mjs",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "mock-api": "node scripts/mock-api.mjs",

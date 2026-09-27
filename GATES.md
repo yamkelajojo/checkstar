@@ -105,9 +105,10 @@ Scope: resolve the approved manager QA issues without breaking Store Context, gu
 - [x] G11: Map tile provider selection is tested, keyless by default, Mapbox when a token exists
       CHECK: npm --prefix frontend test -- mapTiles MapContainer
       EXPECT: /Tests\s+\d+\s+passed/
-      EVIDENCE: 2026-09-27 — `mapTiles.test.ts` (6) + `MapContainer.test.tsx` (8) green; decision
+      EVIDENCE: 2026-09-27 — `mapTiles.test.ts` (9) + `MapContainer.test.tsx` (8) green; decision
       and mobile impossibility recorded in `docs/adr/0003-map-providers.md` (Expo Go cannot load
-      `@rnmapbox/maps`).
+      `@rnmapbox/maps`). The specs assert the exact Styles Static Tiles URL, so the deprecated v4
+      raster endpoint cannot creep back (see G14).
 
 - [x] G12: New component suites render for real (no self-mocking theatre tests)
       CHECK: npm --prefix frontend test -- SafeImage OrderTrackingMap CartDrawer BannerCarousel LoginClient ProductCard
@@ -121,7 +122,24 @@ Scope: resolve the approved manager QA issues without breaking Store Context, gu
       EVIDENCE: 2026-09-27 — `docs/design-critique-2026-09-27.md` (impeccable critique framework,
       Nielsen 29/40 = Good, method declared DEGRADED/single-context because this environment has no
       browser or detector; every finding cites a file), `docs/test-traceability.md` (requirement →
-      test matrix with six declared gaps), `docs/ui-audit-2026-09-27.md` (17/20).
+      test matrix with declared gaps), `docs/ui-audit-2026-09-27.md` (17/20).
+
+- [x] G14: Mapbox support is verified against the real API, not assumed from a plausible URL
+      CHECK: cd frontend && npm run check:mapbox          # with NEXT_PUBLIC_MAPBOX_TOKEN set
+      EXPECT: "✓ HTTP 200 · image/png" and exit code 0; exit 0 with an explanation when no token
+              is configured (keyless OpenStreetMap is the designed default)
+      EVIDENCE: 2026-09-27 — the endpoint was **wrong** and is now fixed test-first: the legacy v4
+      raster path (`api.mapbox.com/v4/mapbox.streets/...`) is deprecated by Mapbox and answers
+      `410 Gone`, so a token holder would have seen an empty map. `mapTiles.ts` now builds
+      `api.mapbox.com/styles/v1/{style}/tiles/256/{z}/{x}/{y}@2x` (tileSize 512, zoomOffset -1,
+      maxZoom 19, style overridable via `NEXT_PUBLIC_MAPBOX_STYLE`, validated as lowercase
+      `owner/style`); `mapTiles.test.ts` + `MapContainer.test.tsx` assert that exact URL and
+      `not.toContain("/v4/")`. `scripts/check-mapbox-tiles.mjs` performs the live fetch (one tile
+      over Durban CBD, token redacted in output, per-status-code hints for 401/403/404/410/429,
+      and a drift guard that fails if the script and `mapTiles.ts` disagree). Sandbox limitation
+      recorded as gap G-7 in `docs/test-traceability.md`: `api.mapbox.com` is unreachable from this
+      environment (probe returned `000`), so the live fetch must be run on the operator's machine —
+      everything up to the network call is verified here (all three script paths exercised).
 
 ## CI cross-check (2026-09-27)
 

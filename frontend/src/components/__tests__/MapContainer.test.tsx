@@ -109,6 +109,7 @@ describe("MapContainer tile provider", () => {
     expect(leaflet.state.tileLayers[0].options.attribution).toMatch(
       /OpenStreetMap/,
     );
+    expect(leaflet.state.tileLayers[0].options.maxZoom).toBe(18);
   });
 
   it("requests Mapbox tiles when NEXT_PUBLIC_MAPBOX_TOKEN is configured", async () => {
@@ -124,6 +125,12 @@ describe("MapContainer tile provider", () => {
     expect(layer.options.tileSize).toBe(512);
     expect(layer.options.zoomOffset).toBe(-1);
     expect(layer.options.attribution).toMatch(/Mapbox/);
+    expect(layer.options.maxZoom).toBe(19);
+    // The documented Styles Static Tiles API. The legacy v4 raster endpoint
+    // (mapbox.streets) is deprecated and answers 410 Gone — a token holder
+    // would see an empty map, so this is asserted, not assumed.
+    expect(layer.url).toContain("/styles/v1/");
+    expect(layer.url).not.toContain("/v4/");
   });
 });
 

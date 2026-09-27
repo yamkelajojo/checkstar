@@ -34,7 +34,8 @@ On the web the situation is different: Leaflet can consume Mapbox **raster tiles
 1. **Web keeps Leaflet as the map engine.** One engine, one branded pin (`checkstarPinIcon`), one degradation path (the `tileerror` → "Map unavailable right now" notice).
 2. **Tile source becomes a provider abstraction, not a constant.** `frontend/src/lib/mapTiles.ts` exposes `getTileProvider(env)` and `tileLayerOptions(provider)`:
    - **No token → OpenStreetMap raster** (`https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png`, maxZoom 18) — exactly today's behaviour, zero credentials.
-   - **`NEXT_PUBLIC_MAPBOX_TOKEN` set → Mapbox raster** (`https://api.mapbox.com/v4/mapbox.streets/{z}/{x}/{y}@2x.png?access_token=…`) with `tileSize: 512` and `zoomOffset: -1`, which 512px tiles require, and attribution `© Mapbox © OpenStreetMap contributors`.
+   - **`NEXT_PUBLIC_MAPBOX_TOKEN` set → Mapbox raster** from the **Styles Static Tiles API** (`https://api.mapbox.com/styles/v1/{style}/tiles/256/{z}/{x}/{y}@2x?access_token=…`) with `tileSize: 512` and `zoomOffset: -1`, which 512px tiles require, `maxZoom: 19`, and attribution `© Mapbox © OpenStreetMap contributors`. `{style}` defaults to `mapbox/streets-v12` and is overridable with `NEXT_PUBLIC_MAPBOX_STYLE`, validated as a lowercase `owner/style` id so it can never escape the URL path.
+     - *Endpoint correction (2026-09-27):* the first implementation used the legacy v4 raster endpoint (`api.mapbox.com/v4/mapbox.streets/{z}/{x}/{y}@2x.png`). Mapbox deprecated those `mapbox.*` v4 tilesets in favour of Styles Static Tiles; the old path answers `410 Gone`, so a paying operator would have seen an empty map. `mapTiles.test.ts` and `MapContainer.test.tsx` now assert the exact URL — including `not.toContain("/v4/")` — so the mistake cannot recur silently. Source: docs.mapbox.com, *Use a Mapbox style in Leaflet*.
    - Whitespace-only or empty tokens fall back to OSM (a pasted blank `.env` line must not produce a 401-ing map).
    - The provider is resolved **per map init**, not at module scope, so the environment the app boots in is what it gets.
    - The token is never written into attribution or logs.
@@ -52,7 +53,7 @@ On the web the situation is different: Leaflet can consume Mapbox **raster tiles
 **Negative / risks**
 
 - Web and mobile basemaps can differ when a token is set (Mapbox raster on web, Apple/Google on mobile). Accepted: the branded pins and interaction model stay identical, and mobile cannot host Mapbox in Expo Go at all.
-- Mapbox raster (v4) tiles are **not** vector styles: no client-side restyling, no Mapbox GL features (3D, custom layers). If those are ever needed on the web, that is a separate ADR (MapLibre GL JS / Mapbox GL JS).
+- Mapbox Static Tiles are **raster**, not vector styles: no client-side restyling, no Mapbox GL features (3D, custom layers). If those are ever needed on the web, that is a separate ADR (MapLibre GL JS / Mapbox GL JS).
 - Public tokens are visible in the client bundle by definition (`NEXT_PUBLIC_*`). Mapbox tokens must be **URL-restricted** to the deployment origin in the Mapbox dashboard; this is documented in `README.md`.
 
 ## Alternatives considered
@@ -76,5 +77,6 @@ Until then, **Expo Go is the constraint that decides the map stack on mobile.**
 
 ## Verification
 
-- `frontend/src/lib/__tests__/mapTiles.test.ts` — provider selection, token trimming, whitespace rejection, 512px hints, no token leakage into attribution.
+- `frontend/src/lib/__tests__/mapTiles.test.ts` — provider selection, exact Styles Static Tiles URL (and an explicit `not.toContain("/v4/")`), style override + style-id validation, token trimming, whitespace rejection, 512px hints, maxZoom 19, no token leakage into attribution.
+- `frontend/scripts/check-mapbox-tiles.mjs` (`npm run check:mapbox`) — **live** verification with a real token: fetches one Durban tile, asserts `200` + `image/*`, redacts the token in output, exits 1 with a per-status-code hint on failure, and fails if its URL shape drifts from `mapTiles.ts`. Unit tests pin the contract; only this proves a given token works, and it must run on a machine that can reach `api.mapbox.com`.
 - `frontend/src/components/__tests__/MapContainer.test.tsx` — OSM by default, Mapbox when the env token is stubbed, tile-outage messaging and recovery, branded pin, late-arriving markers, marker replacement.

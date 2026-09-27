@@ -23,6 +23,8 @@ describe("getTileProvider", () => {
     expect(provider.url).toBe(OSM_TILE_URL);
     expect(provider.attribution).toBe(OSM_ATTRIBUTION);
     expect(provider.maxZoom).toBe(18);
+    expect(provider.tileSize).toBeUndefined();
+    expect(provider.zoomOffset).toBeUndefined();
     expect(provider.label).toMatch(/OpenStreetMap/i);
   });
 
@@ -40,17 +42,55 @@ describe("getTileProvider", () => {
     const provider = getTileProvider({ NEXT_PUBLIC_MAPBOX_TOKEN: "pk.test.123" });
 
     expect(provider.id).toBe("mapbox");
-    expect(provider.url).toContain("api.mapbox.com");
-    expect(provider.url).toContain("pk.test.123");
+    // The documented Styles Static Tiles API — NOT the deprecated v4 raster
+    // endpoint (`/v4/mapbox.streets/...`), which Mapbox retired: requests come
+    // back 410 Gone / blank, i.e. a token holder would see an empty map.
+    // Source: docs.mapbox.com "Use a Mapbox style in Leaflet".
+    expect(provider.url).toBe(
+      "https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/256/{z}/{x}/{y}@2x?access_token=pk.test.123",
+    );
+    expect(provider.url).not.toContain("/v4/");
     expect(provider.url).toContain("{z}");
     expect(provider.url).toContain("{x}");
     expect(provider.url).toContain("{y}");
-    // Mapbox serves 512px raster tiles; Leaflet needs both hints or the map
+    // @2x returns 512px tiles; Leaflet needs both hints or every zoom level
     // renders at the wrong scale.
     expect(provider.tileSize).toBe(512);
     expect(provider.zoomOffset).toBe(-1);
+    // Mapbox styles are served to zoom 19 (OSM raster stops at 18).
+    expect(provider.maxZoom).toBe(19);
     expect(provider.attribution).toMatch(/Mapbox/i);
     expect(provider.attribution).toMatch(/OpenStreetMap/i);
+  });
+
+  it("lets an operator pick a different Mapbox style without touching code", () => {
+    const provider = getTileProvider({
+      NEXT_PUBLIC_MAPBOX_TOKEN: "pk.test.123",
+      NEXT_PUBLIC_MAPBOX_STYLE: "mapbox/light-v11",
+    });
+
+    expect(provider.url).toContain("/styles/v1/mapbox/light-v11/tiles/256/");
+    expect(provider.label).toMatch(/light-v11/i);
+  });
+
+  it("ignores a style value that is not a plain owner/style id", () => {
+    // The style id is interpolated into a URL path: anything that could escape
+    // the path (traversal, query strings, slashes beyond owner/style) falls
+    // back to the default rather than building a surprising request.
+    ["../../evil", "mapbox/streets-v12?x=1", "mapbox/streets-v12/extra", " ", "MAPBOX/STREETS-V12"].forEach(
+      (style) => {
+        const provider = getTileProvider({
+          NEXT_PUBLIC_MAPBOX_TOKEN: "pk.test.123",
+          NEXT_PUBLIC_MAPBOX_STYLE: style,
+        });
+        expect(provider.url).toContain("/styles/v1/mapbox/streets-v12/tiles/256/");
+      },
+    );
+  });
+
+  it("falls back to OpenStreetMap when a style is set but no token exists", () => {
+    const provider = getTileProvider({ NEXT_PUBLIC_MAPBOX_STYLE: "mapbox/light-v11" });
+    expect(provider.id).toBe("osm");
   });
 
   it("trims the token before embedding it in the tile URL", () => {

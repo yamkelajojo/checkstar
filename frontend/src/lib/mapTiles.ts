@@ -7,10 +7,12 @@
  *
  *  - No credentials (fresh clone, `npm run dev`, CI): OpenStreetMap raster
  *    tiles. The prototype must show real maps with zero accounts and zero keys.
- *  - `NEXT_PUBLIC_MAPBOX_TOKEN` present: Mapbox raster tiles through the same
- *    Leaflet pipeline (no new dependency, no build change). Mapbox buys a
- *    branded, consistent basemap and a commercial tile CDN — worth taking when
- *    a token exists, never worth requiring.
+ *  - `NEXT_PUBLIC_MAPBOX_TOKEN` present: Mapbox raster tiles from the Styles
+ *    Static Tiles API through the same Leaflet pipeline (no new dependency, no
+ *    build change). `NEXT_PUBLIC_MAPBOX_STYLE` optionally picks the style
+ *    (default `mapbox/streets-v12`). Mapbox buys a branded, consistent basemap
+ *    and a commercial tile CDN — worth taking when a token exists, never worth
+ *    requiring.
  *
  * Mobile deliberately does NOT use Mapbox: `@rnmapbox/maps` needs custom native
  * code, so it cannot run in Expo Go, and the fleet is pinned to Expo Go
@@ -46,7 +48,27 @@ export interface TileProvider {
 
 interface TileEnv {
   NEXT_PUBLIC_MAPBOX_TOKEN?: string | null;
+  /** Mapbox style id ("mapbox/light-v11"). Optional; defaults to streets. */
+  NEXT_PUBLIC_MAPBOX_STYLE?: string | null;
 }
+
+/**
+ * The documented Styles Static Tiles API. The legacy v4 raster endpoint
+ * (`api.mapbox.com/v4/mapbox.streets/...`) is deprecated by Mapbox and answers
+ * 410 Gone — using it would hand a paying operator an empty map, so the URL
+ * shape is asserted in tests rather than left to memory.
+ * Source: docs.mapbox.com — "Use a Mapbox style in Leaflet".
+ */
+const MAPBOX_TILES_BASE = "https://api.mapbox.com/styles/v1";
+
+const DEFAULT_MAPBOX_STYLE = "mapbox/streets-v12";
+
+/**
+ * A style id is exactly `owner/style`, lowercase: it is interpolated into a URL
+ * path, so anything else (traversal, query strings, extra segments) is refused
+ * and the default is used instead.
+ */
+const STYLE_ID_PATTERN = /^[a-z0-9][a-z0-9_-]*\/[a-z0-9][a-z0-9_-]*$/;
 
 const OSM_PROVIDER: TileProvider = {
   id: "osm",
@@ -64,24 +86,31 @@ const OSM_PROVIDER: TileProvider = {
  * the `=`) falls back to OSM instead of requesting tiles that 401.
  */
 export function getTileProvider(
-  // The literal `process.env.NEXT_PUBLIC_MAPBOX_TOKEN` expression matters:
-  // Next.js inlines NEXT_PUBLIC_* values at build time by textual replacement,
-  // so passing the whole `process.env` object would ship nothing to the browser.
+  // The literal `process.env.NEXT_PUBLIC_*` expressions matter: Next.js inlines
+  // those values at build time by textual replacement, so passing the whole
+  // `process.env` object would ship nothing to the browser.
   env: TileEnv = {
     NEXT_PUBLIC_MAPBOX_TOKEN: process.env.NEXT_PUBLIC_MAPBOX_TOKEN,
+    NEXT_PUBLIC_MAPBOX_STYLE: process.env.NEXT_PUBLIC_MAPBOX_STYLE,
   },
 ): TileProvider {
   const token = (env?.NEXT_PUBLIC_MAPBOX_TOKEN ?? "").trim();
+  // A style without a token does nothing, so it never leaves the OSM default.
   if (!token) return OSM_PROVIDER;
+
+  const requestedStyle = (env?.NEXT_PUBLIC_MAPBOX_STYLE ?? "").trim();
+  const style = STYLE_ID_PATTERN.test(requestedStyle)
+    ? requestedStyle
+    : DEFAULT_MAPBOX_STYLE;
 
   return {
     id: "mapbox",
-    label: "Mapbox Streets",
-    // v4 raster endpoint: the @2x variant returns 512px tiles, which Leaflet
-    // addresses with tileSize 512 + zoomOffset -1.
-    url: `https://api.mapbox.com/v4/mapbox.streets/{z}/{x}/{y}@2x.png?access_token=${encodeURIComponent(token)}`,
+    label: `Mapbox ${style}`,
+    // `/tiles/256/...@2x` returns 512px raster tiles, which Leaflet addresses
+    // with tileSize 512 + zoomOffset -1. Mapbox styles serve up to zoom 19.
+    url: `${MAPBOX_TILES_BASE}/${style}/tiles/256/{z}/{x}/{y}@2x?access_token=${encodeURIComponent(token)}`,
     attribution: "&copy; Mapbox &copy; OpenStreetMap contributors",
-    maxZoom: 18,
+    maxZoom: 19,
     tileSize: 512,
     zoomOffset: -1,
   };

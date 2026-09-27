@@ -69,10 +69,29 @@ Gate evidence and the exact reproduction commands for each acceptance gate live 
 | Variable | Where | Default | Effect |
 | --- | --- | --- | --- |
 | `NEXT_PUBLIC_API_URL` | `frontend/.env.local` | `http://localhost:8000` | Backend origin the web client calls (also used to rewrite media URLs to same-origin paths). |
-| `NEXT_PUBLIC_MAPBOX_TOKEN` | `frontend/.env.local` | *(unset)* | When set, web maps switch from OpenStreetMap to Mapbox raster tiles. Unset = OSM, no account needed. See [`docs/adr/0003-map-providers.md`](./docs/adr/0003-map-providers.md). |
+| `NEXT_PUBLIC_MAPBOX_TOKEN` | `frontend/.env.local` | *(unset)* | When set, web maps switch from OpenStreetMap to Mapbox raster tiles (Styles Static Tiles API). Unset = OSM, no account needed. See [`docs/adr/0003-map-providers.md`](./docs/adr/0003-map-providers.md). |
+| `NEXT_PUBLIC_MAPBOX_STYLE` | `frontend/.env.local` | `mapbox/streets-v12` | Optional Mapbox style id, e.g. `mapbox/light-v11` or `mapbox/outdoors-v12`. Ignored unless a token is set; anything that is not a lowercase `owner/style` id falls back to the default. |
+
+**Turning Mapbox on (web):**
+
+1. Create a free account at [mapbox.com](https://www.mapbox.com/) and copy a
+   **public** token (`pk.…`).
+2. Add `NEXT_PUBLIC_MAPBOX_TOKEN=pk.…` to `frontend/.env.local`, then restart the
+   dev server. Restrict the token to your deployment origin in the Mapbox
+   dashboard — `NEXT_PUBLIC_*` values ship in the browser bundle.
+3. Verify it against the live API:
+
+   ```bash
+   cd frontend
+   npm run check:mapbox     # or: node scripts/check-mapbox-tiles.mjs
+   ```
+
+   It fetches one tile over Durban CBD and prints `✓ HTTP 200 · image/png · …
+   bytes`, or a per-status-code hint (`401` token rejected, `403` scope/URL
+   restriction, `404` unknown style, `429` rate limit). With no token configured
+   it exits `0` and explains that OpenStreetMap is in use — that is the designed
+   default, not a failure.
 
 Mapbox on **mobile** is deliberately not offered: `@rnmapbox/maps` cannot run in
-Expo Go, and the fleet is pinned to Expo Go 57. If you do add a token, restrict it
-to your deployment origin in the Mapbox dashboard — `NEXT_PUBLIC_*` values ship in
-the browser bundle.
+Expo Go, and the fleet is pinned to Expo Go 57.
 
