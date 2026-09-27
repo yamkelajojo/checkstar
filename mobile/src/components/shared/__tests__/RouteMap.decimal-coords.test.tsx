@@ -25,8 +25,14 @@ const WIRE = {
   durationMinutes: '9',
 };
 
-function renderRouteMap(overrides: Partial<Parameters<typeof RouteMap>[0]> = {}) {
-  return render(
+/**
+ * RNTL v14 + React 19 renders asynchronously: `screen` is only populated once
+ * the returned promise settles, so every render here is awaited. (Skipping the
+ * await is what made earlier map tests fall back to asserting literals instead
+ * of the component.)
+ */
+async function renderRouteMap(overrides: Partial<Parameters<typeof RouteMap>[0]> = {}) {
+  await render(
     <RouteMap
       storeName="Checkstar Durban Central"
       deliveryAddress="12 Berea Road"
@@ -43,8 +49,8 @@ function renderRouteMap(overrides: Partial<Parameters<typeof RouteMap>[0]> = {})
 }
 
 describe('RouteMap — decimal-string coordinates from the API', () => {
-  test('hands the native map a finite numeric region', () => {
-    renderRouteMap();
+  test('hands the native map a finite numeric region', async () => {
+    await renderRouteMap();
 
     const region = screen.getByTestId('map-view').props.initialRegion;
     expect(typeof region.latitude).toBe('number');
@@ -58,8 +64,8 @@ describe('RouteMap — decimal-string coordinates from the API', () => {
     expect(region.longitude).toBeCloseTo((30.8833 + 30.972) / 2, 6);
   });
 
-  test('places both markers at numeric coordinates', () => {
-    renderRouteMap();
+  test('places both markers at numeric coordinates', async () => {
+    await renderRouteMap();
 
     const markers = screen.getAllByTestId('map-marker');
     expect(markers).toHaveLength(2);
@@ -79,8 +85,8 @@ describe('RouteMap — decimal-string coordinates from the API', () => {
     });
   });
 
-  test('draws the straight-line fallback with numeric coordinates', () => {
-    renderRouteMap();
+  test('draws the straight-line fallback with numeric coordinates', async () => {
+    await renderRouteMap();
 
     const coordinates = screen.getByTestId('map-polyline').props.coordinates;
     expect(coordinates).toHaveLength(2);
@@ -90,15 +96,15 @@ describe('RouteMap — decimal-string coordinates from the API', () => {
     }
   });
 
-  test('formats distance and duration from decimal strings', () => {
-    renderRouteMap();
+  test('formats distance and duration from decimal strings', async () => {
+    await renderRouteMap();
 
     expect(screen.getByText('1.5 km')).toBeTruthy();
     expect(screen.getByText('9 min')).toBeTruthy();
   });
 
-  test('still degrades to the info card when coordinates are absent', () => {
-    renderRouteMap({
+  test('still degrades to the info card when coordinates are absent', async () => {
+    await renderRouteMap({
       storeLat: null,
       storeLng: null,
       deliveryLat: undefined,
@@ -110,8 +116,8 @@ describe('RouteMap — decimal-string coordinates from the API', () => {
     expect(screen.getByText('Delivery address not set')).toBeTruthy();
   });
 
-  test('treats unusable coordinates as absent rather than rendering a broken map', () => {
-    renderRouteMap({ storeLat: 'not-a-coordinate', storeLng: WIRE.storeLng });
+  test('treats unusable coordinates as absent rather than rendering a broken map', async () => {
+    await renderRouteMap({ storeLat: 'not-a-coordinate', storeLng: WIRE.storeLng });
 
     expect(screen.queryByTestId('map-view')).toBeNull();
   });

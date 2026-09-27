@@ -77,6 +77,29 @@ describe('RiderHomeScreen', () => {
     expect(screen.getByText(copy.rider.deliveries)).toBeTruthy();
   });
 
+  /**
+   * Regression: GET /api/rider/stats returns `average_rating` as a Laravel
+   * `decimal:2` cast, i.e. the STRING "4.70". The screen used to call
+   * `.toFixed(1)` straight on it, which threw and blanked the rider's home
+   * screen on a real device. Feed the real wire shape, not a number.
+   */
+  it('formats a decimal-string rating from the API without crashing', async () => {
+    mockQueries({ stats: { ...stats, average_rating: '4.70' }, active: [], available: [] });
+
+    await render(<RiderHomeScreen />);
+
+    expect(screen.getByText('4.7')).toBeTruthy();
+    expect(screen.getByText('12')).toBeTruthy();
+  });
+
+  it('shows a dash when the rider has no rating yet', async () => {
+    mockQueries({ stats: { ...stats, average_rating: null }, active: [], available: [] });
+
+    await render(<RiderHomeScreen />);
+
+    expect(screen.getByText('—')).toBeTruthy();
+  });
+
   it('shows empty states when there are no orders', async () => {
     await render(<RiderHomeScreen />);
     expect(screen.getByText(copy.rider.emptyActive)).toBeTruthy();

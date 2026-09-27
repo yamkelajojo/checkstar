@@ -594,13 +594,16 @@ export function useDeleteAdminUser() {
   })
 }
 
-export function useAdminRiders() {
+export function useAdminRiders(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['admin-riders'],
     queryFn: async () => {
       const res = await api.getAdminRiders()
       return normalizePaginated<Rider>(res as any)
     },
+    // /api/admin/riders is developer-only; without the gate every non-developer
+    // who lands on the page fires a request that can only 403.
+    enabled: options?.enabled ?? true,
   })
 }
 export function useUpdateAdminRider() {
