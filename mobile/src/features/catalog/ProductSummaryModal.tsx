@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Modal, View, Text, Pressable, StyleSheet, useWindowDimensions } from 'react-native';
 import { Image } from 'expo-image';
+import { mediaSource } from '../../lib/media';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import { ChevronRight } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -46,7 +47,7 @@ export function ProductSummaryModal({ product, storeProductId = null, sourceRect
   const add = useCart((s) => s.add);
   const [quantity, setQuantity] = useState(1);
   const [imageSource, setImageSource] = useState<{ uri: string } | null>(
-    product.images[0] ? { uri: product.images[0] } : null,
+    mediaSource(product.images[0]),
   );
 
   const progress = useSharedValue(reduceMotion ? 1 : 0);

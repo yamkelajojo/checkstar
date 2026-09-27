@@ -9,14 +9,15 @@ import SafeImage from '@/components/SafeImage'
 import { useCartStore } from '@/stores/cart-store'
 import { emitCartAdded } from '@/lib/cart-events'
 import { useProduct, useRelatedProducts } from '@/lib/query'
+import { formatZar } from '@/lib/money'
 
 function ProductPrice({ product }: { product: { effective_price?: number | null; sale_price: number | null; price: number } }) {
   const price = Number(product.effective_price ?? product.sale_price ?? product.price)
   const hasSale = product.effective_price !== null && product.effective_price !== undefined && product.effective_price < product.price
   return (
     <div className="flex items-baseline gap-3">
-      <span className="font-bold text-lg text-gray-900">R{price.toFixed(2)}</span>
-      {hasSale && <span className="text-sm text-gray-500 line-through">R{Number(product.price).toFixed(2)}</span>}
+      <span className="font-bold text-lg text-gray-900">{formatZar(price)}</span>
+      {hasSale && <span className="text-sm text-gray-500 line-through">{formatZar(product.price)}</span>}
     </div>
   )
 }
@@ -145,10 +146,10 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
             <p className="text-sm text-gray-500 mb-4">{product.unit}</p>
 
             <div className="flex items-baseline gap-3 mb-6">
-              <span className="font-bold text-3xl text-gray-900">R{price.toFixed(2)}</span>
+              <span className="font-bold text-3xl text-gray-900">{formatZar(price)}</span>
               {hasSale && (
                 <>
-                  <span className="text-lg text-gray-500 line-through">R{Number(product.price).toFixed(2)}</span>
+                  <span className="text-lg text-gray-500 line-through">{formatZar(product.price)}</span>
                   <span className="bg-green-100 text-green-700 text-xs font-medium px-2 py-0.5 rounded-full">
                     Sale
                   </span>
@@ -268,7 +269,7 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
           >
             <ShoppingCart size={18} />
             <span className="text-sm">{added ? 'Added!' : 'Add to Cart'}</span>
-            <span className="text-sm font-semibold border-l border-white/30 pl-2.5">R{price.toFixed(2)}</span>
+            <span className="text-sm font-semibold border-l border-white/30 pl-2.5">{formatZar(price)}</span>
           </motion.button>
         )}
       </AnimatePresence>,

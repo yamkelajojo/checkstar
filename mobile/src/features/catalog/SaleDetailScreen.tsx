@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { View, Text, ScrollView, FlatList, RefreshControl, Image } from 'react-native';
+import { mediaUri } from '../../lib/media';
 import { ChevronLeft, Tag } from 'lucide-react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -15,6 +16,7 @@ import { EmptyState } from '../../components/shared/EmptyState';
 import { FadeSlideIn } from '../../components/shared/FadeSlideIn';
 import { haptic } from '../../lib/haptics';
 import { formatZar } from '../../lib/currency';
+import { formatDate } from '../../lib/formatters';
 import { fetchProducts, fetchSpecials } from '../../lib/apiClient';
 import type { ProductVO, StoreAvailabilityVO } from '../../lib/product';
 import { findStoreAvailability, mapProduct } from '../../lib/product';
@@ -137,7 +139,7 @@ export function SaleDetailScreen() {
         {special.banner_image && (
           <View style={{ marginBottom: semanticSpacing.md, borderRadius: semanticRadius.card, overflow: 'hidden' }}>
             <Image
-              source={{ uri: special.banner_image }}
+              source={{ uri: mediaUri(special.banner_image) }}
               style={{ width: '100%', height: 180, resizeMode: 'cover' }}
               resizeMode="cover"
             />
@@ -160,9 +162,9 @@ export function SaleDetailScreen() {
         )}
         {(special.start_date || special.end_date) && (
           <Text style={{ color: theme.colors.text.tertiary, ...textStyle.caption }}>
-            {special.start_date && `From ${new Date(special.start_date).toLocaleDateString()}`}
+            {special.start_date && `From ${formatDate(special.start_date)}`}
             {special.start_date && special.end_date ? ' • ' : ''}
-            {special.end_date && `Ends ${new Date(special.end_date).toLocaleDateString()}`}
+            {special.end_date && `Ends ${formatDate(special.end_date)}`}
           </Text>
         )}
       </View>

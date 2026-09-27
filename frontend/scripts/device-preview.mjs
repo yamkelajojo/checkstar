@@ -234,7 +234,11 @@ function route(req) {
   const url = new URL(req.url, 'http://sim')
   const pathname = url.pathname
 
-  if (pathname === '/healthz') return { kind: 'health' }
+  const API_TARGET = { host: '127.0.0.1', port: 8000 }
+// Media namespaces the API serves; extension-guarded so HTML routes pass through.
+const MEDIA_PATH = /^\/(?:products|recipes)\/.+?\.(?:png|jpe?g|webp|svg|gif|avif)$/i
+
+if (pathname === '/healthz') return { kind: 'health' }
   // The simulator UI owns "/" — with ANY query string (?t=native, ?p=…).
   // Falling through would serve the web app in place of the simulator.
   if (pathname === '/' || pathname === '/__sim') return { kind: 'simulator' }
@@ -244,6 +248,14 @@ function route(req) {
   }
   if (pathname.startsWith('/w/')) {
     return { kind: 'proxy', target: WEB_TARGET, strip: '/w' }
+  }
+
+  // Same-origin media (/products/<cat>/<file>.webp, /recipes/<file>.png) is
+  // served by the API, not by Metro or Next. The extension guard mirrors the
+  // Next.js rewrite so HTML routes (/products, /products/<slug>) are left
+  // alone. Without this the native app's web build renders imageless cards.
+  if (MEDIA_PATH.test(pathname)) {
+    return { kind: 'proxy', target: API_TARGET, strip: null }
   }
 
   // Referer-based routing: absolute asset paths from the native app
@@ -256,7 +268,10 @@ function route(req) {
         // The native app calls the API same-origin (/api/...) — serve it
         // straight from the API server rather than Metro (which has no /api).
         if (pathname.startsWith('/api/')) {
-          return { kind: 'proxy', target: { host: '127.0.0.1', port: 8000 }, strip: null }
+          return { kind: 'proxy', target: API_TARGET, strip: null }
+        }
+        if (MEDIA_PATH.test(pathname)) {
+          return { kind: 'proxy', target: API_TARGET, strip: null }
         }
         return { kind: 'proxy', target: NATIVE_TARGET, strip: null }
       }

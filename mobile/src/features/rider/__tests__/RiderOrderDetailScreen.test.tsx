@@ -66,7 +66,7 @@ describe('RiderOrderDetailScreen', () => {
     expect(screen.getAllByText('1 Main Road, Durban').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('2 × Bread')).toBeTruthy();
     expect(screen.getByText('1 × Milk')).toBeTruthy();
-    expect(screen.getByText('R 70,00')).toBeTruthy();
+    expect(screen.getByText('R 70.00')).toBeTruthy();
   });
 
   it('toggles a bought item only while the order is preparing', async () => {

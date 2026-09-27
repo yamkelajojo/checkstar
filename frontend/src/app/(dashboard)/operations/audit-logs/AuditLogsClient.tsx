@@ -16,6 +16,7 @@ import {
   fadeUpTight as fadeUp,
   staggerTight as stagger,
 } from "@/lib/motion/variants";
+import { formatDateTime } from '@/lib/dates';
 
 export default function AuditLogsClient() {
   const { user } = useAuthStore();
@@ -194,9 +195,7 @@ export default function AuditLogsClient() {
                   {filtered.map((log: any, idx: number) => (
                     <tr key={log.id ?? idx} className="hover:bg-gray-50">
                       <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">
-                        {log.created_at
-                          ? new Date(log.created_at).toLocaleString("en-ZA")
-                          : "—"}
+                        {formatDateTime(log.created_at)}
                       </td>
                       <td className="px-4 py-3 text-xs">
                         {log.user?.name ?? log.user_id ?? "System"}

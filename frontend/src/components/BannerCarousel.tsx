@@ -37,6 +37,20 @@ export function BannerCarousel({ banners }: BannerCarouselProps) {
 
   const totalSlides = activeBanners[currentBanner]?.slides.length ?? 0;
 
+  // The banner list is operator-controlled: a banner can be unpublished (or its
+  // slides trimmed) while a visitor is parked on one of them. Without these
+  // guards the stale index points past the end of the list and the component
+  // returns null — the homepage hero silently disappears until someone clicks.
+  useEffect(() => {
+    if (activeBanners.length === 0) return;
+    if (currentBanner > activeBanners.length - 1) setCurrentBanner(0);
+  }, [activeBanners.length, currentBanner]);
+
+  useEffect(() => {
+    if (totalSlides === 0) return;
+    if (currentSlide > totalSlides - 1) setCurrentSlide(0);
+  }, [totalSlides, currentSlide]);
+
   const goNext = useCallback(() => {
     if (currentSlide < totalSlides - 1) {
       setCurrentSlide((prev) => prev + 1);

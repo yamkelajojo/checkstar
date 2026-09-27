@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from '@/lib/motion'
 import { spring } from '@/lib/motion/tokens'
 import { X, Navigation, Clock, User, ChevronRight } from 'lucide-react'
 import { api, ApiError } from '@/lib/api'
+import { formatZar } from '@/lib/money'
 
 interface Rider {
   id: number
@@ -117,13 +118,15 @@ export default function DispatchPanel({ orderId, onClose, onAssigned }: Dispatch
                 <h2 className="text-sm font-semibold text-gray-900">Dispatch</h2>
                 {suggestion?.order && (
                   <p className="text-xs text-gray-400 mt-0.5">
-                    Order {suggestion.order.order_number} — R{suggestion.order.total}
+                    Order {suggestion.order.order_number} — {formatZar(suggestion.order.total)}
                   </p>
                 )}
               </div>
               <button
                 onClick={onClose}
-                className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+                aria-label="Close dispatch suggestions"
+                title="Close"
+                className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
               >
                 <X size={16} />
               </button>

@@ -114,8 +114,8 @@ describe('authenticated account', () => {
     expect(screen.getByText('Order #8')).toBeTruthy();
     expect(screen.getByText('Pending')).toBeTruthy();
     expect(screen.getByText('Out for delivery')).toBeTruthy();
-    expect(screen.getByText('R 125,00')).toBeTruthy();
-    expect(screen.getByText('R 990,00')).toBeTruthy();
+    expect(screen.getByText('R 125.00')).toBeTruthy();
+    expect(screen.getByText('R 990.00')).toBeTruthy();
   });
 
   it('falls back to the raw status string when unmapped', async () => {

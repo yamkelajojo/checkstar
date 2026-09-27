@@ -126,7 +126,7 @@ describe('summary and totals', () => {
     await waitFor(() => {
       expect(placeOrderButton().props.accessibilityState.disabled).toBe(false);
     });
-    expect(screen.getByText(/Place order \u00B7 R 80,00/)).toBeTruthy();
+    expect(screen.getByText(/Place order \u00B7 R 80.00/)).toBeTruthy();
     expect(mockReplace).not.toHaveBeenCalled();
   });
 });

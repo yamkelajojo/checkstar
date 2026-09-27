@@ -68,7 +68,7 @@ describe('CartScreen', () => {
     setCart([{ productId: '1', quantity: 2, storeProductId: null }]);
     await render(<CartScreen />, { wrapper: TestWrapper });
     expect(screen.getByText('Subtotal (2 items)')).toBeTruthy();
-    expect(screen.getAllByText('R 20,00').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('R 20.00').length).toBeGreaterThan(0);
   });
 
   it('shows the min-order warning and disables checkout below R50', async () => {

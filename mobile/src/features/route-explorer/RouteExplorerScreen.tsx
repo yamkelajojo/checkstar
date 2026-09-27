@@ -15,16 +15,19 @@ import { textStyle, weights } from '../../theme/typography';
 import { semanticSpacing, semanticRadius } from '../../theme/spacing';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { decodePolyline, computeBoundingRegion, type LatLng } from '../../lib/polyline';
+import { toLatLng, formatNumeric, type Numeric } from '../../lib/numbers';
 import { useReducedMotion } from '../../components/shared/useReducedMotion';
 import { haptic } from '../../lib/haptics';
 
 interface RouteExplorerParams {
   storeName: string;
-  storeLat?: number;
-  storeLng?: number;
+  /** Route params are forwarded from order/store payloads, where Laravel's
+   *  `decimal:N` casts serialise coordinates as strings. */
+  storeLat?: Numeric;
+  storeLng?: Numeric;
   deliveryAddress?: string | null;
-  deliveryLat?: number;
-  deliveryLng?: number;
+  deliveryLat?: Numeric;
+  deliveryLng?: Numeric;
   distanceKm?: number;
   durationMinutes?: number;
   source?: string;
@@ -53,8 +56,12 @@ export function RouteExplorerScreen() {
   const progressRef = useRef(0);
   const mapRef = useRef<MapView>(null);
 
-  const hasCoordinates =
-    storeLat != null && storeLng != null && deliveryLat != null && deliveryLng != null;
+  // Normalise once: react-native-maps reads native doubles, and string
+  // coordinates would silently drop the markers or NaN the region midpoint.
+  const storePoint = toLatLng({ lat: storeLat, lng: storeLng });
+  const deliveryPoint = toLatLng({ lat: deliveryLat, lng: deliveryLng });
+
+  const hasCoordinates = storePoint != null && deliveryPoint != null;
 
   // Decode geometry
   const routePoints = useMemo<LatLng[]>(() => {
@@ -69,11 +76,11 @@ export function RouteExplorerScreen() {
   // Build all points for bounding region
   const allPoints = useMemo<LatLng[]>(() => {
     const pts: LatLng[] = [];
-    if (storeLat != null && storeLng != null) pts.push({ lat: storeLat, lng: storeLng });
-    if (deliveryLat != null && deliveryLng != null) pts.push({ lat: deliveryLat, lng: deliveryLng });
+    if (storePoint) pts.push(storePoint);
+    if (deliveryPoint) pts.push(deliveryPoint);
     pts.push(...routePoints);
     return pts;
-  }, [storeLat, storeLng, deliveryLat, deliveryLng, routePoints]);
+  }, [storePoint, deliveryPoint, routePoints]);
 
   const region = useMemo(() => {
     if (allPoints.length >= 2) return computeBoundingRegion(allPoints);
@@ -134,7 +141,7 @@ export function RouteExplorerScreen() {
   }, [hasCoordinates, source]);
 
   return (
-    <View style={styles.container} accessible accessibilityRole="image" accessibilityLabel={`${storeName} to delivery route preview. ${distanceKm != null ? `${distanceKm.toFixed(1)} km, ` : ''}${durationMinutes != null ? `${durationMinutes} minutes.` : ''}`}>
+    <View style={styles.container} accessible accessibilityRole="image" accessibilityLabel={`${storeName} to delivery route preview. ${distanceKm != null ? `${formatNumeric(distanceKm, 1)} km, ` : ''}${durationMinutes != null ? `${durationMinutes} minutes.` : ''}`}>
       {/* Header */}
       <View style={styles.headerRow}>
         <TouchableOpacity
@@ -168,7 +175,7 @@ export function RouteExplorerScreen() {
           >
             {/* Store marker */}
             <Marker
-              coordinate={{ latitude: storeLat!, longitude: storeLng! }}
+              coordinate={{ latitude: storePoint!.lat, longitude: storePoint!.lng }}
               anchor={{ x: 0.5, y: 1 }}
               accessibilityLabel={`${storeName} store`}
             >
@@ -177,7 +184,7 @@ export function RouteExplorerScreen() {
 
             {/* Delivery marker */}
             <Marker
-              coordinate={{ latitude: deliveryLat!, longitude: deliveryLng! }}
+              coordinate={{ latitude: deliveryPoint!.lat, longitude: deliveryPoint!.lng }}
               anchor={{ x: 0.5, y: 0.5 }}
               accessibilityLabel={`Delivery: ${deliveryAddress || 'address'}`}
             >
@@ -197,8 +204,8 @@ export function RouteExplorerScreen() {
             {routePoints.length === 0 && (
               <Polyline
                 coordinates={[
-                  { latitude: storeLat!, longitude: storeLng! },
-                  { latitude: deliveryLat!, longitude: deliveryLng! },
+                  { latitude: storePoint!.lat, longitude: storePoint!.lng },
+                  { latitude: deliveryPoint!.lat, longitude: deliveryPoint!.lng },
                 ]}
                 strokeColor={brand.primary}
                 strokeWidth={2}
@@ -222,7 +229,7 @@ export function RouteExplorerScreen() {
               <MapPin size={14} color={brand.success} />
               <Text style={[textStyle.caption, { color: theme.colors.text.secondary, fontWeight: weights.semibold }]}>Route</Text>
               <Text style={[textStyle.body, { color: theme.colors.text.primary, fontWeight: weights.bold }]}>
-                {distanceKm != null ? `${distanceKm.toFixed(2)} km` : '—'}
+                {distanceKm != null ? `${formatNumeric(distanceKm, 2)} km` : '—'}
               </Text>
             </View>
             <View style={styles.metricChip}>
@@ -243,9 +250,9 @@ export function RouteExplorerScreen() {
           <Text style={[textStyle.body, { color: theme.colors.text.primary, fontWeight: weights.semibold }]} numberOfLines={1}>
             {storeName}
           </Text>
-          {storeLat != null && storeLng != null && (
+          {storePoint && (
             <Text style={[textStyle.caption, { color: theme.colors.text.tertiary, fontFamily: 'monospace' }]}>
-              {storeLat.toFixed(4)}, {storeLng.toFixed(4)}
+              {storePoint.lat.toFixed(4)}, {storePoint.lng.toFixed(4)}
             </Text>
           )}
         </View>
@@ -254,9 +261,9 @@ export function RouteExplorerScreen() {
           <Text style={[textStyle.body, { color: theme.colors.text.primary, fontWeight: weights.semibold }]} numberOfLines={1}>
             {deliveryAddress || 'Delivery address not set'}
           </Text>
-          {deliveryLat != null && deliveryLng != null && (
+          {deliveryPoint && (
             <Text style={[textStyle.caption, { color: theme.colors.text.tertiary, fontFamily: 'monospace' }]}>
-              {deliveryLat.toFixed(4)}, {deliveryLng.toFixed(4)}
+              {deliveryPoint.lat.toFixed(4)}, {deliveryPoint.lng.toFixed(4)}
             </Text>
           )}
         </View>

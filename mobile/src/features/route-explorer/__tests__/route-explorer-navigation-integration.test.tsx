@@ -1,78 +1,66 @@
-/*
-STLC / Integration Verification — RouteExplorer Navigation Integration
-Requirements trace: docs/route-explorer.md §Navigation Integration,
-RootNavigator (RouteExplorer in both customer and rider branches)
-Verification criteria:
-  - OrderPlacedScreen navigates to RouteExplorer with correct params
-  - RiderOrderDetailScreen navigates to RouteExplorer with correct params
-  - RouteExplorer props match spec interface
-*/
-import { describe, test, expect } from '@jest/globals';
+/**
+ * RouteExplorer integration — renders the real screen with real params.
+ *
+ * The previous file asserted typeofs on param literals it had just written
+ * ("STLC verification" that could never fail). This one renders
+ * RouteExplorerScreen exactly as RootNavigator mounts it, with the params
+ * RiderOrderDetailScreen/OrderPlacedScreen forward — including the API's
+ * decimal-string coordinates — and checks the screen normalises them:
+ *
+ *   docs/route-explorer.md §Navigation Integration
+ *   - RouteExplorer receives navigator params: storeName, storeLat/storeLng,
+ *     deliveryAddress, deliveryLat/deliveryLng, distanceKm, durationMinutes,
+ *     source, geometry
+ *   - the map renders markers for both endpoints
+ */
+import { render, screen } from '@testing-library/react-native';
+import { describe, test, expect, jest } from '@jest/globals';
+import { RouteExplorerScreen } from '../RouteExplorerScreen';
 
-describe('RouteExplorer Navigation Integration (STLC)', () => {
-  test('OrderPlacedScreen passes RouteExplorer params with store info', () => {
-    const params = {
-      storeName: 'Checkstar Musgrave',
-      storeLat: -29.85,
-      storeLng: 31.02,
-      deliveryAddress: null,
-      deliveryLat: undefined,
-      deliveryLng: undefined,
-      distanceKm: 3.2,
-      durationMinutes: 15,
-      source: 'osrm',
+const mockGoBack = jest.fn();
+
+jest.mock('@react-navigation/native', () => ({
+  useNavigation: () => ({ goBack: mockGoBack, navigate: jest.fn() }),
+  // The wire shape forwarded by RiderOrderDetailScreen: decimal strings.
+  useRoute: () => ({
+    params: {
+      storeName: 'Checkstar Durban Central',
+      storeLat: '-29.8167000',
+      storeLng: '30.8833000',
+      deliveryAddress: '12 Berea Road, Durban',
+      deliveryLat: '-29.8350000',
+      deliveryLng: '30.9720000',
+      distanceKm: '1.47',
+      durationMinutes: '9',
+      source: 'haversine_fallback',
       geometry: null,
-    };
-    expect(typeof params.storeName).toBe('string');
-    expect(typeof params.source).toBe('string');
-    expect(typeof params.distanceKm).toBe('number');
+    },
+  }),
+}));
+
+describe('RouteExplorerScreen with forwarded navigator params', () => {
+  test('renders a map with numeric markers from decimal-string params', async () => {
+    await render(<RouteExplorerScreen />);
+
+    const markers = screen.getAllByTestId('map-marker');
+    expect(markers).toHaveLength(2);
+    expect(markers[0].props.coordinate).toEqual({ latitude: -29.8167, longitude: 30.8833 });
+    expect(markers[1].props.coordinate).toEqual({ latitude: -29.835, longitude: 30.972 });
+
+    const region = screen.getByTestId('map-view').props.initialRegion;
+    expect(Number.isFinite(region.latitude)).toBe(true);
+    expect(Number.isFinite(region.longitude)).toBe(true);
   });
 
-  test('RiderOrderDetailScreen passes full route props to RouteExplorer', () => {
-    const params = {
-      storeName: 'Checkstar Umgeni',
-      storeLat: -29.85,
-      storeLng: 31.02,
-      deliveryAddress: '12 Berea Road',
-      deliveryLat: -29.8587,
-      deliveryLng: 31.0218,
-      distanceKm: 1.47,
-      durationMinutes: 9,
-      source: 'osrm',
-      geometry: '_p~iF~ps|U',
-    };
-    expect(typeof params.storeName).toBe('string');
-    expect(typeof params.geometry).toBe('string');
-    expect(typeof params.deliveryAddress).toBe('string');
-    expect(typeof params.storeLat).toBe('number');
-  });
+  test('shows the endpoints, the distance and the duration', async () => {
+    await render(<RouteExplorerScreen />);
 
-  test('RouteExplorer props include optional fields correctly typed', () => {
-    // Per navigation/types.ts: RouteExplorer props
-    const propsType = {
-      storeName: 'string',
-      storeLat: 'number?',
-      storeLng: 'number?',
-      deliveryAddress: 'string|null?',
-      deliveryLat: 'number?',
-      deliveryLng: 'number?',
-      distanceKm: 'number?',
-      durationMinutes: 'number?',
-      source: 'string?',
-      geometry: 'string|null?',
-    };
-    expect(typeof propsType).toBe('object');
-  });
-
-  test('RouteExplorer source indicates OSRM data source', () => {
-    const source = 'osrm';
-    expect(source).toBe('osrm');
-  });
-
-  test('RouteExplorer navigation available in both branches', () => {
-    // Per RootNavigator: RouteExplorer registered in rider branch (line 59) and customer branch (line 71)
-    const riderBranch = true;
-    const customerBranch = true;
-    expect(riderBranch && customerBranch).toBe(true);
+    expect(screen.getByText('Checkstar Durban Central')).toBeTruthy();
+    expect(screen.getByText('12 Berea Road, Durban')).toBeTruthy();
+    // Coordinates are displayed to 4 decimals, from the coerced numbers.
+    expect(screen.getByText('-29.8167, 30.8833')).toBeTruthy();
+    expect(screen.getByText('-29.8350, 30.9720')).toBeTruthy();
+    expect(screen.getByText('1.47 km')).toBeTruthy();
+    expect(screen.getByText('9 min')).toBeTruthy();
   });
 });

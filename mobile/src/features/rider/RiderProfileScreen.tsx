@@ -14,6 +14,7 @@ import { useSession } from '../../stores/session';
 import { copy } from '../../lib/strings';
 import { useTopSafeArea } from '../../components/shared/ScreenHeader';
 import { brand } from '../../theme/colors';
+import { formatNumeric } from '../../lib/numbers';
 
 export function RiderProfileScreen() {
   const theme = useTheme();
@@ -39,7 +40,7 @@ export function RiderProfileScreen() {
         <FadeSlideIn delay={100} distance={10}>
           <View style={{ flexDirection: 'row', gap: 10 }}>
             <StatCard icon={PackageCheck} label={copy.rider.deliveries} value={String(profile.total_deliveries ?? 0)} index={0} />
-            <StatCard icon={Star} label={copy.rider.rating} value={profile.average_rating != null ? profile.average_rating.toFixed(1) : '—'} index={1} />
+            <StatCard icon={Star} label={copy.rider.rating} value={formatNumeric(profile.average_rating, 1)} index={1} />
             <StatCard icon={ShoppingBag} label={copy.rider.level} value={String(profile.level ?? 1)} index={2} />
           </View>
         </FadeSlideIn>

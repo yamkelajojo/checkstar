@@ -17,6 +17,7 @@ import {
   PopoverFooter,
 } from '@/components/ui/popover'
 import { spring, ease } from '@/lib/motion/tokens'
+import { formatZar } from '@/lib/money'
 
 export default function RecipeDetailClient({ slug }: { slug: string }) {
   const { data: recipe, isLoading: loading, error } = useRecipe(slug)
@@ -276,7 +277,7 @@ function IngredientProductPopover({ product }: { product: Product }) {
           <Package size={12} className="flex-shrink-0" />
         )}
         <span className="truncate max-w-[80px]">{product.name}</span>
-        <span className="font-semibold">R{price.toFixed(2)}</span>
+        <span className="font-semibold">{formatZar(price)}</span>
       </PopoverTrigger>
 
       <PopoverContent className="w-72 rounded-[16px] border border-gray-100 shadow-[0_8px_32px_rgba(0,0,0,0.12)]">
@@ -303,7 +304,7 @@ function IngredientProductPopover({ product }: { product: Product }) {
         )}
 
         <PopoverFooter className="mt-3">
-          <span className="font-bold text-sm text-gray-900 tabular-nums">R{price.toFixed(2)}</span>
+          <span className="font-bold text-sm text-gray-900 tabular-nums">{formatZar(price)}</span>
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.92 }}

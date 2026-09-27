@@ -168,7 +168,11 @@ export const api = {
     ),
   // Store dispatch (Logistics Officer / Store Owner)
   getPendingDispatch: (storeId?: number) => request<{ data: Order[] }>(`/store/dispatch/pending${storeId ? `?store_id=${storeId}` : ''}`),
-  getDispatchRiders: (storeId?: number) => request<{ data: Array<{ id: number; user_id: number; store_id: number | null; is_available: boolean; vehicle_type: string | null; max_radius_km: number; user?: { id: number; name: string; email: string } }> }>(`/store/dispatch/riders${storeId ? `?store_id=${storeId}` : ''}`),
+  // The endpoint returns whole Rider models (StoreDispatchController::riders),
+  // so rating and delivery count are available to the dispatcher choosing
+  // between riders. Declared optional: the client must still work when a rider
+  // profile has no history yet.
+  getDispatchRiders: (storeId?: number) => request<{ data: Array<{ id: number; user_id: number; store_id: number | null; is_available: boolean; vehicle_type: string | null; max_radius_km: number; average_rating?: number | null; total_deliveries?: number | null; user?: { id: number; name: string; email: string } }> }>(`/store/dispatch/riders${storeId ? `?store_id=${storeId}` : ''}`),
   dispatchOrder: (orderId: number, riderId: number, storeId?: number) => request<{ data: Order }>(`/store/orders/${orderId}/dispatch`, { method: 'POST', body: JSON.stringify({ rider_id: riderId, ...(storeId ? { store_id: storeId } : {}) }) }),
   reassignOrder: (orderId: number, riderId: number, storeId?: number) => request<{ data: Order }>(`/store/orders/${orderId}/reassign`, { method: 'POST', body: JSON.stringify({ rider_id: riderId, ...(storeId ? { store_id: storeId } : {}) }) }),
   // Staff management

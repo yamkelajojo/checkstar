@@ -126,11 +126,27 @@ export async function getApiBaseUrl(): Promise<string> {
 
 // Lazy initialization - will be resolved on first API call
 let apiBaseUrlPromise: Promise<string> | null = null;
+// Resolved base, mirrored synchronously once the first lookup completes so
+// render-path code (product imagery) can normalise media URLs without
+// awaiting — see lib/media.ts.
+let resolvedApiBaseUrl: string | null = null;
 function getApiBaseUrlPromise(): Promise<string> {
   if (!apiBaseUrlPromise) {
-    apiBaseUrlPromise = getConfiguredApiUrl();
+    apiBaseUrlPromise = getConfiguredApiUrl().then((url) => {
+      resolvedApiBaseUrl = url;
+      return url;
+    });
   }
   return apiBaseUrlPromise;
+}
+
+/**
+ * The API base resolved by the first lookup, or null before that. Render
+ * paths use this to rebuild media URLs against the origin the app actually
+ * talks to; null means "leave the URL alone".
+ */
+export function getResolvedApiBaseUrlSync(): string | null {
+  return resolvedApiBaseUrl;
 }
 
 const TOKEN_KEY = 'checkstar.auth.token';
@@ -254,6 +270,7 @@ export async function getApi(): Promise<ApiClient> {
 export async function resetApiClient(): Promise<void> {
   client = null;
   apiBaseUrlPromise = null;
+  resolvedApiBaseUrl = null;
   await getApi(); // Re-initialize
 }
 

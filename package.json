@@ -1,0 +1,22 @@
+{
+  "name": "checkstar",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Durban supermarket chain — Laravel API + Next.js web + Expo mobile. Root scripts only; the three apps keep their own package.json.",
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "dev:web": "node scripts/dev.mjs api web",
+    "dev:api": "node scripts/dev.mjs api",
+    "setup": "node scripts/setup.mjs",
+    "test": "node scripts/test-all.mjs",
+    "test:backend": "cd backend && php artisan test",
+    "test:web": "cd frontend && npm test",
+    "test:mobile": "cd mobile && npm test",
+    "build": "cd frontend && npm run build",
+    "typecheck": "node scripts/test-all.mjs --typecheck"
+  }
+}

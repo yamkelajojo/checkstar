@@ -1,5 +1,6 @@
 import { View, Text, FlatList, Pressable } from 'react-native';
 import { Image } from 'expo-image';
+import { mediaUri } from '../../lib/media';
 import { ShoppingCart, ArrowRight, Trash2 } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -128,7 +129,7 @@ export function CartScreen() {
                     }}
                   >
                     {product?.images && product.images[0] ? (
-                      <Image source={{ uri: product.images[0] }} style={{ width: 56, height: 56 }} contentFit="contain" cachePolicy="memory-disk" />
+                      <Image source={{ uri: mediaUri(product.images[0]) }} style={{ width: 56, height: 56 }} contentFit="contain" cachePolicy="memory-disk" />
                     ) : (
                       <Text style={{ fontSize: 24 }}>🛒</Text>
                     )}

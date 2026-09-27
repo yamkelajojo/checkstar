@@ -4,8 +4,10 @@ import { useState, useEffect } from 'react'
 import { motion } from 'motion/react'
 import { User, Mail, Phone, Loader2, Save, CheckCircle, MailCheck } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth-store'
+import ErrorNotice from '@/components/ErrorNotice'
 import { api } from '@/lib/api'
 import AddressBookSection from './AddressBookSection'
+import { roleLabel } from '@/lib/labels'
 
 export default function ProfileClient() {
   // Auth bootstrap + redirect live in the (account) layout AuthGuard.
@@ -72,13 +74,13 @@ export default function ProfileClient() {
               </div>
               <div>
                 <p className="font-semibold text-lg">{user?.name}</p>
-                <p className="text-sm text-gray-400 capitalize">{user?.role?.replace(/_/g, ' ')}</p>
+                <p className="text-sm text-gray-400">{roleLabel(user?.role)}</p>
               </div>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
-                <div className="bg-accent/10 border border-accent/30 text-accent text-sm rounded-lg px-4 py-3">{error}</div>
+                <ErrorNotice compact title="We couldn't save your profile" message={error} />
               )}
 
               {success && (

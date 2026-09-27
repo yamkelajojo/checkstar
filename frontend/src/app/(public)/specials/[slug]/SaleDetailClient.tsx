@@ -2,14 +2,16 @@
 
 import { motion } from 'motion/react'
 import Link from 'next/link'
+import EmptyState from '@/components/EmptyState'
 import { Calendar, MapPin, Clock, Sparkles, ChevronLeft } from 'lucide-react'
 import ProductCard from '@/components/ProductCard'
 import { useSaleDetail } from '@/lib/query'
 import { fadeUp, stagger } from '@/lib/motion/variants'
+import { formatLongDate } from '@/lib/dates'
 
 function fmtDate(d: string | null | undefined) {
   if (!d) return ''
-  return new Date(d).toLocaleDateString('en-ZA', { day: 'numeric', month: 'long', year: 'numeric' })
+  return formatLongDate(d)
 }
 
 /**
@@ -36,18 +38,21 @@ export default function SaleDetailClient({ slug }: { slug: string }) {
 
   if (isError || !sale) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-20 text-center">
-        <Sparkles size={32} className="mx-auto text-gray-300 mb-4" />
-        <h1 className="text-xl font-semibold text-gray-700">This sale isn&rsquo;t available</h1>
-        <p className="text-sm text-gray-500 mt-2">
-          It may have ended, or the link is out of date.
-        </p>
-        <Link
-          href="/specials"
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline mt-6"
-        >
-          <ChevronLeft size={14} /> All specials
-        </Link>
+      <div className="max-w-7xl mx-auto px-4">
+        <EmptyState
+          heading="h1"
+          icon={Sparkles}
+          title="This sale isn't available"
+          caption="It may have ended, or the link is out of date."
+          action={
+            <Link
+              href="/specials"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+            >
+              <ChevronLeft size={14} /> All specials
+            </Link>
+          }
+        />
       </div>
     )
   }
@@ -117,10 +122,13 @@ export default function SaleDetailClient({ slug }: { slug: string }) {
         </motion.div>
 
         {products.length === 0 ? (
-          <div className="mt-10 text-center py-16 text-gray-500">
-            <Sparkles size={36} className="mx-auto mb-3 opacity-40" />
-            <p className="text-lg font-medium">No products in this sale yet</p>
-            <p className="text-sm mt-1">Check back soon.</p>
+          <div className="mt-10">
+            <EmptyState
+              compact
+              icon={Sparkles}
+              title="No products in this sale yet"
+              caption="Check back soon — new specials go up every week."
+            />
           </div>
         ) : (
           <motion.div variants={stagger} initial="hidden" animate="show" className="mt-8 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">

@@ -6,6 +6,8 @@ import { ArrowLeft, Loader2, Package, Bike, MapPin, Clock, CheckCircle, AlertCir
 import { useOrder } from '@/lib/query'
 import OrderTrackingMap from '@/components/OrderTrackingMap'
 import { statusConfig } from '@/lib/motion/variants'
+import { formatDateTime } from '@/lib/dates'
+import { customerStatusLabel } from '@/lib/labels'
 
 export default function TrackingClient({ id }: { id: string }) {
   const { data: order, isLoading, error } = useOrder(id)
@@ -41,7 +43,7 @@ export default function TrackingClient({ id }: { id: string }) {
       <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
         <div>
           <h1 className="font-display text-2xl font-bold flex items-center gap-2">Tracking Order #{order.order_number}</h1>
-          <p className="text-sm text-gray-400">{new Date(order.created_at).toLocaleString('en-ZA')} • {isPickup ? 'Pickup' : order.delivery_address}</p>
+          <p className="text-sm text-gray-400">{formatDateTime(order.created_at)} • {isPickup ? 'Pickup' : order.delivery_address}</p>
         </div>
         <span className={`text-xs font-medium px-3 py-1.5 rounded-full ${statusCfg.bg} ${statusCfg.color} flex items-center gap-1.5`}>
           <StatusIcon size={14} /> {statusCfg.label}
@@ -88,7 +90,7 @@ export default function TrackingClient({ id }: { id: string }) {
             </div>
             <div className="bg-white border border-gray-100 rounded-xl p-4">
               <div className="flex items-center gap-2 text-xs text-gray-500 uppercase tracking-wider mb-2"><Clock size={14} /> Status</div>
-              <p className="font-medium capitalize">{order.status.replace(/_/g, ' ')}</p>
+              <p className="font-medium">{customerStatusLabel(order.status)}</p>
               <p className="text-sm text-gray-500">{order.delivery_address || 'Delivery address'}</p>
               {order.status === 'delivered' && <p className="text-xs text-green-600 mt-1 flex items-center gap-1"><CheckCircle size={12} /> Delivered</p>}
               {order.status === 'cancelled' && <p className="text-xs text-red-600 mt-1 flex items-center gap-1"><AlertCircle size={12} /> Cancelled</p>}

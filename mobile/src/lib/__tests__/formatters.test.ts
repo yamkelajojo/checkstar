@@ -1,10 +1,15 @@
 import {
   formatDate,
   formatDateTime,
+  formatTime,
+  formatDayMonth,
+  formatLongDate,
   formatNumber,
   formatRelativeTime,
+  toDate,
   truncate,
   titleCase,
+  DATE_PLACEHOLDER,
 } from '../formatters';
 
 describe('formatters', () => {
@@ -124,5 +129,87 @@ describe('formatters', () => {
     it('handles apostrophes', () => {
       expect(titleCase("o'brien")).toBe("O'brien");
     });
+  });
+});
+
+/**
+ * House date format — the SAME table the web client asserts
+ * (frontend/src/lib/__tests__/dates.test.ts). One ecosystem, one calendar.
+ *
+ *     27 Sep 2026 · 27 Sep 2026, 14:30 · 14:30 · 27 Sep · 27 September 2026
+ *
+ * Explicit month tables, not Intl: ICU prints "Sept" for September on some
+ * engines and "Sep" on others, and this app runs on Hermes (Android) and JSC
+ * (older iOS) while the web runs on V8. Deterministic beats locale-clever.
+ *
+ * Local Dates are used so the assertions hold in any timezone (CI is UTC, the
+ * team is SAST).
+ */
+describe('house date format (shared with the web client)', () => {
+  const d = (y: number, m: number, day: number, h = 0, min = 0) =>
+    new Date(y, m, day, h, min);
+
+  it('prints day, short month and year', () => {
+    expect(formatDate(d(2026, 8, 27))).toBe('27 Sep 2026');
+  });
+
+  it('does not zero-pad the day', () => {
+    expect(formatDate(d(2026, 0, 5))).toBe('5 Jan 2026');
+  });
+
+  it('uses three-letter months everywhere (the ICU "Sept" trap)', () => {
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    ];
+    months.forEach((label, index) => {
+      expect(formatDate(d(2026, index, 15))).toBe(`15 ${label} 2026`);
+    });
+  });
+
+  it('appends a 24-hour zero-padded time', () => {
+    expect(formatDateTime(d(2026, 8, 27, 14, 30))).toBe('27 Sep 2026, 14:30');
+    expect(formatDateTime(d(2026, 8, 27, 9, 5))).toBe('27 Sep 2026, 09:05');
+  });
+
+  it('formats a clock time on its own', () => {
+    expect(formatTime(d(2026, 8, 27, 14, 30))).toBe('14:30');
+    expect(formatTime(d(2026, 8, 27, 0, 0))).toBe('00:00');
+  });
+
+  it('drops the year for compact rows', () => {
+    expect(formatDayMonth(d(2026, 8, 27))).toBe('27 Sep');
+  });
+
+  it('spells the month out for customer prose', () => {
+    expect(formatLongDate(d(2026, 8, 27))).toBe('27 September 2026');
+    expect(formatLongDate(d(2026, 11, 1))).toBe('1 December 2026');
+  });
+
+  it('accepts the ISO strings the API returns', () => {
+    expect(formatDate('2026-09-27T14:30:00')).toBe('27 Sep 2026');
+    expect(formatDate(new Date('2026-09-27T14:30:00'))).toBe('27 Sep 2026');
+  });
+
+  it('parses or rejects through toDate', () => {
+    expect(toDate('2026-09-27T14:30:00')).toBeInstanceOf(Date);
+    expect(toDate(null)).toBeNull();
+    expect(toDate(undefined)).toBeNull();
+    expect(toDate('')).toBeNull();
+    expect(toDate('not a date')).toBeNull();
+    expect(toDate(true)).toBeNull();
+  });
+
+  it.each([
+    ['null', null],
+    ['undefined', undefined],
+    ['empty string', ''],
+    ['garbage', 'not a date'],
+  ])('renders an em dash for %s instead of "Invalid Date"', (_label, value) => {
+    expect(formatDate(value as never)).toBe(DATE_PLACEHOLDER);
+    expect(formatDateTime(value as never)).toBe(DATE_PLACEHOLDER);
+    expect(formatTime(value as never)).toBe(DATE_PLACEHOLDER);
+    expect(formatDayMonth(value as never)).toBe(DATE_PLACEHOLDER);
+    expect(formatLongDate(value as never)).toBe(DATE_PLACEHOLDER);
   });
 });

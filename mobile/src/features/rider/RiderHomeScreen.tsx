@@ -24,6 +24,7 @@ import { getOrderTotal } from '../../lib/orderTotal';
 import { POLL_BASE_MS, POLL_MAX_MS } from '../../lib/constants';
 import { useTopSafeArea } from '../../components/shared/ScreenHeader';
 import { brand } from '../../theme/colors';
+import { formatNumeric } from '../../lib/numbers';
 
 export function RiderHomeScreen() {
   const theme = useTheme();
@@ -147,7 +148,7 @@ export function RiderHomeScreen() {
         <FadeSlideIn delay={140} distance={10}>
           <View style={{ flexDirection: 'row', gap: 10 }}>
             <StatCard icon={PackageCheck} label={copy.rider.deliveries} value={String(stats?.total_deliveries ?? 0)} index={0} />
-            <StatCard icon={Star} label={copy.rider.rating} value={stats?.average_rating != null ? stats.average_rating.toFixed(1) : '—'} index={1} />
+            <StatCard icon={Star} label={copy.rider.rating} value={formatNumeric(stats?.average_rating, 1)} index={1} />
             <StatCard icon={ShoppingBag} label={copy.rider.level} value={String(stats?.level ?? 1)} index={2} />
           </View>
         </FadeSlideIn>

@@ -3,6 +3,8 @@
 import { useMemo } from 'react'
 import { Line } from 'react-chartjs-2'
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend, Filler } from 'chart.js'
+import { formatZar } from '@/lib/money'
+import { formatDayMonth } from '@/lib/dates'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend, Filler)
 
@@ -13,10 +15,7 @@ interface RevenuePoint {
 
 export default function RevenueChart({ data }: { data: RevenuePoint[] }) {
   const chartData = useMemo(() => ({
-    labels: data.map(d => {
-      const date = new Date(d.date)
-      return date.toLocaleDateString('en-ZA', { month: 'short', day: 'numeric' })
-    }),
+    labels: data.map(d => formatDayMonth(d.date)),
     datasets: [{
       label: 'Revenue (ZAR)',
       data: data.map(d => d.revenue),
@@ -36,7 +35,7 @@ export default function RevenueChart({ data }: { data: RevenuePoint[] }) {
       legend: { display: false },
       tooltip: {
         callbacks: {
-          label: (ctx: any) => `R${ctx.parsed.y.toLocaleString()}`,
+          label: (ctx: any) => formatZar(ctx.parsed.y),
         },
       },
     },
@@ -49,7 +48,7 @@ export default function RevenueChart({ data }: { data: RevenuePoint[] }) {
         ticks: {
           color: '#94A3B8',
           font: { size: 10 },
-          callback: (v: any) => `R${v.toLocaleString()}`,
+          callback: (v: any) => formatZar(v),
         },
         grid: { color: 'rgba(0,0,0,0.04)' },
       },

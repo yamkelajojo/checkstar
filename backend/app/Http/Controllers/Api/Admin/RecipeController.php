@@ -45,6 +45,11 @@ class RecipeController extends Controller
         return response()->json(['data' => Recipe::create($validated)], 201);
     }
 
+    public function show(int $id): JsonResponse
+    {
+        return response()->json(['data' => Recipe::findOrFail($id)]);
+    }
+
     public function update(Request $request, int $id): JsonResponse
     {
         $recipe = Recipe::findOrFail($id);

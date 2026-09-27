@@ -1,5 +1,5 @@
 import { describe, test, expect } from '@jest/globals';
-import { decodePolyline, computeBoundingRegion } from '../polyline';
+import { decodePolyline, computeBoundingRegion, type LatLng } from '../polyline';
 
 describe('decodePolyline', () => {
   test('decodes a simple Google-encoded polyline', () => {
@@ -96,5 +96,59 @@ describe('computeBoundingRegion', () => {
     const padded = computeBoundingRegion(points, 2.0);
     expect(padded.latitudeDelta).toBeGreaterThan(tight.latitudeDelta);
     expect(padded.longitudeDelta).toBeGreaterThan(tight.longitudeDelta);
+  });
+});
+
+/**
+ * The API sends coordinates as Laravel `decimal:7` strings ("-29.8350000").
+ * String arithmetic in the midpoint used to concatenate ("-29.83" + "-29.81")
+ * and divide by two, producing NaN — react-native-maps then rendered nothing.
+ */
+describe('computeBoundingRegion with real API values', () => {
+  const WIRE = [
+    { lat: '-29.8167000', lng: '30.8833000' },
+    { lat: '-29.8350000', lng: '30.9720000' },
+  ] as unknown as LatLng[];
+
+  test('decimal-string coordinates produce a finite numeric region', () => {
+    const region = computeBoundingRegion(WIRE);
+
+    expect(typeof region.latitude).toBe('number');
+    expect(typeof region.longitude).toBe('number');
+    expect(Number.isFinite(region.latitude)).toBe(true);
+    expect(Number.isFinite(region.longitude)).toBe(true);
+    expect(region.latitude).toBeCloseTo(-29.82585, 5);
+    expect(region.longitude).toBeCloseTo(30.92765, 5);
+    expect(region.latitudeDelta).toBeGreaterThan(0);
+    expect(region.longitudeDelta).toBeGreaterThan(0);
+  });
+
+  test('absent coordinates are dropped instead of becoming 0,0', () => {
+    const region = computeBoundingRegion([
+      { lat: null, lng: null },
+      { lat: undefined, lng: undefined },
+    ] as unknown as LatLng[]);
+
+    // Falls back to the Durban CBD default rather than the Gulf of Guinea.
+    expect(region.latitude).toBeCloseTo(-29.8587, 4);
+    expect(region.longitude).toBeCloseTo(31.0218, 4);
+  });
+
+  test('bounds only the usable points when some are missing', () => {
+    const region = computeBoundingRegion([
+      { lat: 'garbage', lng: '30.9720000' },
+      { lat: '-29.8350000', lng: '30.9720000' },
+    ] as unknown as LatLng[]);
+
+    expect(region.latitude).toBeCloseTo(-29.835, 5);
+    expect(region.longitude).toBeCloseTo(30.972, 5);
+  });
+
+  test('an empty point list still yields a usable Durban region', () => {
+    const region = computeBoundingRegion([]);
+
+    expect(region.latitude).toBeCloseTo(-29.8587, 4);
+    expect(region.longitude).toBeCloseTo(31.0218, 4);
+    expect(region.latitudeDelta).toBeGreaterThan(0);
   });
 });

@@ -97,11 +97,11 @@ describe('SaleDetailClient', () => {
     // Both products, at the special price with the struck-through base price
     expect(screen.getByText('Spring Mix')).toBeInTheDocument()
     expect(screen.getByText('Wild Honey')).toBeInTheDocument()
-    expect(screen.getAllByText('R39.99').length).toBe(2)
-    expect(screen.getAllByText('R45.00').length).toBe(2)
+    expect(screen.getAllByText('R 39.99').length).toBe(2)
+    expect(screen.getAllByText('R 45.00').length).toBe(2)
     // Special badge + save pill
     expect(screen.getAllByText('Special').length).toBe(2)
-    expect(screen.getAllByText('Save R5.01').length).toBe(2)
+    expect(screen.getAllByText('Save R 5.01').length).toBe(2)
     // Add-to-cart buttons are named per product
     expect(screen.getByRole('button', { name: 'Add Spring Mix to cart' })).toBeInTheDocument()
   })
@@ -145,7 +145,9 @@ describe('SaleDetailClient', () => {
     apiMocks.getSaleBySlug.mockRejectedValue(new Error('404'))
     renderWithProviders(<SaleDetailClient slug="ghost-sale" />)
 
-    expect(await screen.findByText('This sale isn’t available')).toBeInTheDocument()
+    // Straight apostrophe: 13 of the app's 16 contractions use `&apos;`, and the
+    // shared EmptyState renders the title string as written.
+    expect(await screen.findByText("This sale isn't available")).toBeInTheDocument()
     const back = screen.getByRole('link', { name: /All specials/ })
     expect(back).toHaveAttribute('href', '/specials')
   })

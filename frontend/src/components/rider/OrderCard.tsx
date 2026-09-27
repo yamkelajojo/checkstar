@@ -5,10 +5,9 @@ import { fadeUpTight as fadeUp } from '@/lib/motion/variants'
 import OrderTimeline from '@/components/OrderTimeline'
 import { MapPin, Store } from 'lucide-react'
 import type { Order } from '@/types'
+import { formatZar } from '@/lib/money'
 
-function formatCurrency(amount: number): string {
-  return `R${Number(amount).toFixed(2)}`
-}
+// Money renders through the house formatter (lib/money) like every other surface.
 
 interface OrderCardProps {
   order: Order
@@ -41,7 +40,7 @@ export default function OrderCard({ order, badge, action, children }: OrderCardP
           </div>
           <p className="text-xs text-gray-400">{new Date(order.created_at).toLocaleString()}</p>
         </div>
-        <span className="text-lg font-bold text-primary">{formatCurrency(order.total)}</span>
+        <span className="text-lg font-bold text-primary">{formatZar(order.total)}</span>
       </div>
 
       {order.items && order.items.length > 0 && (
@@ -51,7 +50,7 @@ export default function OrderCard({ order, badge, action, children }: OrderCardP
               <span className="text-gray-600">
                 {item.product_snapshot?.name || `Product #${item.product_id}`} x{item.quantity}
               </span>
-              <span className="text-gray-500">{formatCurrency(item.total_price)}</span>
+              <span className="text-gray-500">{formatZar(item.total_price)}</span>
             </div>
           ))}
           {order.items.length > 5 && (

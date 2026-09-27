@@ -10,6 +10,7 @@ import { semanticSpacing } from '../../theme/spacing';
 import { fetchRiderHistory } from '../../lib/apiClient';
 import { queryKeys } from '../../lib/queryKeys';
 import { formatZar } from '../../lib/currency';
+import { formatDate } from '../../lib/formatters';
 import { getOrderTotal } from '../../lib/orderTotal';
 import { TactilePressable } from '../../components/shared/TactilePressable';
 import { EmptyState } from '../../components/shared/EmptyState';
@@ -33,11 +34,6 @@ export function RiderHistoryScreen() {
     await refetch();
     setRefreshing(false);
   }, [refetch]);
-
-  const formatDate = (dateStr: string) => {
-    const d = new Date(dateStr);
-    return d.toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' });
-  };
 
   const renderOrder = ({ item }: { item: ApiOrder }) => {
     const total = getOrderTotal(item);

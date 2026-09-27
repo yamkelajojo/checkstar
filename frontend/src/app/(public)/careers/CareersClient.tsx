@@ -4,6 +4,7 @@ import { motion } from 'motion/react'
 import { Briefcase, MapPin, Clock, Calendar, ArrowRight, Building } from 'lucide-react'
 import { useCareers } from '@/lib/query'
 import { fadeUp } from '@/lib/motion/variants'
+import { formatDate } from '@/lib/dates'
 
 export default function CareersClient() {
   const { data: listings = [], isLoading: loading, error } = useCareers()
@@ -82,7 +83,7 @@ export default function CareersClient() {
                             {listing.closes_at && (
                               <span className="flex items-center gap-1">
                                 <Calendar size={14} />
-                                Closes {new Date(listing.closes_at).toLocaleDateString('en-ZA')}
+                                Closes {formatDate(listing.closes_at)}
                               </span>
                             )}
                           </div>

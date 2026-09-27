@@ -34,6 +34,7 @@ import EmptyState from "@/components/admin/EmptyState";
 import ErrorState from "@/components/admin/ErrorState";
 import { BannerStatusBadge } from "@/components/admin/StatusBadge";
 import type { Banner, BannerSlide } from "@/types";
+import { formatDate } from '@/lib/dates'
 
 const EMPTY_SLIDE: BannerSlide = {
   title: "",
@@ -573,9 +574,9 @@ export default function BannersClient() {
                       {banner.slides.length !== 1 ? "s" : ""}
                       {banner.store && ` · ${banner.store.name}`}
                       {banner.start_date &&
-                        ` · From ${new Date(banner.start_date).toLocaleDateString()}`}
+                        ` · From ${formatDate(banner.start_date)}`}
                       {banner.end_date &&
-                        ` · Until ${new Date(banner.end_date).toLocaleDateString()}`}
+                        ` · Until ${formatDate(banner.end_date)}`}
                     </p>
 
                     {/* Slide preview thumbnails */}

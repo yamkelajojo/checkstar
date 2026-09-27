@@ -57,6 +57,7 @@ class DatabaseSeeder extends Seeder
             RecipeSeeder::class,
             SouthAfricanRecipeSeeder::class,
             CommunityPostSeeder::class,
+            CareerSeeder::class,
             UserTrackingSeeder::class,
             RiderDeliverySeeder::class,
             SpecialSeeder::class,

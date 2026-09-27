@@ -10,6 +10,7 @@ import { toast } from 'sonner'
 import { fadeUpTight as fadeUp, staggerTight as stagger } from '@/lib/motion/variants'
 import Link from 'next/link'
 import type { Product } from '@/types'
+import { formatZar } from '@/lib/money'
 
 const ROLES = ['developer']
 
@@ -166,7 +167,7 @@ export default function ProductsClient() {
                       {p.is_featured && <span className="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">Featured</span>}
                       {!(p as any).is_active && <span className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full flex items-center gap-1"><EyeOff size={10} />Hidden</span>}
                     </div>
-                    <div className="text-xs text-gray-400 mt-0.5">{p.slug} · {p.unit} · R{Number(p.price).toFixed(2)} {p.sale_price ? `→ R${Number(p.sale_price).toFixed(2)}` : ''}</div>
+                    <div className="text-xs text-gray-400 mt-0.5">{p.slug} · {p.unit} · {formatZar(p.price)} {p.sale_price ? `→ ${formatZar(p.sale_price)}` : ''}</div>
                   </div>
                   <div className="flex items-center gap-1">
                     <button onClick={() => openEdit(p)} className="p-2 text-gray-400 hover:text-primary hover:bg-primary/5 rounded-lg"><Edit3 size={14} /></button>

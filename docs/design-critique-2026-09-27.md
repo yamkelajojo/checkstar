@@ -1,0 +1,207 @@
+# Checkstar design critique — whole-system cohesion review
+
+**Date:** 2026-09-27
+**Method:** ⚠️ DEGRADED: single-context (no sub-agent tool is exposed in this environment, and impeccable's CLI detector + browser overlay injection need a live browser and network, which this sandbox does not have). Assessment A (design review) and Assessment B (evidence) were therefore run by one reviewer against the repository source, its test suites and CI results rather than a rendered browser session. Every claim below cites a file, a test or a CI run so it can be checked without a browser.
+**Framework:** `pbakaus/impeccable` → `.agents/skills/impeccable/reference/critique.md` (Design Health Score, Design Specificity Verdict, Priority Issues P0–P3, Persona Red Flags, Cognitive Load Assessment, Heuristics Scoring Guide).
+**Surface:** the whole ecosystem — Next.js 15 storefront + admin + operations + rider web apps, Expo SDK 57 mobile app (customer/rider/store), and the Laravel 11 API as it presents itself to users.
+
+**Evidence base at review time:** frontend 53 test files / 466 tests green, `tsc --noEmit` clean; mobile 71 suites / 670 passed / 3 skipped, `tsc --noEmit` clean; backend green on PHP 8.2/8.3/8.4 + MySQL 8 (GitHub Actions run `36287076597`, PR #2).
+
+---
+
+## Design Health Score
+
+Nielsen's ten heuristics, 0–4 each (`4` = genuinely excellent). Scored *after* the fixes logged at the bottom of this document, with the pre-fix score in brackets where the session changed it.
+
+| # | Heuristic | Score | Key issue / evidence |
+|---|-----------|-------|----------------------|
+| 1 | Visibility of System Status | 3 | Strong: 42 files use skeleton/shimmer loading, the tracking map shows a LIVE/STALE rider badge with a 90 s staleness threshold (`OrderTrackingMap.tsx`), login shows "Signing in…", map tiles that fail announce themselves instead of showing a black rectangle (`MapContainer.tsx` + test). Gap: sign-in and registration validate only on submit — no inline field feedback (`LoginClient.tsx`). |
+| 2 | Match System / Real World | 4 [was 2] | Now speaks South African retail fluently and identically on both clients: `R 1 234.50` (`lib/money.ts`, `mobile/src/lib/currency.ts`), `27 Sep 2026, 14:30` (`lib/dates.ts`, `mobile/src/lib/formatters.ts`), "Out for delivery" / "Being packed" (`lib/labels.ts`, `mobile/src/lib/status.ts`). Durban suburbs, motorbike couriers, pack sizes ("400ml", "bunch") and a real SA pantry catalogue. Remaining nit: payment vocabulary is shown although no payment integration exists (deliberate — see P3-1). |
+| 3 | User Control and Freedom | 4 [was 3] | Undo on cart removal with a 5 s window (`CartDrawer.tsx`, tested), "Clear" basket, cancel order, admin breadcrumbs (`app/(admin)/layout.tsx`, `DashboardNav.tsx`). The P1-2 gap is closed: every dialog in the product — admin `Modal`, storefront `CartDrawer`, checkout `AuthRequiredModal` — now shares `hooks/useDialogFocus.ts` (focus in, Tab trapped, focus restored, Escape, scroll lock), pinned by 15 hook tests + 6 drawer tests + 16 modal tests. Residual: the page behind an open dialog is not marked `inert`, so a screen-reader's virtual cursor can still reach it (keyboard Tab cannot). |
+| 4 | Consistency and Standards | 4 [was 2] | Money, dates, status/role **and rider** vocabulary are single-sourced per client with mirrored test tables on both sides; the admin kit (`PageHeader`, `SearchInput`, `EmptyState`, `ErrorState`, `StatusBadge`, `ConfirmDialog`, `Modal`) is used across admin/rider surfaces; the storefront now has its own matching pair (`components/EmptyState.tsx`, `components/ErrorNotice.tsx`) adopted on orders, favorites, sale detail, product carousels, order detail, profile and dispatch; dialog behaviour is one shared hook; and `vocabulary-guard.test.ts` fails the suite if a component hand-rolls an enum again. Remaining: motion tokens are still parallel dialects (P2-1). |
+| 5 | Error Prevention | 3 | `ConfirmDialog` on destructive admin actions; login refuses `//evil`, `https://evil` and `javascript:` redirects (tested); cart quantity can never reach 0 without an undo offer; decimal-string coordinates are coerced through `toFiniteNumber` on both clients so a `"31.02"` from the API cannot crash a map. Gap: no inline form validation on auth surfaces; no cross-field check that a sale ends after it starts is surfaced at the input. |
+| 6 | Recognition Rather Than Recall | 4 [was 3] | Cart drawer is globally reachable, tracking shows From / Rider / To in one row, the order timeline renders activity with human words (`humanize`), the specials editor prints each product's base price next to its input so nobody has to remember it. The P1-3 gap is closed: the dispatch picker now reads `Rider Rita — Motorbike · ★ 4.8 · 212 deliveries`, confirmations name the rider and the order number, and the orders screen shows the assigned rider's name and rating with reassignment offered inline (`lib/labels.ts` → `riderName`/`riderLabel`). |
+| 7 | Flexibility and Efficiency | 2 | Admin search, status filters, a developer store-switcher and role-scoped navigation are all present. But there are no keyboard shortcuts anywhere except Escape, no bulk status change on the orders board, no saved filters: a manager clearing 30 orders clicks per row (P2-2). |
+| 8 | Aesthetic and Minimalist Design | 3 | Coherent visual language: one branded pin shared by both platforms (`PIN_BADGE_NAVY #262D3A` + brand orange `#EB6522`), `tabular-nums` on every money string, 16 px radii and a documented shadow ladder, motion derived from spring physics rather than taste. Gap: the dispatch console card gives five grey text rows equal weight next to a mono order number (Visual Noise Floor). |
+| 9 | Error Recovery | 3 | `ErrorState` with retry on admin surfaces, `apiErrorReason` on mobile, `SafeImage` degrades a 404/foreign host/optimizer rejection to the branded placeholder (20 tests), map tile outages explain themselves, an undecodable route geometry falls back to a dashed straight line (`OrderTrackingMap.tsx`, tested), missing dates render an em dash instead of "Invalid Date". Gap: eight variants of "Something went wrong…" across the web. |
+| 10 | Help and Documentation | 2 | Excellent for the people building it (`README.md`, `GATES.md`, `docs/adr/`, `AGENTS.md`, `docs/ui-audit-2026-09-27.md`, mobile onboarding flow). Thin for the people using it: no in-product explanation of admin metrics ("Avg Order Value"), no web onboarding, empty states rarely link to the action that would fill them. |
+| **Total** | | **32/40 (80 %)** | **Good**, close to Excellent — all three P1 findings are fixed and evidenced. What separates this from 90 % is now P2: motion tokens that do not cross-reference each other, no keyboard/bulk operations on the orders board, and thin in-product help. |
+
+---
+
+## Design Specificity Verdict
+
+**This is an authored product, not a category-interchangeable template.** The evidence is in the details that could not have come from a generic grocery starter:
+
+- The catalogue is a real South African pantry: 29 seeded products with brand-accurate names and pack sizes (Rajah curry powder 80 g, Tennis biscuits 200 g, Peppermint Crisp 49 g) and 29 matching 600×600 webp packshots on a white plate (`backend/database/seeders/SouthAfricanPantrySeeder.php`, `backend/public/products/`).
+- Geography is load-bearing, not decorative: Durban coordinates as the default map centre (`MapContainer.tsx` → `DURBAN_CENTER`), three stores, motorbike couriers, route geometry decoded from the API into a brand-orange polyline.
+- The brand mark is drawn once and reused everywhere: the orange teardrop pin with the navy locator disc and white star is the same SVG on web (`checkstarPinIcon`) and mobile (`StorePin`), sharing the `PIN_BADGE_NAVY` constant. Leaflet's default blue marker appears nowhere.
+- The role model mirrors a real SA supermarket org — developer, store_owner, store_manager, logistics_officer, customer, rider — and it is enforced in three places at once (nav gating, API authorization, login routing per role, all tested).
+- Money, dates and status vocabulary now follow South African conventions on purpose, with the sources recorded (`R 1 234.50`; decimal point because tills, bank statements and SA grocer sites print it; space grouping because that is the SA number convention).
+
+**Where it goes generic:** the admin dashboard is a standard KPI-card grid; the Chart.js charts use near-default styling with only the border colour touched (`RevenueChart.tsx`); the auth pages are a centred card. None of these are wrong — they are the places where the product's character is thinnest, and they are staff-facing, where density beats delight.
+
+---
+
+## Overall Impression
+
+The system feels like one product now, and it did not three days ago. The functional spine is genuinely solid: every map, cart, order, dispatch and role flow has a real render test behind it, failure paths are designed rather than accidental, and CI is green across three PHP versions, MySQL, web and mobile. The weakness was never the features — it was that the two clients had each grown their own dialect for the same three sentences (a price, a date, an order status), and that a handful of raw enum values had leaked into customer-facing text. Those are now single-sourced and mirrored by tests on both sides.
+
+The single biggest remaining opportunity is **staff efficiency**: the customer experience is polished, but the people who run the store click too much and read too many equally-weighted grey rows. Fix the dispatch console's rider identity and give the orders board keyboard/bulk handling, and the admin stops feeling like a customer app with extra columns.
+
+---
+
+## What's Working
+
+1. **Failure paths are designed, and now pinned by tests.** `SafeImage` has a documented reason for every branch (next/image throws for un-allow-listed hosts, the optimiser rejects SVG, a stored path can 404 after render) and 20 tests hold it there. `MapContainer` counts tile errors and only declares an outage after three failures with zero successes, then recovers the moment a tile lands. `OrderTrackingMap` falls back to a dashed straight line when route geometry cannot be decoded. This is the opposite of the usual "happy path only" prototype.
+2. **`components/admin/Modal.tsx` is a gold-standard dialog.** `role=dialog`, `aria-modal`, labelled by its title, Escape closes, focus moves in on open, Tab is trapped between first and last focusable, and focus returns to the trigger on close. It is documented in the file header and it works — and it is no longer the only place that works: the behaviour now lives in `hooks/useDialogFocus.ts` and is shared with the storefront's `CartDrawer` and `AuthRequiredModal` (P1-2, fixed).
+3. **Motion is engineered, not vibed.** Both clients derive their springs from physics with the damping ratio written down (`frontend/src/lib/motion/tokens.ts` computes ζ = c / 2√(mk) and estimates settling time; `mobile/src/theme/motion.ts` labels each spring with its ζ), and both honour `prefers-reduced-motion` — the carousel's autoplay is disabled by it (tested), not merely softened.
+
+---
+
+## Priority Issues
+
+### [P1-1] ~~Storefront empty states and error copy are ad hoc while the pattern already exists~~ — FIXED 2026-09-27
+**What it was:** `components/admin/EmptyState.tsx` and `ErrorState.tsx` were used consistently across admin and rider surfaces and mobile had one shared `EmptyState`, but the storefront had neither: "No orders yet", "No favorites yet", "Nothing here yet — check back soon.", "No products in this sale yet" and a family of `bg-accent/10 border-accent/30 text-accent` error divs — each with its own icon size, padding, weight, punctuation and button label ("Start Shopping" on one screen, "Browse Products" on the next).
+**Why it mattered:** an empty state is the first screen a new customer sees, and it is where the app should say what to do next. Four dialects of the same idea read as three apps stitched together, and an error div that only says "Something went wrong" produces a support call.
+**What was done (test-first):** two storefront components, `components/EmptyState.tsx` and `components/ErrorNotice.tsx`, owning one contract — **title = what is missing / what failed, caption = what to do next / why if we know it, action = one way forward**. `EmptyState` mirrors the mobile shape (bare 1.5-stroke glyph → title → caption → action) and can render as an `h1` when the state *is* the page; `ErrorNotice` carries `role="alert"` so a screen reader announces the hole where content should be, takes the query `error` object directly, and only offers a retry when there is something to retry.
+Adopted on: orders list (error + empty), favorites (error + empty), sale detail (unavailable sale + no products), product carousels, order detail (load failure), profile (save failure), and the dispatch console's fetch error (via the admin `ErrorState`, since that is a staff surface).
+**Deliberate split, now documented in both file headers:** `ErrorFallback` remains the *whole-region* failure card (homepage, carousel) while `ErrorNotice` is the *inline* notice inside a working page. Two sizes, one vocabulary, both saying "Try again".
+**Evidence:** `components/__tests__/EmptyState.test.tsx` (17 tests across both components); suite 57 files / 540 tests; `tsc`, `next lint`, `next build` clean. One existing expectation changed on purpose: `SaleDetailClient.test.tsx` asserted "This sale isn&rsquo;t available" with a typographic apostrophe, while 13 of the app's 16 contractions use a straight one — the copy now matches the majority and the test says why.
+
+### [P1-2] ~~The cart drawer is a modal that does not behave like the app's own modal~~ — FIXED 2026-09-27
+**What it was:** `CartDrawer.tsx` had `role=dialog`, `aria-modal`, a label and Escape-to-close, but no focus management: focus stayed on the page behind the drawer, Tab walked into the storefront, and focus was never restored. `components/admin/Modal.tsx` already did all three correctly, so the product had two dialog dialects.
+**Why it mattered:** a keyboard or screen-reader user adding an item to the cart landed in a dialog they could not navigate, and could tab "away" into content visually behind a scrim. It is the most-used overlay on the storefront.
+**What was done (test-first):** the behaviour was lifted out of `admin/Modal.tsx` into `frontend/src/hooks/useDialogFocus.ts` and adopted by all three dialogs — admin `Modal`, storefront `CartDrawer`, checkout `AuthRequiredModal` (which had the same gap and no test file at all). `AuthRequiredModal` additionally lands focus on **Sign in** rather than on its own dismiss button, because a guest stopped at checkout should arrive on the way forward. The hook keeps `onClose` in a ref so a parent re-render with a fresh inline callback cannot re-steal focus mid-typing — a defect class the old Modal code was exposed to.
+**Evidence:** `src/hooks/__tests__/useDialogFocus.test.tsx` (15), `CartDrawer.test.tsx` focus block (6 new, 24 total), `AuthRequiredModal.test.tsx` (16, new file); `admin/__tests__/Modal.test.tsx` (4) unchanged and still green, proving the extraction did not move behaviour. Suite: 55 files / 506 tests; `next lint` and `next build` clean.
+**Residual (deliberately not done):** the page behind an open dialog is not marked `inert`/`aria-hidden`. Doing it properly needs the route layout to hand the dialog a reference to the app root, which is a bigger change than the defect warrants; the Tab trap already keeps keyboard users inside, and `aria-modal="true"` tells assistive tech the rest is background.
+
+### [P1-3] ~~The dispatch console asks a human to recall database ids~~ — FIXED 2026-09-27
+**What it was:** `DispatchConsoleClient.tsx` rendered `Current rider: #12`, confirmed actions with "dispatched to rider 1", and laid the card out as five equally-weighted grey rows with the status printed twice (once in the meta line, once in the pill).
+**Why it mattered:** this is the screen a logistics officer uses to get an order moving. "Who is 12?" forces a trip to the riders page — a Context Switch and a Jargon Barrier on the highest-pressure surface in the product.
+**What the fix uncovered:** the `Current rider` line and its Reassign control were **unreachable**. `/store/dispatch/pending` selects `status IN (confirmed, retrying) AND rider_id IS NULL` (`ManualDispatch::pendingForStore`), so an order in that queue never has a rider — and the test covering it asserted `rider_id: 8` with `status: "preparing"`, a state the API cannot produce. Meanwhile the backend's `POST /store/orders/{id}/reassign` had **no reachable UI anywhere**.
+**What was done (test-first):**
+- Rider wording moved into the shared vocabulary: `riderName` / `riderLabel` in `lib/labels.ts` (8 new tests, including the decimal strings this API returns and the "New" case that must not read "★ 0.0"). The picker now offers `Rider Rita — Motorbike · ★ 4.8 · 212 deliveries`; `getDispatchRiders`' type was widened to the rating/delivery fields the endpoint already returns.
+- Confirmations name the order and the rider: `Order #CS-1501 dispatched to Rider Rita`.
+- The dead branch was deleted and reassignment was built where assigned orders actually live — `admin/orders/StoreOrdersClient.tsx` — with the current rider excluded from the target list, the button disabled until a rider is chosen, and riders only fetched when something on screen can be reassigned.
+- Card hierarchy: the order number is the one primary element; the duplicated status text is gone.
+- While there, the last raw enums on staff surfaces were routed through `labels.ts` (admin dashboard status + role badge, staff roster, users admin role chip and picker, rider dashboard order badges and badge type, orders lifecycle help copy), and `src/lib/__tests__/vocabulary-guard.test.ts` now fails the build if any component hand-rolls `status.replace(/_/g, " ")` again.
+**Evidence:** `manager-surfaces.test.tsx` 28 tests (5 new StoreOrdersClient reassignment/vocabulary tests, the impossible-fixture test replaced with one that documents the endpoint contract), `labels.test.ts` 38, `vocabulary-guard.test.ts` 2. Suite: 56 files / 523 tests; `tsc`, `next lint`, `next build` clean.
+
+### [P2-1] Motion tokens are parallel dialects
+**What:** `frontend/src/lib/motion/tokens.ts` (`spring.apple`, `spring.snap`, `spring.press`, `ease.apple`) and `mobile/src/theme/motion.ts` (`springs.gentle/standard/snappy/bouncy/press`) express the same design intent with different numbers and different names, with nothing cross-referencing them.
+**Why it matters:** the same interaction — a press, a card entering view — will physically feel different on the two clients, and there is no way to notice the drift because no test compares them.
+**Fix:** write the mapping down (`docs/design-language.md`: `spring.apple ↔ springs.apple`, ζ and settling time for each) and add a token test on each side asserting the shared pairs. Do not merge the modules — the platforms' animation runtimes differ; agree the *feel*, not the code.
+**Suggested command:** `$impeccable document`
+
+### [P2-2] No keyboard efficiency for the people who use this all day
+**What:** the only keyboard affordance in the web app is Escape. No `/` to focus search (`components/admin/SearchInput.tsx`), no `j`/`k` on the orders board, no multi-select, no bulk status change.
+**Why it matters:** a store manager processes dozens of orders a shift. Every row is currently a click-and-wait cycle; this is the difference between a tool and a form.
+**Fix:** add `/` to focus the nearest search input, `Esc` to clear it, row selection with `Shift`+click and one bulk "Confirm selected" action on the orders board. Announce bulk results with the existing toast pattern.
+**Suggested command:** `$impeccable optimize`
+
+### [P3-1] Payment vocabulary without a payment system
+**What:** `paymentStatusConfig` renders payment states across order surfaces although no payment integration exists (deliberate, and correct for this prototype).
+**Why it matters:** a store owner reading "payment pending" will look for a gateway that is not there.
+**Fix:** rename the customer-facing wording to settlement language ("To be settled at delivery", "Settled") and keep the enum untouched in the API.
+**Suggested command:** `$impeccable clarify`
+
+### [P3-2] Counts are still browser-locale formatted
+**What:** `analytics/page.tsx` (`sales.total_orders.toLocaleString()`) and `RiderDashboardClient.tsx` (`riderStats.xp.toLocaleString()`) — a US browser prints `1,234`, a South African one `1 234`, and mobile's `formatNumber` uses a non-breaking space with a comma decimal.
+**Why it matters:** the same defect class as money and dates, on two small surfaces. It will keep recurring until counts have a home too.
+**Fix:** add `formatCount` to the shared number modules on both clients (space grouping, no decimals for integers) and adopt it at those two sites plus `AnimatedNumber`'s default `format`.
+**Suggested command:** `$impeccable polish`
+
+---
+
+## Persona Red Flags
+
+**Jordan (First-Timer, customer, mobile-first, Umhlanga):** lands on the storefront, adds spinach, opens the cart, checks out. What breaks for them: (1) the login/register forms only complain after submit — Jordan types a password, hits "Sign In", and waits for a server round-trip to learn the field was empty; (2) if the cart is empty the copy is warm ("Add some groceries to get started — fresh picks await") but offers no button to go shopping; (3) on the tracking page, nothing explains *why* an order says "Finding a rider" or how long that takes. What works for them: the LIVE/STALE badge is honest, "Preparing your order — a rider will be assigned shortly" is exactly the right sentence, and a missing product image now shows the branded placeholder instead of the words "No image".
+
+**Alex (Power User, store_manager, desktop, all day):** opens the orders board at 07:00 and works down it. What breaks: (1) no keyboard path at all — every filter change and row action is a mouse trip; (2) one status change per row, no bulk action, no saved filter for "today's pickups"; (3) `Avg Order Value` and `Total Revenue` tiles have no definition or time-range label, so Alex cannot tell whether the number is today or all-time; (4) the dispatch console's `#12` rider reference (P1-3). What works: breadcrumbs, `SearchInput`, `StatusBadge` consistency, and an audit trail that finally links back to /operations.
+
+**Sipho (project persona — Checkstar rider, motorbike, one hand on the handlebar, Durban rain):** the mobile rider flow is his whole job. What works: large tap targets, `RouteMap`/`LiveDeliveryMap` with the same branded pin as the web, GPS staleness handled explicitly, and status vocabulary he shares with the customer ("Out for delivery"). What breaks: (1) his XP total on the web rider dashboard uses locale formatting and is the only number on that page he cannot read at a glance; (2) when the web dispatch console assigns him an order he is `#12` — the office cannot see his name, which is how mistakes get made in the rain; (3) the app has no offline copy for a failed route-geometry fetch beyond the dashed line, so in a signal dead zone he sees a straight line and no explanation.
+
+---
+
+## Cognitive Load Assessment
+
+**Intrinsic load (the task itself):** choosing a store, filling a basket, tracking a delivery, dispatching riders. Irreducible and well handled — checkout sequences one decision at a time, the tracking page co-locates From/Rider/To with the map, and the specials editor prints each product's base price beside its input.
+
+**Extraneous load (added by the design):** this is where the session's work landed.
+- *Inconsistent Pattern* — **fixed**: three dialects for money, dates and status vocabulary across two clients; now single-sourced with mirrored tests.
+- *Jargon Barrier* — **mostly fixed**: `out_for_delivery`, `store_owner` and `order_status_changed` reached real screens; now "Out for delivery", "Store owner", "Order status changed". **Open:** rider ids on the dispatch console (P1-3), payment vocabulary (P3-1).
+- *Visual Noise Floor* — **open**: the dispatch console card gives five grey rows equal weight (P1-3 fix includes the hierarchy).
+- *Context Switch* — **open**: manager → riders page to resolve `#12`; Alex → analytics to guess a time range.
+- *Hidden Navigation* — **not present**: admin breadcrumbs and role-scoped nav exist; the audit-logs back link now goes to /operations.
+- *Memory Bridge* — **not present** on the surfaces reviewed: the cart drawer is globally reachable and the specials editor repeats the base price where it is needed.
+- *Wall of Options* — **borderline** on the admin dashboard (many tiles at once); acceptable for staff, would fail a customer.
+- *Multi-Task Demand* — **not present**: checkout and dispatch sequence their steps.
+
+**Germane load (learning the system):** the six-role model is the one thing a new staff member must learn, and it is taught implicitly by hiding what a role cannot use. It is not taught explicitly anywhere — there is no in-product explanation of what a logistics officer can do that a store manager cannot (see heuristic 10).
+
+**Working-memory check:** no surface reviewed asks a user to hold more than three values in their head while deciding. The dispatch console comes closest (order number, status, address, rider id, item count) — which is the argument for P1-3.
+
+---
+
+## Minor Observations
+
+- `components/AnimatedNumber.tsx` falls back to `n.toLocaleString()` when no `format` is passed — the same locale drift as P3-2, one file away from being fixed.
+- `SpecialsAdminClient.tsx` keeps a local `formatMoney` for its decimal **input** placeholder and `toMoney().toFixed(2)` semantics. That is correct and deliberate (an editable field must hold a plain number, not `R 24.99`); it is called out here so it is not "cleaned up" into the display formatter by mistake.
+- The em dash is now the app's single "unknown" glyph across dates (`DATE_PLACEHOLDER`), labels (`UNKNOWN_LABEL`) and analytics tiles. Worth writing into a design-language doc before someone introduces "N/A".
+- `Logo.tsx` uses `toFixed(2)` for a pixel value — not money, correctly untouched by the money migration.
+- The tile provider is resolved per map init rather than at module scope (`MapContainer.tsx`), which is what makes `NEXT_PUBLIC_MAPBOX_TOKEN` work with Next's build-time inlining; the comment in `lib/mapTiles.ts` explains why the literal expression matters. Do not "simplify" it into a module constant.
+- `mobile/src/lib/formatters.ts` exports `formatNumber`, `formatRelativeTime`, `truncate` and `titleCase`, of which only `formatDate`/`formatTime` are used by screens. Harmless, but `formatNumber`'s comma decimals are a trap if anyone reaches for it to format money — money is `lib/currency.ts`.
+
+---
+
+## Questions to Consider
+
+- If the dispatch console showed one thing per order — the rider's face and name — and everything else on demand, would assignments get faster or slower?
+- Should the customer ever see the word "status" at all, or only sentences ("Sipho is 4 minutes away")?
+- What would a confident version of the admin dashboard look like: three numbers that decide the day, instead of twelve that describe it?
+- If money, dates and status now have one home each, what is the fourth dialect nobody has noticed yet — distances (`1.2km` vs `1,2 km`), phone numbers, or store names?
+
+---
+
+## Fixed during this review (test-first, with commits)
+
+| # | Defect | Fix | Evidence |
+|---|--------|-----|----------|
+| 1 | Money rendered three ways: `R24.99` (web, 30+ inline sites), `R${v.toLocaleString()}` (charts), `R 24,99` (mobile, `Intl('en-ZA')`) | One house format `R 1 234.50` in `frontend/src/lib/money.ts` + `mobile/src/lib/currency.ts`, adopted at every display site; decimal **inputs** left alone | `money.test.ts` (18), `currency.test.ts` (8), mirrored cross-client tables |
+| 2 | Dates rendered 13 ways on web (two of them bare `toLocaleDateString()`, i.e. the browser's locale) + 6 more via `toLocaleString('en-ZA')`; mobile bypassed its own `formatters.ts` in 5 places; ICU prints "Sept" or "Sep" depending on engine | One house format `27 Sep 2026, 14:30` from explicit month tables in `frontend/src/lib/dates.ts` + `mobile/src/lib/formatters.ts`; all sites adopted | `dates.test.ts` (14), `formatters.test.ts` (34) |
+| 3 | Raw enums on screen: `out_for_delivery` (dispatch console), `order.status.replace(/_/g,' ')` under CSS `capitalize` → "Out For Delivery", `store_owner` on the profile, `logistics officer`/`Logistics Officer` depending on the file | `frontend/src/lib/labels.ts` (`orderStatusLabel`, `customerStatusLabel`, `roleLabel`, `humanize` in sentence case) + `statusConfig` labels now come from it; mobile `lib/status.ts` aligned and gained `retrying`/`ready` | `labels.test.ts` (30), `mobile/src/lib/__tests__/status.test.ts` (4) |
+| 4 | Tile source hardcoded inside `MapContainer`; no way to adopt Mapbox without editing UI code | `frontend/src/lib/mapTiles.ts` provider abstraction: OSM with no credentials, Mapbox raster when `NEXT_PUBLIC_MAPBOX_TOKEN` is set (512 px tiles + zoom offset), token never logged or attributed | `mapTiles.test.ts` (6), `MapContainer.test.tsx` (8), ADR `docs/adr/0003-map-providers.md` |
+| 5 | Homepage hero vanished when an operator unpublished a banner: a stale index pointed past the end of the list and the component returned `null` | Indices clamped in `BannerCarousel.tsx` | `BannerCarousel.test.tsx` "keeps a slide on screen when the banner list shrinks under the visitor" |
+| 6 | Cart drawer had no dialog semantics and ignored Escape | `role=dialog`, `aria-modal`, label, Escape-to-close | `CartDrawer.test.tsx` (18) |
+| 7 | A product with no image printed the developer copy "No image" | Renders `SafeImage` → the branded placeholder, alt text stays the product name | `ProductCard.test.tsx` |
+| 8 | A missing timestamp rendered "Invalid Date" to customers | `DATE_PLACEHOLDER` em dash on both clients | `dates.test.ts`, `formatters.test.ts` |
+| 9 | jsdom has no `matchMedia`, so any component honouring `prefers-reduced-motion` was untestable | Polyfill in `frontend/src/test/setup.ts` | carousel reduced-motion test |
+| 10 | Mapbox tile URL pointed at the deprecated v4 raster endpoint (`410 Gone` for anyone who bought a token) | Styles Static Tiles API in `lib/mapTiles.ts` + optional `NEXT_PUBLIC_MAPBOX_STYLE`, and `npm run check:mapbox` for the live check | `mapTiles.test.ts` (9), `MapContainer.test.tsx` (8), ADR 0003, GATES G14 |
+| 11 | Three dialogs, one dialect: only `admin/Modal` trapped focus; the cart drawer and the checkout gate left focus behind the scrim | Shared `hooks/useDialogFocus.ts` used by all three; checkout gate lands on "Sign in" | `useDialogFocus.test.tsx` (15), `CartDrawer.test.tsx` (24), `AuthRequiredModal.test.tsx` (16, new) |
+| 12 | Dispatch console printed `Current rider: #12` / "dispatched to rider 1" — and its reassign branch was unreachable, leaving `/store/orders/{id}/reassign` with no UI anywhere | `riderName`/`riderLabel` in `lib/labels.ts`; picker shows vehicle, rating, deliveries; reassignment rebuilt on the store Orders screen; dead branch deleted | `labels.test.ts` (38), `manager-surfaces.test.tsx` (28), `vocabulary-guard.test.ts` (2) |
+| 13 | Storefront empty/error copy in four dialects while admin and mobile each had one | `components/EmptyState.tsx` + `components/ErrorNotice.tsx`, adopted on seven surfaces | `EmptyState.test.tsx` (17) |
+
+## Backlog (each with one owner — no shared ownership)
+
+| Priority | Item | DRI | Definition of done |
+|---|---|---|---|
+| ✅ done | Storefront `EmptyState` + `ErrorNotice` adoption (P1-1) | web storefront owner | Shipped 2026-09-27: two components, seven surfaces adopted, 17 tests; `ErrorFallback` kept as the whole-region card and the split documented |
+| ✅ done | Shared `useDialogFocus` used by admin Modal, CartDrawer **and** AuthRequiredModal (P1-2) | web a11y owner | Shipped 2026-09-27: 15 hook tests + 6 drawer + 16 auth-modal; `inert` on the background consciously deferred (see P1-2 residual) |
+| ✅ done | Dispatch console rider identity + card hierarchy, reassignment made reachable, raw enums banned (P1-3) | operations owner | Shipped 2026-09-27: `riderName`/`riderLabel` shared, picker shows vehicle/rating/deliveries, reassignment lives on the orders screen, vocabulary guard test added |
+| P2 | Motion-token mapping doc + parity tests (P2-1) | design-systems owner | `docs/design-language.md` table; a test on each side asserting the shared pairs |
+| P2 | Keyboard + bulk actions on the orders board (P2-2) | admin owner | `/` focuses search, `Shift`+click selects, one bulk confirm, results toasted |
+| P3 | Settlement wording for payment states (P3-1) | backend/API owner | Customer surfaces say "settled"/"to be settled"; enum unchanged |
+| P3 | `formatCount` on both clients (P3-2) | whoever touches analytics next | No `toLocaleString()` left in a render path |
+
+---
+
+## Run Notes
+
+- **Target slug:** whole repository (`frontend/`, `mobile/`, `backend/` as user-visible surface) — no single URL; this environment has no browser to point at.
+- **Assessment independence:** not achieved (single context). Flagged in the header as DEGRADED rather than reported as a dual-agent run.
+- **CLI detector:** unavailable — the impeccable launcher needs network + a live browser; the sandbox reaches only a small allow-list of hosts. Fallback signal used: source review plus the repository's own test suites (53 web files / 466 tests, 71 mobile suites / 670 passed) and GitHub Actions run `36287076597`.
+- **Browser visibility / overlay injection:** not attempted (no browser). No user-visible overlays exist; every finding cites a file and line-level behaviour instead.
+- **Live server cleanup:** no servers were started for this review; the two background test runs completed and exited.
+- **Temp-file cleanup:** the impeccable clone lives in `/tmp/impeccable` (outside the repository); nothing was written into the repo except this document.
+- **Snapshot persistence:** the skill's `.dsh` snapshot store is not present in this repository; this file is the persisted artifact, and `docs/ui-audit-2026-09-27.md` remains the scored UI audit it complements.

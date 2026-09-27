@@ -9,6 +9,7 @@ import { useCartStore } from '@/stores/cart-store'
 import { emitCartAdded } from '@/lib/cart-events'
 import FavoriteHeart from '@/components/FavoriteHeart'
 import { spring, ease } from '@/lib/motion/tokens'
+import { formatZar } from '@/lib/money'
 
 interface Props {
   product: Product
@@ -46,25 +47,25 @@ export default function ProductCard({ product, compact = false, index = 0 }: Pro
         <div className={`relative ${compact ? 'aspect-square' : 'aspect-[4/3]'} bg-gradient-to-br from-gray-50 to-gray-50/50 flex items-center justify-center p-3 overflow-hidden`}>
           {/* Subtle inner glow */}
           <div className="absolute inset-0 bg-gradient-to-br from-white/40 via-transparent to-transparent pointer-events-none" />
-          {product.image ? (
-            <motion.div
-              initial={shouldReduce ? undefined : { scale: 0.92, filter: 'blur(4px)' }}
-              whileInView={{ scale: 1, filter: 'blur(0px)' }}
-              viewport={{ once: true }}
-              transition={{ type: 'spring', ...spring.appleGentle, delay: index * 0.03 + 0.1 }}
-              className="relative w-full h-full"
-            >
-              <SafeImage
-                src={product.image}
-                alt={product.name}
-                fill
-                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                className="object-contain transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.08]"
-              />
-            </motion.div>
-          ) : (
-            <div className="text-gray-300 text-sm">No image</div>
-          )}
+          {/* SafeImage owns every missing/broken media path: a null src renders
+              the branded placeholder (MEDIA_FALLBACK_PATH) exactly like every
+              other image surface. Printing "No image" here instead was the one
+              place a customer could read our internals. */}
+          <motion.div
+            initial={shouldReduce ? undefined : { scale: 0.92, filter: 'blur(4px)' }}
+            whileInView={{ scale: 1, filter: 'blur(0px)' }}
+            viewport={{ once: true }}
+            transition={{ type: 'spring', ...spring.appleGentle, delay: index * 0.03 + 0.1 }}
+            className="relative w-full h-full"
+          >
+            <SafeImage
+              src={product.image}
+              alt={product.name}
+              fill
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              className="object-contain transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.08]"
+            />
+          </motion.div>
           {hasSale && (
             <motion.span
               initial={shouldReduce ? undefined : { opacity: 0, scale: 0.8, y: -4 }}
@@ -90,9 +91,9 @@ export default function ProductCard({ product, compact = false, index = 0 }: Pro
         <div className="flex items-end justify-between gap-2 mt-2">
           <div className="flex flex-col gap-0.5 min-w-0">
             <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
-              <span className={`font-bold ${compact ? 'text-sm' : 'text-sm sm:text-[15px]'} text-gray-900 tabular-nums tracking-tight`}>R{price.toFixed(2)}</span>
+              <span className={`font-bold ${compact ? 'text-sm' : 'text-sm sm:text-[15px]'} text-gray-900 tabular-nums tracking-tight`}>{formatZar(price)}</span>
               {hasSale && (
-                <span className="text-[11px] sm:text-xs text-gray-400 line-through tabular-nums">R{Number(product.price).toFixed(2)}</span>
+                <span className="text-[11px] sm:text-xs text-gray-400 line-through tabular-nums">{formatZar(product.price)}</span>
               )}
             </div>
             {hasSale && !compact && (
@@ -102,7 +103,7 @@ export default function ProductCard({ product, compact = false, index = 0 }: Pro
                 transition={{ delay: 0.15, type: 'spring', ...spring.snap }}
                 className="inline-flex bg-primary/10 text-primary text-[10px] sm:text-[11px] font-semibold px-2 py-0.5 rounded-full tabular-nums w-fit"
               >
-                Save R{saveAmount.toFixed(2)}
+                Save {formatZar(saveAmount)}
               </motion.span>
             )}
           </div>

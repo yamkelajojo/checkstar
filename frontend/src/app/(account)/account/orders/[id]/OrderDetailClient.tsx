@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import ErrorNotice from '@/components/ErrorNotice'
 import { motion } from 'motion/react'
 import { ArrowLeft, Loader2, MapPin, CreditCard, Star, AlertCircle, XCircle, CheckCircle, User, Package, Bike, Clock, Navigation } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth-store'
@@ -11,11 +12,14 @@ import { useQueryClient } from '@tanstack/react-query'
 import type { Order, OrderActivityLog } from '@/types'
 import { statusConfig, paymentStatusConfig } from '@/lib/motion/variants'
 import OrderTrackingMap from '@/components/OrderTrackingMap'
+import { formatZar } from '@/lib/money'
+import { formatDateTime } from '@/lib/dates'
+import { humanize } from '@/lib/labels'
 
 function cancelReasonLabel(reason: string | null): string {
   if (reason === 'order_not_cancellable') return "Can't cancel — order already out for delivery"
   if (reason === 'order_not_claimable' || reason === 'rider_not_eligible') return 'Dispatch failed — check rider eligibility'
-  if (reason) return reason.replace(/_/g, ' ')
+  if (reason) return humanize(reason)
   return "This order can't be cancelled right now."
 }
 
@@ -33,9 +37,9 @@ function OrderTimeline({ logs }: { logs?: OrderActivityLog[] }) {
             </div>
             <div className={`pb-4 ${isLast ? '' : ''}`}>
               <p className="text-sm text-gray-700">
-                {log.event_type.replace(/_/g, ' ')}
+                {humanize(log.event_type)}
               </p>
-              <p className="text-xs text-gray-400">{new Date(log.created_at).toLocaleString('en-ZA')}</p>
+              <p className="text-xs text-gray-400">{formatDateTime(log.created_at)}</p>
             </div>
           </div>
         )
@@ -136,7 +140,7 @@ export default function OrderDetailClient({ id }: { id: string }) {
     return (
       <>
         <main className="max-w-4xl mx-auto px-4 py-16">
-          <div className="bg-accent/10 border border-accent/30 text-accent text-sm rounded-lg px-4 py-3">{error?.message || 'Something went wrong'}</div>
+          <ErrorNotice title="We couldn't load this order" error={error} />
           <Link href="/account/orders" className="mt-4 inline-flex items-center gap-1 text-sm text-primary hover:underline">
             <ArrowLeft size={14} /> Back to orders
           </Link>
@@ -180,7 +184,7 @@ export default function OrderDetailClient({ id }: { id: string }) {
             <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
               <div>
                 <h1 className="font-display text-2xl font-bold">Order #{order.order_number}</h1>
-                <p className="text-sm text-gray-400">{new Date(order.created_at).toLocaleString('en-ZA')}</p>
+                <p className="text-sm text-gray-400">{formatDateTime(order.created_at)}</p>
               </div>
               <div className="flex gap-2">
                 <span className={`text-xs font-medium px-3 py-1.5 rounded-full ${statusCfg.bg} ${statusCfg.color} flex items-center gap-1.5`}>
@@ -195,15 +199,15 @@ export default function OrderDetailClient({ id }: { id: string }) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               <div>
                 <span className="text-gray-400">Subtotal</span>
-                <p className="font-medium">R{Number(order.subtotal).toFixed(2)}</p>
+                <p className="font-medium">{formatZar(order.subtotal)}</p>
               </div>
               <div>
                 <span className="text-gray-400">{isPickup ? 'Pickup' : 'Delivery Fee'}</span>
-                <p className="font-medium">{Number(order.delivery_fee) === 0 ? 'Free' : `R${Number(order.delivery_fee).toFixed(2)}`}</p>
+                <p className="font-medium">{Number(order.delivery_fee) === 0 ? 'Free' : formatZar(order.delivery_fee)}</p>
               </div>
               <div>
                 <span className="text-gray-400">Total</span>
-                <p className="font-semibold text-lg">R{Number(order.total).toFixed(2)}</p>
+                <p className="font-semibold text-lg">{formatZar(order.total)}</p>
               </div>
               <div>
                 <span className="text-gray-400">{isPickup ? 'Collect From' : 'Delivery Address'}</span>
@@ -311,7 +315,7 @@ export default function OrderDetailClient({ id }: { id: string }) {
                       <span className="text-gray-400 w-6 text-right">{item.quantity}x</span>
                       <span>{item.product_snapshot?.name || `Product #${item.product_id}`}</span>
                     </div>
-                    <span className="font-medium">R{Number(item.total_price).toFixed(2)}</span>
+                    <span className="font-medium">{formatZar(item.total_price)}</span>
                   </div>
                 ))}
               </div>

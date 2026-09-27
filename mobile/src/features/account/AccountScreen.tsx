@@ -14,6 +14,7 @@ import { useQuery } from '@tanstack/react-query';
 import { fetchOrders } from '../../lib/apiClient';
 import { queryKeys } from '../../lib/queryKeys';
 import { formatZar } from '../../lib/currency';
+import { formatDate } from '../../lib/formatters';
 import { TactilePressable } from '../../components/shared/TactilePressable';
 import { useCart } from '../cart/store';
 import { haptic } from '../../lib/haptics';
@@ -390,7 +391,7 @@ function OrderRow({ order, onOpen, onReorder, theme }: OrderRowProps) {
       <TactilePressable onPress={onOpen} haptic="selection" style={{ flex: 1, padding: semanticSpacing.md }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <Text style={{ fontWeight: fontWeight.bold, color: theme.colors.text.primary, fontSize: 13, letterSpacing: -0.2 }}>Order #{order.id}</Text>
-          <Text style={{ fontSize: 11, color: theme.colors.text.secondary }}>{new Date(order.created_at).toLocaleDateString()}</Text>
+          <Text style={{ fontSize: 11, color: theme.colors.text.secondary }}>{formatDate(order.created_at)}</Text>
         </View>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: semanticSpacing.xs, alignItems: 'center' }}>
           <View style={{ backgroundColor: brand.orange + '12', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 }}>

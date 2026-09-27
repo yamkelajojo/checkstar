@@ -13,6 +13,7 @@ use App\Models\StoreProduct;
 use App\Models\StoreStaff;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\File;
 use Tests\TestCase;
 
 /**
@@ -86,6 +87,42 @@ class StoreOrderApiTest extends TestCase
 
     public function test_store_inventory_returns_root_relative_product_image_paths(): void
     {
+        // The image has to exist on the public disk for its URL to be worth
+        // returning, so materialise it and clean up afterwards. This is the
+        // pass-through branch of MediaService::relative().
+        $relative = 'products/inventory-cat/test-product.webp';
+        $absolute = public_path($relative);
+        File::ensureDirectoryExists(dirname($absolute));
+        File::put($absolute, 'test-bytes');
+
+        try {
+            $this->makeInventoryProduct($relative);
+
+            $this->actingAs($this->managerA)
+                ->getJson('/api/store/inventory')
+                ->assertStatus(200)
+                ->assertJsonPath('data.0.product.image', '/products/inventory-cat/test-product.webp');
+        } finally {
+            File::delete($absolute);
+            File::deleteDirectory(public_path('products/inventory-cat'));
+        }
+    }
+
+    public function test_store_inventory_falls_back_to_a_raster_placeholder_for_missing_images(): void
+    {
+        // The regression this guards: a stored path with no file behind it
+        // used to be emitted verbatim (a 404 in the UI) or as an SVG, which
+        // next/image refuses to optimise — leaving the card imageless.
+        $this->makeInventoryProduct('products/inventory-cat/never-existed.webp');
+
+        $this->actingAs($this->managerA)
+            ->getJson('/api/store/inventory')
+            ->assertStatus(200)
+            ->assertJsonPath('data.0.product.image', '/products/product-placeholder.webp');
+    }
+
+    private function makeInventoryProduct(string $image): void
+    {
         $category = Category::create(['name' => 'Inventory Cat', 'slug' => 'inventory-cat']);
         $product = Product::create([
             'category_id' => $category->id,
@@ -93,7 +130,7 @@ class StoreOrderApiTest extends TestCase
             'slug' => 'test-product',
             'unit' => 'each',
             'price' => 10,
-            'image' => 'products/inventory-cat/test-product.jpg',
+            'image' => $image,
             'is_active' => true,
         ]);
         StoreProduct::create([
@@ -102,11 +139,6 @@ class StoreOrderApiTest extends TestCase
             'stock_quantity' => 5,
             'is_available' => true,
         ]);
-
-        $this->actingAs($this->managerA)
-            ->getJson('/api/store/inventory')
-            ->assertStatus(200)
-            ->assertJsonPath('data.0.product.image', '/products/inventory-cat/test-product.jpg');
     }
 
     public function test_store_orders_include_every_product_snapshot(): void

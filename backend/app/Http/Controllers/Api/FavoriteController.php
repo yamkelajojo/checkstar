@@ -5,17 +5,29 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\ProductFavorite;
+use App\Services\MediaService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class FavoriteController extends Controller
 {
+    public function __construct(
+        private MediaService $media,
+    ) {}
+
     public function index(Request $request): JsonResponse
     {
         $favorites = ProductFavorite::where('customer_id', $request->user()->id)
             ->with('product')
             ->orderByDesc('created_at')
             ->paginate(20);
+
+        // Same verified-media contract as every other catalogue surface.
+        $favorites->getCollection()->each(function ($favorite): void {
+            if ($favorite->product !== null) {
+                $this->media->applyToProduct($favorite->product);
+            }
+        });
 
         return response()->json($favorites);
     }

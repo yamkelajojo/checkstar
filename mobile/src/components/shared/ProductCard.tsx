@@ -1,5 +1,6 @@
 import { View, Text, Pressable, Modal } from 'react-native';
 import { Image } from 'expo-image';
+import { mediaSource } from '../../lib/media';
 import type { StyleProp, ViewStyle } from 'react-native';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
@@ -58,8 +59,8 @@ export function ProductCard({ product, storeProductId = null, style, onRequestSu
 
   const resolveImage = (imgs: unknown): { uri: string } | null => {
     if (!imgs) return null;
-    if (Array.isArray(imgs)) return imgs[0] ? { uri: String(imgs[0]) } : null;
-    if (typeof imgs === 'string') return imgs ? { uri: imgs } : null;
+    if (Array.isArray(imgs)) return mediaSource(imgs[0] ? String(imgs[0]) : null);
+    if (typeof imgs === 'string') return mediaSource(imgs);
     return null;
   };
   const [imageSource, setImageSource] = useState<{ uri: string } | null>(resolveImage(product.images));

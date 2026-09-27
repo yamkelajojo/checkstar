@@ -6,6 +6,7 @@ import { motion } from 'motion/react'
 import { api } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth-store'
 import type { Order } from '@/types'
+import { humanize, orderStatusLabel } from '@/lib/labels'
 import {
   useRiderProfile, useAvailableOrders, useActiveDeliveries,
   useRiderStats, useRiderHistory, useClaimOrder, useAdvanceOrder, useStores,
@@ -119,6 +120,7 @@ export default function RiderDashboardClient() {
             <button
               onClick={handleToggleAvailability}
               disabled={loading.toggle}
+              aria-pressed={!!rider?.is_available}
               className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all ${
                 rider?.is_available
                   ? 'bg-success/10 text-success border border-success/20 hover:bg-success/20'
@@ -222,7 +224,7 @@ export default function RiderDashboardClient() {
                       <OrderCard
                         key={order.id}
                         order={order}
-                        badge={{ label: order.status.replace(/_/g, ' ') }}
+                        badge={{ label: orderStatusLabel(order.status) }}
                         action={next ? (
                           <button
                             onClick={() => advanceOrder(order.id, next.action, order.items?.map(i => i.id) ?? [])}
@@ -332,7 +334,7 @@ export default function RiderDashboardClient() {
                           >
                             <Award size={18} className="text-primary" />
                             <span className="text-sm font-medium text-gray-700">
-                              {badge.badge_type?.replace(/_/g, ' ') || 'Badge'}
+                              {badge.badge_type ? humanize(badge.badge_type) : 'Badge'}
                             </span>
                           </div>
                         ))}
@@ -365,7 +367,7 @@ export default function RiderDashboardClient() {
               ) : (
                 <div className="space-y-4">
                   {history.map(order => (
-                    <OrderCard key={order.id} order={order} badge={{ label: order.status.replace(/_/g, ' ') }} />
+                    <OrderCard key={order.id} order={order} badge={{ label: orderStatusLabel(order.status) }} />
                   ))}
                 </div>
               )}

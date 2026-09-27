@@ -19,10 +19,11 @@ function timeAgo(dateStr: string): string {
   if (diffHr < 24) return `${diffHr}h ago`
   const diffDay = Math.floor(diffHr / 24)
   if (diffDay < 7) return `${diffDay}d ago`
-  return new Date(dateStr).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short' })
+  return formatDayMonth(dateStr)
 }
 import { Inbox, Send, Loader2, AlertCircle, RefreshCw, MailOpen, Mail, MessageSquare, Lock } from 'lucide-react'
 import { fadeUpTight as fadeUp, staggerTight as stagger } from '@/lib/motion/variants'
+import { formatDayMonth } from '@/lib/dates'
 
 interface ContactMessage {
   id: number

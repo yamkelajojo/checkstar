@@ -7,6 +7,8 @@ import Link from 'next/link'
 import SafeImage from '@/components/SafeImage'
 import { useCartStore } from '@/stores/cart-store'
 import type { CartItem } from '@/types'
+import { formatZar } from '@/lib/money'
+import { useDialogFocus } from '@/hooks/useDialogFocus'
 
 interface Props {
   open: boolean
@@ -22,6 +24,13 @@ export default function CartDrawer({ open, onClose }: Props) {
   useEffect(() => {
     return () => { if (timerRef.current) clearTimeout(timerRef.current) }
   }, [])
+
+  // A slide-over that traps the keyboard is a modal in everything but name:
+  // focus has to move in, Tab has to stay inside, Escape has to close it, and
+  // focus has to go back to the header control that opened it. Shared with the
+  // admin Modal via `useDialogFocus` — the storefront used to have only Escape.
+  const panelRef = useRef<HTMLDivElement>(null)
+  useDialogFocus({ open, onClose, panelRef })
 
   const removeWithUndo = (item: CartItem) => {
     removeItem(item.product.id)
@@ -62,7 +71,12 @@ export default function CartDrawer({ open, onClose }: Props) {
             animate={{ x: 0, filter: 'blur(0px)' }}
             exit={{ x: '100%', filter: 'blur(6px)' }}
             transition={{ type: 'spring', stiffness: 380, damping: 30, mass: 0.8 }}
-            className="fixed right-0 top-0 bottom-0 w-full max-w-md bg-white/95 backdrop-blur-xl z-50 shadow-[-8px_0_32px_rgba(0,0,0,0.12),0_0_0_1px_rgba(0,0,0,0.04)] border-l border-gray-100/50 flex flex-col"
+            ref={panelRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Your cart"
+            tabIndex={-1}
+            className="fixed right-0 top-0 bottom-0 w-full max-w-md bg-white/95 backdrop-blur-xl z-50 shadow-[-8px_0_32px_rgba(0,0,0,0.12),0_0_0_1px_rgba(0,0,0,0.04)] border-l border-gray-100/50 flex flex-col outline-none"
           >
             <div className="flex items-center justify-between p-5 border-b border-gray-100/80 backdrop-blur-sm">
               <div>
@@ -126,7 +140,7 @@ export default function CartDrawer({ open, onClose }: Props) {
                         <p className="text-[13px] font-semibold truncate tracking-tight text-gray-900">{item.product.name}</p>
                         <p className="text-[11px] text-gray-500 mt-0.5">{item.product.unit}</p>
                         <p className="text-[13px] font-bold text-primary mt-1 tabular-nums">
-                          R{(Number(item.product.effective_price ?? item.product.sale_price ?? item.product.price) * item.quantity).toFixed(2)}
+                          {formatZar(Number(item.product.effective_price ?? item.product.sale_price ?? item.product.price) * item.quantity)}
                         </p>
                       </div>
                       <div className="flex items-center gap-1 bg-gray-50 rounded-full p-0.5 border border-gray-100">
@@ -156,7 +170,7 @@ export default function CartDrawer({ open, onClose }: Props) {
               >
                 <div className="flex items-center justify-between mb-4">
                   <span className="text-[13px] font-medium text-gray-500">Total</span>
-                  <span className="font-bold text-[20px] tracking-tight tabular-nums">R{total.toFixed(2)}</span>
+                  <span className="font-bold text-[20px] tracking-tight tabular-nums">{formatZar(total)}</span>
                 </div>
                 <div className="flex gap-2.5">
                   <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={clearCart} className="flex-1 px-4 py-3 text-[13px] font-medium border border-gray-200 rounded-[12px] hover:bg-gray-50 transition-colors">

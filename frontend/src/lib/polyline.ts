@@ -39,10 +39,29 @@ export function decodePolyline(encoded: string): LatLng[] {
   return points
 }
 
+/**
+ * Coerce a wire coordinate to a finite number, or null when it is absent or
+ * unusable. Laravel sends `decimal:7` values as strings; null/"" mean "we have
+ * no position" and must never become 0.
+ */
+function toFiniteNumber(value: unknown): number | null {
+  if (value == null || value === '') return null
+  const numeric = Number(value)
+  return Number.isFinite(numeric) ? numeric : null
+}
+
 export function computeBounds(points: LatLng[]): [[number, number], [number, number]] | null {
-  if (points.length === 0) return null
+  // Coordinates reach here straight from the API, where Laravel's `decimal:7`
+  // casts serialise them as strings ("-29.8350000"). Compare as numbers, or the
+  // bounds come back lexicographic (and mixed-sign values sort wrongly).
+  // Absent values are dropped rather than coerced: Number(null) is 0, which
+  // would silently centre the map on 0,0 in the Gulf of Guinea.
+  const numeric = (points ?? [])
+    .map((p) => ({ lat: toFiniteNumber(p?.lat), lng: toFiniteNumber(p?.lng) }))
+    .filter((p): p is { lat: number; lng: number } => p.lat != null && p.lng != null)
+  if (numeric.length === 0) return null
   let minLat = Infinity, maxLat = -Infinity, minLng = Infinity, maxLng = -Infinity
-  for (const p of points) {
+  for (const p of numeric) {
     if (p.lat < minLat) minLat = p.lat
     if (p.lat > maxLat) maxLat = p.lat
     if (p.lng < minLng) minLng = p.lng

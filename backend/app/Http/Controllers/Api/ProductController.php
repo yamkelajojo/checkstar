@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\StoreProduct;
+use App\Services\MediaService;
 use App\Services\PricingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -14,30 +15,9 @@ class ProductController extends Controller
 {
     public function __construct(
         private PricingService $pricingService,
+        private MediaService $media,
     ) {}
 
-    private function imageUrl(?string $path): ?string
-    {
-        if ($path === null) {
-            return null;
-        }
-
-        if (! is_file(public_path(ltrim($path, '/')))) {
-            return rtrim(request()->getSchemeAndHttpHost(), '/').'/products/product-placeholder.svg';
-        }
-
-        return rtrim(request()->getSchemeAndHttpHost(), '/').'/'.ltrim($path, '/');
-    }
-
-    private function absolutizeImages(Product $product): Product
-    {
-        $product->image = $this->imageUrl($product->image);
-        if ($product->images !== null) {
-            $product->images = array_map(fn (?string $img) => $this->imageUrl($img), $product->images);
-        }
-
-        return $product;
-    }
 
     private function appendStoreAvailability(Product $product): void
     {
@@ -162,7 +142,7 @@ class ProductController extends Controller
         $products = $query->orderBy('sort_order')->paginate($perPage);
 
         foreach ($products as $product) {
-            $this->absolutizeImages($product);
+            $this->media->applyToProduct($product);
             $product->effective_price = $this->pricingService->effectivePrice($product, $product->specials ?? collect());
             $this->appendStoreAvailability($product);
         }
@@ -181,7 +161,7 @@ class ProductController extends Controller
                 ->where('stock_quantity', '>', 0)])
             ->firstOrFail();
 
-        $this->absolutizeImages($product);
+        $this->media->applyToProduct($product);
         $product->effective_price = $this->pricingService->effectivePrice($product, $product->specials ?? collect());
         $this->appendStoreAvailability($product);
         $this->appendTrackingMetrics([$product]);
@@ -206,7 +186,7 @@ class ProductController extends Controller
         $related = $service->getRelatedProducts($product, $limit);
 
         $related->each(function (Product $item) {
-            $this->absolutizeImages($item);
+            $this->media->applyToProduct($item);
             $item->effective_price = $this->pricingService->effectivePrice($item, $item->specials ?? collect());
             $this->appendStoreAvailability($item);
         });

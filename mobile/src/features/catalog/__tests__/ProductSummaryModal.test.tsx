@@ -47,7 +47,7 @@ describe('ProductSummaryModal', () => {
   it('shows the product name and effective price', async () => {
     await renderModal();
     expect(screen.getByText('Fresh Bread')).toBeTruthy();
-    expect(screen.getByText('R 10,00')).toBeTruthy();
+    expect(screen.getByText('R 10.00')).toBeTruthy();
     expect(screen.getByText('per each')).toBeTruthy();
   });
 
