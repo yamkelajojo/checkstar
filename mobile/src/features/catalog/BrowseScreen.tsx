@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { View, Text, TextInput, Pressable } from 'react-native';
 import { useRoute } from '@react-navigation/native';
-import { PackageSearch, Search, SearchX } from 'lucide-react-native';
+import { PackageSearch, Search, SearchX, WifiOff, RefreshCw } from 'lucide-react-native';
 import { useTheme } from '../../theme';
 import { semanticSpacing, semanticRadius } from '../../theme/spacing';
 import { useCategories, useInfiniteProducts } from './hooks';
@@ -47,6 +47,10 @@ export function BrowseScreen() {
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,
+    isError,
+    error,
+    refetch,
+    isFetching,
   } = useInfiniteProducts({
     category: activeCategory,
     search: searching ? debounced.trim() : undefined,
@@ -154,6 +158,28 @@ export function BrowseScreen() {
           <ProductCardSkeleton />
           <ProductCardSkeleton />
         </View>
+      ) : isError ? (
+        <EmptyState
+          icon={(error as unknown as { isOffline?: boolean })?.isOffline ? WifiOff : RefreshCw}
+          title={(error as unknown as { isOffline?: boolean })?.isOffline ? 'You’re offline' : 'Couldn’t load products'}
+          caption={(error as unknown as { isOffline?: boolean })?.isOffline ? 'Check your connection and try again.' : (error as Error)?.message ?? 'Something went wrong. Pull to retry.'}
+          action={
+            <Pressable
+              onPress={() => refetch()}
+              disabled={isFetching}
+              accessibilityLabel="Retry loading products"
+              style={{
+                backgroundColor: theme.colors.interactive?.primary ?? '#EB6522',
+                paddingHorizontal: semanticSpacing.lg,
+                paddingVertical: semanticSpacing.sm,
+                borderRadius: semanticRadius.buttonPill,
+                opacity: isFetching ? 0.6 : 1,
+              }}
+            >
+              <Text style={{ color: '#fff', fontWeight: '600', fontSize: 14 }}>{isFetching ? 'Retrying…' : 'Retry'}</Text>
+            </Pressable>
+          }
+        />
       ) : products.length === 0 ? (
         searching ? (
           <EmptyState
