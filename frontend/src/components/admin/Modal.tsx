@@ -1,9 +1,10 @@
 'use client'
 
-import { useCallback, useEffect, useRef } from 'react'
+import { useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react'
 import { X } from 'lucide-react'
+import { useDialogFocus } from '@/hooks/useDialogFocus'
 
 /**
  * Admin modal — the one way admin dialogs are built.
@@ -11,14 +12,11 @@ import { X } from 'lucide-react'
  * - Portals to <body>: hand-rolled admin modals were previously rendered
  *   inside animated (transformed) ancestors, where `position: fixed` is
  *   scoped to the transform and the overlay can land in the wrong place.
- * - Accessible: role=dialog, aria-modal, labelled by its title, Esc closes,
- *   focus moves in on open and returns to the trigger on close, Tab is
- *   trapped inside.
+ * - Accessible: role=dialog, aria-modal, labelled by its title, and the shared
+ *   `useDialogFocus` behaviour — Esc closes, focus moves in on open and returns
+ *   to the trigger on close, Tab is trapped inside.
  * - Respects prefers-reduced-motion (no scale/fade choreography).
  */
-
-const FOCUSABLE =
-  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
 
 interface ModalProps {
   open: boolean
@@ -33,51 +31,11 @@ interface ModalProps {
 export default function Modal({ open, onClose, title, children, footer, size = 'md' }: ModalProps) {
   const shouldReduce = useReducedMotion()
   const panelRef = useRef<HTMLDivElement>(null)
-  const restoreFocusRef = useRef<HTMLElement | null>(null)
 
-  const trapAndFocus = useCallback(() => {
-    const panel = panelRef.current
-    if (!panel) return
-    restoreFocusRef.current = document.activeElement as HTMLElement | null
-    const focusables = Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE))
-    ;(focusables[0] ?? panel).focus()
-  }, [])
-
-  useEffect(() => {
-    if (!open) return
-    trapAndFocus()
-
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.stopPropagation()
-        onClose()
-        return
-      }
-      if (e.key !== 'Tab') return
-      const panel = panelRef.current
-      if (!panel) return
-      const focusables = Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE))
-      if (focusables.length === 0) return
-      const first = focusables[0]
-      const last = focusables[focusables.length - 1]
-      if (e.shiftKey && document.activeElement === first) {
-        e.preventDefault()
-        last.focus()
-      } else if (!e.shiftKey && document.activeElement === last) {
-        e.preventDefault()
-        first.focus()
-      }
-    }
-
-    document.addEventListener('keydown', onKeyDown)
-    const previousOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.removeEventListener('keydown', onKeyDown)
-      document.body.style.overflow = previousOverflow
-      restoreFocusRef.current?.focus?.()
-    }
-  }, [open, onClose, trapAndFocus])
+  // Focus in, Tab trap, Escape, focus restore, scroll lock — shared with the
+  // storefront's CartDrawer and AuthRequiredModal so the two halves of the app
+  // cannot drift apart on dialog behaviour.
+  useDialogFocus({ open, onClose, panelRef })
 
   const width = size === 'sm' ? 'max-w-sm' : size === 'lg' ? 'max-w-3xl' : 'max-w-md'
 

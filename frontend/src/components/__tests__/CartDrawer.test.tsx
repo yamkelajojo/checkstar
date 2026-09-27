@@ -102,6 +102,98 @@ describe("CartDrawer visibility", () => {
   });
 });
 
+/**
+ * Focus management. A slide-over that takes over the screen is a modal, and
+ * until this was shared with admin/Modal (via `useDialogFocus`) the drawer only
+ * handled Escape: focus stayed on the page *behind* the overlay, so a keyboard
+ * shopper tabbed through invisible content, and screen readers were never told
+ * where they were.
+ */
+describe("CartDrawer focus management", () => {
+  const FOCUSABLE =
+    'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+  /** A button outside React, standing in for the header's cart trigger. */
+  function outsideTrigger(): HTMLButtonElement {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = "Open cart";
+    document.body.appendChild(button);
+    button.focus();
+    return button;
+  }
+
+  function openDrawerFromTrigger() {
+    const trigger = outsideTrigger();
+    const view = render(<CartDrawer open={false} onClose={onClose} />);
+    view.rerender(<CartDrawer open onClose={onClose} />);
+    return { trigger, view, dialog: screen.getByRole("dialog") };
+  }
+
+  afterEach(() => {
+    document.querySelectorAll("body > button").forEach((node) => node.remove());
+    document.body.style.overflow = "";
+  });
+
+  it("moves focus into the drawer when it opens", () => {
+    const { trigger, dialog } = openDrawerFromTrigger();
+
+    expect(dialog.contains(document.activeElement)).toBe(true);
+    expect(document.activeElement).not.toBe(trigger);
+    expect(document.activeElement).not.toBe(document.body);
+  });
+
+  it("wraps Tab from the last control back to the first", () => {
+    cart.items = [item()];
+    const { dialog } = openDrawerFromTrigger();
+    const focusables = Array.from(dialog.querySelectorAll<HTMLElement>(FOCUSABLE));
+    expect(focusables.length).toBeGreaterThan(2);
+
+    focusables[focusables.length - 1].focus();
+    fireEvent.keyDown(document, { key: "Tab" });
+
+    expect(document.activeElement).toBe(focusables[0]);
+  });
+
+  it("wraps Shift+Tab from the first control back to the last", () => {
+    cart.items = [item()];
+    const { dialog } = openDrawerFromTrigger();
+    const focusables = Array.from(dialog.querySelectorAll<HTMLElement>(FOCUSABLE));
+
+    focusables[0].focus();
+    fireEvent.keyDown(document, { key: "Tab", shiftKey: true });
+
+    expect(document.activeElement).toBe(focusables[focusables.length - 1]);
+  });
+
+  it("returns focus to the control that opened it", () => {
+    const { trigger, view } = openDrawerFromTrigger();
+
+    view.rerender(<CartDrawer open={false} onClose={onClose} />);
+
+    expect(document.activeElement).toBe(trigger);
+  });
+
+  it("locks background scroll while open and releases it on close", () => {
+    document.body.style.overflow = "";
+    const { view } = openDrawerFromTrigger();
+    expect(document.body.style.overflow).toBe("hidden");
+
+    view.rerender(<CartDrawer open={false} onClose={onClose} />);
+    expect(document.body.style.overflow).toBe("");
+  });
+
+  it("does not trap focus or lock scroll while closed", () => {
+    const trigger = outsideTrigger();
+    render(<CartDrawer open={false} onClose={onClose} />);
+
+    fireEvent.keyDown(document, { key: "Tab" });
+
+    expect(document.activeElement).toBe(trigger);
+    expect(document.body.style.overflow).toBe("");
+  });
+});
+
 describe("CartDrawer empty state", () => {
   it("explains an empty cart and hides the checkout footer", () => {
     render(<CartDrawer open onClose={onClose} />);

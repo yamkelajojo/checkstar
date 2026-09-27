@@ -8,6 +8,7 @@ import SafeImage from '@/components/SafeImage'
 import { useCartStore } from '@/stores/cart-store'
 import type { CartItem } from '@/types'
 import { formatZar } from '@/lib/money'
+import { useDialogFocus } from '@/hooks/useDialogFocus'
 
 interface Props {
   open: boolean
@@ -25,15 +26,11 @@ export default function CartDrawer({ open, onClose }: Props) {
   }, [])
 
   // A slide-over that traps the keyboard is a modal in everything but name:
-  // Escape has to close it, and assistive tech has to be told what it is.
-  useEffect(() => {
-    if (!open) return
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    document.addEventListener('keydown', onKeyDown)
-    return () => document.removeEventListener('keydown', onKeyDown)
-  }, [open, onClose])
+  // focus has to move in, Tab has to stay inside, Escape has to close it, and
+  // focus has to go back to the header control that opened it. Shared with the
+  // admin Modal via `useDialogFocus` — the storefront used to have only Escape.
+  const panelRef = useRef<HTMLDivElement>(null)
+  useDialogFocus({ open, onClose, panelRef })
 
   const removeWithUndo = (item: CartItem) => {
     removeItem(item.product.id)
@@ -74,10 +71,12 @@ export default function CartDrawer({ open, onClose }: Props) {
             animate={{ x: 0, filter: 'blur(0px)' }}
             exit={{ x: '100%', filter: 'blur(6px)' }}
             transition={{ type: 'spring', stiffness: 380, damping: 30, mass: 0.8 }}
+            ref={panelRef}
             role="dialog"
             aria-modal="true"
             aria-label="Your cart"
-            className="fixed right-0 top-0 bottom-0 w-full max-w-md bg-white/95 backdrop-blur-xl z-50 shadow-[-8px_0_32px_rgba(0,0,0,0.12),0_0_0_1px_rgba(0,0,0,0.04)] border-l border-gray-100/50 flex flex-col"
+            tabIndex={-1}
+            className="fixed right-0 top-0 bottom-0 w-full max-w-md bg-white/95 backdrop-blur-xl z-50 shadow-[-8px_0_32px_rgba(0,0,0,0.12),0_0_0_1px_rgba(0,0,0,0.04)] border-l border-gray-100/50 flex flex-col outline-none"
           >
             <div className="flex items-center justify-between p-5 border-b border-gray-100/80 backdrop-blur-sm">
               <div>

@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useRef } from 'react'
 import Link from 'next/link'
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react'
 import { X, Lock, Smartphone } from 'lucide-react'
+import { useDialogFocus } from '@/hooks/useDialogFocus'
 
 interface AuthRequiredModalProps {
   open: boolean
@@ -22,19 +23,15 @@ const ease: [number, number, number, number] = [0.4, 0.01, 0.165, 0.99]
 export default function AuthRequiredModal({ open, onClose, redirectTo = '/cart' }: AuthRequiredModalProps) {
   const shouldReduceMotion = useReducedMotion()
 
-  useEffect(() => {
-    if (!open) return
-    const prev = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => {
-      document.body.style.overflow = prev
-      window.removeEventListener('keydown', onKey)
-    }
-  }, [open, onClose])
+  // This is the gate every guest hits at checkout, so it gets the same dialog
+  // behaviour as the admin Modal and the cart drawer: focus in, Tab trap,
+  // Escape, focus restore, scroll lock.
+  const panelRef = useRef<HTMLDivElement>(null)
+  // Land on the way forward, not on the dismiss button: the first focusable
+  // element in the card is the close control, which is the wrong place to drop
+  // a guest who was trying to check out.
+  const signInRef = useRef<HTMLAnchorElement>(null)
+  useDialogFocus({ open, onClose, panelRef, initialFocusRef: signInRef })
 
   const loginHref = `/auth/login?redirect=${encodeURIComponent(redirectTo)}`
 
@@ -48,10 +45,12 @@ export default function AuthRequiredModal({ open, onClose, redirectTo = '/cart' 
           exit={{ opacity: 0 }}
           transition={shouldReduceMotion ? { duration: 0.1 } : { duration: 0.2, ease }}
           onClick={onClose}
-          className="fixed inset-0 z-[60] flex items-end justify-center bg-black/40 backdrop-blur-sm sm:items-center p-4"
+          className="fixed inset-0 z-[60] flex items-end justify-center bg-black/40 backdrop-blur-sm sm:items-center p-4 outline-none"
+          ref={panelRef}
           role="dialog"
           aria-modal="true"
           aria-labelledby="auth-required-title"
+          tabIndex={-1}
         >
           <motion.div
             initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 32, scale: 0.96 }}
@@ -89,6 +88,7 @@ export default function AuthRequiredModal({ open, onClose, redirectTo = '/cart' 
 
               <div className="mt-6 flex w-full flex-col gap-2.5">
                 <Link
+                  ref={signInRef}
                   href={loginHref}
                   className="inline-flex w-full items-center justify-center rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-dark"
                 >
