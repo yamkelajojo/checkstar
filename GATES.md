@@ -93,6 +93,14 @@ Scope: resolve the approved manager QA issues without breaking Store Context, gu
 
 ## CI cross-check (2026-09-27)
 
+GitHub Actions run `36287076597` (PR #2, head `a2ed06d`) — **all six checks pass**:
+Backend on PHP 8.2, 8.3, 8.4 and MySQL 8; Frontend (typecheck, lint, unit, build);
+Mobile (typecheck, SDK pin, unit). This is the first run in which the backend matrices
+are fully green: the two outstanding `SeededCatalogueMediaTest` failures were the nine
+packshots added in `5e12006`. (The diagnostics markdown files below lag the Actions
+results by one bot commit; trust the check statuses.)
+## CI cross-check (2026-09-27)
+
 The repository's CI diagnostics bot publishes full PHPUnit output for every push to
 `backend/ci-diagnostics-{php8.2,php8.3,php8.4,mysql}.md`. At commit `07ab538` all four
 matrices agree: **Tests: 2 failed, 475 passed (3121 assertions)**, and both failures are
