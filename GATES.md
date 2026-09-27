@@ -45,8 +45,8 @@ Scope: resolve the approved manager QA issues without breaking Store Context, gu
       CHECK: npm --prefix mobile test -- --runInBand src/components/shared/__tests__/RouteMap.test.tsx src/components/__tests__/LiveDeliveryMap.test.tsx
       EXPECT: /Tests:\s+\d+\s+passed/
       EVIDENCE: 2026-09-27 — Test Suites: 2 passed, Tests: 14 passed. Both files are also
-      green inside the full mobile run (70 suites / 650 passed after the theatre-test
-      replacements in 2b87b1d/ad2e222).
+      green inside the full mobile run: **71 suites / 670 passed / 3 skipped** (was 70 / 650
+      before this session's currency, formatter and status suites) with `npx tsc --noEmit` clean.
 
 - [x] G6: Web Live Operations map renders with tiles and operational layers; mobile map renders with markers on a supported device
       EVIDENCE: 2026-09-27 —
@@ -87,9 +87,41 @@ Scope: resolve the approved manager QA issues without breaking Store Context, gu
 - [x] G9: Frontend production build and all focused frontend regressions pass after integration
       CHECK: npm --prefix frontend run build
       EXPECT: /Compiled successfully/
-      EVIDENCE: 2026-09-27 — `npm run build` compiled successfully, emitting every route
-      (admin, account, public, operations) with no type or lint failures; followed by the
-      full vitest run: Test Files 43 passed, Tests 305 passed, and `npx tsc --noEmit` clean.
+      EVIDENCE: 2026-09-27 — `npm run build` compiled successfully (Next.js 15.5.25, 24.5 s),
+      emitting every route (admin, account, auth, dashboard, operations, public, rider, stores)
+      with no type or lint failures; `npm run lint` reports "No ESLint warnings or errors";
+      full vitest run: **Test Files 53 passed, Tests 466 passed** (was 43 / 305 at the start of
+      this session) and `npx tsc --noEmit` clean.
+
+- [x] G10: Money, dates and status vocabulary are single-sourced and identical on both clients
+      CHECK: npm --prefix frontend test -- money dates labels
+      CHECK: npm --prefix mobile test -- currency formatters status
+      EXPECT: /Tests\s+\d+\s+passed/ on both sides
+      EVIDENCE: 2026-09-27 — web `money.test.ts` (18), `dates.test.ts` (14), `labels.test.ts` (30);
+      mobile `currency.test.ts` (8), `formatters.test.ts` (34), `status.test.ts` (4). Each pair
+      asserts the *same literal strings* ("R 1 234.50", "27 Sep 2026, 14:30", "Out for delivery",
+      "Finding a rider"), so a change on one client fails the other's suite.
+
+- [x] G11: Map tile provider selection is tested, keyless by default, Mapbox when a token exists
+      CHECK: npm --prefix frontend test -- mapTiles MapContainer
+      EXPECT: /Tests\s+\d+\s+passed/
+      EVIDENCE: 2026-09-27 — `mapTiles.test.ts` (6) + `MapContainer.test.tsx` (8) green; decision
+      and mobile impossibility recorded in `docs/adr/0003-map-providers.md` (Expo Go cannot load
+      `@rnmapbox/maps`).
+
+- [x] G12: New component suites render for real (no self-mocking theatre tests)
+      CHECK: npm --prefix frontend test -- SafeImage OrderTrackingMap CartDrawer BannerCarousel LoginClient ProductCard
+      EXPECT: /Tests\s+\d+\s+passed/
+      EVIDENCE: 2026-09-27 — SafeImage (20), OrderTrackingMap (10), CartDrawer (18),
+      BannerCarousel (18), LoginClient (19), ProductCard (11). Two product defects were found and
+      fixed test-first while writing them: the homepage hero returning `null` when a banner was
+      unpublished mid-visit, and the cart drawer having no dialog semantics or Escape handling.
+
+- [x] G13: The system has been reviewed as one ecosystem, and the review is reproducible
+      EVIDENCE: 2026-09-27 — `docs/design-critique-2026-09-27.md` (impeccable critique framework,
+      Nielsen 29/40 = Good, method declared DEGRADED/single-context because this environment has no
+      browser or detector; every finding cites a file), `docs/test-traceability.md` (requirement →
+      test matrix with six declared gaps), `docs/ui-audit-2026-09-27.md` (17/20).
 
 ## CI cross-check (2026-09-27)
 

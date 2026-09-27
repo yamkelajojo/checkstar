@@ -11,43 +11,7 @@ import React from "react";
  * slide-over owes keyboard and screen-reader users.
  */
 
-vi.mock("motion/react", () => {
-  const cache = new Map<string, any>();
-  return {
-    motion: new Proxy(
-      {},
-      {
-        get: (_t, tag: string) => {
-          if (!cache.has(tag)) {
-            cache.set(
-              tag,
-              React.forwardRef((props: any, ref: any) => {
-                const {
-                  initial,
-                  animate,
-                  exit,
-                  whileInView,
-                  whileHover,
-                  whileTap,
-                  viewport,
-                  transition,
-                  variants,
-                  layout,
-                  ...rest
-                } = props;
-                return React.createElement(tag, { ...rest, ref });
-              }),
-            );
-          }
-          return cache.get(tag);
-        },
-      },
-    ),
-    useReducedMotion: () => false,
-    // The drawer's exit animations are visual; tests assert the mounted state.
-    AnimatePresence: ({ children }: any) => children,
-  };
-});
+vi.mock("motion/react", async () => (await import("@/test/motion-mock")).default);
 
 vi.mock("next/image", () => ({
   default: (props: any) =>

@@ -12,43 +12,7 @@ import React from "react";
  */
 
 // --- motion: render the real DOM, drop the animation layer -----------------
-vi.mock("motion/react", () => {
-  // Cache one component per tag: a fresh forwardRef on every property access
-  // would remount the tree each render and loop the effects.
-  const cache = new Map<string, any>();
-  return {
-    motion: new Proxy(
-      {},
-      {
-        get: (_t, tag: string) => {
-          if (!cache.has(tag)) {
-            cache.set(
-              tag,
-              React.forwardRef((props: any, ref: any) => {
-                const {
-                  initial,
-                  animate,
-                  exit,
-                  whileInView,
-                  whileHover,
-                  whileTap,
-                  viewport,
-                  transition,
-                  variants,
-                  ...rest
-                } = props;
-                return React.createElement(tag, { ...rest, ref });
-              }),
-            );
-          }
-          return cache.get(tag);
-        },
-      },
-    ),
-    useReducedMotion: () => false,
-    AnimatePresence: ({ children }: any) => children,
-  };
-});
+vi.mock("motion/react", async () => (await import("@/test/motion-mock")).default);
 
 // --- data layer ------------------------------------------------------------
 const query = vi.hoisted(() => ({
@@ -83,21 +47,25 @@ vi.mock("@/lib/polyline", () => ({
 // --- map double: records exactly what the tracker asks the map to draw ------
 const map = vi.hoisted(() => ({ props: null as any }));
 
-vi.mock("@/components/MapContainer", () => ({
-  default: (props: any) => {
+vi.mock("@/components/MapContainer", () => {
+  // A named component: the double calls a hook, and the lint rule (correctly)
+  // refuses hooks inside an anonymous arrow exported as `default`.
+  function MapContainerDouble(props: any) {
     map.props = props;
+    const { onMapReady } = props;
     // The real MapContainer hands its Leaflet instance back through
     // onMapReady once the chunk has loaded; the polyline effect waits for it.
     React.useEffect(() => {
-      props.onMapReady?.({
+      onMapReady?.({
         __isMapDouble: true,
         removeLayer: () => {},
         fitBounds: () => {},
       });
-    }, [props.onMapReady]);
+    }, [onMapReady]);
     return React.createElement("div", { "data-testid": "map" });
-  },
-}));
+  }
+  return { default: MapContainerDouble };
+});
 
 // --- leaflet double: records the polyline the tracker draws -----------------
 const leaflet = vi.hoisted(() => ({ polylines: [] as any[] }));

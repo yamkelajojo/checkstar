@@ -11,42 +11,7 @@ import React from "react";
  *  3. that same parameter cannot be abused into an open redirect.
  */
 
-vi.mock("motion/react", () => {
-  const cache = new Map<string, any>();
-  return {
-    motion: new Proxy(
-      {},
-      {
-        get: (_t, tag: string) => {
-          if (!cache.has(tag)) {
-            cache.set(
-              tag,
-              React.forwardRef((props: any, ref: any) => {
-                const {
-                  initial,
-                  animate,
-                  exit,
-                  whileInView,
-                  whileHover,
-                  whileTap,
-                  viewport,
-                  transition,
-                  variants,
-                  layout,
-                  ...rest
-                } = props;
-                return React.createElement(tag, { ...rest, ref });
-              }),
-            );
-          }
-          return cache.get(tag);
-        },
-      },
-    ),
-    useReducedMotion: () => false,
-    AnimatePresence: ({ children }: any) => children,
-  };
-});
+vi.mock("motion/react", async () => (await import("@/test/motion-mock")).default);
 
 vi.mock("@/components/Logo", () => ({
   Logo: () => React.createElement("span", { "data-testid": "logo" }, "Checkstar"),
