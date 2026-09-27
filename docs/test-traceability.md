@@ -21,7 +21,7 @@ Levels follow the V-model: the left side is requirement/design decomposition, th
 | Suite | Command | Scale | Runs in CI |
 |---|---|---|---|
 | Backend (Laravel 11, PHPUnit) | `npm run test:backend` / `cd backend && php artisan test` | 477 tests, 3100+ assertions | ✅ PHP 8.2, 8.3, 8.4 (SQLite) + PHP 8.3 (MySQL 8) |
-| Web unit + component (Vitest, jsdom, RTL) | `cd frontend && npx vitest run` | 53 files / 469 tests | ✅ (with `tsc --noEmit`, `next lint`, `next build`) |
+| Web unit + component (Vitest, jsdom, RTL) | `cd frontend && npx vitest run` | 56 files / 523 tests | ✅ (with `tsc --noEmit`, `next lint`, `next build`) |
 | Web end-to-end (Playwright) | `cd frontend && npx playwright test` | 12 specs / 32 tests | ❌ **gap** — needs a live API + web server; see G-1 |
 | Mobile unit + screen (Jest, RNTL) | `cd mobile && npm test` | 71 suites / 670 passed / 3 skipped | ✅ (with `tsc --noEmit` and the Expo SDK pin check) |
 | Live Mapbox tile check (web, real token) | `cd frontend && npm run check:mapbox` | 1 tile over Durban CBD; exit 0 also when no token is set | ⚠️ manual, on the operator's machine — see G-4 |
@@ -141,7 +141,7 @@ npm run setup                 # backend .env, key, migrated + seeded sqlite
 npm test                      # backend + frontend + mobile, one summary
 npm run typecheck             # tsc --noEmit for frontend + mobile
 
-cd frontend && npx vitest run                      # 53 files / 466 tests
+cd frontend && npx vitest run                      # 56 files / 523 tests
 cd frontend && npx playwright test                 # 32 e2e tests (needs api + web running)
 cd mobile && npm test                              # 71 suites / 670 passed / 3 skipped
 cd backend && php artisan test                     # 477 tests

@@ -41,7 +41,7 @@ import { api } from "@/lib/api";
 import EmptyState from "@/components/admin/EmptyState";
 import { formatZar } from '@/lib/money'
 import { formatDate } from '@/lib/dates'
-import { roleLabel } from '@/lib/labels'
+import { orderStatusLabel, roleLabel } from '@/lib/labels'
 
 const SERVICE_ORDER: Array<{ key: string; label: string }> = [
   { key: "api", label: "API" },
@@ -317,7 +317,7 @@ function OrderRow({ order }: { order: Order }) {
                 : "bg-primary/10 text-primary"
           }`}
         >
-          {order.status.replace(/_/g, " ")}
+          {orderStatusLabel(order.status)}
         </span>
       </div>
       <div className="flex items-center justify-between text-sm">
@@ -493,9 +493,7 @@ function AdminDashboardBody({
     queryClient.invalidateQueries({ queryKey: ["admin-health"] });
   };
 
-  const roleBadge = user?.role
-    ?.replace(/_/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+  const roleBadge = user?.role ? roleLabel(user.role) : undefined;
   const health = (healthData ?? null) as AdminHealth | null;
   const healthStatus = health?.status ?? (healthError ? "error" : undefined);
   const serviceValues = Object.values(health?.services ?? {});

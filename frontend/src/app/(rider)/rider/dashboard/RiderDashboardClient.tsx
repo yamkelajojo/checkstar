@@ -6,6 +6,7 @@ import { motion } from 'motion/react'
 import { api } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth-store'
 import type { Order } from '@/types'
+import { humanize, orderStatusLabel } from '@/lib/labels'
 import {
   useRiderProfile, useAvailableOrders, useActiveDeliveries,
   useRiderStats, useRiderHistory, useClaimOrder, useAdvanceOrder, useStores,
@@ -223,7 +224,7 @@ export default function RiderDashboardClient() {
                       <OrderCard
                         key={order.id}
                         order={order}
-                        badge={{ label: order.status.replace(/_/g, ' ') }}
+                        badge={{ label: orderStatusLabel(order.status) }}
                         action={next ? (
                           <button
                             onClick={() => advanceOrder(order.id, next.action, order.items?.map(i => i.id) ?? [])}
@@ -333,7 +334,7 @@ export default function RiderDashboardClient() {
                           >
                             <Award size={18} className="text-primary" />
                             <span className="text-sm font-medium text-gray-700">
-                              {badge.badge_type?.replace(/_/g, ' ') || 'Badge'}
+                              {badge.badge_type ? humanize(badge.badge_type) : 'Badge'}
                             </span>
                           </div>
                         ))}
@@ -366,7 +367,7 @@ export default function RiderDashboardClient() {
               ) : (
                 <div className="space-y-4">
                   {history.map(order => (
-                    <OrderCard key={order.id} order={order} badge={{ label: order.status.replace(/_/g, ' ') }} />
+                    <OrderCard key={order.id} order={order} badge={{ label: orderStatusLabel(order.status) }} />
                   ))}
                 </div>
               )}

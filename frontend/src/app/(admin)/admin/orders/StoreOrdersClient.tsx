@@ -5,7 +5,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "motion/react";
 import { api, ApiError } from "@/lib/api";
 import { useAuthStore } from "@/stores/auth-store";
-import { useStores } from "@/lib/query";
+import { useDispatchRiders, useStores } from "@/lib/query";
+import { orderStatusLabel, riderLabel, riderName } from "@/lib/labels";
 import { toast } from "sonner";
 import {
   ShoppingCart,
@@ -95,6 +96,10 @@ export default function StoreOrdersClient() {
   const { user, isLoading: authLoading } = useAuthStore();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
+  /** orderId -> chosen rider id, for the reassignment picker on that row. */
+  const [reassignTarget, setReassignTarget] = useState<Record<number, string>>(
+    {},
+  );
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("");
   const [storeIdInput, setStoreIdInput] = useState("");
   const [updatingId, setUpdatingId] = useState<number | null>(null);
@@ -167,6 +172,49 @@ export default function StoreOrdersClient() {
     onSettled: () => setUpdatingId(null),
   });
 
+  /**
+   * Reassignment lives here because this is the screen that lists orders which
+   * already have a rider. The dispatch console's queue is `rider_id IS NULL` by
+   * construction (ManualDispatch::pendingForStore), so the control it used to
+   * render could never appear and the backend's `/store/orders/{id}/reassign`
+   * flow had no reachable UI. Riders are only fetched when something on screen
+   * could actually be reassigned.
+   */
+  const hasAssignedOrder = orders.some((o) => !!o.rider);
+  const { data: riders = [] } = useDispatchRiders(activeStoreId, {
+    enabled: shouldFetch && hasAssignedOrder,
+  });
+
+  const reassignMutation = useMutation({
+    meta: { silent: true },
+    mutationFn: ({ orderId, riderId }: { orderId: number; riderId: number }) =>
+      api.reassignOrder(orderId, riderId, activeStoreId),
+    onMutate: ({ orderId }) => setUpdatingId(orderId),
+    onSuccess: (_data, { orderId, riderId }) => {
+      queryClient.invalidateQueries({ queryKey: ["store-orders"] });
+      // Name the rider and the order: "reassigned to rider 5" would send the
+      // manager off to another screen to find out who is now carrying it.
+      const rider = riders.find((r) => r.id === riderId);
+      const order = orders.find((o) => o.id === orderId);
+      toast.success(
+        `Order #${order?.order_number ?? orderId} reassigned to ${
+          rider ? riderName(rider) : `rider ${riderId}`
+        }`,
+      );
+      setReassignTarget((s) => ({ ...s, [orderId]: "" }));
+    },
+    onError: (err) => {
+      const msg =
+        err instanceof ApiError ? err.message : "Could not reassign rider";
+      const reason =
+        err instanceof ApiError
+          ? (err.payload as { reason?: string })?.reason
+          : undefined;
+      toast.error(reason ? `${msg} (${reason})` : msg);
+    },
+    onSettled: () => setUpdatingId(null),
+  });
+
   const filtered = useMemo(() => {
     if (!search.trim()) return orders;
     const q = search.toLowerCase();
@@ -220,7 +268,7 @@ export default function StoreOrdersClient() {
             </h1>
             <p className="text-gray-500 text-sm">
               {filtered.length} order{filtered.length !== 1 ? "s" : ""}{" "}
-              {statusFilter ? `· ${statusFilter.replace(/_/g, " ")}` : ""}
+              {statusFilter ? `· ${orderStatusLabel(statusFilter)}` : ""}
             </p>
           </div>
           <button
@@ -363,7 +411,7 @@ export default function StoreOrdersClient() {
             <p className="text-gray-500 font-medium mb-1">No orders found</p>
             <p className="text-sm text-gray-400">
               {statusFilter
-                ? `No ${statusFilter.replace(/_/g, " ")} orders`
+                ? `No orders are ${orderStatusLabel(statusFilter).toLowerCase()} right now.`
                 : "This store has no orders yet."}
             </p>
           </motion.div>
@@ -387,7 +435,7 @@ export default function StoreOrdersClient() {
                         <span
                           className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${statusStyle(order.status)}`}
                         >
-                          {order.status.replace(/_/g, " ")}
+                          {orderStatusLabel(order.status)}
                         </span>
                         {order.fulfilment_method && (
                           <span className="text-[11px] px-2 py-0.5 rounded-full bg-gray-50 text-gray-500 border border-gray-200">
@@ -407,12 +455,20 @@ export default function StoreOrdersClient() {
                         <span className="font-medium text-gray-700 tabular-nums">
                           {formatZar(order.total)}
                         </span>
-                        {order.rider?.user?.name && (
-                          <span className="flex items-center gap-1">
+                        {order.rider ? (
+                          <span
+                            className="flex items-center gap-1"
+                            title={`Rider #${order.rider.id}`}
+                          >
                             <Bike size={11} />
-                            {order.rider.user.name}
+                            {riderName(order.rider)}
+                            {Number(order.rider.average_rating) > 0 ? (
+                              <span className="text-gray-400">
+                                · ★ {Number(order.rider.average_rating).toFixed(1)}
+                              </span>
+                            ) : null}
                           </span>
-                        )}
+                        ) : null}
                       </div>
                       {order.delivery_address && (
                         <p className="text-xs text-gray-500 mt-1 flex items-center gap-1 truncate">
@@ -440,12 +496,61 @@ export default function StoreOrdersClient() {
                               {isUpdating ? (
                                 <Loader2 size={12} className="animate-spin" />
                               ) : (
-                                ns.replace(/_/g, " ")
+                                orderStatusLabel(ns)
                               )}
                             </button>
                           ))}
                         </div>
                       )}
+                      {order.rider ? (
+                        <div className="flex items-center gap-1.5">
+                          <label
+                            className="sr-only"
+                            htmlFor={`reassign-${order.id}`}
+                          >
+                            Reassign rider for order {order.order_number}
+                          </label>
+                          <select
+                            id={`reassign-${order.id}`}
+                            value={reassignTarget[order.id] ?? ""}
+                            onChange={(e) =>
+                              setReassignTarget((s) => ({
+                                ...s,
+                                [order.id]: e.target.value,
+                              }))
+                            }
+                            disabled={isUpdating}
+                            className="px-2.5 py-1.5 text-xs rounded-lg border border-gray-200 bg-white text-gray-700 focus:ring-2 focus:ring-primary outline-none disabled:opacity-50"
+                          >
+                            <option value="">Reassign…</option>
+                            {riders
+                              .filter((r) => r.id !== order.rider?.id)
+                              .map((r) => (
+                                <option key={r.id} value={r.id}>
+                                  {riderLabel(r)}
+                                </option>
+                              ))}
+                          </select>
+                          <button
+                            onClick={() => {
+                              const riderId = Number(reassignTarget[order.id]);
+                              if (!riderId) return;
+                              reassignMutation.mutate({
+                                orderId: order.id,
+                                riderId,
+                              });
+                            }}
+                            disabled={!reassignTarget[order.id] || isUpdating}
+                            className="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 disabled:opacity-50 transition-colors"
+                          >
+                            {isUpdating ? (
+                              <Loader2 size={12} className="animate-spin" />
+                            ) : (
+                              "Reassign"
+                            )}
+                          </button>
+                        </div>
+                      ) : null}
                     </div>
                   </div>
 
@@ -479,9 +584,10 @@ export default function StoreOrdersClient() {
             <Clock size={12} /> Order lifecycle
           </p>
           <p>
-            Orders flow: pending → confirmed → preparing → out_for_delivery →
-            delivered. Pickup orders use ready instead of out_for_delivery.
-            Payment status is independent and handled automatically.
+            Orders flow: Pending → Confirmed → Preparing → Out for delivery →
+            Delivered. Pickup orders use Ready for pickup instead of Out for
+            delivery. Payment status is tracked separately and never blocks the
+            flow.
           </p>
         </motion.div>
       </motion.div>

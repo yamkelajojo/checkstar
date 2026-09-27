@@ -100,3 +100,38 @@ export function roleLabel(role: unknown): string {
   if (typeof role === "string" && ROLE_LABEL[role]) return ROLE_LABEL[role];
   return humanize(role);
 }
+
+/**
+ * The rider fields the labels below need — a subset of the API's Rider record,
+ * tolerant of the decimal strings Laravel sends and of a missing profile.
+ */
+export interface RiderIdentity {
+  id: number;
+  vehicle_type?: string | null;
+  average_rating?: number | string | null;
+  total_deliveries?: number | string | null;
+  user?: { name?: string | null } | null;
+}
+
+/** "Rider Rita" — or `rider #7` when the profile carries no usable name. */
+export function riderName(rider: RiderIdentity): string {
+  const name = rider?.user?.name?.trim();
+  return name ? name : `rider #${rider?.id}`;
+}
+
+/**
+ * Vehicle, rating and experience on one line: what a dispatcher actually needs
+ * in order to choose between riders. A rider with no history yet reads "New"
+ * rather than "★ 0.0", which would look like a bad rider instead of a new one.
+ */
+export function riderLabel(rider: RiderIdentity): string {
+  const vehicle = rider?.vehicle_type?.trim() || "Bike";
+  const rating = Number(rider?.average_rating ?? 0);
+  const deliveries = Number(rider?.total_deliveries ?? 0);
+  const hasHistory =
+    Number.isFinite(rating) && Number.isFinite(deliveries) && rating > 0 && deliveries > 0;
+  const experience = hasHistory
+    ? `★ ${rating.toFixed(1)} · ${deliveries} ${deliveries === 1 ? "delivery" : "deliveries"}`
+    : "New";
+  return `${riderName(rider)} — ${vehicle} · ${experience}`;
+}

@@ -90,7 +90,7 @@ Scope: resolve the approved manager QA issues without breaking Store Context, gu
       EVIDENCE: 2026-09-27 — `npm run build` compiled successfully (Next.js 15.5.25, 24.5 s),
       emitting every route (admin, account, auth, dashboard, operations, public, rider, stores)
       with no type or lint failures; `npm run lint` reports "No ESLint warnings or errors";
-      full vitest run: **Test Files 53 passed, Tests 466 passed** (was 43 / 305 at the start of
+      full vitest run: **Test Files 56 passed, Tests 523 passed** (was 43 / 305 at the start of
       this session) and `npx tsc --noEmit` clean.
 
 - [x] G10: Money, dates and status vocabulary are single-sourced and identical on both clients
@@ -140,6 +140,17 @@ Scope: resolve the approved manager QA issues without breaking Store Context, gu
       recorded as gap G-7 in `docs/test-traceability.md`: `api.mapbox.com` is unreachable from this
       environment (probe returned `000`), so the live fetch must be run on the operator's machine —
       everything up to the network call is verified here (all three script paths exercised).
+
+- [x] G15: Staff surfaces name people and statuses instead of printing database values
+      CHECK: npm --prefix frontend test -- labels vocabulary-guard manager-surfaces
+      EXPECT: /Tests\s+\d+\s+passed/
+      EVIDENCE: 2026-09-27 — `riderName`/`riderLabel` in `lib/labels.ts` (38 label tests) drive the
+      dispatch picker (`Rider Rita — Motorbike · ★ 4.8 · 212 deliveries`) and dispatch/reassign
+      confirmations; reassignment moved to `admin/orders/StoreOrdersClient.tsx`, because
+      `/store/dispatch/pending` selects `rider_id IS NULL` and the console's reassign branch could
+      never render (its test asserted a state the API cannot produce). `vocabulary-guard.test.ts`
+      fails if any component hand-rolls `status.replace(/_/g, " ")` again. 5 new StoreOrdersClient
+      tests; suite 56 files / 523 tests; tsc + lint + build clean.
 
 ## CI cross-check (2026-09-27)
 

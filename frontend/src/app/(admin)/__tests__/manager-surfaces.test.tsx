@@ -39,6 +39,7 @@ const { authState, setAuth, apiMocks, scratch } = vi.hoisted(() => {
       listStaff: vi.fn(),
       hireStaff: vi.fn(),
       fireStaff: vi.fn(),
+      getStoreOrders: vi.fn(),
       getPendingDispatch: vi.fn(),
       getDispatchRiders: vi.fn(),
       dispatchOrder: vi.fn(),
@@ -649,6 +650,25 @@ describe("AuditLogsClient", () => {
 // ================= DispatchConsoleClient =================
 import DispatchConsoleClient from "@/app/(account)/account/dispatch/DispatchConsoleClient";
 
+/**
+ * `/store/dispatch/riders` returns whole Rider models — rating and delivery
+ * count included — even though the frontend type used to declare only a subset.
+ */
+const riderRow = (over: Record<string, unknown> = {}) => ({
+  id: 1,
+  user_id: 7,
+  store_id: 1,
+  is_available: true,
+  vehicle_type: "Motorbike",
+  max_radius_km: 12,
+  average_rating: 4.8,
+  total_deliveries: 212,
+  xp: 2120,
+  level: 5,
+  user: { id: 7, name: "Rider Rita", email: "rita@x.co.za" },
+  ...over,
+});
+
 const pendingRow = (over: Record<string, unknown> = {}) => ({
   id: 501,
   order_number: "CS-1501",
@@ -673,7 +693,16 @@ describe("DispatchConsoleClient", () => {
     expect(await screen.findByText("Not authorized")).toBeInTheDocument();
   });
 
-  it("shows reassign (not dispatch) for orders that already have a rider", async () => {
+  /**
+   * The queue this screen renders comes from `/store/dispatch/pending`, which
+   * selects `status IN (confirmed, retrying) AND rider_id IS NULL`
+   * (ManualDispatch::pendingForStore). So an order in this list never has a
+   * rider: the old "Current rider: #8" line and its Reassign control were
+   * unreachable, and the test that covered them asserted a state the API cannot
+   * produce. Reassignment lives on the store Orders screen, where orders that
+   * do have riders are listed (see "StoreOrdersClient rider reassignment").
+   */
+  it("offers dispatch only, because the pending endpoint never returns an assigned order", async () => {
     setAuth({
       id: 3,
       name: "Sipho Manager",
@@ -681,22 +710,59 @@ describe("DispatchConsoleClient", () => {
       role: "store_manager",
     });
     setRows(scratch, [
-      pendingRow({
-        id: 503,
-        order_number: "CS-1503",
-        status: "preparing",
-        rider_id: 8,
-      }),
+      pendingRow({ id: 503, order_number: "CS-1503", status: "retrying" }),
     ]);
 
     renderWithProviders(<DispatchConsoleClient />);
 
     expect(await screen.findByText("#CS-1503")).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "Reassign" }),
-    ).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Dispatch" })).toBeNull();
-    expect(screen.getByText(/Current rider: #8/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Dispatch" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Reassign" })).toBeNull();
+    expect(screen.queryByText(/Current rider/i)).toBeNull();
+  });
+
+  it("shows who each rider is in the picker instead of a database id", async () => {
+    setAuth({
+      id: 3,
+      name: "Sipho Manager",
+      email: "manager@x.co.za",
+      role: "store_manager",
+    });
+    setRows(scratch, [pendingRow()]);
+    setRows(scratch, [riderRow()], "riders");
+
+    renderWithProviders(<DispatchConsoleClient />);
+
+    const select = await screen.findByDisplayValue("Select rider...");
+    const option = within(select).getByRole("option", { name: /Rider Rita/ });
+    // A dispatcher choosing between riders needs the vehicle, the rating and the
+    // experience — all of which the endpoint already returns.
+    expect(option).toHaveTextContent("Motorbike");
+    expect(option).toHaveTextContent("4.8");
+    expect(option).toHaveTextContent("212 deliveries");
+  });
+
+  it("falls back to a plain name when a rider profile carries no rating yet", async () => {
+    setAuth({
+      id: 3,
+      name: "Sipho Manager",
+      email: "manager@x.co.za",
+      role: "store_manager",
+    });
+    setRows(scratch, [pendingRow()]);
+    setRows(
+      scratch,
+      [riderRow({ id: 2, average_rating: 0, total_deliveries: 0, user: { id: 9, name: "New Rider", email: "new@x.co.za" } })],
+      "riders",
+    );
+
+    renderWithProviders(<DispatchConsoleClient />);
+
+    const select = await screen.findByDisplayValue("Select rider...");
+    const option = within(select).getByRole("option", { name: /New Rider/ });
+    expect(option).toHaveTextContent("Motorbike");
+    expect(option).not.toHaveTextContent("0.0");
+    expect(option).toHaveTextContent("New");
   });
 
   it("dispatches to a selected rider and confirms", async () => {
@@ -707,20 +773,7 @@ describe("DispatchConsoleClient", () => {
       role: "store_manager",
     });
     setRows(scratch, [pendingRow()]);
-    setRows(
-      scratch,
-      [
-        {
-          id: 1,
-          user_id: 7,
-          store_id: 1,
-          is_available: true,
-          vehicle_type: "Motorbike",
-          user: { id: 7, name: "Rider Rita", email: "rita@x.co.za" },
-        },
-      ],
-      "riders",
-    );
+    setRows(scratch, [riderRow()], "riders");
     apiMocks.dispatchOrder.mockResolvedValue({
       data: pendingRow({ rider_id: 7, status: "preparing" }),
     });
@@ -734,7 +787,7 @@ describe("DispatchConsoleClient", () => {
       expect(apiMocks.dispatchOrder).toHaveBeenCalledWith(501, 1, undefined),
     );
     expect(
-      await screen.findByText(/dispatched to rider 1/),
+      await screen.findByText(/dispatched to Rider Rita/),
     ).toBeInTheDocument();
   });
 
@@ -746,20 +799,7 @@ describe("DispatchConsoleClient", () => {
       role: "store_manager",
     });
     setRows(scratch, [pendingRow()]);
-    setRows(
-      scratch,
-      [
-        {
-          id: 1,
-          user_id: 7,
-          store_id: 1,
-          is_available: true,
-          vehicle_type: "Motorbike",
-          user: { id: 7, name: "Rider Rita", email: "rita@x.co.za" },
-        },
-      ],
-      "riders",
-    );
+    setRows(scratch, [riderRow()], "riders");
     apiMocks.dispatchOrder.mockRejectedValue(
       new (await import("@/lib/api")).ApiError("Invalid rider", 422, {
         reason: "invalid_rider",
@@ -772,5 +812,154 @@ describe("DispatchConsoleClient", () => {
     fireEvent.click(screen.getByRole("button", { name: "Dispatch" }));
 
     expect(await screen.findByText(/invalid_rider/)).toBeInTheDocument();
+  });
+});
+
+// ================= StoreOrdersClient =================
+
+import StoreOrdersClient from "@/app/(admin)/admin/orders/StoreOrdersClient";
+
+const assignedRider = {
+  id: 4,
+  user_id: 7,
+  store_id: 1,
+  is_available: false,
+  vehicle_type: "Motorbike",
+  max_radius_km: 12,
+  average_rating: 4.8,
+  total_deliveries: 212,
+  user: { id: 7, name: "Rider Rita", email: "rita@x.co.za" },
+};
+
+const storeOrderRow = (over: Record<string, unknown> = {}) => ({
+  id: 601,
+  order_number: "CS-2001",
+  status: "preparing",
+  total: "184.50",
+  subtotal: "164.50",
+  delivery_fee: "20.00",
+  payment_status: "pending",
+  delivery_address: "45 Helen Joseph Rd",
+  created_at: "2026-09-06T08:12:00Z",
+  items: [],
+  rider: null as Record<string, unknown> | null,
+  ...over,
+});
+
+/**
+ * Reassignment used to live only on the dispatch console, inside a branch keyed
+ * on `order.rider_id` — but that screen's endpoint selects
+ * `rider_id IS NULL`, so the branch could never render and the backend's
+ * `/store/orders/{id}/reassign` flow had no reachable UI at all. This is where
+ * assigned orders are listed, so this is where the control belongs.
+ */
+describe("StoreOrdersClient rider reassignment", () => {
+  function renderOrders(
+    rows: Array<Record<string, unknown>>,
+    riders: Array<Record<string, unknown>> = [],
+  ) {
+    setAuth({
+      id: 3,
+      name: "Sipho Manager",
+      email: "manager@x.co.za",
+      role: "store_manager",
+    });
+    apiMocks.getStoreOrders.mockResolvedValue({ data: rows });
+    setRows(scratch, riders, "riders");
+    return renderWithProviders(<StoreOrdersClient />);
+  }
+
+  const vusi = riderRow({
+    id: 5,
+    user_id: 8,
+    user: { id: 8, name: "Vusi Dlamini", email: "vusi@x.co.za" },
+  });
+
+  it("offers reassignment on an order that already has a rider", async () => {
+    renderOrders([storeOrderRow({ rider: assignedRider })], [vusi]);
+
+    const select = await screen.findByLabelText(
+      /Reassign rider for order CS-2001/i,
+    );
+    expect(
+      within(select).getByRole("option", { name: /Vusi Dlamini/ }),
+    ).toBeInTheDocument();
+    // The rider already carrying the order is not a reassignment target.
+    expect(
+      within(select).queryByRole("option", { name: /Rider Rita/ }),
+    ).toBeNull();
+    // Nothing chosen yet: the button must not fire an empty reassignment.
+    expect(screen.getByRole("button", { name: "Reassign" })).toBeDisabled();
+  });
+
+  it("reassigns and says who is carrying the order now", async () => {
+    apiMocks.reassignOrder.mockResolvedValue({ data: storeOrderRow() });
+    renderOrders([storeOrderRow({ rider: assignedRider })], [vusi]);
+
+    const select = await screen.findByLabelText(
+      /Reassign rider for order CS-2001/i,
+    );
+    fireEvent.change(select, { target: { value: "5" } });
+    fireEvent.click(screen.getByRole("button", { name: "Reassign" }));
+
+    await waitFor(() =>
+      expect(apiMocks.reassignOrder).toHaveBeenCalledWith(601, 5, undefined),
+    );
+    const { toast } = await import("sonner");
+    await waitFor(() =>
+      expect(toast.success).toHaveBeenCalledWith(
+        expect.stringMatching(/Vusi Dlamini/),
+      ),
+    );
+  });
+
+  it("does not offer reassignment on an order with no rider", async () => {
+    renderOrders([storeOrderRow()], [vusi]);
+
+    expect(await screen.findByText("#CS-2001")).toBeInTheDocument();
+    expect(screen.queryByLabelText(/Reassign rider/i)).toBeNull();
+    expect(screen.queryByRole("button", { name: "Reassign" })).toBeNull();
+  });
+
+  it("surfaces the API reason when a reassignment is refused", async () => {
+    apiMocks.reassignOrder.mockRejectedValue(
+      new (await import("@/lib/api")).ApiError("Rider unavailable", 422, {
+        reason: "rider_busy",
+      }),
+    );
+    renderOrders([storeOrderRow({ rider: assignedRider })], [vusi]);
+
+    const select = await screen.findByLabelText(
+      /Reassign rider for order CS-2001/i,
+    );
+    fireEvent.change(select, { target: { value: "5" } });
+    fireEvent.click(screen.getByRole("button", { name: "Reassign" }));
+
+    const { toast } = await import("sonner");
+    await waitFor(() =>
+      expect(toast.error).toHaveBeenCalledWith(
+        expect.stringMatching(/rider_busy/),
+      ),
+    );
+  });
+
+  it("speaks the house status vocabulary, not raw enums", async () => {
+    renderOrders([storeOrderRow()], []);
+
+    // Wait for the row itself: the status filter and the lifecycle help copy
+    // render before the orders query resolves.
+    const card = (await screen.findByText("#CS-2001")).closest(".rounded-xl");
+    expect(card).not.toBeNull();
+
+    // `status.replace(/_/g, " ")` used to print "preparing" and
+    // "out for delivery" — lowercase enums on a staff surface.
+    expect(within(card as HTMLElement).getByText("Preparing")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Out for delivery" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Ready for pickup" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("out for delivery")).toBeNull();
   });
 });

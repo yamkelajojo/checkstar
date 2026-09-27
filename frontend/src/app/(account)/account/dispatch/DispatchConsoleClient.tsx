@@ -9,7 +9,7 @@ import { api } from '@/lib/api'
 import { usePendingDispatch, useDispatchRiders } from '@/lib/query'
 import { useQueryClient } from '@tanstack/react-query'
 import { formatDateTime } from '@/lib/dates'
-import { orderStatusLabel } from '@/lib/labels'
+import { orderStatusLabel, riderLabel, riderName } from '@/lib/labels'
 
 const allowedRoles = ['store_manager', 'logistics_officer', 'store_owner', 'developer']
 
@@ -18,7 +18,6 @@ export default function DispatchConsoleClient() {
   const queryClient = useQueryClient()
   const [storeIdInput, setStoreIdInput] = useState('')
   const [selectedRider, setSelectedRider] = useState<Record<number, string>>({})
-  const [selectedReassignRider, setSelectedReassignRider] = useState<Record<number, string>>({})
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   const authResolved = !authLoading && !!user
@@ -49,29 +48,19 @@ export default function DispatchConsoleClient() {
     try {
       const riderId = Number(riderIdStr)
       await api.dispatchOrder(orderId, riderId, storeId)
-      setMessage({ type: 'success', text: `Order #${orderId} dispatched to rider ${riderId}` })
+      // The confirmation has to say *who* is now carrying the order: this screen
+      // used to report "dispatched to rider 1", which asks the person who just
+      // made the decision to go and look the id up.
+      const rider = riders.find((r) => r.id === riderId)
+      const orderNumber = pending.find((o) => o.id === orderId)?.order_number ?? String(orderId)
+      setMessage({
+        type: 'success',
+        text: `Order #${orderNumber} dispatched to ${rider ? riderName(rider) : `rider ${riderId}`}`,
+      })
       setSelectedRider((s) => ({ ...s, [orderId]: '' }))
       queryClient.invalidateQueries({ queryKey: ['pending-dispatch'] })
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Dispatch failed'
-      const reason = (err as { payload?: { reason?: string } })?.payload?.reason
-      setMessage({ type: 'error', text: reason ? `${msg} (${reason})` : msg })
-    }
-  }
-
-  const handleReassign = async (orderId: number) => {
-    const riderIdStr = selectedReassignRider[orderId]
-    if (!riderIdStr) {
-      setMessage({ type: 'error', text: 'Select a rider to reassign' })
-      return
-    }
-    try {
-      await api.reassignOrder(orderId, Number(riderIdStr), storeId)
-      setMessage({ type: 'success', text: `Order #${orderId} reassigned to rider ${riderIdStr}` })
-      setSelectedReassignRider((s) => ({ ...s, [orderId]: '' }))
-      queryClient.invalidateQueries({ queryKey: ['pending-dispatch'] })
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Reassign failed'
       const reason = (err as { payload?: { reason?: string } })?.payload?.reason
       setMessage({ type: 'error', text: reason ? `${msg} (${reason})` : msg })
     }
@@ -168,49 +157,33 @@ export default function DispatchConsoleClient() {
               <div key={order.id} className="bg-white border border-gray-100 rounded-xl p-5">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
-                    <p className="font-mono text-sm font-semibold">#{order.order_number}</p>
-                    <p className="text-xs text-gray-400">{formatDateTime(order.created_at)} · {orderStatusLabel(order.status)} · {order.items?.length ?? 0} items</p>
+                    {/* One primary element per card: the order number. Everything
+                        else is muted context, and the status is not repeated here
+                        because the pill on the right already carries it. */}
+                    <p className="font-mono text-[15px] font-semibold text-gray-900">#{order.order_number}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">{formatDateTime(order.created_at)} · {order.items?.length ?? 0} {order.items?.length === 1 ? 'item' : 'items'}</p>
                     <p className="text-xs text-gray-500 mt-1 flex items-center gap-1"><Bike size={12} /> {order.delivery_address ?? 'No address'}</p>
-                    {order.rider_id ? (
-                      <p className="text-xs text-gray-400 mt-0.5">Current rider: #{order.rider_id}</p>
-                    ) : null}
                   </div>
                   <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${order.status === 'retrying' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}`}>{orderStatusLabel(order.status)}</span>
                 </div>
-                <div className="mt-4 flex flex-wrap gap-3">
-                  {order.rider_id ? (
-                    <div className="flex items-center gap-2">
-                      <select
-                        value={selectedReassignRider[order.id] ?? ''}
-                        onChange={e => setSelectedReassignRider(s => ({ ...s, [order.id]: e.target.value }))}
-                        className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none bg-white"
-                      >
-                        <option value="">Select rider...</option>
-                        {riders.map(r => (
-                          <option key={r.id} value={r.id}>
-                            {r.user?.name ?? 'Unknown'} ({r.vehicle_type ?? 'Bike'})
-                          </option>
-                        ))}
-                      </select>
-                      <button onClick={() => handleReassign(order.id)} className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">Reassign</button>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <select
-                        value={selectedRider[order.id] ?? ''}
-                        onChange={e => setSelectedRider(s => ({ ...s, [order.id]: e.target.value }))}
-                        className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none bg-white"
-                      >
-                        <option value="">Select rider...</option>
-                        {riders.map(r => (
-                          <option key={r.id} value={r.id}>
-                            {r.user?.name ?? 'Unknown'} ({r.vehicle_type ?? 'Bike'})
-                          </option>
-                        ))}
-                      </select>
-                      <button onClick={() => handleDispatch(order.id)} className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors">Dispatch</button>
-                    </div>
-                  )}
+                <div className="mt-4 flex flex-wrap items-center gap-3">
+                  <label className="sr-only" htmlFor={`dispatch-rider-${order.id}`}>
+                    Choose a rider for order {order.order_number}
+                  </label>
+                  <select
+                    id={`dispatch-rider-${order.id}`}
+                    value={selectedRider[order.id] ?? ''}
+                    onChange={e => setSelectedRider(s => ({ ...s, [order.id]: e.target.value }))}
+                    className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none bg-white"
+                  >
+                    <option value="">Select rider...</option>
+                    {riders.map(r => (
+                      <option key={r.id} value={r.id}>
+                        {riderLabel(r)}
+                      </option>
+                    ))}
+                  </select>
+                  <button onClick={() => handleDispatch(order.id)} className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors">Dispatch</button>
                 </div>
               </div>
             ))}
@@ -219,7 +192,7 @@ export default function DispatchConsoleClient() {
 
         <div className="mt-8 bg-gray-50 border border-gray-200 rounded-lg p-4 text-xs text-gray-500">
           <p className="font-medium text-gray-700 mb-1">How it works</p>
-          <p>Manual dispatch uses <code className="bg-white px-1 py-0.5 rounded border">OrderClaim::claim</code> with <code className="bg-white px-1 py-0.5 rounded border">FOR UPDATE SKIP LOCKED</code> — never a raw rider_id write. Every action is appended to the Order Activity Log. Reassign swaps rider via atomic transaction.</p>
+          <p>Manual dispatch uses <code className="bg-white px-1 py-0.5 rounded border">OrderClaim::claim</code> with <code className="bg-white px-1 py-0.5 rounded border">FOR UPDATE SKIP LOCKED</code> — never a raw rider_id write. Every action is appended to the Order Activity Log. This queue only ever holds orders with no rider yet — moving an order that is already assigned happens on the Orders screen.</p>
         </div>
       </motion.div>
     </main>

@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion } from 'motion/react'
 import { api, ApiError } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth-store'
+import { roleLabel } from '@/lib/labels'
 import { useStores } from '@/lib/query'
 import { toast } from 'sonner'
 import { Users, UserPlus, ShieldCheck, ShieldX, Loader2, Trash2, AlertCircle, RefreshCw, Store as StoreIcon, Lock } from 'lucide-react'
@@ -21,8 +22,8 @@ interface StaffMember {
 
 const STAFF_ROLES = ['store_manager', 'logistics_officer'] as const
 
-const prettyRole = (role: string) =>
-  role.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+/** Role wording comes from the shared vocabulary — sentence case, one place. */
+const prettyRole = (role: string) => roleLabel(role)
 
 export default function StaffClient() {
   const { user } = useAuthStore()

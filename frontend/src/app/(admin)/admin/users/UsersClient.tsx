@@ -6,6 +6,7 @@ import { Search, AlertCircle, Users, Edit3, Trash2, Shield, X, Save } from 'luci
 import { useAdminUsers, useUpdateAdminUser, useDeleteAdminUser } from '@/lib/query'
 import { useAuthStore } from '@/stores/auth-store'
 import { toast } from 'sonner'
+import { roleLabel } from '@/lib/labels'
 import { fadeUpTight as fadeUp, staggerTight as stagger } from '@/lib/motion/variants'
 import Link from 'next/link'
 import type { User } from '@/types'
@@ -62,7 +63,7 @@ export default function UsersClient() {
               <div key={u.id} className="p-4 flex items-center gap-4 hover:bg-gray-50">
                 <div className="w-9 h-9 rounded-full bg-primary-light flex items-center justify-center text-primary font-semibold text-sm">{u.name[0]}</div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2"><span className="font-medium text-sm truncate">{u.name}</span><span className="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 flex items-center gap-1"><Shield size={10} />{u.role.replace(/_/g,' ')}</span>{!u.is_active && <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full">Inactive</span>}</div>
+                  <div className="flex items-center gap-2"><span className="font-medium text-sm truncate">{u.name}</span><span className="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 flex items-center gap-1"><Shield size={10} />{roleLabel(u.role)}</span>{!u.is_active && <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full">Inactive</span>}</div>
                   <div className="text-xs text-gray-400 truncate">{u.email} {u.phone ? `· ${u.phone}` : ''}</div>
                 </div>
                 <div className="flex gap-1"><button onClick={() => openEdit(u)} className="p-2 text-gray-400 hover:text-primary rounded-lg"><Edit3 size={14} /></button><button onClick={() => setDeletingId(u.id)} className="p-2 text-gray-400 hover:text-red-600 rounded-lg"><Trash2 size={14} /></button></div>
@@ -77,7 +78,7 @@ export default function UsersClient() {
           <div className="bg-white rounded-2xl w-full max-w-md">
             <div className="px-6 py-4 border-b flex items-center justify-between"><h2 className="font-semibold">Edit User — {editing.name}</h2><button onClick={() => setEditing(null)}><X size={18} /></button></div>
             <div className="p-6 space-y-4">
-              <div><label className="text-xs text-gray-500">Role</label><select value={role} onChange={e => setRole(e.target.value)} className="w-full border rounded-lg px-3 py-2 text-sm bg-white mt-1">{ROLES.map(r => <option key={r} value={r}>{r.replace(/_/g,' ')}</option>)}</select></div>
+              <div><label className="text-xs text-gray-500">Role</label><select value={role} onChange={e => setRole(e.target.value)} className="w-full border rounded-lg px-3 py-2 text-sm bg-white mt-1">{ROLES.map(r => <option key={r} value={r}>{roleLabel(r)}</option>)}</select></div>
               <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={isActive} onChange={e => setIsActive(e.target.checked)} /> Active</label>
               <div className="flex justify-end gap-2"><button onClick={() => setEditing(null)} className="px-4 py-2 text-sm">Cancel</button><button onClick={handleUpdate} disabled={updateMut.isPending} className="px-4 py-2 bg-primary text-white rounded-lg text-sm flex items-center gap-2"><Save size={14} />Update</button></div>
             </div>
