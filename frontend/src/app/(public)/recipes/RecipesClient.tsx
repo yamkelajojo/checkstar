@@ -83,7 +83,7 @@ export default function RecipesClient() {
           <motion.div
             initial={{ opacity: 0, y: 12, filter: 'blur(4px)' }}
             animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-            className="text-center py-16 bg-white rounded-[16px] border border-gray-100 shadow-sm"
+            className="text-center py-16 bg-white rounded-card border border-gray-100 shadow-sm"
           >
             <p className="text-[15px] font-medium text-red-600">{fetchError}</p>
             <p className="text-[13px] mt-1 text-gray-500">Give it another try in a moment.</p>
@@ -91,7 +91,7 @@ export default function RecipesClient() {
         ) : loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="bg-white rounded-[16px] h-80 shimmer border border-gray-100" style={{ animationDelay: `${i * 80}ms` }} />
+              <div key={i} className="bg-white rounded-card h-80 shimmer border border-gray-100" style={{ animationDelay: `${i * 80}ms` }} />
             ))}
           </div>
         ) : filtered.length === 0 ? (
@@ -99,7 +99,7 @@ export default function RecipesClient() {
             initial={{ opacity: 0, scale: 0.94, filter: 'blur(8px)' }}
             animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
             transition={{ type: 'spring', ...spring.apple }}
-            className="text-center py-20 bg-white rounded-[16px] border border-gray-100 shadow-sm"
+            className="text-center py-20 bg-white rounded-card border border-gray-100 shadow-sm"
           >
             <div className="w-14 h-14 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center mx-auto mb-4">
               <ChefHat size={22} className="text-gray-400" />
@@ -128,7 +128,7 @@ export default function RecipesClient() {
                 className="group"
               >
                 <Link href={`/recipes/${recipe.slug}`} className="block">
-                  <div className="bg-white rounded-[16px] border border-gray-100/80 overflow-hidden shadow-[0_2px_8px_rgba(0,0,0,0.04),0_0_0_1px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_32px_rgba(0,0,0,0.08),0_0_0_1px_rgba(0,0,0,0.04)] transition-all duration-500">
+                  <div className="bg-white rounded-card border border-gray-100/80 overflow-hidden shadow-[0_2px_8px_rgba(0,0,0,0.04),0_0_0_1px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_32px_rgba(0,0,0,0.08),0_0_0_1px_rgba(0,0,0,0.04)] transition-all duration-500">
                     <div className="relative aspect-[4/3] bg-gradient-to-br from-gray-50 to-gray-50/50 overflow-hidden">
                       <div className="absolute inset-0 bg-gradient-to-br from-white/40 via-transparent to-transparent pointer-events-none z-10" />
                       {recipe.image ? (

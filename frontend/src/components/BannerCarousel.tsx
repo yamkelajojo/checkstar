@@ -193,7 +193,7 @@ export function BannerCarousel({ banners }: BannerCarouselProps) {
               >
                 <Link
                   href={slide.url}
-                  className="inline-flex items-center gap-2 bg-white text-gray-900 px-6 py-3 rounded-[12px] font-semibold hover:bg-white/90 transition-all shadow-[0_4px_12px_rgba(0,0,0,0.15)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.2)] hover:scale-[1.02] active:scale-[0.98] duration-200"
+                  className="inline-flex items-center gap-2 bg-white text-gray-900 px-6 py-3 rounded-button font-semibold hover:bg-white/90 transition-all shadow-[0_4px_12px_rgba(0,0,0,0.15)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.2)] hover:scale-[1.02] active:scale-[0.98] duration-200"
                 >
                   {slide.ctaLabel}
                 </Link>

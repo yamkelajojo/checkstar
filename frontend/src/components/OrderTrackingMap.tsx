@@ -11,7 +11,7 @@ import { formatTime } from '@/lib/dates'
 
 const MapContainer = dynamic(() => import('@/components/MapContainer'), {
   ssr: false,
-  loading: () => <div className="h-[320px] bg-gray-100 shimmer rounded-[16px]" />,
+  loading: () => <div className="h-[320px] bg-gray-100 shimmer rounded-card" />,
 })
 
 interface Props {
@@ -145,7 +145,7 @@ export default function OrderTrackingMap({
         initial={shouldReduce ? { opacity: 0 } : { opacity: 0, y: 12, scale: 0.98, filter: 'blur(6px)' }}
         animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
         transition={{ type: 'spring', ...spring.apple }}
-        className="rounded-[16px] border border-gray-100 bg-white p-8 text-center shadow-[0_2px_8px_rgba(0,0,0,0.04)]"
+        className="rounded-card border border-gray-100 bg-white p-8 text-center shadow-[0_2px_8px_rgba(0,0,0,0.04)]"
       >
         <div className="w-12 h-12 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center mx-auto mb-3">
           <MapPin className="text-gray-300" size={20} strokeWidth={1.5} />
@@ -163,7 +163,7 @@ export default function OrderTrackingMap({
       whileInView={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
       viewport={{ once: true }}
       transition={{ type: 'spring', ...spring.apple }}
-      className="rounded-[16px] border border-gray-100/80 bg-white overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,0.06),0_0_0_1px_rgba(0,0,0,0.03)]"
+      className="rounded-card border border-gray-100/80 bg-white overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,0.06),0_0_0_1px_rgba(0,0,0,0.03)]"
     >
       {/* Header — dedicated animation */}
       <motion.div

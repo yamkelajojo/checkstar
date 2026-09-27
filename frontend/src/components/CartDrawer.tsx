@@ -106,7 +106,7 @@ export default function CartDrawer({ open, onClose }: Props) {
                     initial={{ rotate: -8, scale: 0.8, y: 8 }}
                     animate={{ rotate: 0, scale: 1, y: 0 }}
                     transition={{ type: 'spring', stiffness: 300, damping: 20, delay: 0.1 }}
-                    className="w-20 h-20 rounded-[20px] bg-gray-50 border border-gray-100 flex items-center justify-center mb-5 shadow-[inset_0_1px_2px_rgba(255,255,255,0.8)]"
+                    className="w-20 h-20 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center mb-5 shadow-[inset_0_1px_2px_rgba(255,255,255,0.8)]"
                   >
                     <ShoppingBag size={28} className="text-gray-400" strokeWidth={1.5} />
                   </motion.div>
@@ -133,7 +133,7 @@ export default function CartDrawer({ open, onClose }: Props) {
                       layout
                       className="flex items-center gap-3 bg-white rounded-button p-3 border border-gray-100/80 shadow-[0_1px_4px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] transition-shadow"
                     >
-                      <div className="relative w-14 h-14 bg-gradient-to-br from-gray-50 to-white rounded-[10px] flex items-center justify-center overflow-hidden border border-gray-100/50 shrink-0">
+                      <div className="relative w-14 h-14 bg-gradient-to-br from-gray-50 to-white rounded-sm flex items-center justify-center overflow-hidden border border-gray-100/50 shrink-0">
                         {item.product.image && <SafeImage src={item.product.image} alt={item.product.name} fill sizes="56px" className="object-contain p-1" />}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -173,11 +173,11 @@ export default function CartDrawer({ open, onClose }: Props) {
                   <span className="font-bold text-[20px] tracking-tight tabular-nums">{formatZar(total)}</span>
                 </div>
                 <div className="flex gap-2.5">
-                  <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={clearCart} className="flex-1 px-4 py-3 text-[13px] font-medium border border-gray-200 rounded-[12px] hover:bg-gray-50 transition-colors">
+                  <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={clearCart} className="flex-1 px-4 py-3 text-[13px] font-medium border border-gray-200 rounded-button hover:bg-gray-50 transition-colors">
                     Clear
                   </motion.button>
                   <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="flex-1">
-                    <Link href="/cart" onClick={onClose} className="w-full px-4 py-3 text-[13px] font-semibold bg-primary text-white rounded-[12px] text-center hover:bg-primary-dark shadow-[0_2px_8px_rgba(235,101,34,0.25)] hover:shadow-[0_4px_12px_rgba(235,101,34,0.3)] transition-all flex items-center justify-center">
+                    <Link href="/cart" onClick={onClose} className="w-full px-4 py-3 text-[13px] font-semibold bg-primary text-white rounded-button text-center hover:bg-primary-dark shadow-[0_2px_8px_rgba(235,101,34,0.25)] hover:shadow-[0_4px_12px_rgba(235,101,34,0.3)] transition-all flex items-center justify-center">
                       View Cart
                     </Link>
                   </motion.div>

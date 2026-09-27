@@ -41,7 +41,7 @@ export default function ProductCard({ product, compact = false, index = 0 }: Pro
         delay: index * 0.03,
       }}
       whileHover={shouldReduce ? undefined : { y: -6, scale: 1.01, transition: { type: 'spring', ...spring.snap } }}
-      className="group bg-white rounded-[16px] border border-gray-100/80 overflow-hidden shadow-[0_2px_8px_rgba(0,0,0,0.04),0_0_0_1px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08),0_0_0_1px_rgba(0,0,0,0.04)] transition-shadow duration-300"
+      className="group bg-white rounded-card border border-gray-100/80 overflow-hidden shadow-[0_2px_8px_rgba(0,0,0,0.04),0_0_0_1px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08),0_0_0_1px_rgba(0,0,0,0.04)] transition-shadow duration-300"
     >
       <Link href={`/products/${product.slug}`} className="block">
         <div className={`relative ${compact ? 'aspect-square' : 'aspect-[4/3]'} bg-gradient-to-br from-gray-50 to-gray-50/50 flex items-center justify-center p-3 overflow-hidden`}>
@@ -118,7 +118,7 @@ export default function ProductCard({ product, compact = false, index = 0 }: Pro
                 emitCartAdded(product.name)
               }}
               aria-label={`Add ${product.name} to cart`}
-              className="bg-primary text-white w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-[12px] hover:bg-primary-dark shadow-[0_2px_8px_rgba(235,101,34,0.25)] hover:shadow-[0_4px_12px_rgba(235,101,34,0.35)] transition-all duration-200 shrink-0"
+              className="bg-primary text-white w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-button hover:bg-primary-dark shadow-[0_2px_8px_rgba(235,101,34,0.25)] hover:shadow-[0_4px_12px_rgba(235,101,34,0.35)] transition-all duration-200 shrink-0"
             >
               <ShoppingCart size={16} strokeWidth={1.75} />
             </motion.button>

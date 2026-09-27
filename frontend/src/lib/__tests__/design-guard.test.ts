@@ -33,6 +33,9 @@ describe("design tokens — accent vs primary-dark", () => {
     expect(cfg).toContain("button: '12px'");
     expect(cfg).toContain("card: '16px'");
     expect(cfg).toContain("pill: '9999px'");
+    // Small and extra-large complete the scale (10px chips, 20px hero)
+    expect(cfg).toContain("sm: '10px'");
+    expect(cfg).toContain("xl: '20px'");
   });
 });
 
@@ -52,6 +55,25 @@ describe("design tokens — no arbitrary 14px radius", () => {
     }).trim();
     // If this fails, migrate the listed files to rounded-button (12px) or rounded-card (16px)
     expect(out, `found rounded-[14px] outliers (migrate to rounded-button/card):\n${out}`).toBe("");
+  });
+});
+
+/**
+ * Guard: no arbitrary rounded-[*px] except the device-frame allowlist.
+ * After the 14px fix, 16px (card), 12px (button), 10px (sm chip), 20px (xl hero)
+ * were still used as literals throughout the app — defeating the token
+ * scale. New code must use rounded-sm / rounded-button / rounded-card /
+ * rounded-xl / rounded-pill. The only exceptions are the phone mock in
+ * DownloadTheApp (44px outer, 36px inner) which is not a design token.
+ */
+describe("design tokens — no arbitrary radius literals", () => {
+  it("has no stray rounded-[*px] in src (except 44px/36px device frames)", async () => {
+    const { execSync } = await import("node:child_process");
+    const out = execSync(
+      "grep -R 'rounded-\\[[0-9]\\+px\\]' --include='*.tsx' --include='*.ts' src | grep -v '__tests__' | grep -v '44px' | grep -v '36px' || true",
+      { cwd: ROOT, encoding: "utf8" },
+    ).trim();
+    expect(out, `found arbitrary rounded-[*px] (use rounded-sm/button/card/xl/pill):\n${out}`).toBe("");
   });
 });
 

@@ -39,9 +39,9 @@ export default function CategoryGrid({ categories }: Props) {
           >
             <Link
               href={`/products?category=${cat.slug}`}
-              className="group block rounded-[16px] bg-[#211B16] p-3 ring-1 ring-white/10 shadow-[0_2px_12px_rgba(0,0,0,0.15)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.2)] hover:ring-[#EB6522]/50 transition-all duration-500"
+              className="group block rounded-card bg-[#211B16] p-3 ring-1 ring-white/10 shadow-[0_2px_12px_rgba(0,0,0,0.15)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.2)] hover:ring-[#EB6522]/50 transition-all duration-500"
             >
-              <div className="relative aspect-[3/4] overflow-hidden rounded-[12px] bg-white/[0.04] border border-white/5">
+              <div className="relative aspect-[3/4] overflow-hidden rounded-button bg-white/[0.04] border border-white/5">
                 <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-transparent pointer-events-none z-10" />
                 {image ? (
                   <SafeImage

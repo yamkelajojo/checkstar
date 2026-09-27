@@ -6,7 +6,7 @@ import { motion } from 'motion/react'
 import { Search, SlidersHorizontal, ShoppingCart } from 'lucide-react'
 import ProductCard from '@/components/ProductCard'
 import type { Product } from '@/types'
-import { useAllProducts } from '@/lib/query'
+import { useAllProducts, useCategories } from '@/lib/query'
 
 export const FILTER_GROUPS = [
   { label: 'All', slugs: null as string[] | null },
@@ -17,6 +17,19 @@ export const FILTER_GROUPS = [
   { label: 'Care', slugs: ['baby-toddler', 'health-beauty'] as string[] },
   { label: 'Other', slugs: ['snacks-treats', 'stationery-school'] as string[] },
 ] as const
+
+/**
+ * STLC helper: find slugs in FILTER_GROUPS that are NOT in the live
+ * category list. Used at runtime (dev warning) and in tests (traceability
+ * to CategorySeeder). Pure — no hooks.
+ */
+export function findUnknownFilterSlugs(
+  groups: typeof FILTER_GROUPS,
+  knownSlugs: string[],
+): string[] {
+  const all = groups.flatMap(g => g.slugs ?? [])
+  return all.filter(s => !knownSlugs.includes(s))
+}
 
 export default function ProductsClient() {
   const searchParams = useSearchParams()
@@ -40,6 +53,19 @@ export default function ProductsClient() {
   const activeSlugs = FILTER_GROUPS.find(g => g.label === activeGroup)?.slugs
   if (activeSlugs) queryParams.categories = (activeSlugs as readonly string[]).join(',')
   const { data: products = [], isLoading: productsLoading, error: productsError } = useAllProducts(queryParams)
+
+  // Live validation: if admin creates a category (e.g. pet-supplies → home-garden)
+  // the static FILTER_GROUPS would still send the old slug and "Home" would look
+  // empty. Warn in dev so the drift is caught before a shopper sees it.
+  const { data: categories = [] } = useCategories()
+  useEffect(() => {
+    if (!categories.length) return
+    const known = (categories as { slug: string }[]).map(c => c.slug)
+    const unknown = findUnknownFilterSlugs(FILTER_GROUPS, known)
+    if (unknown.length && process.env.NODE_ENV !== 'production') {
+      console.warn(`[ProductsClient] FILTER_GROUPS references unknown category slugs: ${unknown.join(', ')}`)
+    }
+  }, [categories])
 
   const loading = productsLoading
   const fetchError = productsError ? "Couldn't load products" : null

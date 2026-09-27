@@ -9,9 +9,11 @@ import React from 'react'
  */
 
 const mockGetAllProducts = vi.fn()
+const mockGetCategories = vi.fn(() => Promise.resolve({ data: [] }))
 vi.mock('@/lib/api', () => ({
   api: {
     getAllProducts: (...args: unknown[]) => mockGetAllProducts(...(args as [])),
+    getCategories: (...args: unknown[]) => mockGetCategories(...(args as [])),
   },
 }))
 

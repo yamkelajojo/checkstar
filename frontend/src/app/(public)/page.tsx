@@ -146,7 +146,7 @@ export default function HomePage() {
           className="max-w-7xl mx-auto px-4 py-8"
         >
           {bannersLoading ? (
-            <div className="w-full h-48 md:h-64 rounded-[20px] shimmer border border-gray-100" />
+            <div className="w-full h-48 md:h-64 rounded-xl shimmer border border-gray-100" />
           ) : bannersError ? (
             <ErrorFallback message="Couldn't load banners" onRetry={() => refetchBanners()} />
           ) : (

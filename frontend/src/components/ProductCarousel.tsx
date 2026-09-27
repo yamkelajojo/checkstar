@@ -48,7 +48,7 @@ export function ProductCarousel({ title, products, href, queryResult }: ProductC
         className="py-6"
       >
         <h2 className="text-[18px] font-bold tracking-tight text-foreground mb-3">{title}</h2>
-        <div className="bg-white rounded-[16px] border border-gray-100 shadow-sm">
+        <div className="bg-white rounded-card border border-gray-100 shadow-sm">
           <EmptyState compact title="Nothing here yet" caption="Check back soon." />
         </div>
       </motion.section>

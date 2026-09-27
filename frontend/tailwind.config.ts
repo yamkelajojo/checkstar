@@ -24,8 +24,10 @@ const config: Config = {
         serif: ['var(--font-fraunces)', 'Georgia', 'serif'],
       },
       borderRadius: {
+        sm: '10px',
         button: '12px',
         card: '16px',
+        xl: '20px',
         pill: '9999px',
       },
     },

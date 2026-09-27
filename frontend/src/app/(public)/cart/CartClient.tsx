@@ -174,7 +174,7 @@ export default function CartClient() {
               initial={shouldReduce ? { opacity: 0 } : { opacity: 0, y: 16, scale: 0.97, filter: 'blur(6px)' }}
               animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
               transition={{ type: 'spring', ...spring.apple, delay: 0.1 }}
-              className="text-center py-20 bg-white rounded-[16px] border border-gray-100 shadow-[0_2px_12px_rgba(0,0,0,0.04)]"
+              className="text-center py-20 bg-white rounded-card border border-gray-100 shadow-[0_2px_12px_rgba(0,0,0,0.04)]"
             >
               <motion.div
                 initial={shouldReduce ? undefined : { scale: 0.8, rotate: -4 }}
@@ -204,7 +204,7 @@ export default function CartClient() {
                     hidden: {},
                     visible: { transition: { staggerChildren: 0.06, delayChildren: 0.08 } },
                   }}
-                  className="space-y-1 bg-white rounded-[16px] border border-gray-100/80 shadow-[0_2px_12px_rgba(0,0,0,0.04)] p-2 sm:p-3"
+                  className="space-y-1 bg-white rounded-card border border-gray-100/80 shadow-[0_2px_12px_rgba(0,0,0,0.04)] p-2 sm:p-3"
                 >
                   <AnimatePresence initial={false}>
                     {items.map((item, idx) => {
@@ -221,9 +221,9 @@ export default function CartClient() {
                           animate="visible"
                           exit={{ opacity: 0, x: 20, height: 0, marginBottom: 0, filter: 'blur(4px)', transition: { duration: 0.25, ease: ease.apple } }}
                           transition={{ delay: idx * 0.03 }}
-                          className="flex items-start gap-3 py-4 px-2 sm:px-3 rounded-[12px] hover:bg-gray-50/80 transition-colors border border-transparent hover:border-gray-100 sm:items-center sm:gap-4"
+                          className="flex items-start gap-3 py-4 px-2 sm:px-3 rounded-button hover:bg-gray-50/80 transition-colors border border-transparent hover:border-gray-100 sm:items-center sm:gap-4"
                         >
-                          <div className="relative w-16 h-16 sm:w-20 sm:h-20 bg-gray-50 rounded-[12px] flex-shrink-0 flex items-center justify-center overflow-hidden border border-gray-100/50">
+                          <div className="relative w-16 h-16 sm:w-20 sm:h-20 bg-gray-50 rounded-button flex-shrink-0 flex items-center justify-center overflow-hidden border border-gray-100/50">
                             {item.product.image ? (
                               <SafeImage src={item.product.image} alt={item.product.name} fill sizes="64px" className="object-cover" />
                             ) : (
@@ -293,7 +293,7 @@ export default function CartClient() {
                   initial={shouldReduce ? { opacity: 0 } : { opacity: 0, y: 16, scale: 0.97, filter: 'blur(6px)' }}
                   animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
                   transition={{ type: 'spring', ...spring.apple, delay: 0.18 }}
-                  className="bg-white rounded-[16px] border border-gray-100 shadow-[0_2px_12px_rgba(0,0,0,0.04)] p-5 sm:p-6 sticky top-24"
+                  className="bg-white rounded-card border border-gray-100 shadow-[0_2px_12px_rgba(0,0,0,0.04)] p-5 sm:p-6 sticky top-24"
                 >
                   <h2 className="font-display text-[15px] font-semibold tracking-tight mb-4">Order Summary</h2>
 
@@ -337,7 +337,7 @@ export default function CartClient() {
                       className="mt-5 space-y-3"
                     >
                       {placeError && (
-                        <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-[11px] text-red-500 font-medium bg-red-50 border border-red-100 rounded-[10px] px-3 py-2">{placeError}</motion.p>
+                        <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-[11px] text-red-500 font-medium bg-red-50 border border-red-100 rounded-sm px-3 py-2">{placeError}</motion.p>
                       )}
 
                       <div className="grid grid-cols-2 gap-1 p-1 bg-gray-100 rounded-full" role="group" aria-label="Fulfilment method">
@@ -367,13 +367,13 @@ export default function CartClient() {
                               Deliver to
                             </label>
                             {addressesLoading ? (
-                              <div className="h-10 rounded-[12px] bg-gray-100 animate-pulse" aria-hidden="true" />
+                              <div className="h-10 rounded-button bg-gray-100 animate-pulse" aria-hidden="true" />
                             ) : (
                               <select
                                 id="saved-address"
                                 value={String(selectedAddressId)}
                                 onChange={e => setSelectedAddressId(e.target.value === 'new' ? 'new' : Number(e.target.value))}
-                                className="w-full px-3.5 py-2.5 border border-gray-200 rounded-[12px] text-[13px] bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-shadow"
+                                className="w-full px-3.5 py-2.5 border border-gray-200 rounded-button text-[13px] bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-shadow"
                               >
                                 {savedAddresses.map(a => (
                                   <option key={a.id} value={a.id}>
@@ -394,7 +394,7 @@ export default function CartClient() {
                             id="pickup-store"
                             value={selectedStoreId === '' ? '' : String(selectedStoreId)}
                             onChange={e => setSelectedStoreId(e.target.value === '' ? '' : Number(e.target.value))}
-                            className="w-full px-3.5 py-2.5 border border-gray-200 rounded-[12px] text-[13px] bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
+                            className="w-full px-3.5 py-2.5 border border-gray-200 rounded-button text-[13px] bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
                           >
                             {stores.length === 0 && <option value="">Loading stores…</option>}
                             {stores.map(s => (
@@ -420,7 +420,7 @@ export default function CartClient() {
                                 rows={2}
                                 value={deliveryAddress}
                                 onChange={e => setDeliveryAddress(e.target.value)}
-                                className="w-full pl-10 pr-3.5 py-2.5 border border-gray-200 rounded-[12px] text-[13px] focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none resize-none leading-relaxed"
+                                className="w-full pl-10 pr-3.5 py-2.5 border border-gray-200 rounded-button text-[13px] focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none resize-none leading-relaxed"
                                 placeholder="Enter your delivery address"
                               />
                             </div>
@@ -445,7 +445,7 @@ export default function CartClient() {
                                   maxLength={50}
                                   aria-label="Address label"
                                   placeholder="Label (e.g. Home, Work)"
-                                  className="w-full px-3.5 py-2 border border-gray-200 rounded-[12px] text-[12px] focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
+                                  className="w-full px-3.5 py-2 border border-gray-200 rounded-button text-[12px] focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
                                 />
                               )}
                             </div>

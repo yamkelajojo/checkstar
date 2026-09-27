@@ -18,7 +18,7 @@ export function ErrorFallback({ message = 'Something went wrong', onRetry, class
       initial={shouldReduce ? { opacity: 0 } : { opacity: 0, y: 12, scale: 0.96, filter: 'blur(6px)' }}
       animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
       transition={{ type: 'spring', ...spring.apple }}
-      className={`flex flex-col items-center justify-center py-12 text-center bg-white rounded-[16px] border border-gray-100 shadow-[0_2px_12px_rgba(0,0,0,0.04)] ${className ?? ''}`}
+      className={`flex flex-col items-center justify-center py-12 text-center bg-white rounded-card border border-gray-100 shadow-[0_2px_12px_rgba(0,0,0,0.04)] ${className ?? ''}`}
     >
       <motion.div
         initial={shouldReduce ? undefined : { scale: 0.8, rotate: -4 }}

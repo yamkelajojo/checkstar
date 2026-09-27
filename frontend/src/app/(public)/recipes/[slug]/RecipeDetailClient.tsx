@@ -49,7 +49,7 @@ export default function RecipeDetailClient({ slug }: { slug: string }) {
   if (fetchError) {
     return (
       <motion.div initial={{ opacity: 0, y: 12, filter: 'blur(4px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }} className="max-w-4xl mx-auto px-4 py-16 text-center">
-        <div className="bg-white rounded-[16px] border border-red-100 p-8 shadow-sm">
+        <div className="bg-white rounded-card border border-red-100 p-8 shadow-sm">
           <p className="text-red-600 text-[15px] font-semibold">{fetchError}</p>
           <p className="text-[13px] text-gray-500 mt-1">Give it another try in a moment.</p>
           <Link href="/recipes" className="inline-flex mt-5 text-[13px] font-medium text-primary hover:underline">Back to recipes</Link>
@@ -63,10 +63,10 @@ export default function RecipeDetailClient({ slug }: { slug: string }) {
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="space-y-6">
           <div className="h-6 bg-gray-100 rounded-full w-1/4 shimmer" />
-          <div className="aspect-[2/1] bg-gray-100 rounded-[20px] shimmer" />
+          <div className="aspect-[2/1] bg-gray-100 rounded-xl shimmer" />
           <div className="h-8 bg-gray-100 rounded-full w-1/2 shimmer" />
           <div className="h-4 bg-gray-100 rounded-full w-1/3 shimmer" />
-          <div className="h-40 bg-gray-100 rounded-[16px] shimmer" />
+          <div className="h-40 bg-gray-100 rounded-card shimmer" />
         </div>
       </div>
     )
@@ -75,7 +75,7 @@ export default function RecipeDetailClient({ slug }: { slug: string }) {
   if (!recipe) {
     return (
       <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="max-w-4xl mx-auto px-4 py-16 text-center">
-        <div className="bg-white rounded-[16px] border border-gray-100 p-8">
+        <div className="bg-white rounded-card border border-gray-100 p-8">
           <p className="text-gray-900 text-[15px] font-semibold">Recipe not found.</p>
           <Link href="/recipes" className="inline-flex mt-4 text-[13px] font-medium text-primary hover:underline">Back to recipes</Link>
         </div>
@@ -96,7 +96,7 @@ export default function RecipeDetailClient({ slug }: { slug: string }) {
         initial={shouldReduce ? { opacity: 0 } : { opacity: 0, y: 20, scale: 0.97, filter: 'blur(12px)' }}
         animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
         transition={{ duration: 0.7, ease: ease.appleSpring }}
-        className="relative aspect-[2/1] rounded-[20px] overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 mb-8 shadow-[0_8px_32px_rgba(0,0,0,0.08),0_0_0_1px_rgba(0,0,0,0.04)]"
+        className="relative aspect-[2/1] rounded-xl overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 mb-8 shadow-[0_8px_32px_rgba(0,0,0,0.08),0_0_0_1px_rgba(0,0,0,0.04)]"
       >
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-white/20 pointer-events-none z-10" />
         {recipe.image ? (
@@ -184,7 +184,7 @@ export default function RecipeDetailClient({ slug }: { slug: string }) {
                         hidden: shouldReduce ? { opacity: 0 } : { opacity: 0, x: -8, filter: 'blur(3px)' },
                         visible: { opacity: 1, x: 0, filter: 'blur(0px)', transition: { duration: 0.3, ease: ease.apple } },
                       }}
-                      className="group flex items-center gap-3 px-3.5 py-2.5 rounded-[12px] text-[13px] bg-white border border-gray-100/80 hover:border-gray-200 hover:shadow-[0_2px_8px_rgba(0,0,0,0.04)] transition-all"
+                      className="group flex items-center gap-3 px-3.5 py-2.5 rounded-button text-[13px] bg-white border border-gray-100/80 hover:border-gray-200 hover:shadow-[0_2px_8px_rgba(0,0,0,0.04)] transition-all"
                     >
                       <span className="w-1.5 h-1.5 rounded-full bg-primary/60 group-hover:bg-primary transition-colors shrink-0" />
                       <span className="flex flex-wrap items-center gap-x-2 gap-y-1 flex-1 min-w-0 text-gray-700 leading-snug">
@@ -280,9 +280,9 @@ function IngredientProductPopover({ product }: { product: Product }) {
         <span className="font-semibold">{formatZar(price)}</span>
       </PopoverTrigger>
 
-      <PopoverContent className="w-72 rounded-[16px] border border-gray-100 shadow-[0_8px_32px_rgba(0,0,0,0.12)]">
+      <PopoverContent className="w-72 rounded-card border border-gray-100 shadow-[0_8px_32px_rgba(0,0,0,0.12)]">
         <div className="flex gap-2.5">
-          <div className="relative w-11 h-11 rounded-[10px] bg-gray-50 flex items-center justify-center flex-shrink-0 overflow-hidden border border-gray-100">
+          <div className="relative w-11 h-11 rounded-sm bg-gray-50 flex items-center justify-center flex-shrink-0 overflow-hidden border border-gray-100">
             {product.image ? (
               <SafeImage src={product.image} alt={product.name} width={44} height={44} className="object-contain" />
             ) : (
