@@ -23,6 +23,9 @@ let globalNavState: NavState = 'idle';
 let globalNavStatus: NavStatus = 'ready';
 let globalProgress = 0;
 let subscribers: Set<() => void> = new Set();
+// Handle for the post-complete reset so a fresh navigation can cancel it
+// (rapid navs would otherwise clear the new bar mid-sweep).
+let completeResetTimer: ReturnType<typeof setTimeout> | null = null;
 
 function emit() {
   subscribers.forEach((fn) => fn());
@@ -65,6 +68,10 @@ export function subscribeToNav(cb: () => void): () => void {
  * Initiates the leave transition and loading state.
  */
 export function startNavigation(): () => void {
+  if (completeResetTimer) {
+    clearTimeout(completeResetTimer);
+    completeResetTimer = null;
+  }
   setNavState('leaving');
   setNavStatus('loading');
   setProgress(0);
@@ -98,7 +105,8 @@ export function completeNavigation(): () => void {
     setProgress(1);
 
     // Fast resolve then back to idle
-    setTimeout(() => {
+    completeResetTimer = setTimeout(() => {
+      completeResetTimer = null;
       setNavStatus('ready');
       setProgress(0);
       setNavState('idle');

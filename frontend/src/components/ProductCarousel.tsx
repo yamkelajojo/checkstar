@@ -92,9 +92,9 @@ export function ProductCarousel({ title, products, href, queryResult }: ProductC
           visible: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring', ...spring.apple, delay: 0.08 } },
         }}
       >
-        {/* Full-bleed with inner padding: the overflow-hidden swiper keeps
-            room for the cards' shadows on every side instead of clipping
-            them, and the nav arrows sit off the page edge. */}
+        {/* Full-bleed via negative margins; the shadow-breathing padding lives
+            in globals.css (.product-carousel.swiper) where it can out-spec
+            Swiper's own `.swiper { padding: 0 }` reset. */}
         <Swiper
           modules={[Navigation, Pagination]}
           spaceBetween={12}
@@ -107,7 +107,7 @@ export function ProductCarousel({ title, products, href, queryResult }: ProductC
             768: { slidesPerView: 4, slidesPerGroup: 4, spaceBetween: 16 },
             1024: { slidesPerView: 5, slidesPerGroup: 5, spaceBetween: 16 },
           }}
-          className="product-carousel !-mx-4 !px-4 pb-10"
+          className="product-carousel !-mx-4"
         >
           {products.map((product, idx) => (
             <SwiperSlide key={product.id}>

@@ -1,12 +1,24 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
+import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
-import { useNavigationState } from '@/lib/navigation/transition-service';
+import { useNavigationState, completeNavigation } from '@/lib/navigation/transition-service';
 import { spring, ease } from '@/lib/motion/tokens';
 
 export function NavigationProgress() {
   const { status, progress } = useNavigationState();
   const shouldReduceMotion = useReducedMotion();
+  const pathname = usePathname();
+  const prevPath = useRef(pathname);
+
+  // NavLinks start the bar, but nothing else in the tree settles it — the
+  // moment the new route commits, sweep the bar to full and let it fade.
+  useEffect(() => {
+    if (prevPath.current === pathname) return;
+    prevPath.current = pathname;
+    completeNavigation();
+  }, [pathname]);
 
   return (
     <AnimatePresence initial={false}>
