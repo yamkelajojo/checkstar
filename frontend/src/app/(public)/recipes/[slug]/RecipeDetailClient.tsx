@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { motion, useReducedMotion } from 'motion/react'
-import { Clock, Users, ChefHat, ChevronLeft, ListOrdered, Package, Check, ShoppingCart, Sparkles } from 'lucide-react'
+import { Clock, Users, ChefHat, ChevronLeft, ListOrdered, Package, Check, ShoppingCart } from 'lucide-react'
 import { useState } from 'react'
 import { useRecipe, useAllProducts } from '@/lib/query'
 import { findIngredientProduct } from '@/lib/ingredientMatch'
@@ -105,13 +105,6 @@ export default function RecipeDetailClient({ slug }: { slug: string }) {
           <div className="w-full h-full flex items-center justify-center text-gray-200">
             <ChefHat size={56} strokeWidth={1.5} />
           </div>
-        )}
-        {recipe.is_featured && (
-          <motion.div initial={{ opacity: 0, scale: 0.8, y: -8 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ delay: 0.3, type: 'spring', ...spring.appleBounce }} className="absolute top-4 left-4 z-20">
-            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/90 backdrop-blur-md border border-white/30 text-[11px] font-bold text-gray-900 shadow-[0_2px_8px_rgba(0,0,0,0.12)]">
-              <Sparkles size={12} className="text-primary" /> Featured
-            </span>
-          </motion.div>
         )}
       </motion.div>
 

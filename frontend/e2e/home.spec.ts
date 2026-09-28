@@ -19,12 +19,14 @@ test.describe('Home page', () => {
     await expect(section).toBeVisible()
     await expect(section.getByText('Airtime, data & bill payments')).toBeVisible()
 
+    // Brand logos render as <img alt="MTN"> etc. (PNG packshots); each column
+    // shows exactly one logo at a time.
     const visibleNames = () =>
-      section.locator('svg[role="img"] text').evaluateAll((els) =>
-        els.map((el) => (el.textContent ?? '').trim()).filter(Boolean)
+      section.locator('img').evaluateAll((els) =>
+        els.map((el) => (el.getAttribute('alt') ?? '').trim()).filter(Boolean)
       )
 
-    await expect(section.locator('svg[role="img"]').first()).toBeVisible()
+    await expect(section.locator('img').first()).toBeVisible()
     const first = await visibleNames()
     expect(first.length).toBeGreaterThanOrEqual(2)
     // No brand may appear twice on screen at the same instant.

@@ -4,47 +4,44 @@ import type { Product, Category } from '@/types'
 
 const C = (id: number, slug: string): Category => ({ id, name: slug, slug, description: null, image: null, icon: null, sort_order: id })
 
-// Combined catalogue: real + SA pantry essentials
+/**
+ * SA recipes against the REAL catalogue (products_dataset/products.json).
+ *
+ * History: a previous session added 29 "South African pantry" products purely
+ * so every SA recipe ingredient would have something to link to. Those
+ * products were removed at the owner's request (2026-09-28) — this is a
+ * supermarket catalogue, not an ingredient-driven system. The contract pinned
+ * here is the agreed one: an ingredient shows a product link ONLY when a real
+ * catalogue product matches; otherwise it renders as plain text (null match).
+ * Never fake a link, never throw.
+ */
+
+// Names lifted verbatim from products_dataset/products.json — the catalogue
+// the store actually stocks.
 const catalogue: Product[] = [
-  // real sample
-  ['Grain Field Chickens Fresh Chicken Drumsticks & Thighs Per kg', 'meat-poultry'],
+  ['Grain Field Chickens Fresh Chicken Thighs Per kg', 'meat-poultry'],
   ['Festive Fresh Chicken Thighs Per kg', 'meat-poultry'],
-  ['Stewing Beef Per kg', 'meat-poultry'],
+  ['Grain Field Chickens Fresh Chicken Drumsticks & Thighs Per kg', 'meat-poultry'],
   ['Beef Mince (per kg)', 'meat-poultry'],
+  ['Lean Beef Mince (per kg)', 'meat-poultry'],
+  ['Stewing Beef Per kg', 'meat-poultry'],
   ['Clover Fresh Full Cream Milk 1L', 'dairy-eggs'],
+  ['Douglasdale Full Cream Milk 2L', 'dairy-eggs'],
   ['Ladismith Unsalted Butter 500g', 'dairy-eggs'],
+  ['Crystal Valley Salted Butter Brick 500g', 'dairy-eggs'],
   ['Galbani Mozzarella Cheese 300g', 'dairy-eggs'],
+  ['LANCEWOOD Medium Fat Mozzarella Cheese 250g', 'dairy-eggs'],
   ['SASKO Premium Slices White Bread 700g', 'bakery'],
+  ['Blue Ribbon Classic Brown Bread 700g', 'bakery'],
   ['Bananas 1.2kg', 'fruits-vegetables'],
+  ['Top Red Apples 1.5kg', 'fruits-vegetables'],
+  ['Starking Apples 1.5kg', 'fruits-vegetables'],
+  ['White Seedless Grapes 500g', 'fruits-vegetables'],
+  ['Red Seedless Grapes 500g', 'fruits-vegetables'],
   ['Lemons 7 Pack', 'fruits-vegetables'],
-  // SA pantry
-  ['Snowflake Cake Wheat Flour 2.5kg', 'pantry-staples'],
-  ['Selati White Sugar 2kg', 'pantry-staples'],
-  ['Selati Light Brown Sugar 1kg', 'pantry-staples'],
-  ['Anchor Instant Yeast 10g', 'pantry-staples'],
-  ['Sunfoil Sunflower Oil 750ml', 'pantry-staples'],
-  ['Robertsons Baking Powder 100g', 'pantry-staples'],
-  ['Robertsons Bicarbonate of Soda 100g', 'pantry-staples'],
-  ['Cerebos Iodated Table Salt 500g', 'pantry-staples'],
-  ['All Gold Smooth Apricot Jam 450g', 'pantry-staples'],
-  ['Heinz White Spirit Vinegar 750ml', 'pantry-staples'],
-  ['Robertsons Ground Cinnamon 40g', 'pantry-staples'],
-  ['Robertsons Ground Ginger 40g', 'pantry-staples'],
-  ['Rajah Mild & Spicy Durban Curry Powder 80g', 'pantry-staples'],
-  ['Robertsons Vanilla Essence 40ml', 'pantry-staples'],
-  ['Nestlé Golden Syrup 500g', 'pantry-staples'],
-  ['Free Range Eggs 6 Pack', 'dairy-eggs'],
-  ['Clover Fresh Cream 250ml', 'dairy-eggs'],
-  ['Clover Whipping Cream 500ml', 'dairy-eggs'],
-  ['Nestlé Caramel Treat 360g', 'dairy-eggs'],
-  ['Bakers Tennis Biscuits 200g', 'snacks-treats'],
-  ['Nestlé Peppermint Crisp Chocolate Bar 49g', 'snacks-treats'],
-  ['Onions 1kg', 'fruits-vegetables'],
-  ['Tomatoes 1kg', 'fruits-vegetables'],
-  ['Potatoes 2kg', 'fruits-vegetables'],
-  ['Garlic 3 Pack', 'fruits-vegetables'],
-  ['Fresh Ginger 100g', 'fruits-vegetables'],
-  ['Coconut Milk 400ml', 'pantry-staples'],
+  ['Celery 75g', 'fruits-vegetables'],
+  ['Tim Tam Original Biscuits 200g', 'snacks-treats'],
+  ['Whiskas Lamb In Gravy Cat Food 85g', 'pet-supplies'],
 ].map(([name, cat], i) => ({
   id: i + 1,
   category_id: i + 1,
@@ -61,110 +58,110 @@ const catalogue: Product[] = [
   category: C(i + 1, cat),
 }))
 
-const VETKOEK = [
+const byName = (name: string) => catalogue.find(p => p.name === name)!.slug
+
+// Ingredient lines from the seeded SA recipes that DO have a real catalogue
+// product behind them — these must link.
+const LINKED: Array<[string, string]> = [
+  // Vetkoek
+  ['500 g beef mince (for curried mince filling)', byName('Beef Mince (per kg)')],
+  // Durban chicken curry (the parenthetical alternative is an annotation —
+  // the matcher reads "chicken thighs, skinless" and picks the thighs pack)
+  ['1 kg chicken thighs, skinless (or Grain Field Chickens drumsticks & thighs)', byName('Grain Field Chickens Fresh Chicken Thighs Per kg')],
+  // Koeksisters
+  ['1 tbsp lemon juice (for syrup)', byName('Lemons 7 Pack')],
+  ['3/4 cup full cream milk', byName('Clover Fresh Full Cream Milk 1L')],
+  ['1/4 cup butter, cold and cubed', byName('Ladismith Unsalted Butter 500g')],
+  // Malva pudding
+  ['1 tbsp butter, melted', byName('Ladismith Unsalted Butter 500g')],
+  ['1 cup full cream milk', byName('Clover Fresh Full Cream Milk 1L')],
+]
+
+// Ingredient lines from the seeded SA recipes that have NO product in the
+// real catalogue — these must return null (plain text, no link). This is
+// intended behaviour since the pantry products were removed.
+const UNLINKED: string[] = [
   '4 cups cake flour',
-  '1 sachet instant yeast',
+  '1 sachet instant yeast (10g)',
   '2 tsp white sugar',
   '2 tsp table salt',
-  '1.5 cups lukewarm water',
-  '2 tbsp sunflower oil',
-  '500 g beef mince',
-  '1 onion, finely chopped',
   '2 tsp Durban curry powder',
-  '1 tomato, diced',
-  '1 tsp garlic, crushed',
-  '1 tsp fresh ginger, grated',
-]
-
-const MALVA = [
-  '1 cup white sugar',
-  '2 large free range eggs',
   '1 tbsp smooth apricot jam',
-  '1.5 cups cake flour',
   '1 tsp bicarbonate of soda',
   '1 tsp baking powder',
-  'pinch table salt',
-  '1 tbsp butter, melted',
   '1 tsp white spirit vinegar',
-  '1 cup full cream milk',
-  '1 cup brown sugar',
-  '1/2 cup fresh cream',
-  '1/2 cup butter',
-  '1 tsp vanilla essence',
-]
-
-const PEPPERMINT = [
-  '2 packets Tennis biscuits',
-  '1 tin caramel treat',
-  '2 cups whipping cream',
-  '3 bars Peppermint Crisp chocolate, crushed',
-  '1 tsp vanilla essence',
-]
-
-const DURBAN = [
-  '1 kg chicken thighs',
-  '2 tbsp sunflower oil',
-  '1 onion, diced',
-  '2 tsp garlic, crushed',
-  '2 tsp fresh ginger, grated',
-  '2 tbsp Durban curry powder',
-  '1 tsp ground cinnamon',
-  '1 tsp ground ginger',
+  '1 tsp vanilla essence (for sauce)',
+  '2 packets Tennis biscuits (200g each)',
+  '1 tin caramel treat (360g)',
+  '2 cups whipping cream, cold',
+  '3 bars Peppermint Crisp chocolate (49g each), crushed',
+  '1 cup coconut milk',
+  '2 large free range eggs',
+  '1 onion, finely chopped',
   '2 large tomatoes, diced',
   '2 potatoes, peeled and halved',
-  '1 cup coconut milk',
-  '1 cup water',
-]
-
-const KOEKSISTERS = [
-  '2 cups cake flour',
-  '2 tbsp baking powder',
-  '1/2 tsp table salt',
-  '1/4 cup butter, cold and cubed',
-  '3/4 cup full cream milk',
-  '1 large free range egg, beaten',
-  '2 cups white sugar',
-  '1 cup water',
+  '2 tsp garlic, crushed',
+  '1 tsp fresh ginger, grated',
   '1 tsp ground cinnamon',
-  '1 tsp ground ginger',
-  '1 tbsp lemon juice',
-  '1 tsp vanilla essence',
-  'sunflower oil for deep frying',
 ]
 
-describe('SA recipes against expanded catalogue (inventory check)', () => {
-  it('vetkoek ingredients all link (except water)', () => {
-    const toCheck = VETKOEK.filter(i => !/water/i.test(i))
-    const linked = toCheck.filter(i => findIngredientProduct(i, catalogue) !== null)
-    expect(linked.length / toCheck.length).toBeGreaterThanOrEqual(0.9)
+// Every ingredient line across all five seeded SA recipes.
+const ALL_RECIPE_INGREDIENTS = [
+  // Vetkoek
+  '4 cups cake flour', '1 sachet instant yeast (10g)', '2 tsp white sugar', '2 tsp table salt',
+  '1.5 cups lukewarm water', '2 tbsp sunflower oil, plus extra for frying',
+  '500 g beef mince (for curried mince filling)', '1 onion, finely chopped',
+  '2 tsp Durban curry powder', '1 tomato, diced', '1 tsp garlic, crushed', '1 tsp fresh ginger, grated',
+  // Malva pudding
+  '1 cup white sugar', '2 large free range eggs', '1 tbsp smooth apricot jam', '1.5 cups cake flour',
+  '1 tsp bicarbonate of soda', '1 tsp baking powder', 'pinch table salt', '1 tbsp butter, melted',
+  '1 tsp white spirit vinegar', '1 cup full cream milk', '1 cup brown sugar (for sauce)',
+  '1/2 cup fresh cream (for sauce)', '1/2 cup butter (for sauce)', '1 tsp vanilla essence (for sauce)',
+  // Peppermint crisp tart
+  '2 packets Tennis biscuits (200g each)', '1 tin caramel treat (360g)', '2 cups whipping cream, cold',
+  '3 bars Peppermint Crisp chocolate (49g each), crushed', '1 tsp vanilla essence', 'pinch table salt (optional)',
+  // Durban chicken curry
+  '1 kg chicken thighs, skinless (or Grain Field Chickens drumsticks & thighs)', '2 tbsp sunflower oil',
+  '1 onion, diced', '2 tsp garlic, crushed', '2 tsp fresh ginger, grated', '2 tbsp Durban curry powder',
+  '1 tsp ground cinnamon', '1 tsp ground ginger', '2 large tomatoes, diced', '2 potatoes, peeled and halved',
+  '1 cup coconut milk', '1 cup water', 'pinch table salt', 'fresh coriander for garnish (optional)',
+  // Koeksisters
+  '2 cups cake flour', '2 tbsp baking powder', '1/2 tsp table salt', '1/4 cup butter, cold and cubed',
+  '3/4 cup full cream milk', '1 large free range egg, beaten', '2 cups white sugar (for syrup)',
+  '1 cup water (for syrup)', '1 tsp ground cinnamon (for syrup)', '1 tsp ground ginger (for syrup)',
+  '1 tbsp lemon juice (for syrup)', '1 tsp vanilla essence (for syrup)', 'sunflower oil for deep frying',
+]
+
+describe('SA recipes against the real catalogue (post pantry-removal contract)', () => {
+  it('links an ingredient only when a real catalogue product matches', () => {
+    for (const [ingredient, slug] of LINKED) {
+      expect(findIngredientProduct(ingredient, catalogue)?.slug, ingredient).toBe(slug)
+    }
   })
 
-  it('malva pudding ingredients all link (except water)', () => {
-    const toCheck = MALVA.filter(i => !/water/i.test(i))
-    const linked = toCheck.filter(i => findIngredientProduct(i, catalogue) !== null)
-    expect(linked.length / toCheck.length).toBeGreaterThanOrEqual(0.85)
+  it('returns null — no link — when the catalogue has no matching product', () => {
+    for (const ingredient of UNLINKED) {
+      expect(findIngredientProduct(ingredient, catalogue), ingredient).toBeNull()
+    }
   })
 
-  it('peppermint crisp tart ingredients all link', () => {
-    const linked = PEPPERMINT.filter(i => findIngredientProduct(i, catalogue) !== null)
-    expect(linked.length / PEPPERMINT.length).toBeGreaterThanOrEqual(0.9)
+  it('never matches a non-edible (pet/baby) product into a recipe', () => {
+    for (const ingredient of ALL_RECIPE_INGREDIENTS) {
+      const match = findIngredientProduct(ingredient, catalogue)
+      expect(match?.category?.slug, ingredient).not.toBe('pet-supplies')
+      expect(match?.category?.slug, ingredient).not.toBe('baby-toddler')
+    }
   })
 
-  it('durban curry ingredients all link (except water)', () => {
-    const toCheck = DURBAN.filter(i => !/water/i.test(i))
-    const linked = toCheck.filter(i => findIngredientProduct(i, catalogue) !== null)
-    expect(linked.length / toCheck.length).toBeGreaterThanOrEqual(0.9)
+  it('handles every seeded SA recipe ingredient without throwing', () => {
+    for (const ingredient of ALL_RECIPE_INGREDIENTS) {
+      expect(() => findIngredientProduct(ingredient, catalogue)).not.toThrow()
+    }
   })
 
-  it('koeksisters ingredients all link (except water)', () => {
-    const toCheck = KOEKSISTERS.filter(i => !/water/i.test(i))
-    const linked = toCheck.filter(i => findIngredientProduct(i, catalogue) !== null)
-    expect(linked.length / toCheck.length).toBeGreaterThanOrEqual(0.9)
-  })
-
-  it('overall SA recipes have >=90% link rate', () => {
-    const all = [...VETKOEK, ...MALVA, ...PEPPERMINT, ...DURBAN, ...KOEKSISTERS].filter(i => !/water/i.test(i) && !/pinch/i.test(i))
-    const linked = all.filter(i => findIngredientProduct(i, catalogue) !== null)
-    expect(linked.length / all.length).toBeGreaterThanOrEqual(0.9)
+  it('Tim Tam biscuits are not mistaken for Tennis biscuits', () => {
+    // The catalogue stocks Tim Tams but not Tennis biscuits — the tart must
+    // not fake a link to a different biscuit.
+    expect(findIngredientProduct('2 packets Tennis biscuits (200g each)', catalogue)).toBeNull()
   })
 })

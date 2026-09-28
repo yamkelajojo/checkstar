@@ -3,8 +3,8 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import SafeImage from '@/components/SafeImage'
-import { motion, useReducedMotion, AnimatePresence } from 'motion/react'
-import { Clock, Users, ChefHat, ArrowRight, Sparkles } from 'lucide-react'
+import { motion, useReducedMotion } from 'motion/react'
+import { Clock, Users, ChefHat, ArrowRight } from 'lucide-react'
 import { useRecipes } from '@/lib/query'
 import { spring, ease } from '@/lib/motion/tokens'
 
@@ -144,18 +144,13 @@ export default function RecipesClient() {
                           <ChefHat size={40} strokeWidth={1.5} />
                         </div>
                       )}
-                      <div className="absolute top-3 left-3 z-20 flex gap-1.5">
-                        {recipe.is_featured && (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/90 backdrop-blur-md border border-white/20 text-[10px] font-bold text-gray-900 shadow-[0_2px_8px_rgba(0,0,0,0.1)]">
-                            <Sparkles size={10} className="text-primary" /> Featured
-                          </span>
-                        )}
-                        {recipe.category && (
+                      {recipe.category && (
+                        <div className="absolute top-3 left-3 z-20 flex gap-1.5">
                           <span className="px-2.5 py-1 rounded-full bg-black/70 backdrop-blur-md text-white text-[10px] font-semibold tracking-wide capitalize border border-white/10">
                             {recipe.category}
                           </span>
-                        )}
-                      </div>
+                        </div>
+                      )}
                     </div>
                     <div className="p-5">
                       <h3 className="font-display text-[16px] sm:text-[17px] font-semibold leading-snug tracking-tight group-hover:text-primary transition-colors line-clamp-2">

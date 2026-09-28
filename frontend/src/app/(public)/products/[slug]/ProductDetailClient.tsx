@@ -33,7 +33,7 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
   // button pinned to the bottom-right once the inline button scrolls out of
   // view (so it stays reachable while browsing further down), and morphs back
   // when the inline button re-enters the viewport.
-  const ctaButtonRef = useRef<HTMLButtonElement | null>(null)
+  const ctaButtonRef = useRef<HTMLDivElement | null>(null)
   const [ctaButtonInView, setCtaButtonInView] = useState(true)
   // Portalled to <body>: the page transition leaves a blur filter on the
   // layout's main element, and any filtered ancestor becomes the containing
@@ -174,12 +174,15 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
 
             {/* The inline CTA morphs away while the related shelf is on screen
                 (its fixed twin is visible bottom-right), and morphs back when
-                the shelf scrolls out of view. */}
+                the shelf scrolls out of view. The observer watches this
+                always-mounted wrapper, NOT the button: once the button
+                unmounts, an observer attached to it could never fire again
+                and the morph would be one-way. */}
+            <div ref={ctaButtonRef}>
             <AnimatePresence mode="wait" initial={false}>
               {ctaButtonInView && (
                 <motion.button
                   key="inline-cta"
-                  ref={ctaButtonRef}
                   initial={{ opacity: 0, y: 8, scale: 0.97 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 8, scale: 0.97 }}
@@ -195,6 +198,7 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
                 </motion.button>
               )}
             </AnimatePresence>
+            </div>
           </motion.div>
         </div>
 

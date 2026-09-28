@@ -10,6 +10,10 @@ import type { Product } from '@/types'
  * 4. Fuzzy matching: Levenshtein distance ≤1 for tokens ≥4 chars, ≤2 for ≥7 chars, to handle typos (mozzarela → mozzarella)
  * 5. Improved ranking: matched count, coverage of product tokens, positional (head noun), shorter canonical names, plus ingredient coverage bonus
  * 6. Still respects non-edible guard, negation guard, generic head guard
+ * 7. Single-token matches must explain the whole ingredient — a leftover
+ *    substantive token means the product is a sibling, not the ingredient
+ *    ("Tennis biscuits" must not link to "Tim Tam … Biscuits"). Parenthetical
+ *    annotations ("for sauce", "optional") are ignored.
  */
 
 const NON_EDIBLE_CATEGORIES = new Set(['pet-supplies', 'baby-toddler'])
@@ -21,7 +25,7 @@ const STOPWORDS = new Set([
   'tbsp', 'tbsps', 'tablespoon', 'tablespoons', 'tsp', 'tsps', 'teaspoon', 'teaspoons',
   'cup', 'cups', 'ml', 'l', 'g', 'kg', 'mg', 'oz', 'lb', 'lbs',
   'pinch', 'dash', 'bunch', 'bunches', 'clove', 'cloves', 'piece', 'pieces',
-  'stick', 'sticks', 'can', 'cans', 'jar', 'jars', 'bottle', 'bottles',
+  'stick', 'sticks', 'can', 'cans', 'tin', 'tins', 'jar', 'jars', 'packet', 'packets', 'bottle', 'bottles',
   'box', 'boxes', 'bag', 'bags', 'handful', 'handfuls', 'sprig', 'sprigs',
   'leaf', 'leaves', 'slice', 'slices', 'sliced', // sliced kept as descriptor but slice itself is often not needed; we keep sliced as stopword for ingredients
   'fillet', 'fillets',
@@ -37,7 +41,16 @@ const STOPWORDS = new Set([
 const NEGATIONS = new Set(['no', 'zero', 'free', 'less', 'light', 'lite'])
 
 // Generic heads
-const GENERIC_HEADS = new Set(['powder', 'juice', 'mix', 'drink', 'water', 'flavoured', 'flavour', 'soft', 'blend'])
+const GENERIC_HEADS = new Set(['powder', 'juice', 'mix', 'drink', 'water', 'flavoured', 'flavour', 'soft', 'blend', 'syrup'])
+
+// Prep/state descriptors that can remain in an ingredient line after
+// stopword removal without naming a different product
+// ("1/4 cup butter, cold and cubed" is still just butter).
+const DESCRIPTORS = new Set([
+  'cold', 'cubed', 'melted', 'thawed', 'boneless', 'skinless', 'optional',
+  'extra', 'garnish', 'frying', 'deep', 'finely', 'freshly', 'roughly',
+  'lukewarm', 'warm', 'beaten',
+])
 
 const SIZE_UNITS = '(?:g|kg|ml|l|cl|m|cm|pk|pack|caps?|capsules|sachets?|sheets?|tablets?|tabs?|bars?|rolls?|wipes|nappies|units?|each|bottles?|cans?|tins?|pouches?|bags?)'
 const SIZE_RE = new RegExp(`^\\d+([.,]\\d+)?${SIZE_UNITS}*$`)
@@ -95,6 +108,10 @@ function canonicalToken(t: string): string {
 
 function normalize(text: string): string {
   let s = text.toLowerCase()
+  // Parentheticals in ingredient lines are annotations ("for sauce",
+  // "optional", "for curried mince filling") — drop them so their words can
+  // neither create nor block a match.
+  s = s.replace(/\([^)]*\)/g, ' ')
   // apply phrase synonyms first
   for (const [re, repl] of PHRASE_SYNONYMS) {
     s = s.replace(re, repl)
@@ -204,6 +221,23 @@ export function findIngredientProduct(ingredient: string, products: Product[]): 
 
     if (matched.length === 1 && !GENERIC_HEADS.has(toks[last]) && matched[0] !== last) continue
     if (matched.length === 1 && matched[0] === last && GENERIC_HEADS.has(toks[last])) continue
+
+    // A single shared token only justifies a link when it explains the whole
+    // ingredient. If a substantive ingredient token is left unexplained, the
+    // product is a sibling, not the ingredient ("2 packets Tennis biscuits"
+    // must not link to "Tim Tam Original Biscuits" via 'biscuit' alone).
+    if (matched.length === 1) {
+      const matchedToken = toks[matched[0]]
+      const unexplained = [...ingredientTokens].filter(
+        (t) =>
+          t !== matchedToken &&
+          !isFuzzyMatch(t, matchedToken) &&
+          t.length >= 4 &&
+          !GENERIC_HEADS.has(t) &&
+          !DESCRIPTORS.has(t)
+      )
+      if (unexplained.length > 0) continue
+    }
 
     // Scoring improvements
     const positional = Math.max(...matched.map((idx) => (idx + 1) / toks.length))

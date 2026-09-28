@@ -51,7 +51,6 @@ class DatabaseSeeder extends Seeder
             StoreSeeder::class,
             CategorySeeder::class,
             ProductSeeder::class,
-            SouthAfricanPantrySeeder::class,
             RiderSeeder::class,
             OrderSeeder::class,
             RecipeSeeder::class,

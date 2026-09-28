@@ -7,11 +7,12 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Arr;
 
 /**
- * Authentic South African recipes — only uses ingredients that exist
- * in the inventory after SouthAfricanPantrySeeder.
+ * Authentic South African recipe content.
  *
- * Each ingredient line is written to match the improved ingredient matcher:
- * e.g. "2 cups cake flour" → Snowflake Cake Wheat Flour, "1 cup white sugar" → Selati White Sugar, etc.
+ * Ingredient lines are written as a real recipe reads. The recipe page links
+ * an ingredient to a product only when the live catalogue actually contains a
+ * match (frontend `ingredientMatch`); ingredients with no matching product
+ * simply render without a link — that is intended behaviour, not a gap.
  *
  * Recipes:
  * - Vetkoek (Fat Cake) with curried mince option

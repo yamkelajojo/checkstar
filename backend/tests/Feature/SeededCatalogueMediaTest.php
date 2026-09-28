@@ -11,7 +11,6 @@ use Database\Seeders\BannerSeeder;
 use Database\Seeders\CategorySeeder;
 use Database\Seeders\ProductSeeder;
 use Database\Seeders\RecipeSeeder;
-use Database\Seeders\SouthAfricanPantrySeeder;
 use Database\Seeders\SouthAfricanRecipeSeeder;
 use Database\Seeders\SpecialSeeder;
 use Database\Seeders\StoreSeeder;
@@ -44,7 +43,6 @@ class SeededCatalogueMediaTest extends TestCase
             StoreSeeder::class,
             CategorySeeder::class,
             ProductSeeder::class,
-            SouthAfricanPantrySeeder::class,
             RecipeSeeder::class,
             SouthAfricanRecipeSeeder::class,
             SpecialSeeder::class,

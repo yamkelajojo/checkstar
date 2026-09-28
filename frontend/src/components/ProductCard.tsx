@@ -41,7 +41,7 @@ export default function ProductCard({ product, compact = false, index = 0 }: Pro
         delay: index * 0.03,
       }}
       whileHover={shouldReduce ? undefined : { y: -6, scale: 1.01, transition: { type: 'spring', ...spring.snap } }}
-      className="group bg-white rounded-card border border-gray-100/80 overflow-hidden shadow-[0_2px_8px_rgba(0,0,0,0.04),0_0_0_1px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08),0_0_0_1px_rgba(0,0,0,0.04)] transition-shadow duration-300"
+      className="group h-full flex flex-col bg-white rounded-card border border-gray-100/80 overflow-hidden shadow-[0_2px_8px_rgba(0,0,0,0.04),0_0_0_1px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08),0_0_0_1px_rgba(0,0,0,0.04)] transition-shadow duration-300"
     >
       <Link href={`/products/${product.slug}`} className="block">
         <div className={`relative ${compact ? 'aspect-square' : 'aspect-[4/3]'} bg-gradient-to-br from-gray-50 to-gray-50/50 flex items-center justify-center p-3 overflow-hidden`}>
@@ -85,7 +85,11 @@ export default function ProductCard({ product, compact = false, index = 0 }: Pro
           {!compact && product.unit && (
             <p className="text-[10px] sm:text-[11px] uppercase tracking-wider text-gray-500/80 mb-1.5 truncate font-medium">{product.unit}</p>
           )}
-          <h3 className={`font-semibold ${compact ? 'text-xs' : 'text-[13px] sm:text-sm'} text-gray-900 line-clamp-2 leading-snug ${compact ? '' : 'min-h-[2.4em]'} group-hover:text-primary transition-colors duration-200`}>{product.name}</h3>
+          {/* Reserve exactly two lines (leading-snug = 1.375 × 2 = 2.75em) in
+              every mode so cards stay the same height whether the title wraps
+              or not — long names must not make a card taller than its
+              neighbours in carousels and grids. */}
+          <h3 className={`font-semibold ${compact ? 'text-xs' : 'text-[13px] sm:text-sm'} text-gray-900 line-clamp-2 leading-snug min-h-[2.75em] group-hover:text-primary transition-colors duration-200`}>{product.name}</h3>
         </Link>
 
         <div className="flex items-end justify-between gap-2 mt-2">

@@ -197,6 +197,21 @@ const riders = [
   { rider_id: 10, name: 'Zanele K.', delivery_count: 11, avg_delivery_time: 29, total_distance: 52.0, is_available: true },
 ]
 
+// Whole-Rider model shape the API emits (StoreDispatchController::riders and
+// the Order rider relation): the dispatch picker and the orders screen read
+// user.name, rating and delivery count from it.
+const riderModel = (r) => ({
+  id: r.rider_id,
+  user_id: 900 + r.rider_id,
+  store_id: 1,
+  is_available: r.is_available,
+  vehicle_type: 'Motorbike',
+  max_radius_km: 8,
+  average_rating: 4 + (r.rider_id % 10) / 10,
+  total_deliveries: r.delivery_count * 10,
+  user: { id: 900 + r.rider_id, name: r.name, email: `rider${r.rider_id}@example.com` },
+})
+
 const SEED_ORDERS = [
   { id: 501, order_number: 'CS-1501', status: 'confirmed', payment_status: 'paid', total: 84.97, subtotal: 76.99, delivery_fee: 7.98, fulfilment_method: 'delivery', delivery_latitude: -29.8587, delivery_longitude: 31.0218, delivery_address: '12 Problem Mkhize Rd, Berea', created_at: '2026-09-06T07:41:00Z', can_cancel: true, rider_id: null, items: [{ id: 1, product_id: 3, quantity: 2, unit_price: 12.99, total_price: 25.98, product_snapshot: { name: 'Tropika Pineapple 500ml', image: '/products/mock-3.png', unit: '500ml', slug: 'tropika-pineapple-dairy-fruit-mix-500ml' } }] },
   { id: 502, order_number: 'CS-1502', status: 'retrying', payment_status: 'paid', total: 45.98, subtotal: 45.98, delivery_fee: 0, fulfilment_method: 'delivery', delivery_latitude: -29.7261, delivery_longitude: 31.0836, delivery_address: '9 Lagoon Drive, Umhlanga', created_at: '2026-09-06T08:03:00Z', can_cancel: true, rider_id: null, items: [] },
@@ -505,8 +520,29 @@ const server = http.createServer(async (req, res) => {
   }
 
   // ── Store dispatch (manager/owner/logistics/developer) ─────────────────────
+  // Mirror ManualDispatch::pendingForStore — the queue only ever holds
+  // confirmed/retrying orders with no rider; assigned orders live on the
+  // Orders screen (where reassignment happens).
   if (path === '/api/store/dispatch/pending') {
-    return json(res, 200, { data: [...pendingOrders].sort((a, b) => b.id - a.id) })
+    return json(res, 200, {
+      data: [...pendingOrders]
+        .filter((o) => !o.rider_id && (o.status === 'confirmed' || o.status === 'retrying'))
+        .sort((a, b) => b.id - a.id),
+    })
+  }
+  if (path === '/api/store/dispatch/riders') {
+    // StoreDispatchController::riders only offers available riders.
+    return json(res, 200, { data: riders.filter((r) => r.is_available).map(riderModel) })
+  }
+  if (path === '/api/store/orders' && req.method === 'GET') {
+    return json(res, 200, {
+      data: [...pendingOrders]
+        .sort((a, b) => b.id - a.id)
+        .map((o) => ({
+          ...o,
+          rider: o.rider_id ? riderModel(riders.find((r) => r.rider_id === o.rider_id)) : null,
+        })),
+    })
   }
   const dispatchMatch = path.match(/^\/api\/store\/orders\/(\d+)\/dispatch$/)
   if (dispatchMatch && req.method === 'POST') {

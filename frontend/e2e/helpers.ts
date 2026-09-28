@@ -1,4 +1,5 @@
 import { expect, type APIRequestContext } from '@playwright/test'
+import { formatZar } from '../src/lib/money'
 
 /** Escape a string for safe inclusion in a RegExp. */
 export function escapeRegExp(value: string): string {
@@ -44,9 +45,10 @@ export function num(value: number | string): number {
   return Number(value)
 }
 
-/** Site money format: R12.99 */
+/** Site money format — single-sourced from the app's own formatter so the
+ * E2E suite can never drift from `formatZar` ("R 12.99", space grouping). */
 export function money(value: number): string {
-  return `R${value.toFixed(2)}`
+  return formatZar(value)
 }
 
 /**
