@@ -15,10 +15,10 @@ import { spring, ease, time } from '@/lib/motion/tokens';
  *
  *   input[type='password']::-ms-reveal, ::-ms-clear { display: none; }
  *
- * The reveal transition is deliberately choreographed as ONE gesture:
- *   - the icon flips (Eye ⇄ EyeOff) with a snappy spring,
- *   - the text itself de-blurs / re-blurs in the same instant,
- *   - a single `show` state drives both, so they can never desync.
+ * The reveal transition is deliberately ONE crisp gesture: the icon flips
+ * (Eye ⇄ EyeOff) on the shared spring token while the input type swaps in
+ * the same instant — a single `show` state drives both, so they can never
+ * desync. No blur, no fade on the field itself: the text always stays sharp.
  */
 
 export interface PasswordFieldProps {
@@ -51,16 +51,6 @@ const iconExit = {
   transition: { duration: time.instant, ease: ease.accelerate },
 };
 
-/** The typed text de-blurs as it becomes visible — the eye and the words move together. */
-const textVariants = {
-  hidden: { filter: 'blur(3px)', opacity: 0.72 },
-  shown: {
-    filter: 'blur(0px)',
-    opacity: 1,
-    transition: { duration: time.base, ease: ease.apple },
-  },
-};
-
 export default function PasswordField({
   id,
   label,
@@ -82,10 +72,11 @@ export default function PasswordField({
         {label}
       </label>
       <div className="relative">
+        {/* Static adornment: never fades, never hides, whatever the reveal state. */}
         {showIcon && (
-          <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
         )}
-        <motion.input
+        <input
           id={id}
           type={show ? 'text' : 'password'}
           value={value}
@@ -98,10 +89,7 @@ export default function PasswordField({
           autoComplete={autoComplete}
           autoFocus={autoFocus}
           minLength={minLength}
-          initial={false}
-          animate={show ? 'shown' : 'hidden'}
-          variants={textVariants}
-          className={`w-full ${showIcon ? 'pl-10' : 'pl-3.5'} pr-12 py-2.5 border border-gray-200 rounded-lg bg-white text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none`}
+          className={`w-full ${showIcon ? 'pl-10' : 'pl-3.5'} pr-12 py-2.5 border border-gray-200 rounded-lg bg-white text-sm text-gray-900 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none`}
         />
         {/* The ONLY reveal control for this field — type="button" so it never submits forms. */}
         <button

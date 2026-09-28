@@ -333,7 +333,11 @@ const server = http.createServer(async (req, res) => {
     return json(res, 200, { user, token: `mock-token-${role}` })
   }
   if (path === '/api/auth/user' || path === '/api/user') {
-    const role = parseCookies(req).cs_role || 'customer'
+    // Mirror the real backend: no session → 401 Unauthenticated. A fallback
+    // user here made every guest look signed in, which bounced visitors off
+    // the login page and lied to the header.
+    const role = parseCookies(req).cs_role
+    if (!role) return json(res, 401, { message: 'Unauthenticated.' })
     const user = MOCK_USERS[role] ?? MOCK_USERS.customer
     return json(res, 200, { user, data: user })
   }

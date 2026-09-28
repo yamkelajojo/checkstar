@@ -94,6 +94,14 @@ describe("LoginClient form", () => {
     expect(screen.getByLabelText("Password").getAttribute("type")).toBe("password");
   });
 
+  it("takes the visitor home when they click the Checkstar lockup", () => {
+    render(<LoginClient />);
+
+    expect(
+      screen.getByRole("link", { name: /back to the homepage/i }).getAttribute("href"),
+    ).toBe("/");
+  });
+
   it("links to password recovery, registration and rider sign-up", () => {
     render(<LoginClient />);
 

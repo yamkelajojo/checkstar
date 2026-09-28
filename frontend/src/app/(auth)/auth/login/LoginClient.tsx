@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { motion } from 'motion/react'
+import { motion, AnimatePresence } from 'motion/react'
 import { Mail } from 'lucide-react'
+import { ease, time } from '@/lib/motion/tokens'
 import { Loader } from '@/components/Loader'
 import { Logo } from '@/components/Logo'
 import PasswordField from '@/components/PasswordField'
@@ -58,20 +59,35 @@ export default function LoginClient() {
       <main className="flex min-h-[calc(100dvh-4rem)] flex-col justify-center px-4 py-10">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mx-auto w-full max-w-md">
           <div className="mb-8 flex flex-col items-center">
-            {/* Extra room below the lockup: the "cares enough" tagline sits
-                absolutely under the wordmark, so the heading needs breathing
-                space to clear it. */}
-            <Logo variant="lockup" size={40} tone="dark" className="mb-9" />
+            {/* The lockup is a way home. Extra room below it: the "cares
+                enough" tagline sits absolutely under the wordmark, so the
+                heading needs breathing space to clear it. */}
+            <Link href="/" aria-label="Checkstar — back to the homepage" className="block mb-9 transition-opacity hover:opacity-80">
+              <Logo variant="lockup" size={40} tone="dark" />
+            </Link>
             <h1 className="font-display text-3xl font-bold mb-2 text-center">Welcome back</h1>
             <p className="text-gray-500 text-center">Sign in to your Checkstar account.</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            {error && (
-              <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="bg-accent/10 border border-accent/30 text-accent text-sm rounded-lg px-4 py-3">
-                {error}
-              </motion.div>
-            )}
+            {/* Failed attempts slide open and closed with the rest of the
+                page's motion language — no layout jump, no hard pop. */}
+            <AnimatePresence initial={false}>
+              {error && (
+                <motion.div
+                  key="login-error"
+                  initial={{ opacity: 0, height: 0, y: -6 }}
+                  animate={{ opacity: 1, height: 'auto', y: 0 }}
+                  exit={{ opacity: 0, height: 0, y: -6 }}
+                  transition={{ duration: time.base, ease: ease.apple }}
+                  className="overflow-hidden"
+                >
+                  <div role="alert" className="bg-accent/10 border border-accent/30 text-accent text-sm rounded-lg px-4 py-3">
+                    {error}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
@@ -100,13 +116,39 @@ export default function LoginClient() {
               </Link>
             </div>
 
+            {/* Fixed-size button: idle and loading content trade places inside
+                a clipped stage, so the button morphs in sync with the
+                Checkstar loader instead of jumping or resizing. */}
             <motion.button
               type="submit" disabled={loading}
               whileTap={{ scale: 0.98 }}
-              className="w-full bg-primary text-white py-2.5 rounded-lg font-medium hover:bg-primary-dark transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+              className="relative w-full h-12 overflow-hidden bg-primary text-white rounded-lg font-medium hover:bg-primary-dark transition-colors disabled:cursor-default flex items-center justify-center"
             >
-              {loading ? <Loader className="h-8 w-24" /> : null}
-              {loading ? 'Signing in...' : 'Sign In'}
+              <AnimatePresence mode="wait" initial={false}>
+                {loading ? (
+                  <motion.span
+                    key="loading"
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -12 }}
+                    transition={{ duration: time.fast, ease: ease.apple }}
+                    className="flex items-center justify-center gap-2"
+                  >
+                    <Loader className="h-6 w-20" />
+                    <span>Signing in...</span>
+                  </motion.span>
+                ) : (
+                  <motion.span
+                    key="idle"
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -12 }}
+                    transition={{ duration: time.fast, ease: ease.apple }}
+                  >
+                    Sign In
+                  </motion.span>
+                )}
+              </AnimatePresence>
             </motion.button>
           </form>
 
