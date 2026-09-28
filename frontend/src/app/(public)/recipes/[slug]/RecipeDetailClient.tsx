@@ -157,7 +157,7 @@ export default function RecipeDetailClient({ slug }: { slug: string }) {
           initial={shouldReduce ? { opacity: 0 } : { opacity: 0, x: -16, filter: 'blur(6px)' }}
           animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
           transition={{ delay: 0.25, type: 'spring', ...spring.apple }}
-          className="lg:col-span-2"
+          className="lg:col-span-2 has-[[aria-expanded=true]]:z-20"
         >
           <div className="lg:sticky lg:top-24">
             <h2 className="font-display text-[18px] sm:text-[20px] font-bold mb-5 flex items-center gap-2.5 tracking-tight">
@@ -184,7 +184,7 @@ export default function RecipeDetailClient({ slug }: { slug: string }) {
                         hidden: shouldReduce ? { opacity: 0 } : { opacity: 0, x: -8, filter: 'blur(3px)' },
                         visible: { opacity: 1, x: 0, filter: 'blur(0px)', transition: { duration: 0.3, ease: ease.apple } },
                       }}
-                      className="group flex items-center gap-3 px-3.5 py-2.5 rounded-button text-[13px] bg-white border border-gray-100/80 hover:border-gray-200 hover:shadow-[0_2px_8px_rgba(0,0,0,0.04)] transition-all"
+                      className="group flex items-center gap-3 px-3.5 py-2.5 rounded-button text-[13px] bg-white border border-gray-100/80 hover:border-gray-200 hover:shadow-[0_2px_8px_rgba(0,0,0,0.04)] transition-all has-[[aria-expanded=true]]:relative has-[[aria-expanded=true]]:z-10"
                     >
                       <span className="w-1.5 h-1.5 rounded-full bg-primary/60 group-hover:bg-primary transition-colors shrink-0" />
                       <span className="flex flex-wrap items-center gap-x-2 gap-y-1 flex-1 min-w-0 text-gray-700 leading-snug">
