@@ -4,7 +4,9 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'motion/react'
-import { Mail, Lock, Eye, EyeOff, User, Phone, Loader2, ArrowRight } from 'lucide-react'
+import { Mail, Lock, User, Phone, Loader2 } from 'lucide-react'
+import PasswordField from '@/components/PasswordField'
+import SocialSignUpButtons from '@/components/SocialSignUpButtons'
 import { useAuthStore } from '@/stores/auth-store'
 
 export default function RegisterClient() {
@@ -15,7 +17,6 @@ export default function RegisterClient() {
   const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
   const [passwordConfirmation, setPasswordConfirmation] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [errors, setErrors] = useState<Record<string, string[]>>({})
   const [loading, setLoading] = useState(false)
@@ -57,6 +58,10 @@ export default function RegisterClient() {
           <h1 className="font-display text-3xl font-bold mb-2 text-center">Create your account</h1>
           <p className="text-gray-500 text-center mb-8">Join Checkstar and start shopping.</p>
 
+          <div className="mb-6">
+            <SocialSignUpButtons />
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
               <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="bg-accent/10 border border-accent/30 text-accent text-sm rounded-lg px-4 py-3">
@@ -91,14 +96,15 @@ export default function RegisterClient() {
             </div>
 
             <div>
-              <label htmlFor="reg-password" className="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
-              <div className="relative">
-                <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input id="reg-password" type={showPassword ? 'text' : 'password'} required value={password} onChange={e => setPassword(e.target.value)} className="w-full pl-10 pr-10 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none" placeholder="Min. 8 characters" />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              </div>
+              <PasswordField
+                id="reg-password"
+                label="Password"
+                value={password}
+                onChange={setPassword}
+                placeholder="Min. 8 characters"
+                autoComplete="new-password"
+                showIcon
+              />
               {errors.password?.map((msg, i) => <p key={i} className="text-xs text-accent mt-1">{msg}</p>)}
             </div>
 
@@ -120,14 +126,10 @@ export default function RegisterClient() {
             </motion.button>
           </form>
 
-          <div className="mt-6 text-center text-sm text-gray-500 space-y-2">
+          <div className="mt-6 text-center text-sm text-gray-500">
             <p>
               Already have an account?{' '}
               <Link href="/auth/login" className="text-primary font-medium hover:underline">Sign in</Link>
-            </p>
-            <p>
-              Want to deliver?{' '}
-              <Link href="/auth/register/rider" className="text-primary font-medium hover:underline">Register as a Rider</Link>
             </p>
           </div>
         </motion.div>

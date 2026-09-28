@@ -11,6 +11,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { formatDateTime } from '@/lib/dates'
 import { orderStatusLabel, riderLabel, riderName } from '@/lib/labels'
 import ErrorState from '@/components/admin/ErrorState'
+import Select from '@/components/ui/select'
 
 const allowedRoles = ['store_manager', 'logistics_officer', 'store_owner', 'developer']
 
@@ -173,19 +174,18 @@ export default function DispatchConsoleClient() {
                   <label className="sr-only" htmlFor={`dispatch-rider-${order.id}`}>
                     Choose a rider for order {order.order_number}
                   </label>
-                  <select
+                  <Select
                     id={`dispatch-rider-${order.id}`}
+                    ariaLabel={`Choose a rider for order ${order.order_number}`}
                     value={selectedRider[order.id] ?? ''}
-                    onChange={e => setSelectedRider(s => ({ ...s, [order.id]: e.target.value }))}
-                    className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none bg-white"
-                  >
-                    <option value="">Select rider...</option>
-                    {riders.map(r => (
-                      <option key={r.id} value={r.id}>
-                        {riderLabel(r)}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={v => setSelectedRider(s => ({ ...s, [order.id]: v }))}
+                    options={[
+                      { value: '', label: 'Select rider…' },
+                      ...riders.map(r => ({ value: String(r.id), label: riderLabel(r) })),
+                    ]}
+                    placeholder="Select rider…"
+                    className="w-64"
+                  />
                   <button onClick={() => handleDispatch(order.id)} className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors">Dispatch</button>
                 </div>
               </div>

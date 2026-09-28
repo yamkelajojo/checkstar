@@ -33,6 +33,7 @@ import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import EmptyState from "@/components/admin/EmptyState";
 import ErrorState from "@/components/admin/ErrorState";
 import { BannerStatusBadge } from "@/components/admin/StatusBadge";
+import Select from "@/components/ui/select";
 import type { Banner, BannerSlide } from "@/types";
 import { formatDate } from '@/lib/dates'
 
@@ -132,20 +133,21 @@ function SlideEditor({
                 <label className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500">
                   Theme
                 </label>
-                <select
+                <Select
                   value={slide.bgType}
-                  onChange={(e) =>
+                  onChange={(v) =>
                     onChange(index, {
                       ...slide,
-                      bgType: e.target.value as BannerSlide["bgType"],
+                      bgType: v as BannerSlide["bgType"],
                     })
                   }
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-                >
-                  <option value="solid">Solid</option>
-                  <option value="gradient">Gradient</option>
-                  <option value="radial">Radial</option>
-                </select>
+                  options={[
+                    { value: "solid", label: "Solid" },
+                    { value: "gradient", label: "Gradient" },
+                    { value: "radial", label: "Radial" },
+                  ]}
+                  ariaLabel="Theme"
+                />
               </div>
             </div>
           </div>
@@ -197,21 +199,24 @@ function SlideEditor({
           </div>
 
           {/* Pattern */}
-          <select
+          <Select
             value={slide.pattern ?? ""}
-            onChange={(e) =>
+            onChange={(v) =>
               onChange(index, {
                 ...slide,
-                pattern: e.target.value || undefined,
+                pattern: v || undefined,
               })
             }
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-          >
-            <option value="">No pattern</option>
-            <option value="dots">Dots</option>
-            <option value="lines">Lines</option>
-            <option value="circles">Circles</option>
-          </select>
+            options={[
+              { value: "", label: "No pattern" },
+              { value: "dots", label: "Dots" },
+              { value: "lines", label: "Lines" },
+              { value: "circles", label: "Circles" },
+            ]}
+            placeholder="No pattern"
+            ariaLabel="Pattern"
+            className="w-40"
+          />
 
           {/* Preview */}
           <div
@@ -365,17 +370,18 @@ function BannerForm({
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="space-y-2">
-            <label className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500">
+            <label htmlFor="banner-status" className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500">
               Status
             </label>
-            <select
+            <Select
+              id="banner-status"
               value={status}
-              onChange={(e) => setStatus(e.target.value)}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-            >
-              <option value="draft">Draft</option>
-              <option value="published">Published</option>
-            </select>
+              onChange={setStatus}
+              options={[
+                { value: "draft", label: "Draft" },
+                { value: "published", label: "Published" },
+              ]}
+            />
           </div>
           <div className="space-y-2">
             <label className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500">

@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import React from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -227,8 +227,10 @@ describe('CartClient fulfilment (delivery vs pickup)', () => {
     await openCheckout()
 
     // The picker is preselected to the default address — no typing needed.
-    const picker = await screen.findByLabelText(/deliver to/i) as HTMLSelectElement
-    expect(picker.value).toBe('7')
+    // It is now the styled Select: the trigger shows the chosen address.
+    const picker = await screen.findByLabelText(/deliver to/i)
+    expect(within(picker).getByText(/Home — 12 Flint Road/)).toBeTruthy()
+    fireEvent.click(picker)
     expect(screen.getByRole('option', { name: /Home — 12 Flint Road/ })).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: /place order/i }))
@@ -251,11 +253,16 @@ describe('CartClient fulfilment (delivery vs pickup)', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /pickup/i }))
 
-    const storeSelect = await screen.findByLabelText(/collect from/i) as HTMLSelectElement
+    // The styled Select preselects the first active store and shows it on the
+    // trigger — wait for the async store list to land and update the trigger.
+    const storeSelect = await screen.findByLabelText(/collect from/i)
+    expect(
+      await within(storeSelect).findByText(/Overport Store — 78 Phoenix Highway/),
+    ).toBeTruthy()
+    fireEvent.click(storeSelect)
     // Only ACTIVE stores are offered (Umhlanga is inactive).
     expect(await screen.findByRole('option', { name: /Overport Store — 78 Phoenix Highway/ })).toBeTruthy()
     expect(screen.queryByRole('option', { name: /Umhlanga/ })).toBeNull()
-    expect(storeSelect.value).toBe('3')
 
     fireEvent.click(screen.getByRole('button', { name: /place order/i }))
 

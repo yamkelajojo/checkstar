@@ -733,8 +733,10 @@ describe("DispatchConsoleClient", () => {
 
     renderWithProviders(<DispatchConsoleClient />);
 
-    const select = await screen.findByDisplayValue("Select rider...");
-    const option = within(select).getByRole("option", { name: /Rider Rita/ });
+    // The picker is now the styled Select: open the combobox, inspect the menu.
+    const picker = await screen.findByRole("combobox", { name: /choose a rider/i });
+    fireEvent.click(picker);
+    const option = screen.getByRole("option", { name: /Rider Rita/ });
     // A dispatcher choosing between riders needs the vehicle, the rating and the
     // experience — all of which the endpoint already returns.
     expect(option).toHaveTextContent("Motorbike");
@@ -758,8 +760,9 @@ describe("DispatchConsoleClient", () => {
 
     renderWithProviders(<DispatchConsoleClient />);
 
-    const select = await screen.findByDisplayValue("Select rider...");
-    const option = within(select).getByRole("option", { name: /New Rider/ });
+    const picker = await screen.findByRole("combobox", { name: /choose a rider/i });
+    fireEvent.click(picker);
+    const option = screen.getByRole("option", { name: /New Rider/ });
     expect(option).toHaveTextContent("Motorbike");
     expect(option).not.toHaveTextContent("0.0");
     expect(option).toHaveTextContent("New");
@@ -779,8 +782,9 @@ describe("DispatchConsoleClient", () => {
     });
 
     renderWithProviders(<DispatchConsoleClient />);
-    const select = await screen.findByDisplayValue("Select rider...");
-    fireEvent.change(select, { target: { value: "1" } });
+    const picker = await screen.findByRole("combobox", { name: /choose a rider/i });
+    fireEvent.click(picker);
+    fireEvent.click(screen.getByRole("option", { name: /Rider Rita/ }));
     fireEvent.click(screen.getByRole("button", { name: "Dispatch" }));
 
     await waitFor(() =>
@@ -807,8 +811,9 @@ describe("DispatchConsoleClient", () => {
     );
 
     renderWithProviders(<DispatchConsoleClient />);
-    const select = await screen.findByDisplayValue("Select rider...");
-    fireEvent.change(select, { target: { value: "1" } });
+    const picker = await screen.findByRole("combobox", { name: /choose a rider/i });
+    fireEvent.click(picker);
+    fireEvent.click(screen.getByRole("option", { name: /Rider Rita/ }));
     fireEvent.click(screen.getByRole("button", { name: "Dispatch" }));
 
     expect(await screen.findByText(/invalid_rider/)).toBeInTheDocument();
@@ -878,15 +883,16 @@ describe("StoreOrdersClient rider reassignment", () => {
   it("offers reassignment on an order that already has a rider", async () => {
     renderOrders([storeOrderRow({ rider: assignedRider })], [vusi]);
 
-    const select = await screen.findByLabelText(
+    const picker = await screen.findByLabelText(
       /Reassign rider for order CS-2001/i,
     );
+    fireEvent.click(picker);
     expect(
-      within(select).getByRole("option", { name: /Vusi Dlamini/ }),
+      screen.getByRole("option", { name: /Vusi Dlamini/ }),
     ).toBeInTheDocument();
     // The rider already carrying the order is not a reassignment target.
     expect(
-      within(select).queryByRole("option", { name: /Rider Rita/ }),
+      screen.queryByRole("option", { name: /Rider Rita/ }),
     ).toBeNull();
     // Nothing chosen yet: the button must not fire an empty reassignment.
     expect(screen.getByRole("button", { name: "Reassign" })).toBeDisabled();
@@ -896,10 +902,11 @@ describe("StoreOrdersClient rider reassignment", () => {
     apiMocks.reassignOrder.mockResolvedValue({ data: storeOrderRow() });
     renderOrders([storeOrderRow({ rider: assignedRider })], [vusi]);
 
-    const select = await screen.findByLabelText(
+    const picker = await screen.findByLabelText(
       /Reassign rider for order CS-2001/i,
     );
-    fireEvent.change(select, { target: { value: "5" } });
+    fireEvent.click(picker);
+    fireEvent.click(screen.getByRole("option", { name: /Vusi Dlamini/ }));
     fireEvent.click(screen.getByRole("button", { name: "Reassign" }));
 
     await waitFor(() =>
@@ -929,10 +936,11 @@ describe("StoreOrdersClient rider reassignment", () => {
     );
     renderOrders([storeOrderRow({ rider: assignedRider })], [vusi]);
 
-    const select = await screen.findByLabelText(
+    const picker = await screen.findByLabelText(
       /Reassign rider for order CS-2001/i,
     );
-    fireEvent.change(select, { target: { value: "5" } });
+    fireEvent.click(picker);
+    fireEvent.click(screen.getByRole("option", { name: /Vusi Dlamini/ }));
     fireEvent.click(screen.getByRole("button", { name: "Reassign" }));
 
     const { toast } = await import("sonner");

@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -203,9 +203,9 @@ describe("BannersClient — create validation", () => {
     fireEvent.change(screen.getByPlaceholderText("Title *"), {
       target: { value: "Citrus" },
     });
-    fireEvent.change(screen.getByDisplayValue("Draft"), {
-      target: { value: "published" },
-    });
+    // Status is now the styled Select (not a native <select>): open it and pick.
+    fireEvent.click(screen.getByLabelText("Status"));
+    fireEvent.click(screen.getByRole("option", { name: "Published" }));
     fireEvent.change(screen.getByPlaceholderText("Start date"), {
       target: { value: "2026-09-30" },
     });
@@ -232,9 +232,8 @@ describe("BannersClient — saving", () => {
     fireEvent.change(screen.getByPlaceholderText("Title *"), {
       target: { value: "Citrus" },
     });
-    fireEvent.change(screen.getByDisplayValue("Draft"), {
-      target: { value: "published" },
-    });
+    fireEvent.click(screen.getByLabelText("Status"));
+    fireEvent.click(screen.getByRole("option", { name: "Published" }));
     fireEvent.change(screen.getByPlaceholderText("Start date"), {
       target: { value: "2026-09-01" },
     });
@@ -291,7 +290,8 @@ describe("BannersClient — saving", () => {
     const nameInput = await screen.findByDisplayValue("Spring Freshness");
     expect(screen.getByDisplayValue("2026-09-01")).toBeInTheDocument();
     expect(screen.getByDisplayValue("2026-09-30")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("Published")).toBeInTheDocument();
+    // Status now lives inside the styled Select trigger.
+    expect(within(screen.getByLabelText("Status")).getByText("Published")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Update" })).toBeInTheDocument();
 
     fireEvent.change(nameInput, { target: { value: "Spring Refresh" } });

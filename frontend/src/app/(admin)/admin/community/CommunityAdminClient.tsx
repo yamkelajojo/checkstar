@@ -9,6 +9,7 @@ import PageHeader from '@/components/admin/PageHeader'
 import SearchInput from '@/components/admin/SearchInput'
 import Modal from '@/components/admin/Modal'
 import ConfirmDialog from '@/components/admin/ConfirmDialog'
+import Select from '@/components/ui/select'
 import EmptyState from '@/components/admin/EmptyState'
 import ErrorState from '@/components/admin/ErrorState'
 import type { CommunityPost } from '@/types'
@@ -171,15 +172,17 @@ export default function CommunityAdminClient() {
           </div>
           <div>
             <label htmlFor="post-category" className="text-xs font-medium text-gray-500 block mb-1">Category</label>
-            <select
-              id="post-category"
-              value={category}
-              onChange={(e) => setCategory(e.target.value as 'gallery' | 'csr')}
-              className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/30"
-            >
-              <option value="gallery">Gallery</option>
-              <option value="csr">CSR</option>
-            </select>
+            <div className="mt-1">
+              <Select
+                id="post-category"
+                value={category}
+                onChange={(v) => setCategory(v as 'gallery' | 'csr')}
+                options={[
+                  { value: 'gallery', label: 'Gallery' },
+                  { value: 'csr', label: 'CSR' },
+                ]}
+              />
+            </div>
           </div>
           <div>
             <label htmlFor="post-content" className="text-xs font-medium text-gray-500 block mb-1">Content</label>

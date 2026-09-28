@@ -18,6 +18,7 @@ import { api } from '@/lib/api'
 import { useOperationsMetrics } from '@/lib/query'
 import { useAuthStore } from '@/stores/auth-store'
 import { useStores } from '@/lib/query'
+import Select from '@/components/ui/select'
 
 export default function OperationsPage() {
   const { user } = useAuthStore()
@@ -98,12 +99,21 @@ export default function OperationsPage() {
               <label className="text-xs font-medium text-amber-800">Store ID:</label>
               <input value={storeIdInput} onChange={e => setStoreIdInput(e.target.value)} placeholder="e.g. 1" className="w-24 px-2 py-1 border border-amber-300 rounded-lg text-xs bg-white focus:ring-2 focus:ring-amber-500 outline-none" />
               {stores.length > 0 && (
-                <select value={storeIdInput} onChange={e => setStoreIdInput(e.target.value)} className="px-2 py-1 border border-amber-300 rounded-lg text-xs bg-white">
-                  <option value="">Select…</option>
-                  {stores.map(s => (
-                    <option key={(s as { id: number }).id} value={(s as { id: number }).id}>{(s as { name: string }).name}</option>
-                  ))}
-                </select>
+                <Select
+                  ariaLabel="Pick a store"
+                  value={storeIdInput}
+                  onChange={setStoreIdInput}
+                  options={[
+                    { value: '', label: 'Select…' },
+                    ...stores.map(s => ({
+                      value: String((s as { id: number }).id),
+                      label: (s as { name: string }).name,
+                    })),
+                  ]}
+                  placeholder="Select…"
+                  size="xs"
+                  className="w-40"
+                />
               )}
               {!activeStoreId && <span className="text-[11px] text-amber-700">Required for developer view</span>}
             </div>

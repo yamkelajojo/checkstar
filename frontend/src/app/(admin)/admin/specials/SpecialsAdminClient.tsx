@@ -44,6 +44,7 @@ import {
 } from "@/types";
 import { formatZar } from '@/lib/money';
 import { formatDate } from '@/lib/dates'
+import Select from '@/components/ui/select'
 
 const SALE_ROLES = ["developer", "store_owner", "store_manager"];
 
@@ -339,19 +340,16 @@ function SaleEditor({
                   >
                     Store
                   </label>
-                  <select
+                  <Select
                     id="sale-store"
-                    value={storeId}
-                    onChange={(e) => setStoreId(e.target.value)}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/30"
-                  >
-                    <option value="">Chain-wide (all stores)</option>
-                    {stores.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name}
-                      </option>
-                    ))}
-                  </select>
+                    value={String(storeId)}
+                    onChange={setStoreId}
+                    options={[
+                      { value: "", label: "Chain-wide (all stores)" },
+                      ...stores.map((s) => ({ value: String(s.id), label: s.name })),
+                    ]}
+                    placeholder="Chain-wide (all stores)"
+                  />
                 </div>
               ) : (
                 <div>

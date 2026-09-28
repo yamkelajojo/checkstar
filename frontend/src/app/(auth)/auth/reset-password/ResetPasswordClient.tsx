@@ -4,8 +4,9 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'motion/react'
-import { Lock, Eye, EyeOff, ArrowRight } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import { Loader } from '@/components/Loader'
+import PasswordField from '@/components/PasswordField'
 import { api, ApiError } from '@/lib/api'
 
 export default function ResetPasswordClient() {
@@ -16,7 +17,6 @@ export default function ResetPasswordClient() {
 
   const [password, setPassword] = useState('')
   const [passwordConfirmation, setPasswordConfirmation] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [done, setDone] = useState(false)
@@ -93,38 +93,27 @@ export default function ResetPasswordClient() {
               </motion.div>
             )}
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1.5">New password</label>
-              <div className="relative">
-                <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input
-                  id="password" type={showPassword ? 'text' : 'password'} required minLength={8} value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-10 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
-                  placeholder="At least 8 characters"
-                />
-                <button
-                  type="button" onClick={() => setShowPassword(v => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
-                >
-                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              </div>
-            </div>
+            <PasswordField
+              id="password"
+              label="New password"
+              value={password}
+              onChange={setPassword}
+              placeholder="At least 8 characters"
+              autoComplete="new-password"
+              minLength={8}
+              showIcon
+            />
 
-            <div>
-              <label htmlFor="password-confirmation" className="block text-sm font-medium text-gray-700 mb-1.5">Confirm new password</label>
-              <div className="relative">
-                <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input
-                  id="password-confirmation" type={showPassword ? 'text' : 'password'} required minLength={8} value={passwordConfirmation}
-                  onChange={e => setPasswordConfirmation(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
-                  placeholder="Repeat your new password"
-                />
-              </div>
-            </div>
+            <PasswordField
+              id="password-confirmation"
+              label="Confirm new password"
+              value={passwordConfirmation}
+              onChange={setPasswordConfirmation}
+              placeholder="Repeat your new password"
+              autoComplete="new-password"
+              minLength={8}
+              showIcon
+            />
 
             <button
               type="submit" disabled={loading}

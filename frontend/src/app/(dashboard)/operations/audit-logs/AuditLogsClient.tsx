@@ -17,6 +17,7 @@ import {
   staggerTight as stagger,
 } from "@/lib/motion/variants";
 import { formatDateTime } from '@/lib/dates';
+import Select from '@/components/ui/select';
 
 export default function AuditLogsClient() {
   const { user } = useAuthStore();
@@ -92,18 +93,18 @@ export default function AuditLogsClient() {
               className="w-24 px-2 py-1 border border-amber-300 rounded-lg text-xs bg-white"
             />
             {stores.length > 0 && (
-              <select
+              <Select
+                ariaLabel="Pick a store"
                 value={storeIdInput}
-                onChange={(e) => setStoreIdInput(e.target.value)}
-                className="px-2 py-1 border border-amber-300 rounded-lg text-xs bg-white"
-              >
-                <option value="">Select…</option>
-                {stores.map((s: any) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
+                onChange={setStoreIdInput}
+                options={[
+                  { value: "", label: "Select…" },
+                  ...stores.map((s: any) => ({ value: String(s.id), label: s.name })),
+                ]}
+                placeholder="Select…"
+                size="xs"
+                className="w-40"
+              />
             )}
           </motion.div>
         )}
@@ -125,24 +126,22 @@ export default function AuditLogsClient() {
                 className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/30 outline-none"
               />
             </div>
-            <div className="relative">
-              <Filter
-                size={14}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-              />
-              <select
-                value={entityType}
-                onChange={(e) => setEntityType(e.target.value)}
-                className="pl-8 pr-8 py-2.5 border border-gray-200 rounded-lg text-sm bg-white"
-              >
-                <option value="">All entities</option>
-                <option value="order">Order</option>
-                <option value="product">Product</option>
-                <option value="store">Store</option>
-                <option value="rider">Rider</option>
-                <option value="user">User</option>
-              </select>
-            </div>
+            <Select
+              ariaLabel="Filter by entity"
+              value={entityType}
+              onChange={setEntityType}
+              options={[
+                { value: "", label: "All entities" },
+                { value: "order", label: "Order" },
+                { value: "product", label: "Product" },
+                { value: "store", label: "Store" },
+                { value: "rider", label: "Rider" },
+                { value: "user", label: "User" },
+              ]}
+              placeholder="All entities"
+              icon={<Filter size={14} />}
+              className="w-44"
+            />
           </div>
         </motion.div>
 

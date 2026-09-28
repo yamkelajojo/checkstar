@@ -8,6 +8,7 @@ import { useAuthStore } from '@/stores/auth-store'
 import { useOrders } from '@/lib/query'
 import EmptyState from '@/components/EmptyState'
 import ErrorNotice from '@/components/ErrorNotice'
+import Select from '@/components/ui/select'
 import { statusConfig } from '@/lib/motion/variants'
 import { formatZar } from '@/lib/money'
 import { formatDate } from '@/lib/dates'
@@ -38,21 +39,34 @@ export default function OrdersClient() {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="font-display text-3xl font-bold mb-2">My Orders</h1>
           <div className="flex flex-wrap gap-3 mb-6">
-            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary outline-none">
-              <option value="">All statuses</option>
-              <option value="pending">Pending</option>
-              <option value="confirmed">Confirmed</option>
-              <option value="retrying">Finding Rider</option>
-              <option value="preparing">Preparing</option>
-              <option value="ready">Ready for Pickup</option>
-              <option value="out_for_delivery">Out for Delivery</option>
-              <option value="delivered">Delivered</option>
-              <option value="cancelled">Cancelled</option>
-            </select>
-            <select value={sortOrder} onChange={e => setSortOrder(e.target.value as 'newest' | 'oldest')} className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary outline-none">
-              <option value="newest">Newest first</option>
-              <option value="oldest">Oldest first</option>
-            </select>
+            <Select
+              ariaLabel="Filter by status"
+              value={statusFilter}
+              onChange={setStatusFilter}
+              options={[
+                { value: '', label: 'All statuses' },
+                { value: 'pending', label: 'Pending' },
+                { value: 'confirmed', label: 'Confirmed' },
+                { value: 'retrying', label: 'Finding Rider' },
+                { value: 'preparing', label: 'Preparing' },
+                { value: 'ready', label: 'Ready for Pickup' },
+                { value: 'out_for_delivery', label: 'Out for Delivery' },
+                { value: 'delivered', label: 'Delivered' },
+                { value: 'cancelled', label: 'Cancelled' },
+              ]}
+              placeholder="All statuses"
+              className="w-48"
+            />
+            <Select
+              ariaLabel="Sort orders"
+              value={sortOrder}
+              onChange={v => setSortOrder(v as 'newest' | 'oldest')}
+              options={[
+                { value: 'newest', label: 'Newest first' },
+                { value: 'oldest', label: 'Oldest first' },
+              ]}
+              className="w-40"
+            />
           </div>
 
           {error && (

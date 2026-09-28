@@ -11,6 +11,7 @@ import { useStores } from '@/lib/query'
 import { toast } from 'sonner'
 import { Users, UserPlus, ShieldCheck, ShieldX, Loader2, Trash2, AlertCircle, RefreshCw, Store as StoreIcon, Lock } from 'lucide-react'
 import { fadeUpTight as fadeUp, staggerTight as stagger } from '@/lib/motion/variants'
+import Select from '@/components/ui/select'
 
 interface StaffMember {
   id: number
@@ -159,29 +160,27 @@ export default function StaffClient() {
               placeholder="name@company.co.za"
               className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
-            <select
+            <Select
+              ariaLabel="Role"
               value={selectedRole}
-              onChange={(e) => setSelectedRole(e.target.value)}
-              className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/30"
-            >
-              {STAFF_ROLES.map((r) => (
-                <option key={r} value={r}>{prettyRole(r)}</option>
-              ))}
-            </select>
+              onChange={setSelectedRole}
+              options={STAFF_ROLES.map((r) => ({ value: r, label: prettyRole(r) }))}
+              className="w-44"
+            />
           </div>
 
           {stores.length > 1 && (
-            <select
-              value={activeStoreId}
-              onChange={(e) => setStoreId(e.target.value)}
-              className="mt-3 border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/30"
-            >
-              {stores.map((s) => (
-                <option key={(s as { id: number }).id} value={(s as { id: number }).id}>
-                  {(s as { name: string }).name}
-                </option>
-              ))}
-            </select>
+            <div className="mt-3">
+              <Select
+                ariaLabel="Store"
+                value={String(activeStoreId)}
+                onChange={(v) => setStoreId(v)}
+                options={stores.map((s) => ({
+                  value: String((s as { id: number }).id),
+                  label: (s as { name: string }).name,
+                }))}
+              />
+            </div>
           )}
 
           {hireError && (

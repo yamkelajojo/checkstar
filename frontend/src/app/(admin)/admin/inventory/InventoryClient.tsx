@@ -6,6 +6,7 @@ import { motion } from 'motion/react'
 import { api, ApiError } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth-store'
 import { useStores } from '@/lib/query'
+import Select from '@/components/ui/select'
 import { toast } from 'sonner'
 import {
   Package, Search, AlertTriangle, Loader2, RefreshCw,
@@ -141,19 +142,20 @@ export default function InventoryClient() {
             <label htmlFor="inventory-store-select" className="block text-xs font-medium text-amber-800 mb-1 flex items-center gap-1.5">
               <StoreIcon size={12} /> Developer: pick a store
             </label>
-            <select
+            <Select
               id="inventory-store-select"
               value={storeIdInput}
-              onChange={e => setStoreIdInput(e.target.value)}
-              className="px-3 py-2 border border-amber-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 min-w-56"
-            >
-              <option value="">Select store…</option>
-              {stores.map(s => (
-                <option key={(s as { id: number }).id} value={(s as { id: number }).id}>
-                  {(s as { name: string }).name}
-                </option>
-              ))}
-            </select>
+              onChange={setStoreIdInput}
+              options={[
+                { value: '', label: 'Select store…' },
+                ...stores.map(s => ({
+                  value: String((s as { id: number }).id),
+                  label: (s as { name: string }).name,
+                })),
+              ]}
+              placeholder="Select store…"
+              className="min-w-56"
+            />
             {!activeStoreId && (
               <p className="text-xs text-amber-700 mt-2">Select a store to load its inventory. This is required for the developer role.</p>
             )}

@@ -22,7 +22,6 @@ import {
   Truck,
   XCircle,
   Bike,
-  ChevronDown,
   MapPin,
   User,
   Calendar,
@@ -31,6 +30,7 @@ import {
   fadeUpTight as fadeUp,
   staggerTight as stagger,
 } from "@/lib/motion/variants";
+import Select from "@/components/ui/select";
 import Link from "next/link";
 import type { Order } from "@/types";
 import { formatZar } from '@/lib/money'
@@ -294,22 +294,20 @@ export default function StoreOrdersClient() {
             >
               <StoreIcon size={12} /> Developer: pick a store
             </label>
-            <select
+            <Select
               id="orders-store-select"
               value={storeIdInput}
-              onChange={(e) => setStoreIdInput(e.target.value)}
-              className="px-3 py-2 border border-amber-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 min-w-56"
-            >
-              <option value="">Select store…</option>
-              {stores.map((s) => (
-                <option
-                  key={(s as { id: number }).id}
-                  value={(s as { id: number }).id}
-                >
-                  {(s as { name: string }).name}
-                </option>
-              ))}
-            </select>
+              onChange={setStoreIdInput}
+              options={[
+                { value: "", label: "Select store…" },
+                ...stores.map((s) => ({
+                  value: String((s as { id: number }).id),
+                  label: (s as { name: string }).name,
+                })),
+              ]}
+              placeholder="Select store…"
+              className="min-w-56"
+            />
             {!activeStoreId && (
               <p className="text-xs text-amber-700 mt-2">
                 Select a store to load its orders.
@@ -336,25 +334,16 @@ export default function StoreOrdersClient() {
                 className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
               />
             </div>
-            <div className="relative">
-              <select
-                value={statusFilter}
-                onChange={(e) =>
-                  setStatusFilter(e.target.value as StatusFilter)
-                }
-                className="appearance-none pl-3 pr-8 py-2.5 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-              >
-                {STATUS_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown
-                size={14}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-              />
-            </div>
+            <Select
+              ariaLabel="Filter by status"
+              value={statusFilter}
+              onChange={(v) => setStatusFilter(v as StatusFilter)}
+              options={STATUS_OPTIONS.map((opt) => ({
+                value: opt.value,
+                label: opt.label,
+              }))}
+              className="w-48"
+            />
           </div>
         </motion.div>
 
@@ -510,27 +499,29 @@ export default function StoreOrdersClient() {
                           >
                             Reassign rider for order {order.order_number}
                           </label>
-                          <select
+                          <Select
                             id={`reassign-${order.id}`}
                             value={reassignTarget[order.id] ?? ""}
-                            onChange={(e) =>
+                            onChange={(v) =>
                               setReassignTarget((s) => ({
                                 ...s,
-                                [order.id]: e.target.value,
+                                [order.id]: v,
                               }))
                             }
                             disabled={isUpdating}
-                            className="px-2.5 py-1.5 text-xs rounded-lg border border-gray-200 bg-white text-gray-700 focus:ring-2 focus:ring-primary outline-none disabled:opacity-50"
-                          >
-                            <option value="">Reassign…</option>
-                            {riders
-                              .filter((r) => r.id !== order.rider?.id)
-                              .map((r) => (
-                                <option key={r.id} value={r.id}>
-                                  {riderLabel(r)}
-                                </option>
-                              ))}
-                          </select>
+                            options={[
+                              { value: "", label: "Reassign…" },
+                              ...riders
+                                .filter((r) => r.id !== order.rider?.id)
+                                .map((r) => ({
+                                  value: String(r.id),
+                                  label: riderLabel(r),
+                                })),
+                            ]}
+                            placeholder="Reassign…"
+                            size="sm"
+                            className="w-44"
+                          />
                           <button
                             onClick={() => {
                               const riderId = Number(reassignTarget[order.id]);

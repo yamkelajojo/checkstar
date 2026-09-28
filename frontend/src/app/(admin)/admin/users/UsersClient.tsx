@@ -10,6 +10,7 @@ import { roleLabel } from '@/lib/labels'
 import { fadeUpTight as fadeUp, staggerTight as stagger } from '@/lib/motion/variants'
 import Link from 'next/link'
 import type { User } from '@/types'
+import Select from '@/components/ui/select'
 
 const ROLES = ['developer','store_owner','store_manager','logistics_officer','customer','rider'] as const
 
@@ -78,7 +79,7 @@ export default function UsersClient() {
           <div className="bg-white rounded-2xl w-full max-w-md">
             <div className="px-6 py-4 border-b flex items-center justify-between"><h2 className="font-semibold">Edit User — {editing.name}</h2><button onClick={() => setEditing(null)}><X size={18} /></button></div>
             <div className="p-6 space-y-4">
-              <div><label className="text-xs text-gray-500">Role</label><select value={role} onChange={e => setRole(e.target.value)} className="w-full border rounded-lg px-3 py-2 text-sm bg-white mt-1">{ROLES.map(r => <option key={r} value={r}>{roleLabel(r)}</option>)}</select></div>
+              <div><label className="text-xs text-gray-500">Role</label><div className="mt-1"><Select ariaLabel="Role" value={role} onChange={setRole} options={ROLES.map(r => ({ value: r, label: roleLabel(r) }))} /></div></div>
               <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={isActive} onChange={e => setIsActive(e.target.checked)} /> Active</label>
               <div className="flex justify-end gap-2"><button onClick={() => setEditing(null)} className="px-4 py-2 text-sm">Cancel</button><button onClick={handleUpdate} disabled={updateMut.isPending} className="px-4 py-2 bg-primary text-white rounded-lg text-sm flex items-center gap-2"><Save size={14} />Update</button></div>
             </div>

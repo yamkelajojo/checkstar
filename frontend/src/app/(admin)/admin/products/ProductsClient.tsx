@@ -11,6 +11,7 @@ import { fadeUpTight as fadeUp, staggerTight as stagger } from '@/lib/motion/var
 import Link from 'next/link'
 import type { Product } from '@/types'
 import { formatZar } from '@/lib/money'
+import Select from '@/components/ui/select'
 
 const ROLES = ['developer']
 
@@ -192,10 +193,16 @@ export default function ProductsClient() {
                 <input value={name} onChange={e => { setName(e.target.value); if (!editing) setSlug(slugify(e.target.value)) }} placeholder="Name *" className="w-full border rounded-lg px-3 py-2 text-sm" />
                 <input value={slug} onChange={e => setSlug(e.target.value)} placeholder="Slug *" className="w-full border rounded-lg px-3 py-2 text-sm" />
                 <div className="grid grid-cols-2 gap-3">
-                  <select value={categoryId} onChange={e => setCategoryId(e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-white">
-                    <option value="">Select category</option>
-                    {categories.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
+                  <Select
+                    ariaLabel="Category"
+                    value={String(categoryId)}
+                    onChange={setCategoryId}
+                    options={[
+                      { value: '', label: 'Select category' },
+                      ...categories.map((c: any) => ({ value: String(c.id), label: c.name })),
+                    ]}
+                    placeholder="Select category"
+                  />
                   <input value={unit} onChange={e => setUnit(e.target.value)} placeholder="Unit (each, kg…)" className="border rounded-lg px-3 py-2 text-sm" />
                 </div>
                 <div className="grid grid-cols-2 gap-3">

@@ -9,6 +9,7 @@ import { toast } from 'sonner'
 import { fadeUpTight as fadeUp, staggerTight as stagger } from '@/lib/motion/variants'
 import Link from 'next/link'
 import type { Rider } from '@/types'
+import Select from '@/components/ui/select'
 
 export default function RidersClient() {
   const { user } = useAuthStore()
@@ -85,7 +86,7 @@ export default function RidersClient() {
           <div className="bg-white rounded-2xl w-full max-w-md">
             <div className="px-6 py-4 border-b flex items-center justify-between"><h2 className="font-semibold">Edit Rider — {editing.user?.name ?? editing.id}</h2><button onClick={() => setEditing(null)}><X size={18} /></button></div>
             <div className="p-6 space-y-4">
-              <div><label className="text-xs text-gray-500">Store</label><select value={storeId} onChange={e => setStoreId(e.target.value)} className="w-full border rounded-lg px-3 py-2 text-sm bg-white mt-1"><option value="">No store</option>{stores.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}</select></div>
+              <div><label className="text-xs text-gray-500">Store</label><div className="mt-1"><Select ariaLabel="Store" value={String(storeId)} onChange={setStoreId} options={[{ value: '', label: 'No store' }, ...stores.map((s: any) => ({ value: String(s.id), label: s.name }))]} placeholder="No store" /></div></div>
               <div><label className="text-xs text-gray-500">Vehicle type</label><input value={vehicle} onChange={e => setVehicle(e.target.value)} placeholder="e.g. motorbike, bicycle" className="w-full border rounded-lg px-3 py-2 text-sm mt-1" /></div>
               <div><label className="text-xs text-gray-500">Max radius km</label><input value={maxRadius} onChange={e => setMaxRadius(e.target.value)} type="number" className="w-full border rounded-lg px-3 py-2 text-sm mt-1" /></div>
               <div className="flex justify-end gap-2"><button onClick={() => setEditing(null)} className="px-4 py-2 text-sm">Cancel</button><button onClick={handleUpdate} className="px-4 py-2 bg-primary text-white rounded-lg text-sm flex items-center gap-2"><Save size={14} />Update</button></div>

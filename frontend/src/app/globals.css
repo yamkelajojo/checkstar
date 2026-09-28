@@ -67,6 +67,17 @@
     caret-color: var(--color-primary);
   }
 
+  /* One reveal eye, always. Windows Chromium (Edge/Chrome) injects its own
+     "show password" button into password inputs via ::-ms-reveal; Checkstar
+     fields ship the PasswordField toggle instead, so strip the native one
+     (and ::-ms-clear, its sibling adornment on text inputs). */
+  input[type="password"]::-ms-reveal,
+  input[type="password"]::-ms-clear,
+  input::-ms-reveal,
+  input::-ms-clear {
+    display: none;
+  }
+
   /* Underline offset — breathing room */
   a {
     text-underline-offset: 3px;

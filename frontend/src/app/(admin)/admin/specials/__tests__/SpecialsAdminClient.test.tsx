@@ -416,10 +416,12 @@ describe("developer", () => {
     fireEvent.click(await screen.findByRole("button", { name: "New sale" }));
     await screen.findByRole("heading", { name: "New sale" });
 
+    // The store picker is now the styled Select: chain-wide until a store is chosen.
     const storeSelect = screen.getByLabelText("Store");
-    expect(storeSelect).toHaveValue("");
+    expect(within(storeSelect).getByText(/chain-wide \(all stores\)/i)).toBeTruthy();
 
-    fireEvent.change(storeSelect, { target: { value: "1" } });
+    fireEvent.click(storeSelect);
+    fireEvent.click(screen.getByRole("option", { name: "Durban Central" }));
     fireEvent.change(screen.getByLabelText("Title *"), {
       target: { value: "Chain Sale" },
     });

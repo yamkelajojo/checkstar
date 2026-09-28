@@ -4,19 +4,16 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'motion/react'
-import { Mail, Lock, Eye, EyeOff, User, Phone, Bike, Landmark, Loader2, ArrowRight } from 'lucide-react'
+import { Mail, Lock, User, Phone, Bike, Loader2 } from 'lucide-react'
+import PasswordField from '@/components/PasswordField'
+import Select from '@/components/ui/select'
+import { createPrototypeBankingDetails } from '@/lib/prototype-banking'
 import { useAuthStore } from '@/stores/auth-store'
 
 const VEHICLE_TYPES = [
   { value: 'motorbike', label: 'Motorbike' },
   { value: 'scooter', label: 'Scooter' },
   { value: 'bicycle', label: 'Bicycle' },
-]
-
-const ACCOUNT_TYPES = [
-  { value: 'savings', label: 'Savings' },
-  { value: 'cheque', label: 'Cheque' },
-  { value: 'transmission', label: 'Transmission' },
 ]
 
 export default function RiderRegisterClient() {
@@ -28,11 +25,6 @@ export default function RiderRegisterClient() {
   const [password, setPassword] = useState('')
   const [passwordConfirmation, setPasswordConfirmation] = useState('')
   const [vehicleType, setVehicleType] = useState('motorbike')
-  const [bank, setBank] = useState('')
-  const [accountNumber, setAccountNumber] = useState('')
-  const [branchCode, setBranchCode] = useState('')
-  const [accountType, setAccountType] = useState('savings')
-  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [errors, setErrors] = useState<Record<string, string[]>>({})
   const [loading, setLoading] = useState(false)
@@ -60,7 +52,11 @@ export default function RiderRegisterClient() {
         password_confirmation: passwordConfirmation,
         phone: phone || undefined,
         vehicle_type: vehicleType,
-        banking_details: { bank, account_number: accountNumber, branch_code: branchCode, account_type: accountType },
+        // Prototype: banking details are no longer collected from riders.
+        // A clearly-labelled dummy record is fabricated here (seeded by email
+        // so it is stable per rider) and the backend stores it like before —
+        // the API contract and the mobile flow are untouched.
+        banking_details: createPrototypeBankingDetails(email),
       })
     } catch (err: any) {
       if (err.message && typeof err.message === 'object') {
@@ -118,14 +114,15 @@ export default function RiderRegisterClient() {
                 </div>
 
                 <div>
-                  <label htmlFor="rr-password" className="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
-                  <div className="relative">
-                    <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input id="rr-password" type={showPassword ? 'text' : 'password'} required value={password} onChange={e => setPassword(e.target.value)} className="w-full pl-10 pr-10 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none" placeholder="Min. 8 characters" />
-                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
-                  </div>
+                  <PasswordField
+                    id="rr-password"
+                    label="Password"
+                    value={password}
+                    onChange={setPassword}
+                    placeholder="Min. 8 characters"
+                    autoComplete="new-password"
+                    showIcon
+                  />
                   {errors.password?.map((msg, i) => <p key={i} className="text-xs text-accent mt-1">{msg}</p>)}
                 </div>
 
@@ -139,45 +136,17 @@ export default function RiderRegisterClient() {
               </div>
             </div>
 
-            <div className="border-b border-gray-100 pb-4">
+            <div className="pb-2">
               <h2 className="text-sm font-semibold text-gray-800 mb-3">Vehicle</h2>
               <div>
                 <label htmlFor="rr-vehicle" className="block text-sm font-medium text-gray-700 mb-1.5">Vehicle Type</label>
-                <div className="relative">
-                  <Bike size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <select id="rr-vehicle" value={vehicleType} onChange={e => setVehicleType(e.target.value)} className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none appearance-none bg-white">
-                    {VEHICLE_TYPES.map(vt => <option key={vt.value} value={vt.value}>{vt.label}</option>)}
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <div className="pb-2">
-              <h2 className="text-sm font-semibold text-gray-800 mb-3">Banking Details</h2>
-              <div className="space-y-4">
-                <div>
-                  <label htmlFor="rr-bank" className="block text-sm font-medium text-gray-700 mb-1.5">Bank Name</label>
-                  <div className="relative">
-                    <Landmark size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input id="rr-bank" type="text" required value={bank} onChange={e => setBank(e.target.value)} className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none" placeholder="e.g. Standard Bank" />
-                  </div>
-                </div>
-                <div>
-                  <label htmlFor="rr-account-number" className="block text-sm font-medium text-gray-700 mb-1.5">Account Number</label>
-                  <input id="rr-account-number" type="text" required value={accountNumber} onChange={e => setAccountNumber(e.target.value)} className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none" placeholder="000000000" />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label htmlFor="rr-branch-code" className="block text-sm font-medium text-gray-700 mb-1.5">Branch Code</label>
-                    <input id="rr-branch-code" type="text" required value={branchCode} onChange={e => setBranchCode(e.target.value)} className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none" placeholder="000000" />
-                  </div>
-                  <div>
-                    <label htmlFor="rr-account-type" className="block text-sm font-medium text-gray-700 mb-1.5">Account Type</label>
-                    <select id="rr-account-type" value={accountType} onChange={e => setAccountType(e.target.value)} className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none appearance-none bg-white">
-                      {ACCOUNT_TYPES.map(at => <option key={at.value} value={at.value}>{at.label}</option>)}
-                    </select>
-                  </div>
-                </div>
+                <Select
+                  id="rr-vehicle"
+                  value={vehicleType}
+                  onChange={setVehicleType}
+                  options={VEHICLE_TYPES}
+                  icon={<Bike size={16} />}
+                />
               </div>
             </div>
 

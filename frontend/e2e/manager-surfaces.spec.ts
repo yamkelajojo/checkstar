@@ -33,9 +33,10 @@ test.describe('Admin surfaces (developer)', () => {
     await expect(page.getByRole('heading', { name: 'Admin Dashboard' })).toBeVisible()
     await expect(page.getByText('Products', { exact: true })).toBeVisible()
 
-    // Store management links point at pages that actually exist
-    await expect(page.getByRole('link', { name: /Banners Create and manage/ }).or(page.getByRole('link', { name: /^Banners/ }))).toBeVisible()
-    await expect(page.getByRole('link', { name: /^Store Staff/ })).toBeVisible()
+    // Persistent management links live in the sidebar (AdminNav) and point
+    // at pages that actually exist.
+    await expect(page.getByRole('link', { name: /^Banners/ })).toBeVisible()
+    await expect(page.getByRole('link', { name: /^Staff/ })).toBeVisible()
 
     // System health renders from the real payload (mock: queue=warn → degraded)
     await expect(page.getByText('System Health')).toBeVisible()
@@ -43,10 +44,13 @@ test.describe('Admin surfaces (developer)', () => {
     await expect(page.getByText('Queue', { exact: true })).toBeVisible()
   })
 
-  test('developer-only dashboard blocks store staff', async ({ page }) => {
+  test('store staff get their store cockpit, not the developer dashboard', async ({ page }) => {
+    // The developer body is gated: non-developer staff land on the focused
+    // per-store cockpit instead of the platform dashboard.
     await login(page, 'owner@checkstar.co.za')
     await page.goto('/admin/dashboard')
-    await expect(page.getByText('Developer access only')).toBeVisible({ timeout: 20_000 })
+    await expect(page.getByRole('heading', { name: 'Staff Dashboard' })).toBeVisible({ timeout: 20_000 })
+    await expect(page.getByRole('heading', { name: 'Admin Dashboard' })).toHaveCount(0)
   })
 })
 
@@ -104,45 +108,48 @@ test.describe('Dispatch console', () => {
     expect(res.ok()).toBeTruthy()
   })
 
-  test('pending orders list, invalid rider blocked, dispatch succeeds', async ({ page }) => {
+  test('riderless queue, rider picker validation, dispatch succeeds', async ({ page }) => {
     await login(page, 'manager@checkstar.co.za')
     await page.goto('/account/dispatch')
 
     await expect(page.getByRole('heading', { name: 'Dispatch Console' })).toBeVisible()
 
-    // Three seeded pending orders (501 no rider, 502 no rider, 503 with rider 8)
+    // Riderless confirmed/retrying orders queue up…
     await expect(page.getByText('#CS-1501')).toBeVisible({ timeout: 20_000 })
     await expect(page.getByText('#CS-1502')).toBeVisible()
-    await expect(page.getByText('#CS-1503')).toBeVisible()
+    // …but an order that already has a rider belongs on the Orders screen,
+    // never in the dispatch queue.
+    await expect(page.getByText('#CS-1503')).toHaveCount(0)
 
-    // The order that already has a rider shows reassign (not dispatch)
-    const row503 = page.locator('div.bg-white', { hasText: '#CS-1503' }).first()
-    await expect(row503.getByRole('button', { name: 'Reassign' })).toBeVisible()
-    await expect(row503.getByRole('button', { name: 'Dispatch', exact: true })).toHaveCount(0)
-
-    // Non-numeric rider id is blocked client-side
+    // Dispatching without choosing a rider is blocked client-side
     const row501 = page.locator('div.bg-white', { hasText: '#CS-1501' }).first()
-    await row501.getByPlaceholder('Rider ID').fill('abc')
     await row501.getByRole('button', { name: 'Dispatch', exact: true }).click()
-    await expect(page.getByText('Enter a valid numeric Rider ID')).toBeVisible()
+    await expect(page.getByText('Select a rider from the dropdown')).toBeVisible()
 
-    // Valid dispatch → success message, order leaves the queue
-    await row501.getByPlaceholder('Rider ID').fill('7')
+    // Choose a rider from the human-readable picker (the styled Select:
+    // open the combobox, pick from the menu), then dispatch:
+    // the confirmation names the rider, and the order leaves the queue.
+    await row501.locator('#dispatch-rider-501').click()
+    await page.getByRole('option', { name: /Sipho R/ }).click()
     await row501.getByRole('button', { name: 'Dispatch', exact: true }).click()
-    await expect(page.getByText(/dispatched to rider 7/)).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByText(/dispatched to Sipho R\./)).toBeVisible({ timeout: 15_000 })
     await expect(page.getByText('#CS-1501')).toHaveCount(0, { timeout: 15_000 })
   })
 
-  test('reassign path swaps the rider on an assigned order', async ({ page }) => {
+  test('orders screen reassign path swaps the rider on an assigned order', async ({ page }) => {
     await login(page, 'manager@checkstar.co.za')
-    await page.goto('/account/dispatch')
+    await page.goto('/admin/orders')
 
     const row503 = page.locator('div.bg-white', { hasText: '#CS-1503' }).first()
-    await expect(row503.getByText(/Current rider: #8/)).toBeVisible({ timeout: 20_000 })
+    // Assigned rider is shown by name (with rating), not a raw id
+    await expect(row503.getByText('Ayanda N.')).toBeVisible({ timeout: 20_000 })
 
-    await row503.getByPlaceholder('New Rider ID').fill('9')
+    // The reassign picker is the styled Select — open it and choose from the menu.
+    await row503.getByLabel('Reassign rider for order CS-1503').click()
+    await page.getByRole('option', { name: /Zanele K/ }).click()
     await row503.getByRole('button', { name: 'Reassign' }).click()
-    await expect(page.getByText(/reassigned to rider 9/)).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByText(/reassigned to Zanele K\./)).toBeVisible({ timeout: 15_000 })
+    await expect(row503.getByText('Zanele K.')).toBeVisible({ timeout: 15_000 })
   })
 })
 

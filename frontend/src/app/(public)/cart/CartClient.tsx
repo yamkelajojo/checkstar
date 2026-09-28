@@ -18,6 +18,7 @@ import type { Dispatch, FulfilmentMethod, Store as StoreType, UserAddress } from
 import OrderConfirmation from './OrderConfirmation'
 import { spring, ease } from '@/lib/motion/tokens'
 import { formatAmount, formatZar } from '@/lib/money'
+import Select from '@/components/ui/select'
 
 export default function CartClient() {
   const queryClient = useQueryClient()
@@ -369,19 +370,18 @@ export default function CartClient() {
                             {addressesLoading ? (
                               <div className="h-10 rounded-button bg-gray-100 animate-pulse" aria-hidden="true" />
                             ) : (
-                              <select
+                              <Select
                                 id="saved-address"
                                 value={String(selectedAddressId)}
-                                onChange={e => setSelectedAddressId(e.target.value === 'new' ? 'new' : Number(e.target.value))}
-                                className="w-full px-3.5 py-2.5 border border-gray-200 rounded-button text-[13px] bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-shadow"
-                              >
-                                {savedAddresses.map(a => (
-                                  <option key={a.id} value={a.id}>
-                                    {a.label} — {a.address}
-                                  </option>
-                                ))}
-                                <option value="new">Enter a new address…</option>
-                              </select>
+                                onChange={v => setSelectedAddressId(v === 'new' ? 'new' : Number(v))}
+                                options={[
+                                  ...savedAddresses.map(a => ({
+                                    value: String(a.id),
+                                    label: `${a.label} — ${a.address}`,
+                                  })),
+                                  { value: 'new', label: 'Enter a new address…' },
+                                ]}
+                              />
                             )}
                           </div>
                         ) : null
@@ -390,19 +390,16 @@ export default function CartClient() {
                           <label htmlFor="pickup-store" className="block text-[11px] font-semibold tracking-wide text-gray-600 mb-1.5 uppercase">
                             Collect from
                           </label>
-                          <select
+                          <Select
                             id="pickup-store"
                             value={selectedStoreId === '' ? '' : String(selectedStoreId)}
-                            onChange={e => setSelectedStoreId(e.target.value === '' ? '' : Number(e.target.value))}
-                            className="w-full px-3.5 py-2.5 border border-gray-200 rounded-button text-[13px] bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
-                          >
-                            {stores.length === 0 && <option value="">Loading stores…</option>}
-                            {stores.map(s => (
-                              <option key={s.id} value={s.id}>
-                                {s.name} — {s.address}
-                              </option>
-                            ))}
-                          </select>
+                            onChange={v => setSelectedStoreId(v === '' ? '' : Number(v))}
+                            options={stores.map(s => ({
+                              value: String(s.id),
+                              label: `${s.name} — ${s.address}`,
+                            }))}
+                            placeholder={stores.length === 0 ? 'Loading stores…' : 'Select a store'}
+                          />
                           <p className="text-[11px] text-gray-400 mt-2 leading-relaxed">We&apos;ll pack your order ready for you to collect. No delivery fee.</p>
                         </div>
                       )}

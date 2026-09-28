@@ -4,9 +4,10 @@ import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'motion/react'
-import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react'
+import { Mail } from 'lucide-react'
 import { Loader } from '@/components/Loader'
 import { Logo } from '@/components/Logo'
+import PasswordField from '@/components/PasswordField'
 import { useAuthStore } from '@/stores/auth-store'
 
 export default function LoginClient() {
@@ -14,7 +15,6 @@ export default function LoginClient() {
   const { isAuthenticated, user, login, checkAuth } = useAuthStore()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const searchParams = useSearchParams()
@@ -58,7 +58,10 @@ export default function LoginClient() {
       <main className="flex min-h-[calc(100dvh-4rem)] flex-col justify-center px-4 py-10">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mx-auto w-full max-w-md">
           <div className="mb-8 flex flex-col items-center">
-            <Logo variant="lockup" size={40} tone="dark" className="mb-5" />
+            {/* Extra room below the lockup: the "cares enough" tagline sits
+                absolutely under the wordmark, so the heading needs breathing
+                space to clear it. */}
+            <Logo variant="lockup" size={40} tone="dark" className="mb-9" />
             <h1 className="font-display text-3xl font-bold mb-2 text-center">Welcome back</h1>
             <p className="text-gray-500 text-center">Sign in to your Checkstar account.</p>
           </div>
@@ -82,26 +85,14 @@ export default function LoginClient() {
               </div>
             </div>
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
-              <div className="relative">
-                <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input
-                  id="password" type={showPassword ? 'text' : 'password'} required value={password} onChange={e => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-10 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
-                  placeholder="********"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
-                  aria-pressed={showPassword}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600"
-                >
-                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              </div>
-            </div>
+            <PasswordField
+              id="password"
+              label="Password"
+              value={password}
+              onChange={setPassword}
+              placeholder="********"
+              showIcon
+            />
 
             <div className="flex justify-end">
               <Link href="/auth/forgot-password" className="text-sm text-primary hover:underline">

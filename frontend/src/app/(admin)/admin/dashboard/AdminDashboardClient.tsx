@@ -42,6 +42,7 @@ import EmptyState from "@/components/admin/EmptyState";
 import { formatZar } from '@/lib/money'
 import { formatDate } from '@/lib/dates'
 import { orderStatusLabel, roleLabel } from '@/lib/labels'
+import Select from '@/components/ui/select'
 
 const SERVICE_ORDER: Array<{ key: string; label: string }> = [
   { key: "api", label: "API" },
@@ -518,18 +519,14 @@ function AdminDashboardBody({
                 className="ml-auto flex items-center gap-2 text-sm text-gray-500"
               >
                 Store focus
-                <select
+                <Select
                   id="dev-store-focus"
-                  value={focusStoreId ?? ""}
-                  onChange={(e) => setFocusStoreId(Number(e.target.value))}
-                  className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/30"
-                >
-                  {stores.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
+                  value={String(focusStoreId ?? "")}
+                  onChange={(v) => setFocusStoreId(Number(v))}
+                  options={stores.map((s) => ({ value: String(s.id), label: s.name }))}
+                  size="sm"
+                  className="w-44"
+                />
               </label>
             )}
           </div>

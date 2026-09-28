@@ -11,6 +11,7 @@ import Modal from '@/components/admin/Modal'
 import ConfirmDialog from '@/components/admin/ConfirmDialog'
 import EmptyState from '@/components/admin/EmptyState'
 import ErrorState from '@/components/admin/ErrorState'
+import Select from '@/components/ui/select'
 import type { CareerListing } from '@/types'
 
 function slugify(s: string) { return s.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') }
@@ -193,16 +194,18 @@ export default function CareersAdminClient() {
           </div>
           <div>
             <label htmlFor="career-type" className="text-xs font-medium text-gray-500 block mb-1">Type</label>
-            <select
-              id="career-type"
-              value={type}
-              onChange={(e) => setType(e.target.value as 'full_time' | 'part_time' | 'contract')}
-              className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/30"
-            >
-              <option value="full_time">Full time</option>
-              <option value="part_time">Part time</option>
-              <option value="contract">Contract</option>
-            </select>
+            <div className="mt-1">
+              <Select
+                id="career-type"
+                value={type}
+                onChange={(v) => setType(v as 'full_time' | 'part_time' | 'contract')}
+                options={[
+                  { value: 'full_time', label: 'Full time' },
+                  { value: 'part_time', label: 'Part time' },
+                  { value: 'contract', label: 'Contract' },
+                ]}
+              />
+            </div>
           </div>
           <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
             <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary/30" />
