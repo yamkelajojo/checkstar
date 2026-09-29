@@ -9,15 +9,20 @@ class PricingService
 {
     public function effectivePrice(Product $product, ?Collection $specials = null): float
     {
-        // True cascade: the customer never pays more than the cheapest
-        // applicable price — base, product-level sale_price, or any live
-        // special. The previous early-return on sale_price would overcharge
-        // when e.g. base 45, sale 39.99, special 29.99 (special is cheaper).
-        $candidates = [(float) $product->price];
+        // Documented cascade (CONTEXT.md, Special / Order Intake): product
+        // sale_price → collection special → base price. A product-level
+        // markdown outranks every collection Special the product also sits
+        // in, so the customer pays the direct sale price first.
+        $base = (float) $product->price;
+        $sale = $product->sale_price !== null ? (float) $product->sale_price : null;
 
-        if ($product->sale_price !== null && (float) $product->sale_price < (float) $product->price) {
-            $candidates[] = (float) $product->sale_price;
+        // A sale_price at or above base is a mistyped admin edit, never a
+        // discount — drop it so it cannot raise the price.
+        if ($sale !== null && $sale < $base) {
+            return $sale;
         }
+
+        $candidates = [$base];
 
         if ($specials !== null && $specials->isNotEmpty()) {
             $now = now();
@@ -43,8 +48,8 @@ class PricingService
 
             foreach ($specialPrices as $sp) {
                 // Clamp each special to base so a mis-typed pivot can never
-                // overcharge; the overall min still picks the cheapest.
-                $candidates[] = min((float) $product->price, $sp);
+                // overcharge; min still picks the cheapest of base vs specials.
+                $candidates[] = min($base, $sp);
             }
         }
 

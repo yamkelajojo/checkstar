@@ -1,13 +1,50 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync, existsSync } from "node:fs";
-import { join, dirname } from "node:path";
+import { readFileSync, readdirSync } from "node:fs";
+import { join, dirname, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
+const SRC = join(ROOT, "src");
 
 function readTailwind(): string {
   const p = join(ROOT, "tailwind.config.ts");
   return readFileSync(p, "utf8");
+}
+
+/** Every .ts/.tsx file under src/, walked with node:fs (no shell tools). */
+function sourceFiles(exts: string[] = [".ts", ".tsx"]): string[] {
+  const files: string[] = [];
+  const walk = (dir: string): void => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const full = join(dir, entry.name);
+      if (entry.isDirectory()) walk(full);
+      else if (exts.some((ext) => entry.name.endsWith(ext))) files.push(full);
+    }
+  };
+  walk(SRC);
+  return files;
+}
+
+/**
+ * Grep-style scan returning `path:line:trimmed text` for every match.
+ * Replaces the shell `grep` pipelines this suite used to run, which are not
+ * available on Windows.
+ */
+function grep(
+  pattern: RegExp,
+  { exts, exclude }: { exts?: string[]; exclude?: RegExp } = {},
+): string[] {
+  const hits: string[] = [];
+  for (const file of sourceFiles(exts)) {
+    const rel = relative(SRC, file).split(sep).join("/");
+    if (exclude?.test(rel)) continue;
+    readFileSync(file, "utf8")
+      .split(/\r?\n/)
+      .forEach((line, index) => {
+        if (pattern.test(line)) hits.push(`${rel}:${index + 1}: ${line.trim()}`);
+      });
+  }
+  return hits;
 }
 
 /**
@@ -47,14 +84,13 @@ describe("design tokens — accent vs primary-dark", () => {
  * migrated.
  */
 describe("design tokens — no arbitrary 14px radius", () => {
-  it("has no rounded-[14px] in src", async () => {
-    const { execSync } = await import("node:child_process");
-    const out = execSync("grep -r 'rounded-\\[14px\\]' --include='*.tsx' src || true", {
-      cwd: ROOT,
-      encoding: "utf8",
-    }).trim();
+  it("has no rounded-[14px] in src", () => {
+    const hits = grep(/rounded-\[14px\]/, { exts: [".tsx"] });
     // If this fails, migrate the listed files to rounded-button (12px) or rounded-card (16px)
-    expect(out, `found rounded-[14px] outliers (migrate to rounded-button/card):\n${out}`).toBe("");
+    expect(
+      hits,
+      `found rounded-[14px] outliers (migrate to rounded-button/card):\n${hits.join("\n")}`,
+    ).toEqual([]);
   });
 });
 
@@ -67,13 +103,14 @@ describe("design tokens — no arbitrary 14px radius", () => {
  * DownloadTheApp (44px outer, 36px inner) which is not a design token.
  */
 describe("design tokens — no arbitrary radius literals", () => {
-  it("has no stray rounded-[*px] in src (except 44px/36px device frames)", async () => {
-    const { execSync } = await import("node:child_process");
-    const out = execSync(
-      "grep -R 'rounded-\\[[0-9]\\+px\\]' --include='*.tsx' --include='*.ts' src | grep -v '__tests__' | grep -v '44px' | grep -v '36px' || true",
-      { cwd: ROOT, encoding: "utf8" },
-    ).trim();
-    expect(out, `found arbitrary rounded-[*px] (use rounded-sm/button/card/xl/pill):\n${out}`).toBe("");
+  it("has no stray rounded-[*px] in src (except 44px/36px device frames)", () => {
+    const hits = grep(/rounded-\[\d+px\]/, { exclude: /__tests__/ }).filter(
+      (hit) => !hit.includes("44px") && !hit.includes("36px"),
+    );
+    expect(
+      hits,
+      `found arbitrary rounded-[*px] (use rounded-sm/button/card/xl/pill):\n${hits.join("\n")}`,
+    ).toEqual([]);
   });
 });
 
@@ -91,12 +128,8 @@ describe("dead dependencies", () => {
     expect(dead, `remove unused deps from package.json: ${dead.join(", ")}`).toEqual([]);
   });
 
-  it("does not import dead deps in src", async () => {
-    const { execSync } = await import("node:child_process");
-    const out = execSync("grep -r \"from ['\\\"]solid-glass['\\\"]\\|from ['\\\"]lenis['\\\"]\" --include='*.tsx' --include='*.ts' src || true", {
-      cwd: ROOT,
-      encoding: "utf8",
-    }).trim();
-    expect(out, `found imports of dead deps:\n${out}`).toBe("");
+  it("does not import dead deps in src", () => {
+    const hits = grep(/from ['"](?:solid-glass|lenis)['"]/);
+    expect(hits, `found imports of dead deps:\n${hits.join("\n")}`).toEqual([]);
   });
 });

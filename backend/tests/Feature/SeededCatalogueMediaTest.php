@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\Store;
 use App\Models\StoreStaff;
 use App\Models\User;
+use App\Services\MediaService;
 use Database\Seeders\BannerSeeder;
 use Database\Seeders\CategorySeeder;
 use Database\Seeders\ProductSeeder;
@@ -27,6 +28,24 @@ use Tests\TestCase;
  *
  * These tests run the *real* seeders and then check the media the API emits
  * against the *real* filesystem, so a stale seed path can never ship again.
+ *
+ * ## The standing rule
+ *
+ * **A product with no usable image must never reach a Customer.**
+ *
+ * Two ways that rule gets broken, two tests catching them:
+ *  - a stored path points at a file that does not exist → the filesystem
+ *    assertions below;
+ *  - `MediaService` quietly swaps in `products/product-placeholder.webp` →
+ *    `test_no_customer_facing_product_is_served_the_fallback_placeholder`,
+ *    which is the one the other assertions *cannot* make: the placeholder is
+ *    a real file, so "the URL resolves" stays green while the storefront
+ *    renders a placeholder bag where a packshot should be. That is the
+ *    visual inconsistency the rule exists to prevent.
+ *
+ * Offending products are controlled at the source (their paths are repaired
+ * by the seeder that wrote them), not hidden downstream — a Customer must
+ * never lose a stocked, priced product just because its media drifted.
  */
 class SeededCatalogueMediaTest extends TestCase
 {
@@ -130,7 +149,121 @@ class SeededCatalogueMediaTest extends TestCase
         }
     }
 
+    /**
+     * The standing rule: a product with no usable image never reaches a
+     * Customer. Every other assertion in this class stays green when a path
+     * rots, because MediaService swaps in a *real* file
+     * (products/product-placeholder.webp) and `pathExists()` therefore
+     * reports success — the Customer just sees a placeholder bag where a
+     * packshot belongs. This test names that case explicitly.
+     */
+    public function test_no_customer_facing_product_is_served_the_fallback_placeholder(): void
+    {
+        $checked = 0;
+
+        foreach ($this->catalogueEndpoints() as $endpoint) {
+            foreach ($this->pagesOf($endpoint) as [$where, $payload]) {
+                foreach ($this->productImages($payload) as [$path, $image]) {
+                    $checked++;
+
+                    $this->assertNotSame(
+                        '',
+                        trim((string) $image),
+                        "$where [$path] has an empty product image; a product with no usable image reached the storefront."
+                    );
+                    $this->assertStringNotContainsString(
+                        MediaService::PRODUCT_PLACEHOLDER,
+                        (string) $image,
+                        "$where [$path] is serving the fallback placeholder — a product with no usable image reached the storefront."
+                    );
+                }
+            }
+        }
+
+        $this->assertGreaterThan(
+            0,
+            $checked,
+            'No product-shaped nodes were found in any catalogue payload; the assertions above would be vacuous.'
+        );
+    }
+
     /* ------------------------------------------------------------------ */
+
+    /** @return array<int, string> */
+    private function catalogueEndpoints(): array
+    {
+        return [
+            '/api/products?per_page=100',
+            '/api/products/trending',
+            '/api/products/popular',
+            '/api/products/new-arrivals',
+            '/api/specials',
+            '/api/recipes',
+        ];
+    }
+
+    /**
+     * Walk every page of a (optionally paginated) endpoint. Endpoints that
+     * do not paginate report no `last_page` and so are yielded once.
+     *
+     * @return array<int, array{0: string, 1: mixed}>
+     */
+    private function pagesOf(string $endpoint): array
+    {
+        $pages = [];
+
+        for ($page = 1; ; $page++) {
+            $separator = str_contains($endpoint, '?') ? '&' : '?';
+            $payload = $this->getJson($endpoint.$separator.'page='.$page)
+                ->assertStatus(200)
+                ->json();
+
+            $pages[] = [$endpoint.' (page '.$page.')', $payload];
+
+            if ($page >= (int) ($payload['last_page'] ?? 1)) {
+                break;
+            }
+        }
+
+        return $pages;
+    }
+
+    /**
+     * Product-shaped nodes anywhere in a payload, as [json path, image].
+     * A node qualifies on slug + image + (price|unit) so a recipe or banner
+     * image is never mistaken for a product image.
+     *
+     * @return array<int, array{0: string, 1: mixed}>
+     */
+    private function productImages(mixed $node, string $path = ''): array
+    {
+        if (! is_array($node)) {
+            return [];
+        }
+
+        $out = [];
+
+        if (
+            array_key_exists('slug', $node)
+            && array_key_exists('image', $node)
+            && (array_key_exists('price', $node) || array_key_exists('unit', $node))
+        ) {
+            $out[] = [($path !== '' ? $path.'.' : '').'image', $node['image']];
+        }
+
+        foreach ($node as $key => $value) {
+            if (! is_array($value)) {
+                continue;
+            }
+
+            $child = $path === '' ? (string) $key : $path.'.'.$key;
+            foreach ($this->productImages($value, $child) as $hit) {
+                $out[] = $hit;
+            }
+        }
+
+        return $out;
+    }
 
     private function pathExists(?string $value): bool
     {
