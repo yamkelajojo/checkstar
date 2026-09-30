@@ -44,7 +44,7 @@ export default function AnalyticsPage() {
       <div className="bg-white border-b border-gray-100 px-6 py-4">
         <div className="flex items-center justify-between max-w-7xl mx-auto">
           <div className="flex items-center gap-3">
-            <Link href="/operations" className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
+            <Link href="/admin/dashboard" aria-label="Back to dashboard" className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
               <ArrowLeft size={16} />
             </Link>
             <div>

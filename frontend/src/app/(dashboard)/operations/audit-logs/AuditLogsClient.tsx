@@ -57,11 +57,11 @@ export default function AuditLogsClient() {
         >
           <div>
             <Link
-              href="/operations"
+              href="/admin/dashboard"
               className="inline-flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-primary mb-3"
             >
               <span aria-hidden="true">←</span>
-              Back to operations
+              Back to dashboard
             </Link>
             <h1 className="font-display text-3xl font-bold flex items-center gap-2">
               <FileClock size={24} /> Audit Logs

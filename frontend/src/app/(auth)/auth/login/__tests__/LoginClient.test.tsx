@@ -220,3 +220,25 @@ describe("LoginClient role routing", () => {
     expect(screen.getByRole("heading", { name: "Welcome back" })).toBeTruthy();
   });
 });
+
+// ---------- Submit button exit transition ----------
+import fs from "node:fs";
+import path from "node:path";
+
+describe("Sign In button transition", () => {
+  it("exits the Sign In label in a crossfade as the loader enters (popLayout, not sequential)", () => {
+    const src = fs.readFileSync(
+      path.join(__dirname, "..", "LoginClient.tsx"),
+      "utf8",
+    );
+
+    // The idle/loading swap must run both animations at once so the
+    // "Sign In" text visibly animates OUT instead of disappearing while
+    // waiting for the loader to finish entering.
+    expect(src).toMatch(/<AnimatePresence mode="popLayout"/);
+    expect(src).not.toMatch(/<AnimatePresence mode="wait"/);
+
+    // Both states declare real exit props so the departing label animates.
+    expect((src.match(/exit=\{\{ opacity: 0/g) ?? []).length).toBeGreaterThanOrEqual(2);
+  });
+});

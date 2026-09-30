@@ -7,8 +7,9 @@ import { useAuthStore } from '@/stores/auth-store'
 import {
   LayoutDashboard, ShoppingCart, ShoppingBag, Sparkles, Image as ImageIcon, Users,
   Bike, Activity, Package, Tags, Store, UserCog, BookOpen, HeartHandshake, Briefcase,
-  MessageSquare, BarChart3, ShieldAlert, HeartPulse, Menu, X,
+  MessageSquare, BarChart3, ShieldAlert, HeartPulse, Menu, X, LogOut,
 } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 
 /**
  * Persistent admin navigation — the (admin) area has 16 pages but no
@@ -145,9 +146,23 @@ function NavLinks({ role, pathname, onNavigate }: { role: Role; pathname: string
 }
 
 export default function AdminNav() {
-  const { user } = useAuthStore()
+  const { user, logout } = useAuthStore()
   const pathname = usePathname()
+  const router = useRouter()
   const [open, setOpen] = useState(false)
+
+  async function handleLogout() {
+    setOpen(false)
+    try {
+      await logout()
+    } catch {
+      // store clears auth state regardless of network outcome
+    }
+    // End the admin session explicitly: leaving navigation to the auth
+    // guards can race checkAuth and bounce the user back into the
+    // dashboard before the session is gone.
+    router.push('/auth/login')
+  }
 
   // Close the mobile drawer on navigation and lock body scroll while open.
   useEffect(() => {
@@ -175,15 +190,25 @@ export default function AdminNav() {
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="hidden lg:block fixed inset-y-0 left-0 w-60 bg-white border-r border-gray-200 overflow-y-auto z-40">
-        <div className="px-5 py-5">
+      <aside className="hidden lg:block fixed inset-y-0 left-0 w-60 bg-white border-r border-gray-200 z-40 flex flex-col">
+        <div className="px-5 py-5 shrink-0">
           <Link href="/admin/dashboard" className="font-display text-xl font-bold text-gray-900">
             Checkstar
             <span className="ml-2 text-xs font-sans font-medium text-gray-400">Admin</span>
           </Link>
         </div>
-        <div className="px-3 pb-8">
+        <div className="flex-1 overflow-y-auto px-3 pb-4">
           <NavLinks role={role} pathname={pathname} />
+        </div>
+        <div className="px-3 py-3 border-t border-gray-100 shrink-0">
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="flex w-full items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+          >
+            <LogOut size={16} className="text-gray-400" />
+            Log out
+          </button>
         </div>
       </aside>
 
@@ -232,6 +257,16 @@ export default function AdminNav() {
             </div>
             <div className="px-3 py-4">
               <NavLinks role={role} pathname={pathname} onNavigate={() => setOpen(false)} />
+            </div>
+            <div className="px-3 py-3 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="flex w-full items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+              >
+                <LogOut size={16} className="text-gray-400" />
+                Log out
+              </button>
             </div>
           </div>
         </div>

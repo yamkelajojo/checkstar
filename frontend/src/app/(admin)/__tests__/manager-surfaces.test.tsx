@@ -632,7 +632,7 @@ describe("MessagesClient", () => {
 });
 
 describe("AuditLogsClient", () => {
-  it("offers a clear return route back to operations", () => {
+  it("offers a clear return route back to the admin dashboard", () => {
     setAuth({
       id: 1,
       name: "Dev User",
@@ -642,8 +642,8 @@ describe("AuditLogsClient", () => {
     renderWithProviders(<AuditLogsClient />);
 
     expect(
-      screen.getByRole("link", { name: /Back to operations/i }),
-    ).toHaveAttribute("href", "/operations");
+      screen.getByRole("link", { name: /Back to dashboard/i }),
+    ).toHaveAttribute("href", "/admin/dashboard");
   });
 });
 

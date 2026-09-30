@@ -56,7 +56,9 @@ export const useAuthStore = create<AuthState>()(
         } catch {
           // ignore — local state must clear regardless
         }
-        set({ user: null, isAuthenticated: false })
+        // isLoading:false so guards (AuthGuard/Header) react immediately and
+        // never re-run checkAuth into a half-logged-out state.
+        set({ user: null, isAuthenticated: false, isLoading: false })
       },
       checkAuth: () => {
         // Single-flight: concurrent callers (AuthGuard bootstrap, page-level

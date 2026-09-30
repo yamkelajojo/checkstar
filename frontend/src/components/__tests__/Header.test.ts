@@ -77,6 +77,12 @@ describe('Header mobile menu', () => {
     expect(src).toMatch(/backdropFilter/)
   })
 
+  it('logout clears the session then navigates home (no guarded-page bounce)', () => {
+    expect(src).toMatch(/await logout\(\)/)
+    expect(src).toMatch(/router\.push\('\/'\)/)
+    expect(src).toMatch(/useRouter/)
+  })
+
   it('keeps menu open until next page appears (closes on pathname change, not immediate)', () => {
     expect(src).toMatch(/usePathname/)
     expect(src).toMatch(/prevPathRef/)

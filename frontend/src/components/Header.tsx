@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react'
 import { ShoppingCart, User, LogOut } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth-store'
@@ -18,8 +18,20 @@ export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false)
   const shouldReduceMotion = useReducedMotion()
   const pathname = usePathname()
+  const router = useRouter()
   const prevPathRef = useRef(pathname)
   const { user, isAuthenticated, logout } = useAuthStore()
+
+  const handleLogout = async () => {
+    try {
+      await logout()
+    } catch {
+      // store clears auth state regardless of network outcome
+    }
+    // Leaving the current page makes the logged-out state visible and
+    // prevents a flash where a guarded page re-redirects the user.
+    if (window.location.pathname !== '/') router.push('/')
+  }
   const itemCount = useCartStore(s => s.itemCount)
 
   useEffect(() => {
@@ -130,7 +142,11 @@ export default function Header() {
                 <Link href={user?.role === 'rider' ? '/rider/dashboard' : '/account/orders'} className="p-2 text-gray-600 hover:text-primary transition-colors">
                   <User size={20} />
                 </Link>
-                <button onClick={() => { logout().catch(() => {}) }} className="p-2 text-gray-600 hover:text-accent transition-colors">
+                <button
+                  onClick={handleLogout}
+                  aria-label="Logout"
+                  className="p-2 text-gray-600 hover:text-accent transition-colors"
+                >
                   <LogOut size={20} />
                 </button>
               </div>
@@ -246,8 +262,9 @@ export default function Header() {
                       <button
                         onClick={() => {
                           setMenuOpen(false)
-                          logout().catch(() => {})
+                          handleLogout()
                         }}
+                        aria-label="Logout"
                         className="inline-flex items-center justify-center gap-2 bg-gray-100 text-gray-700 px-4 py-3 rounded-xl text-sm font-medium"
                       >
                         <LogOut size={16} /> Logout

@@ -2,12 +2,16 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import React from 'react'
 
-const { authState, setAuth, pathname } = vi.hoisted(() => ({
-  authState: { user: null as Record<string, unknown> | null },
+const { authState, setAuth, pathname, router } = vi.hoisted(() => ({
+  authState: {
+    user: null as Record<string, unknown> | null,
+    logout: vi.fn(async () => {}),
+  },
   setAuth: (user: Record<string, unknown> | null) => {
     authState.user = user
   },
   pathname: { current: '/admin/dashboard' },
+  router: { push: vi.fn() },
 }))
 
 vi.mock('@/stores/auth-store', () => ({
@@ -17,6 +21,7 @@ vi.mock('@/stores/auth-store', () => ({
 
 vi.mock('next/navigation', () => ({
   usePathname: () => pathname.current,
+  useRouter: () => router,
 }))
 
 import AdminNav from '../AdminNav'
@@ -25,6 +30,8 @@ describe('AdminNav', () => {
   beforeEach(() => {
     setAuth(null)
     pathname.current = '/admin/dashboard'
+    authState.logout = vi.fn(async () => {})
+    router.push = vi.fn()
   })
 
   it('renders nothing for non-staff roles', () => {
@@ -91,6 +98,52 @@ describe('AdminNav', () => {
     expect(openBtn).toHaveAttribute('aria-expanded', 'true')
 
     fireEvent.click(screen.getByRole('button', { name: 'Close navigation' }))
+    expect(screen.queryByRole('dialog', { name: 'Admin navigation' })).toBeNull()
+  })
+
+  it('shows a Log out button in the sidebar that logs out and navigates to login', async () => {
+    setAuth({ id: 3, role: 'store_manager' })
+    render(<AdminNav />)
+
+    const logoutBtn = screen.getByRole('button', { name: /log out/i })
+    fireEvent.click(logoutBtn)
+
+    await vi.waitFor(() => {
+      expect(authState.logout).toHaveBeenCalledTimes(1)
+      expect(router.push).toHaveBeenCalledWith('/auth/login')
+    })
+  })
+
+  it('still logs out when the network call fails and navigates to login anyway', async () => {
+    authState.logout = vi.fn(async () => {
+      throw new Error('network down')
+    })
+    setAuth({ id: 3, role: 'store_manager' })
+    render(<AdminNav />)
+
+    fireEvent.click(screen.getByRole('button', { name: /log out/i }))
+
+    await vi.waitFor(() => {
+      expect(router.push).toHaveBeenCalledWith('/auth/login')
+    })
+  })
+
+  it('offers Log out inside the mobile drawer and closes the drawer on use', async () => {
+    setAuth({ id: 1, role: 'developer' })
+    render(<AdminNav />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open admin navigation' }))
+    const drawer = screen.getByRole('dialog', { name: 'Admin navigation' })
+    const drawerLogout = Array.from(drawer.querySelectorAll('button')).find((b) =>
+      /log out/i.test(b.textContent ?? ''),
+    )
+    expect(drawerLogout).toBeDefined()
+
+    fireEvent.click(drawerLogout!)
+    await vi.waitFor(() => {
+      expect(authState.logout).toHaveBeenCalledTimes(1)
+      expect(router.push).toHaveBeenCalledWith('/auth/login')
+    })
     expect(screen.queryByRole('dialog', { name: 'Admin navigation' })).toBeNull()
   })
 })

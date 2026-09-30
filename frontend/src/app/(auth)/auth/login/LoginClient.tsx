@@ -118,13 +118,17 @@ export default function LoginClient() {
 
             {/* Fixed-size button: idle and loading content trade places inside
                 a clipped stage, so the button morphs in sync with the
-                Checkstar loader instead of jumping or resizing. */}
+                Checkstar loader instead of jumping or resizing. popLayout
+                runs the exit and entry simultaneously (crossfade) so the
+                "Sign In" label visibly animates out while the loader
+                animates in — with mode="wait" the exit finished before the
+                entry began and read as the text just disappearing. */}
             <motion.button
               type="submit" disabled={loading}
               whileTap={{ scale: 0.98 }}
               className="relative w-full h-12 overflow-hidden bg-primary text-white rounded-lg font-medium hover:bg-primary-dark transition-colors disabled:cursor-default flex items-center justify-center"
             >
-              <AnimatePresence mode="wait" initial={false}>
+              <AnimatePresence mode="popLayout" initial={false}>
                 {loading ? (
                   <motion.span
                     key="loading"

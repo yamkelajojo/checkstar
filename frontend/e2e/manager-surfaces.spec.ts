@@ -181,4 +181,36 @@ test.describe('Live operations', () => {
     await expect(page.getByText('Total Revenue')).toBeVisible()
     await expect(page.getByText('Active Riders')).toBeVisible()
   })
+
+  test('analytics back arrow returns to the admin dashboard', async ({ page }) => {
+    await login(page, 'manager@checkstar.co.za')
+    await page.goto('/operations/analytics')
+    await expect(page.getByText('Total Revenue')).toBeVisible({ timeout: 20_000 })
+
+    await page.getByRole('link', { name: 'Back to dashboard' }).click()
+    await expect(page).toHaveURL(/\/admin\/dashboard/)
+  })
+
+  test('audit logs back link returns to the admin dashboard', async ({ page }) => {
+    await login(page, 'manager@checkstar.co.za')
+    await page.goto('/operations/audit-logs')
+    await expect(page.getByRole('link', { name: /Back to dashboard/i })).toBeVisible({ timeout: 20_000 })
+
+    await page.getByRole('link', { name: /Back to dashboard/i }).click()
+    await expect(page).toHaveURL(/\/admin\/dashboard/)
+  })
+
+  test('logout from the admin sidebar ends the session and lands on sign-in', async ({ page }) => {
+    await login(page, 'manager@checkstar.co.za')
+    await page.goto('/admin/dashboard')
+    await expect(page.getByRole('heading', { name: 'Staff Dashboard' })).toBeVisible({ timeout: 20_000 })
+
+    await page.getByRole('button', { name: /Log out/i }).click()
+
+    // Lands on the sign-in screen and stays there — no bounce back into
+    // the dashboard from a stale auth check.
+    await expect(page).toHaveURL(/\/auth\/login/, { timeout: 15_000 })
+    await page.waitForTimeout(1500)
+    await expect(page).toHaveURL(/\/auth\/login/)
+  })
 })
