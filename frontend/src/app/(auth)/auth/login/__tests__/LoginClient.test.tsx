@@ -134,10 +134,16 @@ describe("LoginClient form", () => {
     fireEvent.change(screen.getByLabelText("Password"), { target: { value: "pw" } });
     fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
 
+    // While loading the button is disabled and announces progress (invisible
+    // aria-label), but shows ONLY the loader — no visible loading text.
     await waitFor(() =>
       expect(screen.getByRole("button", { name: /signing in/i })).toBeTruthy(),
     );
-    expect(screen.getByRole("button", { name: /signing in/i })).toBeDisabled();
+    const busyBtn = screen.getByRole("button", { name: /signing in/i });
+    expect(busyBtn).toBeDisabled();
+    expect(busyBtn).toHaveAttribute("aria-busy", "true");
+    expect(busyBtn.textContent).not.toMatch(/signing in/i);
+    expect(screen.getByTestId("loader")).toBeTruthy();
 
     resolveLogin();
 
@@ -226,19 +232,19 @@ import fs from "node:fs";
 import path from "node:path";
 
 describe("Sign In button transition", () => {
-  it("exits the Sign In label in a crossfade as the loader enters (popLayout, not sequential)", () => {
+  it("fades the Sign In label out as the loader enters, with no loading text", () => {
     const src = fs.readFileSync(
       path.join(__dirname, "..", "LoginClient.tsx"),
       "utf8",
     );
 
-    // The idle/loading swap must run both animations at once so the
-    // "Sign In" text visibly animates OUT instead of disappearing while
-    // waiting for the loader to finish entering.
-    expect(src).toMatch(/<AnimatePresence mode="popLayout"/);
-    expect(src).not.toMatch(/<AnimatePresence mode="wait"/);
+    // Both layers are driven directly by `animate` keyed on `loading`, so
+    // the "Sign In" label animates out the instant loading starts — no
+    // AnimatePresence exit timing that can leave the label visible.
+    expect(src).toMatch(/animate=\{loading \? \{ opacity: 0, y: -12 \}/);
+    expect(src).toMatch(/animate=\{loading \? \{ opacity: 1, y: 0 \}/);
 
-    // Both states declare real exit props so the departing label animates.
-    expect((src.match(/exit=\{\{ opacity: 0/g) ?? []).length).toBeGreaterThanOrEqual(2);
+    // The loading layer shows only the loader — no visible loading text.
+    expect(src).not.toMatch(/Signing in\.\.\./);
   });
 });

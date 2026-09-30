@@ -116,43 +116,34 @@ export default function LoginClient() {
               </Link>
             </div>
 
-            {/* Fixed-size button: idle and loading content trade places inside
-                a clipped stage, so the button morphs in sync with the
-                Checkstar loader instead of jumping or resizing. popLayout
-                runs the exit and entry simultaneously (crossfade) so the
-                "Sign In" label visibly animates out while the loader
-                animates in — with mode="wait" the exit finished before the
-                entry began and read as the text just disappearing. */}
+            {/* Fixed-size button with two stacked layers driven directly by
+                `animate` (no AnimatePresence exit timing to miss): the
+                "Sign In" label fades/slides away the instant loading starts,
+                and the loading layer shows ONLY the Checkstar loader — no
+                loading label text, per design. The button never resizes. */}
             <motion.button
               type="submit" disabled={loading}
               whileTap={{ scale: 0.98 }}
+              aria-busy={loading}
+              aria-label={loading ? 'Signing in' : undefined}
               className="relative w-full h-12 overflow-hidden bg-primary text-white rounded-lg font-medium hover:bg-primary-dark transition-colors disabled:cursor-default flex items-center justify-center"
             >
-              <AnimatePresence mode="popLayout" initial={false}>
-                {loading ? (
-                  <motion.span
-                    key="loading"
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -12 }}
-                    transition={{ duration: time.fast, ease: ease.apple }}
-                    className="flex items-center justify-center gap-2"
-                  >
-                    <Loader className="h-6 w-20" />
-                    <span>Signing in...</span>
-                  </motion.span>
-                ) : (
-                  <motion.span
-                    key="idle"
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -12 }}
-                    transition={{ duration: time.fast, ease: ease.apple }}
-                  >
-                    Sign In
-                  </motion.span>
-                )}
-              </AnimatePresence>
+              <motion.span
+                aria-hidden={loading || undefined}
+                animate={loading ? { opacity: 0, y: -12 } : { opacity: 1, y: 0 }}
+                transition={{ duration: time.fast, ease: ease.apple }}
+                className="absolute inset-0 flex items-center justify-center"
+              >
+                Sign In
+              </motion.span>
+              <motion.span
+                aria-hidden={!loading || undefined}
+                animate={loading ? { opacity: 1, y: 0 } : { opacity: 0, y: 12 }}
+                transition={{ duration: time.fast, ease: ease.apple }}
+                className="flex items-center justify-center"
+              >
+                <Loader className="h-6 w-20" />
+              </motion.span>
             </motion.button>
           </form>
 
