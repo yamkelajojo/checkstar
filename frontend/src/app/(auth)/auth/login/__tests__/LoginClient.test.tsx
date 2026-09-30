@@ -147,8 +147,16 @@ describe("LoginClient form", () => {
 
     resolveLogin();
 
-    await waitFor(() =>
-      expect(screen.getByRole("button", { name: /^sign in$/i })).toBeTruthy(),
+    // Even though the login promise resolved instantly, the loading state
+    // is guaranteed a minimum visible window (MIN_LOADER_MS), so the
+    // button is still busy right after resolve — that is what makes the
+    // Sign In → loader transition visible in real use.
+    expect(busyBtn).toBeDisabled();
+    expect(busyBtn).toHaveAttribute("aria-busy", "true");
+
+    await waitFor(
+      () => expect(screen.getByRole("button", { name: /^sign in$/i })).toBeTruthy(),
+      { timeout: 3000 },
     );
     expect(screen.getByRole("button", { name: /^sign in$/i })).not.toBeDisabled();
   });
@@ -246,5 +254,11 @@ describe("Sign In button transition", () => {
 
     // The loading layer shows only the loader — no visible loading text.
     expect(src).not.toMatch(/Signing in\.\.\./);
+
+    // The loading window has a guaranteed minimum so the transition is
+    // visible even when the API answers instantly — and the redirect
+    // effect waits for it instead of navigating mid-animation.
+    expect(src).toMatch(/MIN_LOADER_MS/);
+    expect(src).toMatch(/isAuthenticated && user && !loading/);
   });
 });

@@ -28,7 +28,10 @@ export default function LoginClient() {
   }, [checkAuth])
 
   useEffect(() => {
-    if (isAuthenticated && user) {
+    // `!loading` keeps the redirect parked until the submit handler's
+    // minimum loader window has played out — otherwise the page would
+    // navigate instantly and the transition would never be visible.
+    if (isAuthenticated && user && !loading) {
       if (redirectTo) {
         router.push(redirectTo)
         return
@@ -38,14 +41,24 @@ export default function LoginClient() {
       else if (role === 'store_owner' || role === 'store_manager' || role === 'logistics_officer' || role === 'developer') router.push('/admin/dashboard')
       else router.push('/')
     }
-  }, [isAuthenticated, user, router, redirectTo])
+  }, [isAuthenticated, user, loading, router, redirectTo])
+
+  // The Sign In → loader swap must be SEEN, not just computed: when the API
+  // answers faster than the eye can register the transition (e.g. the mock
+  // API answers in a few ms), hold the loading state for a minimum window so
+  // the label exit and loader entry always play in full — no hovering or
+  // timing luck required. Real, slow APIs simply eat into the window.
+  const MIN_LOADER_MS = 1200
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     setLoading(true)
+    const startedAt = Date.now()
     try {
       await login(email, password)
+      const remaining = MIN_LOADER_MS - (Date.now() - startedAt)
+      if (remaining > 0) await new Promise((r) => setTimeout(r, remaining))
     } catch (err: any) {
       setError(err.message || 'Invalid email or password.')
     } finally {
