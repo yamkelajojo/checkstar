@@ -260,5 +260,9 @@ describe("Sign In button transition", () => {
     // effect waits for it instead of navigating mid-animation.
     expect(src).toMatch(/MIN_LOADER_MS/);
     expect(src).toMatch(/isAuthenticated && user && !loading/);
+
+    // The loader on the orange button uses the light tone — an orange
+    // wordmark on the orange button is invisible without hover.
+    expect(src).toMatch(/tone="light"/);
   });
 });

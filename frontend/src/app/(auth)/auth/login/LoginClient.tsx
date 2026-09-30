@@ -155,7 +155,7 @@ export default function LoginClient() {
                 transition={{ duration: time.fast, ease: ease.apple }}
                 className="flex items-center justify-center"
               >
-                <Loader className="h-6 w-20" />
+                <Loader className="h-6 w-20" tone="light" />
               </motion.span>
             </motion.button>
           </form>

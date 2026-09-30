@@ -63,7 +63,7 @@ export default function ForgotPasswordClient() {
               type="submit" disabled={loading}
               className="w-full bg-primary text-white py-3 rounded-lg font-medium hover:bg-primary-dark transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
             >
-              {loading ? <Loader /> : <>Send reset link <ArrowRight size={16} /></>}
+              {loading ? <Loader tone="light" /> : <>Send reset link <ArrowRight size={16} /></>}
             </button>
           </form>
         )}

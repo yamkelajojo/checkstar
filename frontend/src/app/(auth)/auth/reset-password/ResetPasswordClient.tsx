@@ -119,7 +119,7 @@ export default function ResetPasswordClient() {
               type="submit" disabled={loading}
               className="w-full bg-primary text-white py-3 rounded-lg font-medium hover:bg-primary-dark transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
             >
-              {loading ? <Loader /> : <>Reset password <ArrowRight size={16} /></>}
+              {loading ? <Loader tone="light" /> : <>Reset password <ArrowRight size={16} /></>}
             </button>
           </form>
         )}
