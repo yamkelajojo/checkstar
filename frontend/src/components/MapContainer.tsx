@@ -98,17 +98,29 @@ export default function MapContainer({
     } = initialPropsRef.current;
 
     let map: any = null;
+    let cancelled = false;
 
     async function initMap() {
       const L = await import("leaflet");
+      if (cancelled || !mapEl.isConnected) return;
       leafletRef.current = L;
 
-      map = L.map(mapEl, {
-        center: initialCenter,
-        zoom: initialZoom,
-        zoomControl: true,
-        attributionControl: true,
-      });
+      if ((mapEl as any)._leaflet_id != null) {
+        try {
+          delete (mapEl as any)._leaflet_id;
+        } catch {}
+      }
+
+      try {
+        map = L.map(mapEl, {
+          center: initialCenter,
+          zoom: initialZoom,
+          zoomControl: true,
+          attributionControl: true,
+        });
+      } catch {
+        return;
+      }
 
       // Resolved per mount (not at module scope) so the provider follows the
       // environment the app actually boots in — and so an operator can add a
@@ -132,7 +144,7 @@ export default function MapContainer({
 
       tileLayer.addTo(map);
 
-      if (disposedRef.current) {
+      if (cancelled || disposedRef.current) {
         // Unmounted while the chunk was loading — tear down immediately.
         try {
           map.remove();
@@ -145,7 +157,7 @@ export default function MapContainer({
       map!.whenReady(() => {
         setTimeout(() => {
           try {
-            map!.invalidateSize();
+            if (!cancelled) map!.invalidateSize();
           } catch {}
         }, 100);
       });
@@ -156,11 +168,13 @@ export default function MapContainer({
     initMap();
 
     return () => {
+      cancelled = true;
       disposedRef.current = true;
       if (map) {
         try {
           map.remove();
         } catch {}
+        map = null;
       }
       if (mapInstance.current) {
         try {
@@ -178,23 +192,39 @@ export default function MapContainer({
     const map = mapInstance.current;
     if (!L || !map) return;
 
-    markersRef.current.forEach((m) => map.removeLayer(m));
+    markersRef.current.forEach((m) => {
+      try {
+        map.removeLayer(m);
+      } catch {}
+    });
     markersRef.current = [];
 
     markers.forEach(({ position, popup, tooltip }) => {
-      const marker = L.marker(position, { icon: checkstarPinIcon(L) }).addTo(
-        map,
-      );
-      if (popup) marker.bindPopup(popup);
-      if (tooltip) marker.bindTooltip(tooltip);
-      markersRef.current.push(marker);
+      if (!Array.isArray(position) || position.length < 2 || !Number.isFinite(position[0]) || !Number.isFinite(position[1])) {
+        return;
+      }
+      try {
+        const marker = L.marker(position, { icon: checkstarPinIcon(L) }).addTo(
+          map,
+        );
+        if (popup) marker.bindPopup(popup);
+        if (tooltip) marker.bindTooltip(tooltip);
+        markersRef.current.push(marker);
+      } catch {}
     });
   }, [markers, mapReady]);
 
   useEffect(() => {
     const map = mapInstance.current;
     if (!map || !fitBounds || fitBounds.length === 0) return;
-    map.fitBounds(fitBounds, { padding: [50, 50] });
+    try {
+      const validBounds = fitBounds.filter(
+        (pt) => Array.isArray(pt) && pt.length >= 2 && Number.isFinite(pt[0]) && Number.isFinite(pt[1]),
+      );
+      if (validBounds.length > 0) {
+        map.fitBounds(validBounds, { padding: [50, 50] });
+      }
+    } catch {}
   }, [fitBounds, mapReady]);
 
   useEffect(() => {

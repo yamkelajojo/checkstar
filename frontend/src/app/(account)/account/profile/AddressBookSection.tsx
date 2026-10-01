@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'motion/react'
 import { MapPin, Plus, Pencil, Trash2, Star, Loader2, LocateFixed, X } from 'lucide-react'
 import { api, ApiError } from '@/lib/api'
 import { getDeliveryCoords } from '@/lib/delivery-coords'
+import { searchAddressSuggestions, resolveAddressCoordinates } from '@/lib/address-suggestions'
 import type { UserAddress } from '@/types'
 
 interface FormState {
@@ -28,6 +29,9 @@ export default function AddressBookSection() {
   const [formError, setFormError] = useState('')
   const [listError, setListError] = useState('')
   const [locating, setLocating] = useState(false)
+  const [showSuggestions, setShowSuggestions] = useState(false)
+
+  const addressSuggestions = form ? searchAddressSuggestions(form.address, 5) : []
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['addresses'] })
 
@@ -207,11 +211,14 @@ export default function AddressBookSection() {
                     setFormError('Please enter the street address.')
                     return
                   }
-                  if (!form.latitude.trim() || !form.longitude.trim() || Number.isNaN(Number(form.latitude)) || Number.isNaN(Number(form.longitude))) {
-                    setFormError('Pin the location — use your current location or enter coordinates.')
-                    return
+                  let lat = form.latitude.trim()
+                  let lng = form.longitude.trim()
+                  if (!lat || !lng || Number.isNaN(Number(lat)) || Number.isNaN(Number(lng))) {
+                    const resolved = resolveAddressCoordinates(form.address)
+                    lat = String(resolved.latitude)
+                    lng = String(resolved.longitude)
                   }
-                  saveMutation.mutate(form)
+                  saveMutation.mutate({ ...form, latitude: lat, longitude: lng })
                 }}
                 className="mt-4 space-y-3 overflow-hidden"
               >
@@ -244,17 +251,50 @@ export default function AddressBookSection() {
                   </div>
                 </div>
 
-                <div>
+                <div className="relative">
                   <label htmlFor="address-street" className="block text-xs font-medium text-gray-600 mb-1">Street Address</label>
                   <textarea
                     id="address-street"
                     rows={2}
                     maxLength={500}
                     value={form.address}
-                    onChange={e => setForm({ ...form, address: e.target.value })}
-                    placeholder="12 Flint Road, Umgeni Park, Durban"
+                    onFocus={() => setShowSuggestions(true)}
+                    onBlur={() => setTimeout(() => setShowSuggestions(false), 180)}
+                    onChange={e => {
+                      const val = e.target.value
+                      setForm({ ...form, address: val })
+                      setShowSuggestions(true)
+                    }}
+                    placeholder="Start typing a street or suburb (e.g. 195 Florida Road, Morningside, Durban)"
                     className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none resize-none"
                   />
+                  {showSuggestions && addressSuggestions.length > 0 && (
+                    <div className="absolute left-0 right-0 top-full mt-1 z-30 bg-white border border-gray-200 rounded-xl shadow-lg max-h-48 overflow-y-auto divide-y divide-gray-50">
+                      {addressSuggestions.map(s => (
+                        <button
+                          key={s.id}
+                          type="button"
+                          onMouseDown={ev => {
+                            ev.preventDefault()
+                            setForm({
+                              ...form,
+                              address: s.address,
+                              latitude: String(s.latitude),
+                              longitude: String(s.longitude),
+                            })
+                            setShowSuggestions(false)
+                          }}
+                          className="w-full text-left px-3 py-2 hover:bg-gray-50 transition-colors flex items-start gap-2"
+                        >
+                          <MapPin size={13} className="text-primary mt-0.5 shrink-0" />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-medium text-gray-900 truncate">{s.address}</p>
+                            <p className="text-[10px] text-gray-400">Checkstar {s.storeArea} ({s.latitude.toFixed(4)}, {s.longitude.toFixed(4)})</p>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">

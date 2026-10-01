@@ -125,15 +125,15 @@ export function BannerCarousel({ banners, onSlidePress }: BannerCarouselProps) {
 
     const containerStyle = {
       marginHorizontal: semanticSpacing.screenPadding,
-      borderRadius: 16,
-      minHeight: 148,
+      borderRadius: 14,
+      minHeight: 112,
       justifyContent: 'center' as const,
       overflow: 'hidden' as const,
       shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.12,
-      shadowRadius: 12,
-      elevation: 4,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.08,
+      shadowRadius: 8,
+      elevation: 3,
       borderWidth: 1,
       borderColor: 'rgba(255,255,255,0.1)',
     };
@@ -156,7 +156,7 @@ export function BannerCarousel({ banners, onSlidePress }: BannerCarouselProps) {
               end={{ x: 1, y: 1 }}
               style={containerStyle}
             >
-              <View style={{ padding: semanticSpacing.xl, minHeight: 148, justifyContent: 'center' }}>
+              <View style={{ paddingHorizontal: semanticSpacing.md, paddingVertical: semanticSpacing.sm + 2, minHeight: 112, justifyContent: 'center' }}>
                 {item.pattern === 'dots' && <PatternOverlay type="dots" />}
                 {item.pattern === 'lines' && <PatternOverlay type="lines" />}
                 {item.pattern === 'circles' && <PatternOverlay type="circles" />}
@@ -165,7 +165,7 @@ export function BannerCarousel({ banners, onSlidePress }: BannerCarouselProps) {
               </View>
             </LinearGradient>
           ) : (
-            <View style={[containerStyle, { backgroundColor: colors[0], padding: semanticSpacing.xl }]}>
+            <View style={[containerStyle, { backgroundColor: colors[0], paddingHorizontal: semanticSpacing.md, paddingVertical: semanticSpacing.sm + 2 }]}>
               {item.pattern === 'dots' && <PatternOverlay type="dots" />}
               {item.pattern === 'lines' && <PatternOverlay type="lines" />}
               {item.pattern === 'circles' && <PatternOverlay type="circles" />}
@@ -179,7 +179,7 @@ export function BannerCarousel({ banners, onSlidePress }: BannerCarouselProps) {
 
   return (
     <FadeSlideIn delay={80} distance={12}>
-      <View style={{ marginTop: semanticSpacing.lg }}>
+      <View style={{ marginTop: 0 }}>
         <FlatList
           ref={flatListRef}
           data={activeSlides}
@@ -200,7 +200,7 @@ export function BannerCarousel({ banners, onSlidePress }: BannerCarouselProps) {
         />
 
         {totalSlides > 1 ? (
-          <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 8, marginTop: semanticSpacing.md }} accessibilityRole="tablist">
+          <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 6, marginTop: semanticSpacing.xs }} accessibilityRole="tablist">
             {activeSlides.map((_, index) => {
               const isActive = index === currentIndex;
               return (

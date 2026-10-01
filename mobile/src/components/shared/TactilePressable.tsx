@@ -115,6 +115,12 @@ export function TactilePressable({
   };
 
   const flatStyle = style ? StyleSheet.flatten(style) : undefined;
+  const shouldStretch =
+    variant === 'card' ||
+    flatStyle?.width === '100%' ||
+    typeof flatStyle?.width === 'number' ||
+    flatStyle?.alignSelf === 'stretch' ||
+    (typeof flatStyle?.flex === 'number' && flatStyle.flex > 0);
 
   return (
     <Animated.View
@@ -123,14 +129,16 @@ export function TactilePressable({
       <View
         style={{
           flex: 1,
-          alignItems: 'center',
-          justifyContent: 'center',
+          width: shouldStretch ? '100%' : undefined,
+          alignItems: variant === 'card' ? 'stretch' : (flatStyle?.alignItems ?? 'center'),
+          justifyContent: flatStyle?.justifyContent ?? 'center',
           flexDirection: flatStyle?.flexDirection ?? 'column',
           gap: flatStyle?.gap ?? 0,
         }}
       >
         <Pressable
           {...rest}
+          style={variant === 'card' ? { width: '100%' } : undefined}
           accessibilityRole={accessibilityRole}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           onPressIn={handlePressIn}

@@ -42,7 +42,7 @@ class ProductCarouselController extends Controller
 
         $products = Product::whereIn('id', $productIds)
             ->where('is_active', true)
-            ->with(['category', 'specials'])
+            ->with(['category', 'specials', 'storeProducts.store'])
             ->get()
             ->sortBy(fn ($p) => array_search($p->id, $productIds))
             ->values();
@@ -55,6 +55,19 @@ class ProductCarouselController extends Controller
         foreach ($products as $product) {
             $this->media->applyToProduct($product);
             $product->effective_price = $this->pricingService->effectivePrice($product, $product->specials ?? collect());
+            $storeProducts = $product->relationLoaded('storeProducts') ? $product->storeProducts : collect();
+            $product->stores = $storeProducts
+                ->filter(fn ($sp) => $sp->store && $sp->store->is_active)
+                ->map(fn ($sp) => [
+                    'store_product_id' => $sp->id,
+                    'id' => $sp->store->id,
+                    'name' => $sp->store->name,
+                    'slug' => $sp->store->slug,
+                    'is_available' => (bool) $sp->is_available && ($sp->stock_quantity - ($sp->reserved_quantity ?? 0)) > 0,
+                    'stock_quantity' => max(0, $sp->stock_quantity - ($sp->reserved_quantity ?? 0)),
+                ])
+                ->values();
+            $product->unsetRelation('storeProducts');
         }
 
         return $products;
@@ -67,7 +80,7 @@ class ProductCarouselController extends Controller
     private function getRecentProducts(int $limit): array
     {
         $products = Product::where('is_active', true)
-            ->with(['category', 'specials'])
+            ->with(['category', 'specials', 'storeProducts.store'])
             ->orderBy('created_at', 'desc')
             ->limit($limit)
             ->get();
@@ -116,7 +129,7 @@ class ProductCarouselController extends Controller
     {
         $products = Product::where('is_active', true)
             ->where('created_at', '>=', Carbon::now()->subDays(14))
-            ->with(['category', 'specials'])
+            ->with(['category', 'specials', 'storeProducts.store'])
             ->orderBy('created_at', 'desc')
             ->limit(10)
             ->get();

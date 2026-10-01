@@ -43,11 +43,13 @@ class DispatchSuggestionService
         }
 
         $riders = DB::table('riders')
-            ->where('is_available', true)
-            ->whereNull('suspended_at')
-            ->where('store_id', $order->store_id)
-            ->whereNotNull('latitude')
-            ->whereNotNull('longitude')
+            ->leftJoin('users', 'riders.user_id', '=', 'users.id')
+            ->select('riders.*', 'users.name as user_name')
+            ->where('riders.is_available', true)
+            ->whereNull('riders.suspended_at')
+            ->where('riders.store_id', $order->store_id)
+            ->whereNotNull('riders.latitude')
+            ->whereNotNull('riders.longitude')
             ->get()
             ->map(function ($rider) use ($customerLat, $customerLng) {
                 $distance = GeoUtils::haversineDistance(
@@ -90,7 +92,7 @@ class DispatchSuggestionService
     {
         return (object) [
             'id' => $rider->id,
-            'name' => 'Rider #'.$rider->id,
+            'name' => ! empty($rider->user_name) ? $rider->user_name : 'Rider #'.$rider->id,
             'distance_meters' => (int) $rider->distance_meters,
             'eta_seconds' => $rider->eta_seconds,
             'latitude' => $rider->latitude,

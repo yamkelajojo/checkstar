@@ -65,7 +65,7 @@ class RoutingService
         }
 
         try {
-            $response = Http::timeout(10)->get("{$this->osrmBaseUrl}/route/v1/driving/{$fromLng},{$fromLat};{$toLng},{$toLat}", [
+            $response = Http::timeout(2)->connectTimeout(1)->get("{$this->osrmBaseUrl}/route/v1/driving/{$fromLng},{$fromLat};{$toLng},{$toLat}", [
                 'overview' => 'full',
                 'geometries' => 'polyline',
                 'steps' => 'false',
@@ -89,7 +89,7 @@ class RoutingService
      */
     private function fetchFromOsrm(float $fromLat, float $fromLng, float $toLat, float $toLng): RouteResult
     {
-        $response = Http::timeout(10)->get("{$this->osrmBaseUrl}/route/v1/driving/{$fromLng},{$fromLat};{$toLng},{$toLat}", [
+        $response = Http::timeout(2)->connectTimeout(1)->get("{$this->osrmBaseUrl}/route/v1/driving/{$fromLng},{$fromLat};{$toLng},{$toLat}", [
             'overview' => 'full',
             'geometries' => 'polyline',
             'steps' => 'false',

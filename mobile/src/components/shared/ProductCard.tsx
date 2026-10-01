@@ -84,9 +84,10 @@ export function ProductCard({ product, storeProductId = null, style, onRequestSu
       accessibilityLabel={product.name}
       style={[{ borderRadius: semanticRadius.card, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2, width: '100%' }, style]}
     >
-      <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: semanticRadius.card, padding: semanticSpacing.cardPadding, gap: semanticSpacing.elementGap, minHeight: 238, borderWidth: 1, borderColor: theme.colors.border.subtle, flexDirection: 'column' }}>
+      <View style={{ width: '100%', backgroundColor: theme.colors.surface.primary, borderRadius: semanticRadius.card, padding: semanticSpacing.cardPadding, gap: semanticSpacing.elementGap, minHeight: 238, borderWidth: 1, borderColor: theme.colors.border.subtle, flexDirection: 'column' }}>
         <View
           style={{
+            width: '100%',
             height: 132,
             borderRadius: semanticRadius.imageFrame,
             backgroundColor: imageTint,
@@ -95,7 +96,7 @@ export function ProductCard({ product, storeProductId = null, style, onRequestSu
             overflow: 'hidden',
           }}
         >
-          <SaveHeart productId={product.id} />
+          <SaveHeart productId={product.id} product={product} />
           <View
             style={{
               width: 94,
@@ -123,7 +124,7 @@ export function ProductCard({ product, storeProductId = null, style, onRequestSu
               style={{
                 position: 'absolute',
                 top: semanticSpacing.tightGap,
-                right: semanticSpacing.tightGap,
+                left: semanticSpacing.tightGap,
                 backgroundColor: brand.orange,
                 borderRadius: semanticRadius.badge,
                 paddingHorizontal: semanticSpacing.inlineGap + 2,

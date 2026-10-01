@@ -83,18 +83,40 @@ export function useSpecials(storeId?: number | null) {
       // carousel renders product cards, so flatten the attached products
       // (deduped) — mapping the special objects themselves produced blank,
       // unpriceable cards.
-      type SpecialWithProducts = { products?: ApiProduct[] };
+      type SpecialWithProducts = {
+        special_price?: string | number | null;
+        product?: ApiProduct | null;
+        products?: Array<ApiProduct & { pivot?: { special_price?: string | number | null } }>;
+      };
       const seen = new Set<number>();
-      const products: ApiProduct[] = [];
+      const products: ProductVO[] = [];
       for (const special of result.data as unknown as SpecialWithProducts[]) {
-        for (const product of special.products ?? []) {
+        const rawList =
+          Array.isArray(special.products) && special.products.length > 0
+            ? special.products
+            : special.product
+              ? [special.product as ApiProduct & { pivot?: { special_price?: string | number | null } }]
+              : [];
+        for (const product of rawList) {
           if (!seen.has(product.id)) {
             seen.add(product.id);
-            products.push(product);
+            const vo = mapProduct(product);
+            const pivotSpecial = product.pivot?.special_price ?? special.special_price;
+            const salePriceCents =
+              pivotSpecial != null ? Math.round(Number(pivotSpecial) * 100) : vo.salePriceCents;
+            const effectivePriceCents =
+              salePriceCents != null && salePriceCents < vo.effectivePriceCents
+                ? salePriceCents
+                : vo.effectivePriceCents;
+            products.push({
+              ...vo,
+              salePriceCents,
+              effectivePriceCents,
+            });
           }
         }
       }
-      return products.map(mapProduct);
+      return products;
     },
   });
 }
@@ -129,10 +151,18 @@ export function useTrendingProducts() {
   return useQuery({
     queryKey: queryKeys.trendingProducts,
     queryFn: async (): Promise<ProductVO[]> => {
-      const data = await fetchTrendingProducts();
-      return data.map(mapProduct);
+      try {
+        const data = await fetchTrendingProducts();
+        const mapped = (data ?? []).map(mapProduct);
+        if (mapped.length > 0) return mapped;
+      } catch {
+        // Fall back to featured products if carousel endpoint fails
+      }
+      const fallback = await fetchProducts({ featured: true });
+      return (fallback.data ?? []).map(mapProduct);
     },
     staleTime: 120_000,
+    retry: 2,
   });
 }
 
@@ -140,10 +170,18 @@ export function usePopularProducts() {
   return useQuery({
     queryKey: queryKeys.popularProducts,
     queryFn: async (): Promise<ProductVO[]> => {
-      const data = await fetchPopularProducts();
-      return data.map(mapProduct);
+      try {
+        const data = await fetchPopularProducts();
+        const mapped = (data ?? []).map(mapProduct);
+        if (mapped.length > 0) return mapped;
+      } catch {
+        // Fall back to general products if carousel endpoint fails
+      }
+      const fallback = await fetchProducts({});
+      return (fallback.data ?? []).map(mapProduct);
     },
     staleTime: 120_000,
+    retry: 2,
   });
 }
 
@@ -151,9 +189,17 @@ export function useNewArrivals() {
   return useQuery({
     queryKey: queryKeys.newArrivals,
     queryFn: async (): Promise<ProductVO[]> => {
-      const data = await fetchNewArrivals();
-      return data.map(mapProduct);
+      try {
+        const data = await fetchNewArrivals();
+        const mapped = (data ?? []).map(mapProduct);
+        if (mapped.length > 0) return mapped;
+      } catch {
+        // Fall back to general products if carousel endpoint fails
+      }
+      const fallback = await fetchProducts({});
+      return (fallback.data ?? []).map(mapProduct);
     },
     staleTime: 120_000,
+    retry: 2,
   });
 }

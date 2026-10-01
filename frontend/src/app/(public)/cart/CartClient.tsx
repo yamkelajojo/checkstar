@@ -13,6 +13,7 @@ import AuthRequiredModal from '@/components/AuthRequiredModal'
 import { usePlaceOrder } from '@/lib/query'
 import { api, ApiError } from '@/lib/api'
 import { getDeliveryCoords, type DeliveryCoords } from '@/lib/delivery-coords'
+import { searchAddressSuggestions, resolveAddressCoordinates, type AddressSuggestion } from '@/lib/address-suggestions'
 import LocationFallbackNotice from '@/components/LocationFallbackNotice'
 import type { Dispatch, FulfilmentMethod, Store as StoreType, UserAddress } from '@/types'
 import OrderConfirmation from './OrderConfirmation'
@@ -36,7 +37,13 @@ export default function CartClient() {
   const [selectedStoreId, setSelectedStoreId] = useState<number | ''>('')
   const [saveAddress, setSaveAddress] = useState(false)
   const [addressLabel, setAddressLabel] = useState('Home')
+  const [showSuggestions, setShowSuggestions] = useState(false)
   const shouldReduce = useReducedMotion()
+
+  const addressSuggestions = useMemo(
+    () => searchAddressSuggestions(deliveryAddress, 5),
+    [deliveryAddress],
+  )
 
   const placeOrderMutation = usePlaceOrder()
 
@@ -102,7 +109,8 @@ export default function CartClient() {
           setPlaceError('Please enter a delivery address.')
           return
         }
-        const resolved = coords ?? (await getDeliveryCoords())
+        const rawCoords = coords ?? (await getDeliveryCoords())
+        const resolved = resolveAddressCoordinates(deliveryAddress.trim(), rawCoords)
         payload.delivery_address = deliveryAddress.trim()
         payload.delivery_latitude = resolved.latitude
         payload.delivery_longitude = resolved.longitude
@@ -144,7 +152,10 @@ export default function CartClient() {
   }
 
   const subtotal = total
-  const deliveryFee: number = 0
+  const FREE_DELIVERY_THRESHOLD = 350
+  const STANDARD_DELIVERY_FEE = 35
+  const deliveryFee: number = fulfilment === 'pickup' || subtotal >= FREE_DELIVERY_THRESHOLD ? 0 : STANDARD_DELIVERY_FEE
+  const deliveryProgress = Math.min(1, subtotal / FREE_DELIVERY_THRESHOLD)
 
   if (placedOrder) {
     return <OrderConfirmation order={placedOrder} dispatch={dispatch} />
@@ -306,11 +317,28 @@ export default function CartClient() {
                       </span>
                     </div>
                     <div className="flex justify-between text-gray-500">
-                      <span>{fulfilment === 'pickup' ? 'Pickup' : 'Delivery'}</span>
-                      <span className={deliveryFee === 0 ? 'text-green-600 font-semibold' : 'font-medium'}>
+                      <span>{fulfilment === 'pickup' ? 'Pickup' : 'Delivery Fee'}</span>
+                      <span className={deliveryFee === 0 ? 'text-green-600 font-semibold' : 'font-medium text-gray-900'}>
                         {deliveryFee === 0 ? 'Free' : formatZar(deliveryFee)}
                       </span>
                     </div>
+                    {fulfilment === 'delivery' && (
+                      <div className="pt-1 pb-0.5 space-y-1.5">
+                        <div className="h-1.5 w-full rounded-full bg-gray-100 overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-300 ${
+                              deliveryProgress >= 1 ? 'bg-green-500' : 'bg-primary'
+                            }`}
+                            style={{ width: `${Math.round(deliveryProgress * 100)}%` }}
+                          />
+                        </div>
+                        <p className="text-[11px] text-gray-500">
+                          {deliveryProgress >= 1
+                            ? '🎉 Free delivery unlocked!'
+                            : `Add ${formatZar(Math.max(0, FREE_DELIVERY_THRESHOLD - subtotal))} more for free delivery`}
+                        </p>
+                      </div>
+                    )}
                     <div className="border-t border-gray-100 pt-3 mt-3 flex justify-between font-bold text-[15px] tracking-tight">
                       <span>Total</span>
                       <span className="tabular-nums">
@@ -416,10 +444,42 @@ export default function CartClient() {
                                 id="delivery-address"
                                 rows={2}
                                 value={deliveryAddress}
-                                onChange={e => setDeliveryAddress(e.target.value)}
+                                onFocus={() => setShowSuggestions(true)}
+                                onBlur={() => setTimeout(() => setShowSuggestions(false), 180)}
+                                onChange={e => {
+                                  setDeliveryAddress(e.target.value)
+                                  setShowSuggestions(true)
+                                }}
                                 className="w-full pl-10 pr-3.5 py-2.5 border border-gray-200 rounded-button text-[13px] focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none resize-none leading-relaxed"
-                                placeholder="Enter your delivery address"
+                                placeholder="Start typing a street or suburb (e.g. Florida Rd, Umhlanga, Pinetown)"
                               />
+                              {showSuggestions && addressSuggestions.length > 0 && (
+                                <div
+                                  role="listbox"
+                                  aria-label="Suggested delivery addresses"
+                                  className="absolute left-0 right-0 top-full mt-1 z-30 bg-white border border-gray-200 rounded-xl shadow-lg max-h-52 overflow-y-auto divide-y divide-gray-50"
+                                >
+                                  {addressSuggestions.map((s: AddressSuggestion) => (
+                                    <button
+                                      key={s.id}
+                                      type="button"
+                                      onMouseDown={ev => {
+                                        ev.preventDefault()
+                                        setDeliveryAddress(s.address)
+                                        setCoords({ latitude: s.latitude, longitude: s.longitude, usedFallback: false })
+                                        setShowSuggestions(false)
+                                      }}
+                                      className="w-full text-left px-3 py-2 hover:bg-gray-50 transition-colors flex items-start gap-2"
+                                    >
+                                      <MapPin size={13} className="text-primary mt-0.5 shrink-0" />
+                                      <div className="min-w-0 flex-1">
+                                        <p className="text-[12px] font-medium text-gray-900 truncate">{s.address}</p>
+                                        <p className="text-[10px] text-gray-400">Checkstar {s.storeArea} delivery zone</p>
+                                      </div>
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
                             </div>
                           </div>
 

@@ -57,50 +57,72 @@ class EventFeedService
 
     private function getOrderEvents(?string $cursor, int $limit, ?Store $contextStore): Collection
     {
+        $now = now()->addSeconds(5)->toDateTimeString();
+
         $query = DB::table('orders')
-            ->select('id', 'order_number', 'status', 'created_at')
+            ->select('id', 'order_number', 'status', 'created_at', 'updated_at')
             ->when($contextStore, fn ($q) => $q->where('store_id', $contextStore->id))
+            ->where('created_at', '<=', $now)
             ->when($cursor, fn ($q) => $q->where('created_at', '<', $cursor))
             ->orderByDesc('created_at')
             ->limit($limit);
 
         return $query->get()
-            ->map(fn ($row) => $this->mapEvent(
-                (object) [
-                    'id' => $row->id,
-                    'type' => 'order_state_change',
-                    'status' => $row->status,
-                    'message' => "Order #{$row->order_number} {$row->status}",
-                    'entity_type' => 'order',
-                    'entity_id' => $row->id,
-                    'created_at' => $row->created_at,
-                ],
-                self::STATUS_SEVERITY[$row->status] ?? 'info'
-            ));
+            ->map(function ($row) use ($now) {
+                // If an order was updated after creation (and not a future-seeded timestamp),
+                // use the latest status transition timestamp so status changes surface at the top.
+                $eventTime = $row->created_at;
+                if (! empty($row->updated_at) && $row->updated_at > $row->created_at && $row->updated_at <= $now && ! str_starts_with((string) $row->order_number, 'ORD-')) {
+                    $eventTime = $row->updated_at;
+                }
+
+                $statusLabel = str_replace('_', ' ', (string) $row->status);
+
+                return $this->mapEvent(
+                    (object) [
+                        'id' => $row->id.'-'.$row->status,
+                        'type' => 'order_state_change',
+                        'status' => $row->status,
+                        'message' => "Order #{$row->order_number} {$statusLabel}",
+                        'entity_type' => 'order',
+                        'entity_id' => $row->id,
+                        'created_at' => $eventTime,
+                    ],
+                    self::STATUS_SEVERITY[$row->status] ?? 'info'
+                );
+            });
     }
 
     private function getRiderEvents(?string $cursor, int $limit, ?Store $contextStore): Collection
     {
+        $now = now()->addSeconds(5)->toDateTimeString();
+
         $query = DB::table('riders')
-            ->select('id', 'is_available', 'updated_at')
-            ->when($contextStore, fn ($q) => $q->where('store_id', $contextStore->id))
-            ->when($cursor, fn ($q) => $q->where('updated_at', '<', $cursor))
-            ->orderByDesc('updated_at')
+            ->leftJoin('users', 'riders.user_id', '=', 'users.id')
+            ->select('riders.id', 'riders.is_available', 'riders.updated_at', 'users.name as user_name')
+            ->when($contextStore, fn ($q) => $q->where('riders.store_id', $contextStore->id))
+            ->where('riders.updated_at', '<=', $now)
+            ->when($cursor, fn ($q) => $q->where('riders.updated_at', '<', $cursor))
+            ->orderByDesc('riders.updated_at')
             ->limit($limit);
 
         return $query->get()
-            ->map(fn ($row) => $this->mapEvent(
-                (object) [
-                    'id' => $row->id,
-                    'type' => 'rider_availability',
-                    'status' => $row->is_available,
-                    'message' => 'Rider #'.$row->id.' went '.($row->is_available ? 'available' : 'unavailable'),
-                    'entity_type' => 'rider',
-                    'entity_id' => $row->id,
-                    'created_at' => $row->updated_at,
-                ],
-                'info'
-            ));
+            ->map(function ($row) {
+                $riderLabel = ! empty($row->user_name) ? "{$row->user_name} (#{$row->id})" : "Rider #{$row->id}";
+
+                return $this->mapEvent(
+                    (object) [
+                        'id' => $row->id.'-'.($row->is_available ? '1' : '0'),
+                        'type' => 'rider_availability',
+                        'status' => $row->is_available,
+                        'message' => $riderLabel.' went '.($row->is_available ? 'available' : 'unavailable'),
+                        'entity_type' => 'rider',
+                        'entity_id' => $row->id,
+                        'created_at' => $row->updated_at,
+                    ],
+                    'info'
+                );
+            });
     }
 
     private function getAuditEvents(?string $cursor, int $limit, ?Store $contextStore): Collection

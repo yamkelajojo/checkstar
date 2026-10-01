@@ -87,13 +87,13 @@ export function LiveDeliveryMap({
   });
 
   // Fetch route geometry if not provided — store -> delivery
-  const { data: fetchedGeometry } = useQuery({
+  const { data: fetchedRoute } = useQuery({
     queryKey: [...queryKeys.order(orderId), 'route-geometry', storePoint?.lat, storePoint?.lng, deliveryPoint?.lat, deliveryPoint?.lng],
     queryFn: async () => {
       if (!storePoint || !deliveryPoint) return null
       try {
         const res = await fetchRouteGeometry(storePoint.lat, storePoint.lng, deliveryPoint.lat, deliveryPoint.lng)
-        return res.geometry || null
+        return res || null
       } catch {
         return null
       }
@@ -102,7 +102,9 @@ export function LiveDeliveryMap({
     staleTime: 5 * 60 * 1000,
   });
 
-  const effectiveGeometry = geometry || fetchedGeometry || null
+  const effectiveGeometry = geometry || fetchedRoute?.geometry || null
+  const effectiveDistanceKm = distanceKm ?? fetchedRoute?.distance_km
+  const effectiveDurationMinutes = durationMinutes ?? fetchedRoute?.duration_minutes
 
   // Compute staleness from recorded_at
   const isStale = useMemo(() => {
@@ -323,19 +325,19 @@ export function LiveDeliveryMap({
 
         {/* Metrics overlay */}
         <View style={styles.metricsOverlay} pointerEvents="none">
-          {distanceKm != null && (
+          {effectiveDistanceKm != null && (
             <View style={[styles.metricChip, { backgroundColor: 'rgba(0,0,0,0.75)' }]}>
               <MapPin size={12} color={brand.success} />
               <Text style={[textStyle.micro, { color: '#fff', fontWeight: weights.semibold }]}>
-                {formatNumeric(distanceKm, 1)} km
+                {formatNumeric(effectiveDistanceKm, 1)} km
               </Text>
             </View>
           )}
-          {durationMinutes != null && (
+          {effectiveDurationMinutes != null && (
             <View style={[styles.metricChip, { backgroundColor: 'rgba(0,0,0,0.75)' }]}>
               <Clock size={12} color={brand.orange} />
               <Text style={[textStyle.micro, { color: '#fff', fontWeight: weights.semibold }]}>
-                {durationMinutes} min
+                {effectiveDurationMinutes} min
               </Text>
             </View>
           )}

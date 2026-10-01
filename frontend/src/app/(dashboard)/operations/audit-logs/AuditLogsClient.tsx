@@ -26,6 +26,11 @@ export default function AuditLogsClient() {
   const [search, setSearch] = useState("");
   const [entityType, setEntityType] = useState("");
 
+  if (user?.role === "developer" && !storeIdInput && stores.length > 0) {
+    const firstId = (stores[0] as { id?: number })?.id;
+    if (firstId != null) setStoreIdInput(String(firstId));
+  }
+
   const activeStoreId =
     user?.role === "developer" && storeIdInput
       ? Number(storeIdInput)

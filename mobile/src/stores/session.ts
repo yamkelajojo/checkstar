@@ -9,6 +9,7 @@ import {
 } from '../services/pushNotificationService';
 import { queryClient } from '../lib/queryKeys';
 import { BOOT_TIMEOUT_MS } from '../lib/constants';
+import { useFavoritesStore } from './favoritesStore';
 
 export type SessionStatus = 'boot' | 'authenticated' | 'guest';
 
@@ -63,9 +64,11 @@ export const useSession = create<SessionState>((set) => ({
           }
         } else {
           set({ status: 'authenticated', token, user: cached });
+          useFavoritesStore.getState().loadFavorites().catch(() => {});
         }
       } else {
         set({ status: 'guest', token: null, user: null });
+        useFavoritesStore.getState().loadFavorites().catch(() => {});
       }
     } catch {
       // Timeout or storage error — fall through to guest
@@ -78,6 +81,7 @@ export const useSession = create<SessionState>((set) => ({
     await tokenStorage.set(token);
     await storage.set(STORAGE_KEYS.session, user);
     set({ status: 'authenticated', token, user });
+    useFavoritesStore.getState().loadFavorites().catch(() => {});
     registerForPushNotifications();
   },
 
@@ -90,6 +94,7 @@ export const useSession = create<SessionState>((set) => ({
     try {
       getGlobalSyncRef().current = false;
     } catch {}
+    useFavoritesStore.getState().clearFavorites().catch(() => {});
     // Clear all cached queries to prevent stale data leakage between sessions
     queryClient.clear();
     set({ status: 'guest', token: null, user: null });

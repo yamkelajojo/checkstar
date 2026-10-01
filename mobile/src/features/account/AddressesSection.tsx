@@ -11,6 +11,11 @@ import { FadeSlideIn } from '../../components/shared/FadeSlideIn';
 import { CrashCascadeIn } from '../../components/shared/CrashCascadeIn';
 import { haptic } from '../../lib/haptics';
 import { getDeliveryCoords } from '../../lib/deliveryCoords';
+import {
+  searchAddressSuggestions,
+  resolveAddressCoordinates,
+  type AddressSuggestion,
+} from '../../lib/addressSuggestions';
 import { fetchAddresses, createAddress, updateAddress, deleteAddress } from '../../lib/apiClient';
 import type { ApiUserAddress } from '../../lib/types';
 
@@ -20,10 +25,13 @@ export function AddressesSection() {
   const [adding, setAdding] = useState(false);
   const [label, setLabel] = useState('');
   const [address, setAddress] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const [locating, setLocating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  const suggestions: AddressSuggestion[] = showSuggestions ? searchAddressSuggestions(address, 5) : [];
 
   const refresh = useCallback(() => {
     void fetchAddresses().then(setAddresses).catch(() => setAddresses([]));
@@ -49,12 +57,26 @@ export function AddressesSection() {
     if (!address.trim()) { setError('Please enter the street address.'); haptic.warning(); return; }
     let latitude = coords?.latitude, longitude = coords?.longitude;
     if (latitude == null || longitude == null) {
-      try { const fix = await getDeliveryCoords(); latitude = fix.latitude; longitude = fix.longitude; } catch { setError('Pin the location first (use my current location).'); haptic.warning(); return; }
+      try {
+        const fix = await getDeliveryCoords();
+        if (fix.usedFallback) {
+          const resolved = resolveAddressCoordinates(address);
+          latitude = resolved.latitude;
+          longitude = resolved.longitude;
+        } else {
+          latitude = fix.latitude;
+          longitude = fix.longitude;
+        }
+      } catch {
+        const resolved = resolveAddressCoordinates(address);
+        latitude = resolved.latitude;
+        longitude = resolved.longitude;
+      }
     }
     setSaving(true); setError(null);
     try {
       await createAddress({ label: label.trim() || 'Home', address: address.trim(), latitude: latitude!, longitude: longitude!, is_default: (addresses?.length ?? 0) === 0 });
-      haptic.success(); setAdding(false); setLabel(''); setAddress(''); setCoords(null); refresh();
+      haptic.success(); setAdding(false); setLabel(''); setAddress(''); setCoords(null); setShowSuggestions(false); refresh();
     } catch (e) { setError(e instanceof Error ? e.message : 'Could not save the address.'); haptic.warning(); } finally { setSaving(false); }
   };
 
@@ -147,7 +169,49 @@ export function AddressesSection() {
         <FadeSlideIn delay={120} distance={10}>
           <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: 16, padding: 14, gap: 10, borderWidth: 1, borderColor: theme.colors.border.subtle, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 1 }}>
             <TextInput value={label} onChangeText={setLabel} placeholder="Label (e.g. Home, Work)" placeholderTextColor={theme.colors.text.tertiary} maxLength={50} style={{ backgroundColor: theme.colors.background.secondary, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, color: theme.colors.text.primary, fontSize: 12, borderWidth: 1, borderColor: theme.colors.border.subtle }} />
-            <TextInput value={address} onChangeText={setAddress} placeholder="Street address" placeholderTextColor={theme.colors.text.tertiary} multiline style={{ backgroundColor: theme.colors.background.secondary, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, color: theme.colors.text.primary, fontSize: 12, minHeight: 60, textAlignVertical: 'top', borderWidth: 1, borderColor: theme.colors.border.subtle }} />
+            <TextInput
+              value={address}
+              onChangeText={(val) => {
+                setAddress(val);
+                setShowSuggestions(true);
+              }}
+              onFocus={() => setShowSuggestions(true)}
+              placeholder="Street address"
+              placeholderTextColor={theme.colors.text.tertiary}
+              multiline
+              style={{ backgroundColor: theme.colors.background.secondary, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, color: theme.colors.text.primary, fontSize: 12, minHeight: 60, textAlignVertical: 'top', borderWidth: 1, borderColor: theme.colors.border.subtle }}
+            />
+            {showSuggestions && suggestions.length > 0 ? (
+              <View style={{ backgroundColor: theme.colors.background.secondary, borderRadius: 10, borderWidth: 1, borderColor: theme.colors.border.subtle, overflow: 'hidden' }}>
+                {suggestions.map((suggestion) => (
+                  <TactilePressable
+                    key={suggestion.id}
+                    onPress={() => {
+                      haptic.selection();
+                      setAddress(suggestion.address);
+                      setCoords({ latitude: suggestion.latitude, longitude: suggestion.longitude });
+                      if (!label.trim()) setLabel(suggestion.suburb);
+                      setShowSuggestions(false);
+                    }}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 8,
+                      paddingHorizontal: 10,
+                      paddingVertical: 8,
+                      borderBottomWidth: 1,
+                      borderBottomColor: theme.colors.border.subtle,
+                    }}
+                  >
+                    <MapPin size={12} color={brand.orange} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: 11, fontWeight: '600', color: theme.colors.text.primary }}>{suggestion.label}</Text>
+                      <Text style={{ fontSize: 10, color: theme.colors.text.secondary }} numberOfLines={1}>{suggestion.address}</Text>
+                    </View>
+                  </TactilePressable>
+                ))}
+              </View>
+            ) : null}
             <TactilePressable onPress={() => void useMyLocation()} haptic="selection" style={{ flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', paddingVertical: 6, paddingHorizontal: 10, borderRadius: 8, borderWidth: 1, borderColor: theme.colors.border.subtle, backgroundColor: theme.colors.surface.elevated }}>
               <LocateFixed size={12} color={locating ? theme.colors.text.tertiary : brand.orange} />
               <Text style={{ color: brand.orange, fontWeight: '600', fontSize: 11 }}>{locating ? 'Locating…' : coords ? `Pinned ${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)}` : 'Use my current location'}</Text>

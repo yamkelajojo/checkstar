@@ -37,7 +37,7 @@ function OrderTimeline({ logs }: { logs?: OrderActivityLog[] }) {
             </div>
             <div className={`pb-4 ${isLast ? '' : ''}`}>
               <p className="text-sm text-gray-700">
-                {humanize(log.event_type)}
+                {humanize(log.event_type || log.new_status || (log as any).status || 'order_updated')}
               </p>
               <p className="text-xs text-gray-400">{formatDateTime(log.created_at)}</p>
             </div>

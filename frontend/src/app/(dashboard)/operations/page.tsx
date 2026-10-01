@@ -1,41 +1,94 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useMemo, useCallback } from 'react'
+import Link from 'next/link'
 import { motion, AnimatePresence, LayoutGroup } from '@/lib/motion'
 import { orchestratedLayout } from '@/lib/motion/variants'
 import { spring } from '@/lib/motion/tokens'
-import { Maximize2, Minimize2, Store as StoreIcon } from 'lucide-react'
+import { Maximize2, Minimize2, Store as StoreIcon, ArrowLeft, ChevronRight, BarChart3, FileClock } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import MetricsHud from '@/components/operations/MetricsHud'
 
 const MapContainer = dynamic(() => import('@/components/MapContainer'), { ssr: false, loading: () => <div className="h-64 bg-gray-100 rounded animate-pulse" /> })
 import EventFeed from '@/components/operations/EventFeed'
 import AlertBanner from '@/components/operations/AlertBanner'
+import DispatchPanel from '@/components/operations/DispatchPanel'
 import MapLayerToggles, { MapLayerData } from '@/components/operations/MapLayerToggles'
 import { getDispatchChime } from '@/lib/audio/dispatch-chime'
 import { useHotkeys } from '@/lib/hooks/useHotkeys'
 import { api } from '@/lib/api'
-import { useOperationsMetrics } from '@/lib/query'
+import { orderStatusLabel } from '@/lib/labels'
+import { useOperationsMetrics, useStores, useStoreOrders } from '@/lib/query'
 import { useAuthStore } from '@/stores/auth-store'
-import { useStores } from '@/lib/query'
 import Select from '@/components/ui/select'
 
 export default function OperationsPage() {
   const { user } = useAuthStore()
   const { data: stores = [] } = useStores()
   const [storeIdInput, setStoreIdInput] = useState('')
-  const activeStoreId = user?.role === 'developer' && storeIdInput ? Number(storeIdInput) : undefined
+  const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null)
 
-  const { data: metrics, isLoading: metricsLoading } = useOperationsMetrics(activeStoreId)
+  useEffect(() => {
+    if (user?.role === 'developer' && !storeIdInput && stores.length > 0) {
+      const firstId = (stores[0] as { id?: number })?.id
+      if (firstId != null) setStoreIdInput(String(firstId))
+    }
+  }, [user?.role, storeIdInput, stores])
+
+  const activeStoreId = user?.role === 'developer' ? (storeIdInput ? Number(storeIdInput) : undefined) : undefined
+  const canQueryStore = user?.role !== 'developer' || activeStoreId != null
+
+  const { data: metrics, isLoading: metricsLoading, refetch: refetchMetrics } = useOperationsMetrics(activeStoreId)
+  const { data: storeOrders = [], refetch: refetchOrders } = useStoreOrders(
+    activeStoreId,
+    { per_page: '30' },
+    { enabled: canQueryStore },
+  )
   const [expanded, setExpanded] = useState(false)
   const [mapInstance, setMapInstance] = useState<import('leaflet').Map | null>(null)
   const [mapLayerData, setMapLayerData] = useState<MapLayerData | null>(null)
   const chimeRef = useRef(getDispatchChime())
   const prevPendingRef = useRef(0)
 
-  useEffect(() => {
+  const refreshLayers = useCallback(() => {
+    if (!canQueryStore) return
     api.getOperationsMapLayers(activeStoreId).then(setMapLayerData).catch(() => {})
-  }, [activeStoreId])
+  }, [activeStoreId, canQueryStore])
+
+  useEffect(() => {
+    refreshLayers()
+    const timer = setInterval(refreshLayers, 15_000)
+    return () => clearInterval(timer)
+  }, [refreshLayers])
+
+  const mapMarkers = useMemo(() => {
+    const markers: Array<{ position: [number, number]; popup?: string; tooltip?: string }> = []
+    for (const s of stores as Array<{ id: number; name: string; address?: string; latitude?: number; longitude?: number }>) {
+      if (activeStoreId && Number(s.id) !== Number(activeStoreId)) continue
+      const lat = Number(s.latitude)
+      const lng = Number(s.longitude)
+      if (Number.isFinite(lat) && Number.isFinite(lng)) {
+        markers.push({
+          position: [lat, lng],
+          popup: `${s.name}${s.address ? ` — ${s.address}` : ''}`,
+          tooltip: s.name,
+        })
+      }
+    }
+    for (const o of storeOrders) {
+      if (!['confirmed', 'preparing', 'out_for_delivery', 'retrying'].includes(o.status)) continue
+      const lat = Number(o.delivery_latitude)
+      const lng = Number(o.delivery_longitude)
+      if (Number.isFinite(lat) && Number.isFinite(lng)) {
+        markers.push({
+          position: [lat, lng],
+          popup: `Order #${o.order_number} (${orderStatusLabel(o.status)})`,
+          tooltip: `Order #${o.order_number}`,
+        })
+      }
+    }
+    return markers
+  }, [stores, activeStoreId, storeOrders])
 
   useEffect(() => {
     if (metrics) {
@@ -75,19 +128,44 @@ export default function OperationsPage() {
         <motion.header
           layout
           transition={sharedSpring}
-          className="flex items-center justify-between px-4 md:px-6 h-14"
+          className="flex flex-wrap items-center justify-between gap-3 px-4 md:px-6 py-2.5 min-h-[56px] border-b border-gray-100 bg-white/90 backdrop-blur-sm"
         >
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-[#F58220] flex items-center justify-center text-white font-bold text-sm">C</div>
-            <motion.span layout transition={sharedSpring} className="font-display text-lg font-bold tracking-tight text-foreground">
-              CHECKSTAR OPS
-            </motion.span>
+            <Link
+              href="/admin/dashboard"
+              aria-label="Back to dashboard"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+            >
+              <ArrowLeft size={14} />
+              <span>Back to Dashboard</span>
+            </Link>
+            <ChevronRight size={13} className="text-gray-300 hidden sm:inline" />
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-lg bg-[#F58220] flex items-center justify-center text-white font-bold text-xs">C</div>
+              <motion.span layout transition={sharedSpring} className="font-display text-base sm:text-lg font-bold tracking-tight text-foreground">
+                CHECKSTAR OPS
+              </motion.span>
+            </div>
           </div>
-          <div className="flex items-center gap-4">
-            <motion.span layout transition={sharedSpring} className="text-xs text-gray-400">
+          <div className="flex items-center gap-3">
+            <Link
+              href="/operations/analytics"
+              className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+            >
+              <BarChart3 size={13} />
+              Analytics
+            </Link>
+            <Link
+              href="/operations/audit-logs"
+              className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+            >
+              <FileClock size={13} />
+              Audit Logs
+            </Link>
+            <motion.span layout transition={sharedSpring} className="text-xs text-gray-400 hidden md:inline">
               Press <kbd className="px-1 py-0.5 bg-gray-100 rounded text-[10px] font-mono">F</kbd> fullscreen
             </motion.span>
-            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" title="Live operations feed active" />
           </div>
         </motion.header>
 
@@ -152,7 +230,7 @@ export default function OperationsPage() {
               style={expanded ? { height: '100vh' } : { minHeight: 'calc(100vh - 140px)' }}
             >
               <div className="absolute inset-0 z-10">
-                <MapContainer center={[-29.825, 31.00]} zoom={12.5} onMapReady={setMapInstance} />
+                <MapContainer center={[-29.825, 31.00]} zoom={12.5} markers={mapMarkers} onMapReady={setMapInstance} />
               </div>
 
               {mapInstance && <MapLayerToggles map={mapInstance} data={mapLayerData} />}
@@ -183,12 +261,23 @@ export default function OperationsPage() {
                   exit={orchestratedLayout.panelExit}
                   transition={sharedSpring}
                 >
-                  <EventFeed storeId={activeStoreId} />
+                  <EventFeed storeId={activeStoreId} onSelectOrder={setSelectedOrderId} />
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
         </motion.div>
+
+        <DispatchPanel
+          orderId={selectedOrderId}
+          storeId={activeStoreId}
+          onClose={() => setSelectedOrderId(null)}
+          onAssigned={() => {
+            refetchMetrics()
+            refetchOrders()
+            refreshLayers()
+          }}
+        />
 
         {/* Alerts */}
         <AlertBanner storeId={activeStoreId} />

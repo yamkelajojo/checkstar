@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, FlatList, RefreshControl, Image } from 'react-native';
+import { useEffect, useState, useCallback } from 'react';
+import { View, Text, ScrollView, RefreshControl, Image } from 'react-native';
 import { mediaUri } from '../../lib/media';
-import { ChevronLeft, Tag } from 'lucide-react-native';
+import { Tag } from 'lucide-react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
@@ -10,20 +10,53 @@ import { brand } from '../../theme/colors';
 import { textStyle, fontWeight } from '../../theme/typography';
 import { semanticSpacing, semanticRadius } from '../../theme/spacing';
 import { useDeliveryStore } from '../../stores/deliveryStore';
-import { ProductCard } from '../../components/shared/ProductCard';
+import { ProductGrid } from '../../components/shared/ProductGrid';
 import { ProductCardSkeleton } from '../../components/shared/ProductCardSkeleton';
 import { EmptyState } from '../../components/shared/EmptyState';
-import { FadeSlideIn } from '../../components/shared/FadeSlideIn';
-import { haptic } from '../../lib/haptics';
-import { formatZar } from '../../lib/currency';
 import { formatDate } from '../../lib/formatters';
-import { fetchProducts, fetchSpecials } from '../../lib/apiClient';
-import type { ProductVO, StoreAvailabilityVO } from '../../lib/product';
+import { fetchSpecials } from '../../lib/apiClient';
+import type { ProductVO } from '../../lib/product';
 import { findStoreAvailability, mapProduct } from '../../lib/product';
 import type { RootStackParamList } from '../../navigation/types';
 import { ScreenHeader } from '../../components/shared/ScreenHeader';
 
 type SaleDetailScreenRouteProp = RouteProp<RootStackParamList, 'SaleDetail'>;
+
+function extractProductsFromSpecial(s: any): ProductVO[] {
+  const results: ProductVO[] = [];
+  if (Array.isArray(s?.products) && s.products.length > 0) {
+    for (const rawProd of s.products) {
+      if (!rawProd || typeof rawProd !== 'object') continue;
+      const vo = mapProduct(rawProd);
+      const pivotPrice = rawProd.pivot?.special_price ?? s.special_price;
+      const salePriceCents = pivotPrice != null ? Math.round(Number(pivotPrice) * 100) : vo.salePriceCents;
+      const effectivePriceCents =
+        salePriceCents != null && salePriceCents < vo.effectivePriceCents
+          ? salePriceCents
+          : vo.effectivePriceCents;
+      results.push({
+        ...vo,
+        salePriceCents,
+        effectivePriceCents,
+      });
+    }
+  } else if (s?.product && typeof s.product === 'object') {
+    const vo = mapProduct(s.product);
+    const salePriceCents = s.special_price != null ? Math.round(Number(s.special_price) * 100) : vo.salePriceCents;
+    const effectivePriceCents =
+      salePriceCents != null && salePriceCents < vo.effectivePriceCents
+        ? salePriceCents
+        : vo.effectivePriceCents;
+    results.push({
+      ...vo,
+      salePriceCents,
+      effectivePriceCents,
+    });
+  } else if (s && typeof s === 'object' && s.name && s.price != null) {
+    results.push(mapProduct(s));
+  }
+  return results;
+}
 
 export function SaleDetailScreen() {
   const theme = useTheme();
@@ -32,52 +65,84 @@ export function SaleDetailScreen() {
   const store = useDeliveryStore((s) => s.fulfillmentStore);
   const { slug } = route.params;
 
-  const [special, setSpecial] = useState<{ id: number; name: string; slug: string; description?: string; banner_image?: string; start_date?: string; end_date?: string; is_active: boolean } | null>(null);
+  const [special, setSpecial] = useState<{
+    id: number;
+    name: string;
+    slug: string;
+    description?: string;
+    banner_image?: string;
+    start_date?: string;
+    end_date?: string;
+    is_active: boolean;
+  } | null>(null);
   const [products, setProducts] = useState<ProductVO[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const getStoreProductId = (product: ProductVO): number | null => {
-    if (!store) return null;
-    const avail = findStoreAvailability(product, store.id);
-    return avail?.storeProductId ?? null;
-  };
+  const getStoreProductId = useCallback(
+    (product: ProductVO): number | null => {
+      if (!store) return null;
+      const avail = findStoreAvailability(product, store.id);
+      return avail?.storeProductId ?? null;
+    },
+    [store],
+  );
 
-  const loadSale = async () => {
+  const loadSale = useCallback(async () => {
     try {
-      // Fetch specials products
       const specialsResult = await fetchSpecials({ store_id: store?.id ?? undefined });
-      const specialsProducts = specialsResult.data.map(mapProduct);
-      
-      if (slug === 'all' || !slug) {
-        // Show all specials
-        setSpecial({
-          id: 0,
-          name: 'All Specials',
-          slug: 'all',
-          description: 'All products currently on special',
-          is_active: true,
-        });
-        setProducts(specialsProducts);
-      } else {
-        // Try to find a specific special by slug (when backend supports it)
-        // For now, fall back to all specials
-        setSpecial({
-          id: 0,
-          name: 'All Specials',
-          slug: 'all',
-          description: 'All products currently on special',
-          is_active: true,
-        });
-        setProducts(specialsProducts);
+      const rawSpecials: any[] = specialsResult?.data ?? [];
+
+      const dedupeProducts = (list: ProductVO[]): ProductVO[] => {
+        const byId = new Map<number, ProductVO>();
+        for (const item of list) {
+          const prev = byId.get(item.id);
+          if (!prev || item.effectivePriceCents < prev.effectivePriceCents) {
+            byId.set(item.id, item);
+          }
+        }
+        return Array.from(byId.values());
+      };
+
+      if (slug && slug !== 'all') {
+        const matched = rawSpecials.find(
+          (s: any) => s?.slug === slug || String(s?.id) === String(slug),
+        );
+        if (matched) {
+          setSpecial({
+            id: matched.id,
+            name: matched.title ?? matched.name ?? 'Special Offer',
+            slug: matched.slug ?? String(matched.id),
+            description: matched.description ?? undefined,
+            banner_image: matched.image ?? matched.banner_image ?? undefined,
+            start_date: matched.valid_from ?? matched.start_date ?? undefined,
+            end_date: matched.valid_until ?? matched.end_date ?? undefined,
+            is_active: matched.is_active ?? true,
+          });
+          setProducts(dedupeProducts(extractProductsFromSpecial(matched)));
+          return;
+        }
       }
+
+      const allSpecialProducts = dedupeProducts(
+        rawSpecials.flatMap((s: any) => extractProductsFromSpecial(s)),
+      );
+
+      setSpecial({
+        id: 0,
+        name: 'All Specials',
+        slug: 'all',
+        description: 'All products currently on special',
+        is_active: true,
+      });
+      setProducts(allSpecialProducts);
     } catch (error) {
       console.error('Failed to load sale:', error);
     } finally {
       setIsLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [slug, store?.id]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -86,7 +151,7 @@ export function SaleDetailScreen() {
 
   useEffect(() => {
     loadSale();
-  }, [slug, store?.id]);
+  }, [loadSale]);
 
   const isActive = special?.is_active && (!special.end_date || new Date(special.end_date) > new Date());
   const isEnded = special?.end_date && new Date(special.end_date) <= new Date();
@@ -171,31 +236,24 @@ export function SaleDetailScreen() {
 
       {/* Products Grid */}
       {products.length > 0 ? (
-        <View style={{ paddingHorizontal: semanticSpacing.screenPadding, paddingBottom: semanticSpacing.xl }}>
+        <View style={{ paddingBottom: semanticSpacing.xl }}>
           {!store && (
-            <View style={{ marginBottom: semanticSpacing.md, padding: semanticSpacing.md, backgroundColor: theme.colors.surface.primary, borderRadius: semanticRadius.card, borderWidth: 1, borderColor: theme.colors.border.subtle }}>
+            <View style={{ marginHorizontal: semanticSpacing.screenPadding, marginBottom: semanticSpacing.md, padding: semanticSpacing.md, backgroundColor: theme.colors.surface.primary, borderRadius: semanticRadius.card, borderWidth: 1, borderColor: theme.colors.border.subtle }}>
               <Text style={{ color: theme.colors.text.secondary, ...textStyle.caption, textAlign: 'center' }}>
                 Select a delivery store to see accurate stock and add items to cart.
               </Text>
             </View>
           )}
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: semanticSpacing.md }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: semanticSpacing.screenPadding, marginBottom: semanticSpacing.xs }}>
             <Text style={{ ...textStyle.h3, fontWeight: fontWeight.bold, color: theme.colors.text.primary }}>
               {products.length} {products.length === 1 ? 'Product' : 'Products'}
             </Text>
           </View>
-          <FlatList
+          <ProductGrid
             data={products}
             keyExtractor={(p) => String(p.id)}
-            numColumns={2}
-            columnWrapperStyle={{ gap: semanticSpacing.inlineGap }}
-            contentContainerStyle={{ gap: semanticSpacing.inlineGap, paddingBottom: semanticSpacing.xl }}
-            showsVerticalScrollIndicator={false}
-            renderItem={({ item, index }) => (
-              <FadeSlideIn delay={index * 40} distance={16}>
-                <ProductCard product={item} storeProductId={getStoreProductId(item)} />
-              </FadeSlideIn>
-            )}
+            getStoreProductId={getStoreProductId}
+            scrollEnabled={false}
           />
         </View>
       ) : (

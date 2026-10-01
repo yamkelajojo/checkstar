@@ -33,6 +33,38 @@ function isPollingStatus(status?: string) {
   return status != null && ['confirmed', 'preparing', 'out_for_delivery'].includes(status)
 }
 
+function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const toRad = (deg: number) => (deg * Math.PI) / 180
+  const dLat = toRad(lat2 - lat1)
+  const dLng = toRad(lng2 - lng1)
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2
+  return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+}
+
+/**
+ * Generates a smooth, slightly curved road-like path when OSRM is unavailable
+ * so the prototype map renders an appealing route line without local .osrm files.
+ */
+function buildFallbackPath(from: [number, number], to: [number, number], via?: [number, number]): [number, number][] {
+  if (via) {
+    return [...buildFallbackPath(from, via), ...buildFallbackPath(via, to).slice(1)]
+  }
+  const [lat1, lng1] = from
+  const [lat2, lng2] = to
+  const dLat = lat2 - lat1
+  const dLng = lng2 - lng1
+  const steps = 16
+  const pts: [number, number][] = []
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps
+    const offset = Math.sin(t * Math.PI) * 0.12
+    pts.push([lat1 + dLat * t - dLng * offset, lng1 + dLng * t + dLat * offset])
+  }
+  return pts
+}
+
 export default function OrderTrackingMap({
   orderId,
   orderStatus,
@@ -55,7 +87,24 @@ export default function OrderTrackingMap({
   }, [riderLocation])
 
   // Fetch route geometry store -> delivery
-  const { data: geometry } = useRouteGeometry(storeLat, storeLng, deliveryLat, deliveryLng, !!(storeLat && storeLng && deliveryLat && deliveryLng))
+  const { data: geometry } = useRouteGeometry(
+    storeLat,
+    storeLng,
+    deliveryLat,
+    deliveryLng,
+    !!(storeLat && storeLng && deliveryLat && deliveryLng),
+  )
+
+  const routeMetrics = useMemo(() => {
+    if (storeLat != null && storeLng != null && deliveryLat != null && deliveryLng != null) {
+      const dist = haversineKm(storeLat, storeLng, deliveryLat, deliveryLng) * 1.32
+      return {
+        distanceKm: Math.round(dist * 100) / 100,
+        durationMinutes: Math.max(5, Math.ceil((dist / 32) * 60 + 3)),
+      }
+    }
+    return null
+  }, [storeLat, storeLng, deliveryLat, deliveryLng])
 
   const routePoints = useMemo<LatLng[]>(() => {
     if (!geometry) return []
@@ -115,13 +164,10 @@ export default function OrderTrackingMap({
         const latlngs = routePoints.map(p => [p.lat, p.lng] as [number, number])
         polylineRef.current = L.polyline(latlngs, { color: '#EB6522', weight: 4, opacity: 0.85 }).addTo(mapInstance)
       } else if (storeLat != null && storeLng != null && deliveryLat != null && deliveryLng != null) {
-        // fallback straight dashed line
-        const latlngs: [number, number][] = [
-          [storeLat, storeLng],
-          ...(riderLocation ? [[riderLocation.latitude, riderLocation.longitude] as [number, number]] : []),
-          [deliveryLat, deliveryLng],
-        ]
-        polylineRef.current = L.polyline(latlngs, { color: '#EB6522', weight: 2, opacity: 0.6, dashArray: '8 8' }).addTo(mapInstance)
+        polylineRef.current = L.polyline(
+          [[storeLat, storeLng], [deliveryLat, deliveryLng]],
+          { color: '#EB6522', weight: 3, opacity: 0.65, dashArray: '8 6' },
+        ).addTo(mapInstance)
       }
     }
     draw()
@@ -219,6 +265,19 @@ export default function OrderTrackingMap({
         />
         {/* Metrics overlay — dedicated badge animation */}
         <div className="absolute top-3 right-3 z-[400] flex gap-1.5">
+          {routeMetrics && (
+            <motion.div
+              initial={{ opacity: 0, y: -8, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ type: 'spring', ...spring.appleBounce, delay: 0.25 }}
+              className="bg-black/75 backdrop-blur-md text-white text-[11px] px-2.5 py-1.5 rounded-full flex items-center gap-1.5 border border-white/10 shadow-[0_2px_8px_rgba(0,0,0,0.2)]"
+            >
+              <Navigation size={11} className="text-primary" strokeWidth={2.5} />
+              <span className="tabular-nums font-medium">
+                {routeMetrics.distanceKm.toFixed(1)} km · ~{routeMetrics.durationMinutes} min
+              </span>
+            </motion.div>
+          )}
           {riderLocation && (
             <motion.div
               initial={{ opacity: 0, y: -8, scale: 0.9 }}

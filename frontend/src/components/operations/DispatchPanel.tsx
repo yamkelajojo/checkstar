@@ -32,6 +32,7 @@ interface DispatchSuggestion {
 
 interface DispatchPanelProps {
   orderId: number | null
+  storeId?: number
   onClose: () => void
   onAssigned?: () => void
 }
@@ -46,7 +47,7 @@ function formatEta(seconds: number): string {
   return `${mins} min`
 }
 
-export default function DispatchPanel({ orderId, onClose, onAssigned }: DispatchPanelProps) {
+export default function DispatchPanel({ orderId, storeId, onClose, onAssigned }: DispatchPanelProps) {
   const [suggestion, setSuggestion] = useState<DispatchSuggestion | null>(null)
   const [loading, setLoading] = useState(false)
   const [assigning, setAssigning] = useState(false)
@@ -61,7 +62,7 @@ export default function DispatchPanel({ orderId, onClose, onAssigned }: Dispatch
     setLoading(true)
     setError(null)
     try {
-      const data = await api.getDispatchSuggestion(orderId) as unknown as DispatchSuggestion
+      const data = await api.getDispatchSuggestion(orderId, storeId) as unknown as DispatchSuggestion
       if (seq !== requestSeq.current) return // superseded by a newer selection
       setSuggestion(data)
     } catch {
@@ -70,7 +71,7 @@ export default function DispatchPanel({ orderId, onClose, onAssigned }: Dispatch
     } finally {
       if (seq === requestSeq.current) setLoading(false)
     }
-  }, [orderId])
+  }, [orderId, storeId])
 
   useEffect(() => {
     if (orderId) fetchSuggestion()
@@ -82,7 +83,7 @@ export default function DispatchPanel({ orderId, onClose, onAssigned }: Dispatch
     setAssigning(true)
     setError(null)
     try {
-      await api.assignRider(orderId, riderId)
+      await api.assignRider(orderId, riderId, storeId)
       onAssigned?.()
       onClose()
     } catch (e) {

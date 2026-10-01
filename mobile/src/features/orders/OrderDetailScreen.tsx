@@ -298,18 +298,22 @@ export function OrderDetailScreen() {
             <FadeSlideIn delay={340} distance={10}>
               <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: semanticRadius.card, padding: semanticSpacing.md, gap: semanticSpacing.xs, borderWidth: 1, borderColor: theme.colors.border.subtle }}>
                 <Text style={[textStyle.body, { fontWeight: fontWeight.bold, color: theme.colors.text.primary, letterSpacing: -0.2 }]}>{copy.orders.activity}</Text>
-                {order.activity_logs.map((log, idx) => (
-                  <FadeSlideIn key={log.id} delay={360 + idx * 20} distance={6}>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: semanticSpacing.inlineGap }}>
-                      <Text style={[textStyle.body, { flex: 1, color: theme.colors.text.secondary }]}>
-                        {log.status.replace(/_/g, ' ')}
-                      </Text>
-                      <Text style={[textStyle.caption, { color: theme.colors.text.tertiary }]}>
-                        {new Date(log.created_at).toLocaleString()}
-                      </Text>
-                    </View>
-                  </FadeSlideIn>
-                ))}
+                {order.activity_logs.map((log, idx) => {
+                  const rawLabel = log.status ?? log.new_status ?? log.event_type ?? 'order_updated';
+                  const statusText = String(rawLabel).replace(/_/g, ' ');
+                  return (
+                    <FadeSlideIn key={log.id ?? idx} delay={360 + idx * 20} distance={6}>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: semanticSpacing.inlineGap }}>
+                        <Text style={[textStyle.body, { flex: 1, color: theme.colors.text.secondary, textTransform: 'capitalize' }]}>
+                          {statusText}
+                        </Text>
+                        <Text style={[textStyle.caption, { color: theme.colors.text.tertiary }]}>
+                          {new Date(log.created_at).toLocaleString()}
+                        </Text>
+                      </View>
+                    </FadeSlideIn>
+                  );
+                })}
               </View>
             </FadeSlideIn>
           )}

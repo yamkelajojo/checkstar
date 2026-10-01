@@ -33,10 +33,11 @@ export function ProductCardSkeleton({ index = 0 }: { index?: number }) {
   }));
 
   return (
-    <FadeSlideIn delay={index * 38} distance={10}>
+    <FadeSlideIn delay={index * 38} distance={10} style={{ flex: 1 }}>
       <View
         style={{
           flex: 1,
+          width: '100%',
           backgroundColor: theme.colors.surface.primary,
           borderRadius: semanticRadius.card,
           padding: semanticSpacing.cardPadding,

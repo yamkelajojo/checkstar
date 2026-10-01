@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\ProductFavorite;
 use App\Services\MediaService;
+use App\Services\PricingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -13,19 +14,35 @@ class FavoriteController extends Controller
 {
     public function __construct(
         private MediaService $media,
+        private PricingService $pricingService,
     ) {}
 
     public function index(Request $request): JsonResponse
     {
         $favorites = ProductFavorite::where('customer_id', $request->user()->id)
-            ->with('product')
+            ->with(['product.category', 'product.specials', 'product.storeProducts.store'])
             ->orderByDesc('created_at')
             ->paginate(20);
 
-        // Same verified-media contract as every other catalogue surface.
+        // Same verified-media, pricing, and store-availability contract as every other catalogue surface.
         $favorites->getCollection()->each(function ($favorite): void {
-            if ($favorite->product !== null) {
-                $this->media->applyToProduct($favorite->product);
+            $product = $favorite->product;
+            if ($product !== null) {
+                $this->media->applyToProduct($product);
+                $product->effective_price = $this->pricingService->effectivePrice($product, $product->specials ?? collect());
+                $storeProducts = $product->relationLoaded('storeProducts') ? $product->storeProducts : collect();
+                $product->stores = $storeProducts
+                    ->filter(fn ($sp) => $sp->store && $sp->store->is_active)
+                    ->map(fn ($sp) => [
+                        'store_product_id' => $sp->id,
+                        'id' => $sp->store->id,
+                        'name' => $sp->store->name,
+                        'slug' => $sp->store->slug,
+                        'is_available' => (bool) $sp->is_available && ($sp->stock_quantity - ($sp->reserved_quantity ?? 0)) > 0,
+                        'stock_quantity' => max(0, $sp->stock_quantity - ($sp->reserved_quantity ?? 0)),
+                    ])
+                    ->values();
+                $product->unsetRelation('storeProducts');
             }
         });
 

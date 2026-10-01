@@ -219,7 +219,7 @@ export function ProductDetailScreen() {
                 elevation: 2,
               }}
             >
-              {product && <SaveHeart productId={product.id} size={24} />}
+              {product && <SaveHeart productId={product.id} product={product} size={24} />}
               {imageSource && !imageError ? (
                 <Image source={imageSource} style={{ width: '100%', height: '100%' }} contentFit="cover" cachePolicy="memory-disk" onError={() => setImageError(true)} />
               ) : (

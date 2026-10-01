@@ -75,8 +75,10 @@ export interface ApiOrderItem {
 
 export interface ApiActivityLog {
   id: number;
-  status: string;
+  status?: string;
+  event_type?: string;
   old_status?: string | null;
+  new_status?: string | null;
   reason?: string | null;
   created_at: string;
   user?: { id: number; name: string } | null;

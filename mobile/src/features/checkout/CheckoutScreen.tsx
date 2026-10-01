@@ -14,6 +14,11 @@ import { useSession } from '../../stores/session';
 import { placeOrder, validateFulfillment, fetchStores, fetchAddresses } from '../../lib/apiClient';
 import type { ApiStore, ApiUserAddress } from '../../lib/types';
 import { getDeliveryCoords } from '../../lib/deliveryCoords';
+import {
+  searchAddressSuggestions,
+  resolveAddressCoordinates,
+  type AddressSuggestion,
+} from '../../lib/addressSuggestions';
 import { formatZar } from '../../lib/currency';
 import { TactilePressable } from '../../components/shared/TactilePressable';
 import { EmptyState } from '../../components/shared/EmptyState';
@@ -23,7 +28,12 @@ import { haptic } from '../../lib/haptics';
 import { copy, formatString } from '../../lib/strings';
 import { queryClient, queryKeys } from '../../lib/queryKeys';
 import { useToast } from '../../components/shared/GlassToast';
-import { MIN_ORDER_CENTS, EST_DELIVERY_FEE_CENTS, VALIDATION_DEBOUNCE_MS } from '../../lib/constants';
+import {
+  MIN_ORDER_CENTS,
+  EST_DELIVERY_FEE_CENTS,
+  FREE_DELIVERY_THRESHOLD_CENTS,
+  VALIDATION_DEBOUNCE_MS,
+} from '../../lib/constants';
 import type { RootStackParamList } from '../../navigation/types';
 import { canSubmit } from './model';
 import { trackCheckout } from '../../services/trackingService';
@@ -50,6 +60,8 @@ export function CheckoutScreen() {
   const topInset = useTopSafeArea(semanticSpacing.sm);
 
   const [address, setAddress] = useState('');
+  const [selectedSuggestionCoords, setSelectedSuggestionCoords] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [notes, setNotes] = useState('');
   const [paymentMethod] = useState<PaymentMethod>('cash_on_delivery');
   const [usedFallbackLocation, setUsedFallbackLocation] = useState(false);
@@ -110,7 +122,10 @@ export function CheckoutScreen() {
   const { data: products = [] } = useAllProducts({ storeId: undefined });
   const priceOf = (id: string) => products.find((p) => p.id === Number(id))?.effectivePriceCents ?? 0;
   const subtotal = cartRules.subtotalCents(items, priceOf);
-  const total = subtotal + EST_DELIVERY_FEE_CENTS;
+  const deliveryFeeCents = subtotal >= FREE_DELIVERY_THRESHOLD_CENTS ? 0 : EST_DELIVERY_FEE_CENTS;
+  const deliveryProgress = subtotal > 0 ? Math.min(subtotal / FREE_DELIVERY_THRESHOLD_CENTS, 1) : 0;
+  const total = subtotal + deliveryFeeCents;
+  const addressSuggestions: AddressSuggestion[] = showSuggestions ? searchAddressSuggestions(address, 5) : [];
   const selectedStore = stores.find((x) => x.id === selectedStoreId) ?? null;
   const isPickup = fulfilment === 'pickup';
   const usingSavedAddress = !isPickup && selectedAddressId !== 'new' && savedAddresses.some((a) => a.id === selectedAddressId);
@@ -151,12 +166,21 @@ export function CheckoutScreen() {
         setValidatingFulfillment(true);
         setFulfillmentError(null);
         try {
-          let coords;
+          let coords: { latitude: number; longitude: number } | undefined;
           if (usingSavedAddress) {
             const saved = savedAddresses.find((a) => a.id === selectedAddressId);
             if (saved) coords = { latitude: Number(saved.latitude), longitude: Number(saved.longitude) };
+          } else if (selectedSuggestionCoords) {
+            coords = selectedSuggestionCoords;
           }
-          if (!coords) coords = await getDeliveryCoords();
+          if (!coords) {
+            const gps = await getDeliveryCoords();
+            if (gps.usedFallback && address.trim().length > 0) {
+              coords = resolveAddressCoordinates(address);
+            } else {
+              coords = { latitude: gps.latitude, longitude: gps.longitude };
+            }
+          }
           if (cancelled) return;
           const result = await validateFulfillment({
             items: items.map((i) => ({ product_id: Number(i.productId), quantity: i.quantity })),
@@ -193,7 +217,7 @@ export function CheckoutScreen() {
       cancelled = true;
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [items, address, fulfilment, usingSavedAddress, savedAddresses, selectedAddressId]);
+  }, [items, address, selectedSuggestionCoords, fulfilment, usingSavedAddress, savedAddresses, selectedAddressId]);
 
   const submit = async () => {
     if (!canSubmitOrder) {
@@ -238,14 +262,30 @@ export function CheckoutScreen() {
             payment_method: paymentMethod,
           });
         } else {
-          const coords = await getDeliveryCoords();
-          setUsedFallbackLocation(coords.usedFallback);
+          let finalLat: number;
+          let finalLng: number;
+          if (selectedSuggestionCoords) {
+            finalLat = selectedSuggestionCoords.latitude;
+            finalLng = selectedSuggestionCoords.longitude;
+            setUsedFallbackLocation(false);
+          } else {
+            const coords = await getDeliveryCoords();
+            setUsedFallbackLocation(coords.usedFallback);
+            if (coords.usedFallback && address.trim().length > 0) {
+              const resolved = resolveAddressCoordinates(address);
+              finalLat = resolved.latitude;
+              finalLng = resolved.longitude;
+            } else {
+              finalLat = coords.latitude;
+              finalLng = coords.longitude;
+            }
+          }
           res = await placeOrder({
             items: items.map((i) => ({ product_id: Number(i.productId), quantity: i.quantity })),
             fulfilment_method: 'delivery',
             delivery_address: address.trim(),
-            delivery_latitude: coords.latitude,
-            delivery_longitude: coords.longitude,
+            delivery_latitude: finalLat,
+            delivery_longitude: finalLng,
             delivery_notes: notes.trim() || undefined,
             payment_method: paymentMethod,
           });
@@ -471,7 +511,12 @@ export function CheckoutScreen() {
               <Text style={{ fontWeight: '600', color: theme.colors.text.primary, fontSize: 11, letterSpacing: 0.5, textTransform: 'uppercase' }}>{copy.checkout.deliveryAddress}</Text>
               <TextInput
                 value={address}
-                onChangeText={setAddress}
+                onChangeText={(val) => {
+                  setAddress(val);
+                  setSelectedSuggestionCoords(null);
+                  setShowSuggestions(true);
+                }}
+                onFocus={() => setShowSuggestions(true)}
                 placeholder={copy.checkout.deliveryAddressPlaceholder}
                 placeholderTextColor={theme.colors.text.tertiary}
                 multiline
@@ -488,6 +533,66 @@ export function CheckoutScreen() {
                   textAlignVertical: 'top',
                 }}
               />
+              {showSuggestions && addressSuggestions.length > 0 && (
+                <View
+                  style={{
+                    backgroundColor: theme.colors.surface.primary,
+                    borderRadius: 12,
+                    borderWidth: 1,
+                    borderColor: theme.colors.border.subtle,
+                    overflow: 'hidden',
+                  }}
+                >
+                  <Text
+                    style={{
+                      paddingHorizontal: 12,
+                      paddingTop: 8,
+                      paddingBottom: 4,
+                      fontSize: 10,
+                      fontWeight: '700',
+                      color: theme.colors.text.tertiary,
+                      letterSpacing: 0.4,
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    Suggested Durban Delivery Addresses
+                  </Text>
+                  {addressSuggestions.map((suggestion) => (
+                    <TactilePressable
+                      key={suggestion.id}
+                      onPress={() => {
+                        haptic.selection();
+                        setAddress(suggestion.address);
+                        setSelectedSuggestionCoords({
+                          latitude: suggestion.latitude,
+                          longitude: suggestion.longitude,
+                        });
+                        setUsedFallbackLocation(false);
+                        setShowSuggestions(false);
+                      }}
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: 8,
+                        paddingHorizontal: 12,
+                        paddingVertical: 10,
+                        borderTopWidth: 1,
+                        borderTopColor: theme.colors.border.subtle,
+                      }}
+                    >
+                      <MapPin size={14} color={brand.orange} />
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ fontSize: 12, fontWeight: '600', color: theme.colors.text.primary }}>
+                          {suggestion.label}
+                        </Text>
+                        <Text style={{ fontSize: 11, color: theme.colors.text.secondary }} numberOfLines={1}>
+                          {suggestion.address}
+                        </Text>
+                      </View>
+                    </TactilePressable>
+                  ))}
+                </View>
+              )}
             </View>
           </FadeSlideIn>
 
@@ -534,7 +639,36 @@ export function CheckoutScreen() {
             <View style={{ backgroundColor: theme.colors.surface.primary, borderRadius: semanticRadius.card, padding: 14, gap: 10, borderWidth: 1, borderColor: theme.colors.border.subtle }}>
               <Text style={{ fontWeight: '700', color: theme.colors.text.primary, fontSize: 13, letterSpacing: -0.2 }}>{copy.checkout.summary}</Text>
               {row(`${cartRules.totalQuantity(items)} items`, formatZar(subtotal))}
-              {isPickup ? row('Pickup', 'Free') : row(copy.checkout.estimatedDelivery, formatZar(EST_DELIVERY_FEE_CENTS))}
+              {isPickup
+                ? row('Pickup', 'Free')
+                : row(
+                    copy.checkout.estimatedDelivery,
+                    deliveryFeeCents === 0 ? 'Free' : formatZar(deliveryFeeCents),
+                  )}
+              {!isPickup && subtotal > 0 && (
+                <View style={{ gap: 4, paddingTop: 2 }}>
+                  <View style={{ height: 4, borderRadius: 2, backgroundColor: theme.colors.border.subtle, overflow: 'hidden' }}>
+                    <View
+                      style={{
+                        width: `${deliveryProgress * 100}%`,
+                        height: '100%',
+                        backgroundColor: deliveryProgress >= 1 ? brand.success : brand.orange,
+                        borderRadius: 2,
+                      }}
+                    />
+                  </View>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                    <Text style={{ color: theme.colors.text.tertiary, fontSize: 11 }}>
+                      {deliveryProgress >= 1
+                        ? '🎉 Free delivery unlocked!'
+                        : `Add ${formatZar(Math.max(0, FREE_DELIVERY_THRESHOLD_CENTS - subtotal))} for free delivery`}
+                    </Text>
+                    <Text style={{ color: theme.colors.text.tertiary, fontSize: 11 }}>
+                      {formatZar(subtotal)} / {formatZar(FREE_DELIVERY_THRESHOLD_CENTS)}
+                    </Text>
+                  </View>
+                </View>
+              )}
               <View style={{ height: 1, backgroundColor: theme.colors.border.subtle, marginVertical: 2 }} />
               {row(copy.checkout.total, formatZar(isPickup ? subtotal : total), true)}
             </View>

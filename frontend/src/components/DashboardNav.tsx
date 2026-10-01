@@ -55,13 +55,18 @@ export default function DashboardNav() {
         if (segments.includes('dispatch')) {
           crumbs.push({ label: 'Dashboard', href: '/admin/dashboard' })
         } else {
-          crumbs.push({ label: 'Account', href: '/account/profile' })
+          crumbs.push({ label: 'Home', href: '/' })
         }
       }
       continue
     }
 
-    if (/^\d+$/.test(seg)) continue
+    if (/^\d+$/.test(seg)) {
+      if (segments[i - 1] === 'orders') {
+        crumbs.push({ label: `Order #${seg}`, href: accumulated })
+      }
+      continue
+    }
 
     const label = routeLabels[seg] ?? seg.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
     crumbs.push({ label, href: accumulated })
@@ -69,7 +74,8 @@ export default function DashboardNav() {
 
   if (crumbs.length <= 1) return null
 
-  const backHref = crumbs.length > 1 ? crumbs[crumbs.length - 2].href : crumbs[0].href
+  const candidateBackHref = crumbs.length > 1 ? crumbs[crumbs.length - 2].href : crumbs[0].href
+  const backHref = candidateBackHref === pathname ? '/' : candidateBackHref
 
   return (
     <nav className="max-w-6xl mx-auto px-4 pt-4 pb-2 flex items-center gap-1.5 text-xs text-gray-400" aria-label="Breadcrumb">
@@ -86,12 +92,17 @@ export default function DashboardNav() {
           <ChevronRight size={12} className="text-gray-300" />
           {crumbs.map((crumb, i) => {
             const isLast = i === crumbs.length - 1
-            return isLast ? (
-              <span key={crumb.href} className="text-gray-600 font-medium">{crumb.label}</span>
-            ) : (
-              <Link key={crumb.href} href={crumb.href} className="hover:text-gray-600 transition-colors">
-                {crumb.label}
-              </Link>
+            return (
+              <span key={`${crumb.href}-${i}`} className="inline-flex items-center gap-1.5">
+                {i > 0 && <ChevronRight size={12} className="text-gray-300" />}
+                {isLast ? (
+                  <span className="text-gray-600 font-medium">{crumb.label}</span>
+                ) : (
+                  <Link href={crumb.href} className="hover:text-gray-600 transition-colors">
+                    {crumb.label}
+                  </Link>
+                )}
+              </span>
             )
           })}
         </>

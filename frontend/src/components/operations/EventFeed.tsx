@@ -10,32 +10,44 @@ import { api } from '@/lib/api'
 const POLL_INTERVAL = 5000
 const MAX_EVENTS = 200
 
-export default function EventFeed({ storeId }: { storeId?: number }) {
+interface EventFeedProps {
+  storeId?: number
+  onSelectOrder?: (orderId: number) => void
+}
+
+export default function EventFeed({ storeId, onSelectOrder }: EventFeedProps) {
   const [events, setEvents] = useState<FeedEvent[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const cursorRef = useRef<string | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
   const fetchEvents = useCallback(async () => {
     try {
+      // Live polling must ALWAYS request the latest events (no backward cursor),
+      // otherwise subsequent polls fetch historical pages older than `next_cursor`
+      // and prepend them over the newest events.
       const params: Record<string, string> = { limit: '50' }
-      if (cursorRef.current) {
-        params.cursor = cursorRef.current
-      }
-
       const data = await api.getOperationsEvents(params, storeId) as unknown as EventFeedResponse
+      const incoming = Array.isArray(data?.events) ? data.events : []
 
       setEvents(prev => {
-        const existingIds = new Set(prev.map(e => e.id))
-        const newEvents = data.events.filter(e => !existingIds.has(e.id))
-        const merged = [...newEvents, ...prev].slice(0, MAX_EVENTS)
-        return merged
+        const byId = new Map<string, FeedEvent>()
+        for (const ev of incoming) {
+          if (ev && ev.id) byId.set(String(ev.id), ev)
+        }
+        for (const ev of prev) {
+          if (ev && ev.id && !byId.has(String(ev.id))) {
+            byId.set(String(ev.id), ev)
+          }
+        }
+        return Array.from(byId.values())
+          .sort((a, b) => {
+            const tA = new Date(a.created_at).getTime() || 0
+            const tB = new Date(b.created_at).getTime() || 0
+            return tB - tA
+          })
+          .slice(0, MAX_EVENTS)
       })
-
-      if (data.next_cursor) {
-        cursorRef.current = data.next_cursor
-      }
 
       setError(null)
     } catch {
@@ -46,6 +58,8 @@ export default function EventFeed({ storeId }: { storeId?: number }) {
   }, [storeId])
 
   useEffect(() => {
+    setEvents([])
+    setLoading(true)
     fetchEvents()
     const interval = setInterval(fetchEvents, POLL_INTERVAL)
     return () => clearInterval(interval)
@@ -109,18 +123,23 @@ export default function EventFeed({ storeId }: { storeId?: number }) {
             animate="visible"
           >
             <AnimatePresence initial={false}>
-              {events.map(event => (
-                <motion.div
-                  key={event.id}
-                  variants={itemVariant}
-                  initial="hidden"
-                  animate="visible"
-                  exit={{ opacity: 0, x: -10, transition: { duration: 0.15 } }}
-                  layout
-                >
-                  <EventItem event={event} />
-                </motion.div>
-              ))}
+              {events.map(event => {
+                const isOrderEvent = event.entity_type === 'order' && typeof event.entity_id === 'number' && onSelectOrder
+                return (
+                  <motion.div
+                    key={event.id}
+                    variants={itemVariant}
+                    initial="hidden"
+                    animate="visible"
+                    exit={{ opacity: 0, x: -10, transition: { duration: 0.15 } }}
+                    layout
+                    onClick={isOrderEvent ? () => onSelectOrder(Number(event.entity_id)) : undefined}
+                    className={isOrderEvent ? 'cursor-pointer' : undefined}
+                  >
+                    <EventItem event={event} />
+                  </motion.div>
+                )
+              })}
             </AnimatePresence>
           </motion.div>
         )}

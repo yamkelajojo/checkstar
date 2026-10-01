@@ -24,6 +24,12 @@ export default function AnalyticsPage() {
   const { user } = useAuthStore()
   const { data: stores = [] } = useStores()
   const [storeIdInput, setStoreIdInput] = useState('')
+
+  if (user?.role === 'developer' && !storeIdInput && stores.length > 0) {
+    const firstId = (stores[0] as { id?: number })?.id
+    if (firstId != null) setStoreIdInput(String(firstId))
+  }
+
   const activeStoreId = user?.role === 'developer' && storeIdInput ? Number(storeIdInput) : undefined
 
   const { data: sales, isLoading: salesLoading } = useAnalyticsSales(period, activeStoreId)

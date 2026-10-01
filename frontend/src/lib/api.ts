@@ -362,7 +362,7 @@ export const api = {
 
   // Routing
   getRoute: (fromLat: number, fromLng: number, toLat: number, toLng: number) => request<{ distance_km: number; duration_minutes: number; geometry: string | null; source: string }>(`/routing/route?from_lat=${fromLat}&from_lng=${fromLng}&to_lat=${toLat}&to_lng=${toLng}`),
-  getRouteGeometry: (fromLat: number, fromLng: number, toLat: number, toLng: number) => request<{ geometry: string | null }>(`/routing/geometry?from_lat=${fromLat}&from_lng=${fromLng}&to_lat=${toLat}&to_lng=${toLng}`),
+  getRouteGeometry: (fromLat: number, fromLng: number, toLat: number, toLng: number) => request<{ geometry: string | null; distance_km?: number; duration_minutes?: number; source?: string }>(`/routing/geometry?from_lat=${fromLat}&from_lng=${fromLng}&to_lat=${toLat}&to_lng=${toLng}`),
 
   // Recommendations
   getRecommendations: () => request<{ data: Product[] } | Product[]>('/recommendations'),

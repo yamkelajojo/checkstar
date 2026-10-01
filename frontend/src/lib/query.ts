@@ -709,27 +709,38 @@ export function useAdminHealth() {
   })
 }
 
-export function useFavorites() {
+export function useFavorites(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['favorites'],
     queryFn: async () => {
-      const res = await api.getFavorites()
-      return normalizePaginated<Product>(res as any)
+      const res = await api.getFavorites({ per_page: '100' })
+      const items = normalizePaginated<any>(res as any)
+      return items
+        .map((item: any) => (item?.product ? item.product : item))
+        .filter((p: any): p is Product => Boolean(p && typeof p.id === 'number' && p.name))
     },
+    enabled: options?.enabled ?? true,
+    staleTime: 30_000,
   })
 }
 export function useAddFavorite() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (productId: number) => api.addFavorite(productId),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['favorites'] }),
+    onSuccess: (_data, productId) => {
+      qc.invalidateQueries({ queryKey: ['favorites'] })
+      qc.invalidateQueries({ queryKey: ['favorite-check', productId] })
+    },
   })
 }
 export function useRemoveFavorite() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (productId: number) => api.removeFavorite(productId),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['favorites'] }),
+    onSuccess: (_data, productId) => {
+      qc.invalidateQueries({ queryKey: ['favorites'] })
+      qc.invalidateQueries({ queryKey: ['favorite-check', productId] })
+    },
   })
 }
 
@@ -740,7 +751,8 @@ export function useRecommendations() {
       const res = await api.getRecommendations()
       const anyRes = res as any
       if (Array.isArray(anyRes)) return anyRes as Product[]
-      if (anyRes.data && Array.isArray(anyRes.data)) return anyRes.data as Product[]
+      if (anyRes?.recommendations && Array.isArray(anyRes.recommendations)) return anyRes.recommendations as Product[]
+      if (anyRes?.data && Array.isArray(anyRes.data)) return anyRes.data as Product[]
       return [] as Product[]
     },
   })

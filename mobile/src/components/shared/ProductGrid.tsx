@@ -25,6 +25,7 @@ export interface ProductGridProps extends ProductCardOptions {
   onEndReachedThreshold?: number;
   ListFooterComponent?: ListSlot;
   ListHeaderComponent?: ListSlot;
+  scrollEnabled?: boolean;
 }
 
 /**
@@ -43,6 +44,7 @@ export function ProductGrid({
   onEndReachedThreshold,
   ListFooterComponent,
   ListHeaderComponent,
+  scrollEnabled = true,
 }: ProductGridProps) {
   const { columnWidth, screenPadding, gap } = getGridMetrics();
 
@@ -51,6 +53,7 @@ export function ProductGrid({
       data={data}
       keyExtractor={keyExtractor}
       numColumns={2}
+      scrollEnabled={scrollEnabled}
       columnWrapperStyle={{ gap, paddingHorizontal: screenPadding }}
       contentContainerStyle={[
         {

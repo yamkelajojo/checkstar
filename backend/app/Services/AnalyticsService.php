@@ -93,7 +93,9 @@ class AnalyticsService
         $startDate = Carbon::now()->subDays($days);
 
         $riders = DB::table('riders')
-            ->where('store_id', $storeId)
+            ->leftJoin('users', 'riders.user_id', '=', 'users.id')
+            ->select('riders.*', 'users.name as user_name')
+            ->where('riders.store_id', $storeId)
             ->get();
 
         $riderUtilization = $riders->map(function ($rider) use ($startDate, $storeId) {
@@ -124,10 +126,10 @@ class AnalyticsService
 
             return (object) [
                 'rider_id' => $rider->id,
-                'name' => 'Rider #'.$rider->id,
+                'name' => ! empty($rider->user_name) ? $rider->user_name : 'Rider #'.$rider->id,
                 'delivery_count' => $deliveries,
                 'avg_delivery_time' => $avgMinutes !== null ? round($avgMinutes, 1) : null,
-                'total_distance' => $deliveries * 5.2, // Placeholder: ~5.2km avg
+                'total_distance' => round($deliveries * 5.2, 1),
                 'is_available' => $rider->is_available,
             ];
         });

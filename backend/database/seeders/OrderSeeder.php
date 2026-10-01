@@ -69,6 +69,9 @@ class OrderSeeder extends Seeder
                 $hour = $this->weightedHour();
                 $minute = rand(0, 59);
                 $createdAt = $date->copy()->hour($hour)->minute($minute);
+                if ($createdAt->gt(Carbon::now()->subMinutes(5))) {
+                    $createdAt = Carbon::now()->subMinutes(rand(10, 240));
+                }
 
                 $storeId = $storeIds[array_rand($storeIds)];
                 $customerId = $customerIds[array_rand($customerIds)];

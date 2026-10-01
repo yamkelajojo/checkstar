@@ -13,12 +13,21 @@ class OrderActivityLog extends Model
 
     protected $table = 'order_activity_logs';
 
+    protected $appends = [
+        'status',
+    ];
+
     protected function casts(): array
     {
         return [
             'metadata' => 'array',
             'created_at' => 'datetime',
         ];
+    }
+
+    public function getStatusAttribute(): string
+    {
+        return (string) ($this->new_status ?? $this->event_type ?? 'updated');
     }
 
     public function order(): BelongsTo

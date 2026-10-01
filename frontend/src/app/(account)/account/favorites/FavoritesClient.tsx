@@ -25,7 +25,7 @@ export default function FavoritesClient() {
   }
 
   const handleAddToCart = (product: Product) => {
-    addItem({ product, quantity: 1 } as any)
+    addItem(product, 1)
     toast.success('Added to cart')
   }
 
@@ -78,8 +78,9 @@ export default function FavoritesClient() {
           </motion.div>
         ) : (
           <motion.div variants={fadeUp} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {favorites.map((product: any) => {
-              const p = product as Product
+            {favorites.map((item: any) => {
+              const p = (item?.product ?? item) as Product
+              if (!p || !p.id) return null
               return (
                 <div key={p.id} className="group bg-white border border-gray-100 rounded-xl overflow-hidden hover:shadow-md transition-shadow">
                   <Link href={`/products/${p.slug}`} className="block">

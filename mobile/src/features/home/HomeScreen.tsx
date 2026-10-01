@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { View, Text, ScrollView, RefreshControl, Platform } from 'react-native';
+import { View, Text, ScrollView, RefreshControl } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Search, MapPin, Store, Tag, ChevronDown } from 'lucide-react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -19,7 +19,6 @@ import { ProductCardSkeleton } from '../../components/shared/ProductCardSkeleton
 import { FadeSlideIn } from '../../components/shared/FadeSlideIn';
 import { FadeEdgeScroll } from '../../components/shared/FadeEdgeScroll';
 import { useDeliveryStore } from '../../stores/deliveryStore';
-import { useCart } from '../cart/store';
 import { EmptyState } from '../../components/shared/EmptyState';
 import type { RootStackParamList } from '../../navigation/types';
 import { Logo } from '../../components/shared/Logo';
@@ -29,8 +28,6 @@ import type { ProductVO } from '../../lib/product';
 import type { ApiBannerSlide } from '../../lib/types';
 import { findStoreAvailability } from '../../lib/product';
 import { ErrorBoundary } from '../../components/shared/ErrorBoundary';
-import { FREE_DELIVERY_THRESHOLD_CENTS } from '../../lib/constants';
-import { formatZar } from '../../lib/currency';
 import { RecommendationsSection } from './RecommendationsSection';
 import { BannerCarousel } from '../../components/shared/BannerCarousel';
 import { fetchBanners } from '../../lib/apiClient';
@@ -58,22 +55,7 @@ export function HomeScreen() {
     queryKey: queryKeys.banners,
     queryFn: fetchBanners,
   });
-  const cartItems = useCart((s) => s.items);
-  const needsAll = cartItems.length > 0 && cartItems.some((ci) => !trending.some((p) => String(p.id) === ci.productId));
-  const { data: allProducts = [] } = useQuery({
-    queryKey: ['products-all', store?.id],
-    queryFn: async () => {
-      const { fetchProducts } = await import('../../lib/apiClient');
-      const { mapProduct } = await import('../../lib/product');
-      const result = await fetchProducts({ store_id: store?.id ?? undefined });
-      return result.data.map(mapProduct);
-    },
-    enabled: needsAll,
-  });
-  const priceSource = needsAll && allProducts.length > 0 ? allProducts : trending;
-  const subtotal = cartSubtotal(cartItems, priceSource);
   const storeName = store?.name ?? 'Choose your store';
-  const deliveryProgress = subtotal > 0 ? Math.min(subtotal / FREE_DELIVERY_THRESHOLD_CENTS, 1) : 0;
 
   const getStoreProductId = useCallback((product: ProductVO): number | null => {
     const selection = useStoreSelection.getState().getSelection(product.id);
@@ -91,10 +73,16 @@ export function HomeScreen() {
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      await queryClient.invalidateQueries({ queryKey: queryKeys.products({}) });
-      await queryClient.invalidateQueries({ queryKey: queryKeys.categories });
-      await queryClient.invalidateQueries({ queryKey: queryKeys.specials({ storeId: store?.id ?? null }) });
-      await queryClient.invalidateQueries({ queryKey: queryKeys.banners });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['products'] }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.trendingProducts }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.popularProducts }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.newArrivals }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.categories }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.specials({ storeId: store?.id ?? null }) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.banners }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.recommendations }),
+      ]);
     } finally {
       setRefreshing(false);
     }
@@ -134,9 +122,9 @@ export function HomeScreen() {
         colors={heroGradient(theme.name, theme.colors.background.primary)}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={{ paddingBottom: semanticSpacing.md }}
+        style={{ paddingBottom: semanticSpacing.sm }}
       >
-        <View style={{ paddingHorizontal: semanticSpacing.screenPadding, paddingTop: topInset, gap: semanticSpacing.sm }}>
+        <View style={{ paddingHorizontal: semanticSpacing.screenPadding, paddingTop: topInset, gap: semanticSpacing.xs }}>
           {/* Top Row: Logo + Search */}
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <FadeSlideIn delay={40} distance={6}>
@@ -162,7 +150,7 @@ export function HomeScreen() {
             </TactilePressable>
           </View>
 
-          {/* Store Selector with Free Delivery Progress */}
+          {/* Store Selector */}
           <View style={{ gap: semanticSpacing.xs }}>
             <TactilePressable
               onPress={() => navigation.navigate('StorePicker')}
@@ -193,30 +181,6 @@ export function HomeScreen() {
               </View>
               <ChevronDown size={16} color={theme.colors.text.tertiary} strokeWidth={2} />
             </TactilePressable>
-
-            {/* Free Delivery Progress Bar */}
-            {subtotal > 0 && (
-              <View style={{ gap: semanticSpacing.xxs }}>
-                <View style={{ height: 4, borderRadius: 2, backgroundColor: theme.colors.border.subtle, overflow: 'hidden' }}>
-                  <View
-                    style={{
-                      width: `${deliveryProgress * 100}%`,
-                      height: '100%',
-                      backgroundColor: deliveryProgress >= 1 ? brand.success : brand.orange,
-                      borderRadius: 2,
-                    }}
-                  />
-                </View>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                  <Text style={{ color: theme.colors.text.tertiary, ...textStyle.caption }}>
-                    {deliveryProgress >= 1 ? '🎉 Free delivery unlocked!' : `Add ${formatZar(Math.max(0, FREE_DELIVERY_THRESHOLD_CENTS - subtotal))} for free delivery`}
-                  </Text>
-                  <Text style={{ color: theme.colors.text.tertiary, ...textStyle.caption }}>
-                    {formatZar(subtotal)} / {formatZar(FREE_DELIVERY_THRESHOLD_CENTS)}
-                  </Text>
-                </View>
-              </View>
-            )}
           </View>
         </View>
       </LinearGradient>
@@ -224,7 +188,7 @@ export function HomeScreen() {
       {/* Content Sections */}
       {!trendingLoading && trending.length === 0 && specials.length === 0 && categories.length === 0 && banners.length === 0 ? (
         /* Empty State */
-        <FadeSlideIn delay={120} style={{ marginTop: semanticSpacing.sectionGap, paddingHorizontal: semanticSpacing.screenPadding }}>
+        <FadeSlideIn delay={120} style={{ marginTop: semanticSpacing.md, paddingHorizontal: semanticSpacing.screenPadding }}>
           <EmptyState
             icon={Store}
             title="The shelves are being stocked"
@@ -239,19 +203,19 @@ export function HomeScreen() {
       ) : (
         <>
           {/* Banner Carousel */}
-          {banners.length > 0 && renderSection(0, <BannerCarousel banners={banners} onSlidePress={handleBannerSlidePress} />, { marginTop: semanticSpacing.md })}
+          {banners.length > 0 && renderSection(0, <BannerCarousel banners={banners} onSlidePress={handleBannerSlidePress} />, { marginTop: semanticSpacing.xs })}
 
           {/* Picked for You Recommendations */}
-          {renderSection(1, <RecommendationsSection />, { marginTop: semanticSpacing.sectionGap })}
+          <RecommendationsSection />
 
           {/* Best Deals — Sale Products Rail */}
           {renderSection(2, (
-            <ErrorBoundary fallback={<View style={{ marginTop: semanticSpacing.lg, paddingHorizontal: semanticSpacing.screenPadding }}>
+            <ErrorBoundary fallback={<View style={{ marginTop: semanticSpacing.md, paddingHorizontal: semanticSpacing.screenPadding }}>
               <View style={{ backgroundColor: theme.colors.surface.elevated, borderRadius: semanticRadius.card, padding: 20, alignItems: 'center', borderWidth: 1, borderColor: theme.colors.border.subtle }}>
                 <Text style={{ color: theme.colors.text.secondary, fontSize: 13, fontWeight: '500' }}>Specials unavailable</Text>
               </View>
             </View>}>
-              <View style={{ marginTop: semanticSpacing.lg }}>
+              <View style={{ marginTop: semanticSpacing.md }}>
                 <SectionHeader
                   title="Best Deals"
                   icon={<Tag size={16} color={brand.orange} />}
@@ -284,7 +248,7 @@ export function HomeScreen() {
 
           {/* Categories — Horizontal Pills */}
           {categories.length > 0 && renderSection(3, (
-            <View style={{ marginTop: semanticSpacing.sectionGap }}>
+            <View style={{ marginTop: semanticSpacing.md }}>
               <SectionHeader title="Shop by category" icon={<Store size={16} color={brand.orange} />} />
               <FadeEdgeScroll
                 fadeWidth={32}
@@ -306,7 +270,7 @@ export function HomeScreen() {
 
           {/* Trending Now — Product Rail */}
           {trending.length > 0 && renderSection(4, (
-            <View style={{ marginTop: semanticSpacing.sectionGap }}>
+            <View style={{ marginTop: semanticSpacing.md }}>
               <SectionHeader title="Trending Now" icon={<Tag size={16} color={brand.orange} />} />
               <ProductCarousel
                 data={trending}
@@ -318,7 +282,7 @@ export function HomeScreen() {
 
           {/* Popular — Product Rail */}
           {popular.length > 0 && renderSection(5, (
-            <View style={{ marginTop: semanticSpacing.sectionGap }}>
+            <View style={{ marginTop: semanticSpacing.md }}>
               <SectionHeader title="Popular" icon={<Tag size={16} color={brand.orange} />} />
               <ProductCarousel
                 data={popular}
@@ -330,7 +294,7 @@ export function HomeScreen() {
 
           {/* New Arrivals — 2-Col Grid */}
           {newArrivals.length > 0 && renderSection(6, (
-            <View style={{ marginTop: semanticSpacing.sectionGap }}>
+            <View style={{ marginTop: semanticSpacing.md }}>
               <SectionHeader
                 title="New Arrivals"
                 trailing={
@@ -343,13 +307,14 @@ export function HomeScreen() {
                 data={newArrivals}
                 getStoreProductId={getStoreProductId}
                 source="home"
+                scrollEnabled={false}
               />
             </View>
           ))}
 
           {/* Loading Shimmer for Trending */}
           {trendingLoading && renderSection(7, (
-            <View style={{ marginTop: semanticSpacing.sectionGap }}>
+            <View style={{ marginTop: semanticSpacing.md }}>
               <SectionHeader title="Trending Now" />
               <View style={{ flexDirection: 'row', gap: semanticSpacing.inlineGap, paddingHorizontal: semanticSpacing.screenPadding }}>
                 <ProductCardSkeleton />
@@ -361,11 +326,6 @@ export function HomeScreen() {
       )}
     </ScrollView>
   );
-}
-
-function cartSubtotal(items: { productId: string; quantity: number }[], products: { id: number; effectivePriceCents: number }[]): number {
-  const priceOf = (id: string) => products.find((p) => p.id === Number(id))?.effectivePriceCents ?? 0;
-  return items.reduce((sum, i) => sum + priceOf(i.productId) * i.quantity, 0);
 }
 
 // Type for renderSection style parameter
