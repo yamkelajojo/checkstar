@@ -23,7 +23,7 @@ interface StepperProps {
  */
 export function Stepper({ quantity, onIncrement, onDecrement }: StepperProps) {
   const theme = useTheme();
-  const buttonSize = 30;
+  const buttonSize = 24;
   const buttonStyle: ViewStyle = {
     width: buttonSize,
     height: buttonSize,
@@ -35,8 +35,8 @@ export function Stepper({ quantity, onIncrement, onDecrement }: StepperProps) {
 
   useEffect(() => {
     pulse.value = withSequence(
-      withSpring(1.25, { damping: 14, stiffness: 400, mass: 0.4 }),
-      withDelay(120, withSpring(1, springs.appleGentle)),
+      withSpring(1.18, { damping: 14, stiffness: 400, mass: 0.4 }),
+      withDelay(90, withSpring(1, springs.appleGentle)),
     );
   }, [quantity]);
 
@@ -47,13 +47,13 @@ export function Stepper({ quantity, onIncrement, onDecrement }: StepperProps) {
   return (
     <View
       style={{
+        height: 30,
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 4,
+        gap: 3,
         backgroundColor: theme.colors.surface.primary,
         borderRadius: semanticRadius.buttonPill,
         paddingHorizontal: 3,
-        paddingVertical: 3,
         borderWidth: 1,
         borderColor: theme.colors.border.subtle,
         shadowColor: '#000',
@@ -64,6 +64,7 @@ export function Stepper({ quantity, onIncrement, onDecrement }: StepperProps) {
       }}
     >
       <TactilePressable
+        variant="compact"
         onPress={() => {
           haptic.selection();
           onDecrement();
@@ -79,18 +80,18 @@ export function Stepper({ quantity, onIncrement, onDecrement }: StepperProps) {
           },
         ]}
       >
-        <Minus size={12} color={quantity <= 1 ? theme.colors.text.tertiary : theme.colors.text.primary} strokeWidth={2.2} />
+        <Minus size={11} color={quantity <= 1 ? theme.colors.text.tertiary : theme.colors.text.primary} strokeWidth={2.3} />
       </TactilePressable>
 
-      <Animated.View style={[{ minWidth: 24, alignItems: 'center', justifyContent: 'center' }, pulseStyle]}>
+      <Animated.View style={[{ minWidth: 20, alignItems: 'center', justifyContent: 'center' }, pulseStyle]}>
         <Text
           style={{
             textAlign: 'center',
             fontWeight: fontWeight.bold,
             color: theme.colors.text.primary,
-            fontSize: 13,
+            fontSize: 12,
             letterSpacing: -0.2,
-            minWidth: 20,
+            minWidth: 18,
           }}
           accessibilityLiveRegion="polite"
         >
@@ -99,6 +100,7 @@ export function Stepper({ quantity, onIncrement, onDecrement }: StepperProps) {
       </Animated.View>
 
       <TactilePressable
+        variant="compact"
         onPress={() => {
           haptic.selection();
           onIncrement();
@@ -118,7 +120,7 @@ export function Stepper({ quantity, onIncrement, onDecrement }: StepperProps) {
           },
         ]}
       >
-        <Plus size={12} color={theme.colors.text.inverse} strokeWidth={2.5} />
+        <Plus size={11} color={theme.colors.text.inverse} strokeWidth={2.5} />
       </TactilePressable>
     </View>
   );

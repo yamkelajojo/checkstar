@@ -161,7 +161,17 @@ export function ProductDetailScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background.primary }}>
-      <FadeSlideIn delay={60} distance={8}>
+      <FadeSlideIn
+        delay={60}
+        distance={8}
+        style={{
+          position: 'absolute',
+          top: insets.top + 10,
+          left: 12,
+          zIndex: 100,
+          elevation: 10,
+        }}
+      >
         <Pressable
           onPress={() => {
             haptic.selection();
@@ -171,12 +181,10 @@ export function ProductDetailScreen() {
               navigation.navigate('Tabs');
             }
           }}
+          accessibilityRole="button"
+          accessibilityLabel="Back"
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-          style={{
-            position: 'absolute',
-            top: insets.top + 12,
-            left: 12,
-            zIndex: 100,
+          style={({ pressed }) => ({
             backgroundColor: theme.colors.surface.primary,
             paddingHorizontal: 14,
             paddingVertical: 10,
@@ -190,8 +198,9 @@ export function ProductDetailScreen() {
             shadowOffset: { width: 0, height: 2 },
             shadowOpacity: 0.1,
             shadowRadius: 10,
-            elevation: 4,
-          }}
+            elevation: 6,
+            opacity: pressed ? 0.8 : 1,
+          })}
         >
           <ChevronLeft size={18} color={theme.colors.text.primary} strokeWidth={2.5} />
           <Text style={{ fontSize: 13, fontWeight: '700', letterSpacing: 0.1, color: theme.colors.text.primary }}>Back</Text>

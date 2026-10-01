@@ -84,7 +84,7 @@ export function ProductCard({ product, storeProductId = null, style, onRequestSu
       accessibilityLabel={product.name}
       style={[{ borderRadius: semanticRadius.card, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2, width: '100%' }, style]}
     >
-      <View style={{ width: '100%', backgroundColor: theme.colors.surface.primary, borderRadius: semanticRadius.card, padding: semanticSpacing.cardPadding, gap: semanticSpacing.elementGap, minHeight: 238, borderWidth: 1, borderColor: theme.colors.border.subtle, flexDirection: 'column' }}>
+      <View style={{ width: '100%', backgroundColor: theme.colors.surface.primary, borderRadius: semanticRadius.card, padding: semanticSpacing.cardPadding, gap: semanticSpacing.elementGap, minHeight: 240, borderWidth: 1, borderColor: theme.colors.border.subtle, flexDirection: 'column' }}>
         <View
           style={{
             width: '100%',
@@ -112,6 +112,7 @@ export function ProductCard({ product, storeProductId = null, style, onRequestSu
                 source={imageSource}
                 style={{ width: 86, height: 86, transform: [{ rotate: '-12deg' }] }}
                 contentFit="contain"
+                transition={220}
                 cachePolicy="memory-disk"
                 onError={() => setImageSource(null)}
               />
@@ -125,24 +126,24 @@ export function ProductCard({ product, storeProductId = null, style, onRequestSu
                 position: 'absolute',
                 top: semanticSpacing.tightGap,
                 left: semanticSpacing.tightGap,
-                backgroundColor: brand.orange,
+                backgroundColor: '#1B1816',
                 borderRadius: semanticRadius.badge,
-                paddingHorizontal: semanticSpacing.inlineGap + 2,
-                paddingVertical: 4,
-                shadowColor: brand.orange,
+                paddingHorizontal: 9,
+                paddingVertical: 3,
+                shadowColor: '#000',
                 shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.3,
+                shadowOpacity: 0.2,
                 shadowRadius: 4,
               }}
             >
-              <Text style={{ color: theme.colors.text.inverse, fontSize: 11, fontWeight: fontWeight.bold, letterSpacing: 0.3 }}>{pctOff}% OFF</Text>
+              <Text style={{ color: '#FFFFFF', fontSize: 10, fontWeight: fontWeight.bold, letterSpacing: 0.3 }}>{pctOff}% OFF</Text>
             </View>
           )}
         </View>
 
         <View style={{ gap: 2, flex: 1, justifyContent: 'flex-start' }}>
-          <View style={{ minHeight: 44 }}>
-            <Text numberOfLines={2} style={{ ...textStyle.title, color: theme.colors.text.primary }}>
+          <View style={{ height: 40, justifyContent: 'flex-start' }}>
+            <Text numberOfLines={2} style={{ ...textStyle.title, lineHeight: 19, color: theme.colors.text.primary }}>
               {product.name}
             </Text>
           </View>
@@ -189,16 +190,25 @@ export function ProductCard({ product, storeProductId = null, style, onRequestSu
           )}
         </View>
 
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto' }}>
+        <View style={{ height: 30, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto' }}>
           {quantity === 0 ? (
             <TactilePressable
+              variant="compact"
               onPress={() => add(String(product.id), 1, storeProductId)}
               haptic="tap"
               accessibilityRole="button"
               accessibilityLabel={`Add ${product.name} to cart`}
-              style={{ backgroundColor: brand.orange, borderRadius: semanticRadius.buttonPill, paddingHorizontal: 14, minWidth: 80, paddingVertical: 6 }}
+              style={{
+                backgroundColor: brand.orange,
+                borderRadius: semanticRadius.buttonPill,
+                height: 30,
+                paddingHorizontal: 12,
+                minWidth: 68,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
             >
-              <Text style={{ color: theme.colors.text.inverse, fontWeight: fontWeight.semibold, textTransform: 'uppercase', ...textStyle.caption }}>
+              <Text style={{ color: theme.colors.text.inverse, fontWeight: fontWeight.bold, textTransform: 'uppercase', fontSize: 11, letterSpacing: 0.3 }}>
                 Add +
               </Text>
             </TactilePressable>

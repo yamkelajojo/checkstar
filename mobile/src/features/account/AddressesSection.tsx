@@ -14,6 +14,7 @@ import { getDeliveryCoords } from '../../lib/deliveryCoords';
 import {
   searchAddressSuggestions,
   resolveAddressCoordinates,
+  reverseResolveAddress,
   type AddressSuggestion,
 } from '../../lib/addressSuggestions';
 import { fetchAddresses, createAddress, updateAddress, deleteAddress } from '../../lib/apiClient';
@@ -44,10 +45,14 @@ export function AddressesSection() {
     setError(null);
     try {
       const fix = await getDeliveryCoords();
-      setCoords({ latitude: fix.latitude, longitude: fix.longitude });
+      const resolved = reverseResolveAddress(fix.latitude, fix.longitude);
+      setAddress(resolved.address);
+      setLabel((prev) => (prev.trim() ? prev : resolved.label));
+      setCoords({ latitude: resolved.latitude, longitude: resolved.longitude });
+      setShowSuggestions(false);
       haptic.selection();
     } catch {
-      setError('Could not get your location — enter coordinates manually below.');
+      setError('Could not get your location — enter your street address below.');
     } finally {
       setLocating(false);
     }
@@ -154,12 +159,44 @@ export function AddressesSection() {
               <Text numberOfLines={1} style={{ fontSize: 11, color: theme.colors.text.secondary }}>{item.address}</Text>
             </View>
             {!item.is_default ? (
-              <TactilePressable onPress={() => void makeDefault(item.id)} haptic="selection" style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: theme.colors.surface.elevated, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: theme.colors.border.subtle }}>
-                <Star size={12} color={theme.colors.text.tertiary} strokeWidth={2} />
+              <TactilePressable
+                variant="compact"
+                onPress={() => void makeDefault(item.id)}
+                haptic="selection"
+                accessibilityRole="button"
+                accessibilityLabel={`Make ${item.label} default`}
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 16,
+                  backgroundColor: theme.colors.surface.elevated,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderWidth: 1,
+                  borderColor: theme.colors.border.subtle,
+                }}
+              >
+                <Star size={13} color={theme.colors.text.tertiary} strokeWidth={2} />
               </TactilePressable>
             ) : null}
-            <TactilePressable onPress={() => void remove(item.id)} haptic="selection" style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: '#FEF2F2', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#FECACA' }}>
-              <Trash2 size={12} color="#DC2626" strokeWidth={2} />
+            <TactilePressable
+              variant="compact"
+              onPress={() => void remove(item.id)}
+              haptic="selection"
+              accessibilityRole="button"
+              accessibilityLabel={`Delete ${item.label}`}
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 16,
+                backgroundColor: '#FEF2F2',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderWidth: 1,
+                borderColor: '#FECACA',
+              }}
+            >
+              <Trash2 size={13} color="#DC2626" strokeWidth={2} />
             </TactilePressable>
           </View>
         </CrashCascadeIn>

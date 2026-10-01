@@ -268,22 +268,6 @@ export function OrderDetailScreen() {
             </View>
           </FadeSlideIn>
 
-          {canReorder && (
-            <FadeSlideIn delay={280} distance={8}>
-              <TactilePressable
-                onPress={handleReorder}
-                haptic="commit"
-                accessibilityRole="button"
-                style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: semanticSpacing.xxs, backgroundColor: theme.colors.surface.primary, borderRadius: semanticRadius.buttonPill, paddingVertical: semanticSpacing.sm, borderWidth: 1, borderColor: brand.orange }}
-              >
-                <RefreshCw size={16} color={brand.orange} />
-                <Text style={[textStyle.bodySmall, { color: brand.orange, fontWeight: fontWeight.semibold, letterSpacing: 0.2 }]}>
-                  Reorder
-                </Text>
-              </TactilePressable>
-            </FadeSlideIn>
-          )}
-
           <FadeSlideIn delay={300} distance={8}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', backgroundColor: theme.colors.surface.primary, borderRadius: semanticRadius.card, padding: semanticSpacing.md, borderWidth: 1, borderColor: theme.colors.border.subtle }}>
               <Text style={[textStyle.body, { color: theme.colors.text.secondary }]}>{copy.orders.payment}</Text>

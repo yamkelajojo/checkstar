@@ -159,8 +159,8 @@ export function SaleDetailScreen() {
   if (isLoading) {
     return (
       <View style={{ flex: 1, backgroundColor: theme.colors.background.primary }}>
-        <ScreenHeader title="Sale" showBackButton onBackPress={() => navigation.goBack()} />
-        <View style={{ flexDirection: 'row', gap: semanticSpacing.inlineGap, paddingHorizontal: semanticSpacing.screenPadding, marginTop: semanticSpacing.md }}>
+        <ScreenHeader title="Sale" showBackButton onBackPress={() => navigation.goBack()} modal />
+        <View style={{ flexDirection: 'row', gap: semanticSpacing.inlineGap, paddingHorizontal: semanticSpacing.screenPadding, marginTop: semanticSpacing.sm }}>
           <ProductCardSkeleton />
           <ProductCardSkeleton />
         </View>
@@ -171,7 +171,7 @@ export function SaleDetailScreen() {
   if (!special) {
     return (
       <View style={{ flex: 1, backgroundColor: theme.colors.background.primary }}>
-        <ScreenHeader title="Sale" showBackButton onBackPress={() => navigation.goBack()} />
+        <ScreenHeader title="Sale" showBackButton onBackPress={() => navigation.goBack()} modal />
         <EmptyState
           icon={Tag}
           title="Sale not found"
@@ -198,11 +198,12 @@ export function SaleDetailScreen() {
         showBackButton={true}
         backButtonVariant="back"
         onBackPress={() => navigation.goBack()}
+        modal
       />
       {/* Sale Header */}
-      <View style={{ paddingHorizontal: semanticSpacing.screenPadding, paddingBottom: semanticSpacing.lg }}>
+      <View style={{ paddingHorizontal: semanticSpacing.screenPadding, paddingTop: semanticSpacing.xs, paddingBottom: semanticSpacing.md }}>
         {special.banner_image && (
-          <View style={{ marginBottom: semanticSpacing.md, borderRadius: semanticRadius.card, overflow: 'hidden' }}>
+          <View style={{ marginBottom: semanticSpacing.sm, borderRadius: semanticRadius.card, overflow: 'hidden' }}>
             <Image
               source={{ uri: mediaUri(special.banner_image) }}
               style={{ width: '100%', height: 180, resizeMode: 'cover' }}
@@ -210,26 +211,23 @@ export function SaleDetailScreen() {
             />
           </View>
         )}
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: semanticSpacing.inlineGap, marginBottom: semanticSpacing.xs }}>
-          <Text style={{ ...textStyle.h2, fontWeight: fontWeight.bold, color: theme.colors.text.primary }}>
-            {special.name}
-          </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: semanticSpacing.inlineGap, marginBottom: semanticSpacing.xxs }}>
           <View style={{ backgroundColor: isActive ? brand.success + '15' : theme.colors.text.tertiary + '15', borderRadius: semanticRadius.smallControl, paddingHorizontal: semanticSpacing.inlineGap, paddingVertical: semanticSpacing.xxs }}>
             <Text style={{ fontSize: 10, fontWeight: '700', color: isActive ? brand.success : theme.colors.text.tertiary, letterSpacing: 0.5 }}>
               {isActive ? 'ACTIVE' : 'ENDED'}
             </Text>
           </View>
+          {(special.start_date || special.end_date) && (
+            <Text style={{ color: theme.colors.text.tertiary, ...textStyle.caption }}>
+              {special.start_date && `From ${formatDate(special.start_date)}`}
+              {special.start_date && special.end_date ? ' • ' : ''}
+              {special.end_date && `Ends ${formatDate(special.end_date)}`}
+            </Text>
+          )}
         </View>
         {special.description && (
-          <Text style={{ color: theme.colors.text.secondary, ...textStyle.body, marginBottom: semanticSpacing.xs }}>
+          <Text style={{ color: theme.colors.text.secondary, ...textStyle.body }}>
             {special.description}
-          </Text>
-        )}
-        {(special.start_date || special.end_date) && (
-          <Text style={{ color: theme.colors.text.tertiary, ...textStyle.caption }}>
-            {special.start_date && `From ${formatDate(special.start_date)}`}
-            {special.start_date && special.end_date ? ' • ' : ''}
-            {special.end_date && `Ends ${formatDate(special.end_date)}`}
           </Text>
         )}
       </View>

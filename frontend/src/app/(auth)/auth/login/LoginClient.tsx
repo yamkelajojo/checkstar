@@ -139,7 +139,7 @@ export default function LoginClient() {
               whileTap={{ scale: 0.98 }}
               aria-busy={loading}
               aria-label={loading ? 'Signing in' : undefined}
-              className="relative w-full h-12 overflow-hidden bg-primary text-white rounded-lg font-medium hover:bg-primary-dark transition-colors disabled:cursor-default flex items-center justify-center"
+              className={`relative w-full h-12 overflow-hidden ${loading ? 'bg-primary-dark' : 'bg-primary'} text-white rounded-lg font-medium hover:bg-primary-dark transition-colors duration-200 disabled:cursor-default flex items-center justify-center`}
             >
               <motion.span
                 aria-hidden={loading || undefined}
@@ -155,7 +155,7 @@ export default function LoginClient() {
                 transition={{ duration: time.fast, ease: ease.apple }}
                 className="flex items-center justify-center"
               >
-                <Loader className="h-6 w-20" tone="light" />
+                <Loader className="h-6 w-20 opacity-60" tone="light" />
               </motion.span>
             </motion.button>
           </form>

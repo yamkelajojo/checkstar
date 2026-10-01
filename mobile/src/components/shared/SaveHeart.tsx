@@ -1,11 +1,11 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Pressable } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withSpring,
   withTiming,
   withSequence,
+  Easing,
 } from 'react-native-reanimated';
 import { Heart } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
@@ -21,31 +21,41 @@ interface SaveHeartProps {
 }
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+const EASE_OUT = Easing.out(Easing.quad);
 
-export function SaveHeart({ productId, product, size = 18, style }: SaveHeartProps) {
+export function SaveHeart({ productId, product, size = 17, style }: SaveHeartProps) {
   const reduceMotion = useReducedMotion();
   const isFavorite = useFavoritesStore((s) => s.favorites.has(productId));
   const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
+  const prevFavorite = useRef(isFavorite);
 
   const scale = useSharedValue(1);
   const burstScale = useSharedValue(0);
   const burstOpacity = useSharedValue(0);
 
   useEffect(() => {
+    if (prevFavorite.current === isFavorite) return;
+    prevFavorite.current = isFavorite;
+
     if (reduceMotion) return;
 
     if (isFavorite) {
       scale.value = withSequence(
-        withSpring(1.45, { damping: 10, stiffness: 240 }),
-        withSpring(1, { damping: 15, stiffness: 200 }),
+        withTiming(1.16, { duration: 95, easing: EASE_OUT }),
+        withTiming(1, { duration: 115, easing: EASE_OUT }),
       );
       burstScale.value = withSequence(
-        withTiming(2.2, { duration: 400 }),
+        withTiming(1.3, { duration: 160, easing: EASE_OUT }),
         withTiming(0, { duration: 0 }),
       );
       burstOpacity.value = withSequence(
-        withTiming(0.6, { duration: 200 }),
-        withTiming(0, { duration: 200 }),
+        withTiming(0.24, { duration: 70 }),
+        withTiming(0, { duration: 90 }),
+      );
+    } else {
+      scale.value = withSequence(
+        withTiming(0.92, { duration: 75, easing: EASE_OUT }),
+        withTiming(1, { duration: 95, easing: EASE_OUT }),
       );
     }
   }, [isFavorite, reduceMotion]);

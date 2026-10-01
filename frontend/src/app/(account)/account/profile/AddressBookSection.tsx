@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'motion/react'
 import { MapPin, Plus, Pencil, Trash2, Star, Loader2, LocateFixed, X } from 'lucide-react'
 import { api, ApiError } from '@/lib/api'
 import { getDeliveryCoords } from '@/lib/delivery-coords'
-import { searchAddressSuggestions, resolveAddressCoordinates } from '@/lib/address-suggestions'
+import { searchAddressSuggestions, resolveAddressCoordinates, reverseResolveAddress } from '@/lib/address-suggestions'
 import type { UserAddress } from '@/types'
 
 interface FormState {
@@ -89,7 +89,19 @@ export default function AddressBookSection() {
     setFormError('')
     try {
       const coords = await getDeliveryCoords()
-      setForm(f => (f ? { ...f, latitude: String(coords.latitude), longitude: String(coords.longitude) } : f))
+      const resolved = reverseResolveAddress(coords.latitude, coords.longitude)
+      setForm(f =>
+        f
+          ? {
+              ...f,
+              label: f.label.trim() ? f.label : resolved.label,
+              address: resolved.address,
+              latitude: String(resolved.latitude),
+              longitude: String(resolved.longitude),
+            }
+          : f,
+      )
+      setShowSuggestions(false)
     } catch {
       setFormError('Could not get your location — enter coordinates manually.')
     } finally {

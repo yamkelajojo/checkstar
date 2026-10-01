@@ -23,8 +23,8 @@ export const DURBAN_ADDRESS_CATALOG: AddressSuggestion[] = [
     suburb: 'Durban Central',
     city: 'Durban',
     postalCode: '4001',
-    latitude: -29.8587,
-    longitude: 31.0218,
+    latitude: -29.8512,
+    longitude: 31.0314,
     storeArea: 'Durban Central',
   },
   {
@@ -328,6 +328,43 @@ export function resolveAddressCoordinates(
     return { latitude: currentCoords.latitude, longitude: currentCoords.longitude }
   }
 
-  // 5. Default to Durban Central flagship delivery zone
-  return { latitude: -29.8587, longitude: 31.0218 }
+  // 5. Default to Durban Central flagship delivery zone (Morningside / Berea)
+  return { latitude: -29.8389, longitude: 31.0145 }
 }
+
+/**
+ * Resolves a human-readable street address, default label, and deliverable
+ * coordinates from a GPS fix so "Use my current location" populates all
+ * address form inputs immediately.
+ */
+export function reverseResolveAddress(
+  latitude: number,
+  longitude: number,
+): { address: string; label: string; latitude: number; longitude: number } {
+  const inDurbanBounds =
+    latitude >= -30.1 &&
+    latitude <= -29.5 &&
+    longitude >= 30.7 &&
+    longitude <= 31.2
+
+  let closest = DURBAN_ADDRESS_CATALOG[0]
+  let bestDistSq = Number.POSITIVE_INFINITY
+
+  for (const item of DURBAN_ADDRESS_CATALOG) {
+    const dLat = item.latitude - latitude
+    const dLng = item.longitude - longitude
+    const distSq = dLat * dLat + dLng * dLng
+    if (distSq < bestDistSq) {
+      bestDistSq = distSq
+      closest = item
+    }
+  }
+
+  return {
+    address: closest.address,
+    label: closest.suburb || 'Home',
+    latitude: inDurbanBounds ? latitude : closest.latitude,
+    longitude: inDurbanBounds ? longitude : closest.longitude,
+  }
+}
+

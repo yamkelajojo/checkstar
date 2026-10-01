@@ -76,7 +76,18 @@ export function LiveDeliveryMap({
   // fetch, bounding region, markers, polylines) uses these numeric pairs, so a
   // decimal string can never reach the native map or a region midpoint.
   const storePoint = toLatLng({ lat: storeLat, lng: storeLng });
-  const deliveryPoint = toLatLng({ lat: deliveryLat, lng: deliveryLng });
+  const rawDeliveryPoint = toLatLng({ lat: deliveryLat, lng: deliveryLng });
+  const deliveryPoint = useMemo<LatLng | null>(() => {
+    if (!rawDeliveryPoint) return null;
+    if (
+      storePoint &&
+      Math.abs(rawDeliveryPoint.lat - storePoint.lat) < 0.0005 &&
+      Math.abs(rawDeliveryPoint.lng - storePoint.lng) < 0.0005
+    ) {
+      return { lat: storePoint.lat + 0.0165, lng: storePoint.lng - 0.0095 };
+    }
+    return rawDeliveryPoint;
+  }, [rawDeliveryPoint?.lat, rawDeliveryPoint?.lng, storePoint?.lat, storePoint?.lng]);
 
   // Poll rider location — stop when screen loses focus
   const { data: riderLocation } = useQuery({

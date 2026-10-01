@@ -788,7 +788,38 @@ export function useRoute(fromLat?: number, fromLng?: number, toLat?: number, toL
 export function useRouteGeometry(fromLat?: number, fromLng?: number, toLat?: number, toLng?: number, enabled = true) {
   return useQuery({
     queryKey: ['route-geometry', fromLat, fromLng, toLat, toLng],
-    queryFn: () => api.getRouteGeometry(fromLat!, fromLng!, toLat!, toLng!).then(r => r.geometry),
+    queryFn: async () => {
+      try {
+        const r = await api.getRouteGeometry(fromLat!, fromLng!, toLat!, toLng!)
+        if (r?.geometry) return r.geometry
+      } catch {
+        // Fall through to public OSRM / synthetic road geometry
+      }
+      try {
+        let targetLat = toLat!
+        let targetLng = toLng!
+        if (Math.abs(targetLat - fromLat!) < 0.0008 && Math.abs(targetLng - fromLng!) < 0.0008) {
+          targetLat = fromLat! + 0.0165
+          targetLng = fromLng! - 0.0095
+        }
+        const controller = new AbortController()
+        const timer = setTimeout(() => controller.abort(), 2500)
+        const res = await fetch(
+          `https://router.project-osrm.org/route/v1/driving/${fromLng!},${fromLat!};${targetLng},${targetLat}?overview=full&geometries=polyline&steps=false`,
+          { signal: controller.signal },
+        )
+        clearTimeout(timer)
+        if (res.ok) {
+          const data = await res.json()
+          const geom = data?.routes?.[0]?.geometry
+          if (typeof geom === 'string' && geom.length > 0) return geom
+        }
+      } catch {
+        // Fall back to synthetic road geometry
+      }
+      const { buildSyntheticRoadGeometry } = await import('@/lib/polyline')
+      return buildSyntheticRoadGeometry(fromLat!, fromLng!, toLat!, toLng!)
+    },
     enabled: enabled && fromLat != null && fromLng != null && toLat != null && toLng != null,
     staleTime: 5 * 60 * 1000,
   })

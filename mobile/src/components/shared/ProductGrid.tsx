@@ -1,6 +1,7 @@
 import { FlatList, View, type StyleProp, type ViewStyle } from 'react-native';
 import { ProductCard } from './ProductCard';
 import type { BadgeRect } from './ProductCard';
+import { FadeSlideIn } from './FadeSlideIn';
 import { getGridMetrics } from '../../lib/grid';
 import { semanticSpacing } from '../../theme/spacing';
 import type { ProductVO } from '../../lib/product';
@@ -68,14 +69,16 @@ export function ProductGrid({
       onEndReachedThreshold={onEndReachedThreshold}
       ListFooterComponent={ListFooterComponent}
       ListHeaderComponent={ListHeaderComponent}
-      renderItem={({ item }) => (
+      renderItem={({ item, index }) => (
         <View testID="product-grid-item" style={{ width: columnWidth }}>
-          <ProductCard
-            product={item}
-            storeProductId={getStoreProductId(item)}
-            onRequestSummary={onRequestSummary}
-            source={source}
-          />
+          <FadeSlideIn delay={(index % 6) * 28} distance={10} style={{ width: '100%' }}>
+            <ProductCard
+              product={item}
+              storeProductId={getStoreProductId(item)}
+              onRequestSummary={onRequestSummary}
+              source={source}
+            />
+          </FadeSlideIn>
         </View>
       )}
     />

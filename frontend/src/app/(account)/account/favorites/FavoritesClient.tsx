@@ -82,16 +82,18 @@ export default function FavoritesClient() {
               const p = (item?.product ?? item) as Product
               if (!p || !p.id) return null
               return (
-                <div key={p.id} className="group bg-white border border-gray-100 rounded-xl overflow-hidden hover:shadow-md transition-shadow">
+                <div key={p.id} className="group h-full flex flex-col bg-white border border-gray-100 rounded-xl overflow-hidden hover:shadow-md transition-shadow">
                   <Link href={`/products/${p.slug}`} className="block">
                     <div className="aspect-square bg-gray-50 flex items-center justify-center overflow-hidden">
                       {p.image ? <SafeImage src={p.image} alt={p.name} width={200} height={200} className="object-cover w-full h-full group-hover:scale-105 transition-transform" /> : <ShoppingBag size={28} className="text-gray-300" />}
                     </div>
                   </Link>
-                  <div className="p-3">
-                    <Link href={`/products/${p.slug}`}><p className="text-sm font-medium line-clamp-2 hover:text-primary">{p.name}</p></Link>
+                  <div className="p-3 flex-1 flex flex-col">
+                    <Link href={`/products/${p.slug}`}>
+                      <p className="text-sm font-medium leading-snug line-clamp-2 min-h-[2.75em] hover:text-primary">{p.name}</p>
+                    </Link>
                     <p className="text-sm font-semibold text-primary mt-1">{formatZar(p.effective_price ?? p.sale_price ?? p.price)}</p>
-                    <div className="flex gap-1.5 mt-3">
+                    <div className="flex gap-1.5 mt-auto pt-3">
                       <button onClick={() => handleAddToCart(p)} className="flex-1 px-3 py-1.5 bg-primary text-white rounded-lg text-xs font-medium hover:bg-primary-dark">Add</button>
                       <button onClick={() => handleRemove(p.id)} disabled={removeMut.isPending} className="p-1.5 border border-gray-200 rounded-lg hover:bg-red-50 hover:text-red-600 hover:border-red-200 disabled:opacity-50"><Trash2 size={14} /></button>
                     </div>

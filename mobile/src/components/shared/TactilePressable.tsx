@@ -120,35 +120,33 @@ export function TactilePressable({
     flatStyle?.width === '100%' ||
     typeof flatStyle?.width === 'number' ||
     flatStyle?.alignSelf === 'stretch' ||
+    flatStyle?.justifyContent === 'space-between' ||
     (typeof flatStyle?.flex === 'number' && flatStyle.flex > 0);
 
   return (
     <Animated.View
       style={[styles.base, variantStyle[variant], animatedStyle, style]}
     >
-      <View
+      <Pressable
+        {...rest}
         style={{
-          flex: 1,
           width: shouldStretch ? '100%' : undefined,
-          alignItems: variant === 'card' ? 'stretch' : (flatStyle?.alignItems ?? 'center'),
+          flexDirection:
+            flatStyle?.flexDirection ?? (variant === 'card' ? 'column' : 'row'),
+          alignItems:
+            variant === 'card' ? 'stretch' : (flatStyle?.alignItems ?? 'center'),
           justifyContent: flatStyle?.justifyContent ?? 'center',
-          flexDirection: flatStyle?.flexDirection ?? 'column',
           gap: flatStyle?.gap ?? 0,
         }}
+        accessibilityRole={accessibilityRole}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        onPress={disabled ? undefined : onPress}
+        disabled={disabled}
       >
-        <Pressable
-          {...rest}
-          style={variant === 'card' ? { width: '100%' } : undefined}
-          accessibilityRole={accessibilityRole}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          onPressIn={handlePressIn}
-          onPressOut={handlePressOut}
-          onPress={disabled ? undefined : onPress}
-          disabled={disabled}
-        >
-          {children}
-        </Pressable>
-      </View>
+        {children}
+      </Pressable>
     </Animated.View>
   );
 }
@@ -162,7 +160,6 @@ const variantStyle: Record<Variant, StyleProp<ViewStyle>> = {
 
 const styles = StyleSheet.create({
   base: {
-    minHeight: 44,
     justifyContent: 'center',
   },
 });

@@ -69,3 +69,58 @@ export function computeBounds(points: LatLng[]): [[number, number], [number, num
   }
   return [[minLat, minLng], [maxLat, maxLng]]
 }
+
+function encodeSignedNumber(num: number): string {
+  let sgnNum = num << 1
+  if (num < 0) sgnNum = ~sgnNum
+  let encoded = ''
+  while (sgnNum >= 0x20) {
+    encoded += String.fromCharCode((0x20 | (sgnNum & 0x1f)) + 63)
+    sgnNum >>= 5
+  }
+  encoded += String.fromCharCode(sgnNum + 63)
+  return encoded
+}
+
+export function encodePolyline(points: LatLng[]): string {
+  let lastLat = 0
+  let lastLng = 0
+  let result = ''
+  for (const point of points) {
+    const lat = Math.round(point.lat * 1e5)
+    const lng = Math.round(point.lng * 1e5)
+    result += encodeSignedNumber(lat - lastLat)
+    result += encodeSignedNumber(lng - lastLng)
+    lastLat = lat
+    lastLng = lng
+  }
+  return result
+}
+
+export function buildSyntheticRoadGeometry(
+  fromLat: number,
+  fromLng: number,
+  toLat: number,
+  toLng: number,
+): string {
+  let targetLat = toLat
+  let targetLng = toLng
+  if (Math.abs(targetLat - fromLat) < 0.0008 && Math.abs(targetLng - fromLng) < 0.0008) {
+    targetLat = fromLat + 0.0165
+    targetLng = fromLng - 0.0095
+  }
+  const dLat = targetLat - fromLat
+  const dLng = targetLng - fromLng
+  const steps = 16
+  const pts: LatLng[] = []
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps
+    const curve = Math.sin(t * Math.PI) * 0.14 + Math.sin(t * Math.PI * 2) * 0.04
+    pts.push({
+      lat: fromLat + dLat * t - dLng * curve,
+      lng: fromLng + dLng * t + dLat * curve,
+    })
+  }
+  return encodePolyline(pts)
+}
+

@@ -51,7 +51,18 @@ export function RouteMap({
   // ("-29.8350000") makes the marker/polyline fail, and string arithmetic in
   // the bounding-region midpoint produced NaN. Coerce once, use everywhere.
   const storePoint = toLatLng({ lat: storeLat, lng: storeLng });
-  const deliveryPoint = toLatLng({ lat: deliveryLat, lng: deliveryLng });
+  const rawDeliveryPoint = toLatLng({ lat: deliveryLat, lng: deliveryLng });
+  const deliveryPoint = useMemo<LatLng | null>(() => {
+    if (!rawDeliveryPoint) return null;
+    if (
+      storePoint &&
+      Math.abs(rawDeliveryPoint.lat - storePoint.lat) < 0.0005 &&
+      Math.abs(rawDeliveryPoint.lng - storePoint.lng) < 0.0005
+    ) {
+      return { lat: storePoint.lat + 0.0165, lng: storePoint.lng - 0.0095 };
+    }
+    return rawDeliveryPoint;
+  }, [rawDeliveryPoint?.lat, rawDeliveryPoint?.lng, storePoint?.lat, storePoint?.lng]);
   const hasCoords = storePoint != null && deliveryPoint != null;
 
   // Decode geometry from the backend if available

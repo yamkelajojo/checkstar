@@ -555,6 +555,42 @@ export async function fetchNearestStore(latitude: number, longitude: number): Pr
 
 // ---- Routing ----
 
+import { buildSyntheticRoadGeometry } from './polyline';
+
+async function fetchPublicOsrmGeometry(
+  fromLat: number,
+  fromLng: number,
+  toLat: number,
+  toLng: number,
+): Promise<{ geometry: string; distanceKm: number; durationMinutes: number } | null> {
+  try {
+    let targetLat = toLat;
+    let targetLng = toLng;
+    if (Math.abs(targetLat - fromLat) < 0.0008 && Math.abs(targetLng - fromLng) < 0.0008) {
+      targetLat = fromLat + 0.0165;
+      targetLng = fromLng - 0.0095;
+    }
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 2500);
+    const url = `https://router.project-osrm.org/route/v1/driving/${fromLng},${fromLat};${targetLng},${targetLat}?overview=full&geometries=polyline&steps=false`;
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timer);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const route = data?.routes?.[0];
+    if (route?.geometry) {
+      return {
+        geometry: route.geometry,
+        distanceKm: Math.round((Number(route.distance ?? 2000) / 1000) * 100) / 100,
+        durationMinutes: Math.max(5, Math.ceil(Number(route.duration ?? 360) / 60)),
+      };
+    }
+  } catch {
+    // Public OSRM unreachable; caller falls back to synthetic road geometry
+  }
+  return null;
+}
+
 export async function fetchRoute(
   fromLat: number,
   fromLng: number,
@@ -562,7 +598,22 @@ export async function fetchRoute(
   toLng: number
 ): Promise<ApiRouteResponse> {
   const api = await getApi();
-  return api.get<ApiRouteResponse>('/routing/route', { from_lat: fromLat, from_lng: fromLng, to_lat: toLat, to_lng: toLng }, false);
+  const res = await api.get<ApiRouteResponse>('/routing/route', { from_lat: fromLat, from_lng: fromLng, to_lat: toLat, to_lng: toLng }, false);
+  if (res?.geometry) return res;
+  const osrm = await fetchPublicOsrmGeometry(fromLat, fromLng, toLat, toLng);
+  if (osrm) {
+    return {
+      ...res,
+      distance_km: res?.distance_km && res.distance_km > 0.1 ? res.distance_km : osrm.distanceKm,
+      duration_minutes: res?.duration_minutes && res.duration_minutes > 1 ? res.duration_minutes : osrm.durationMinutes,
+      geometry: osrm.geometry,
+      source: 'osrm',
+    };
+  }
+  return {
+    ...res,
+    geometry: buildSyntheticRoadGeometry(fromLat, fromLng, toLat, toLng),
+  };
 }
 
 export async function fetchRouteGeometry(
@@ -572,7 +623,22 @@ export async function fetchRouteGeometry(
   toLng: number
 ): Promise<ApiRouteGeometryResponse> {
   const api = await getApi();
-  return api.get<ApiRouteGeometryResponse>('/routing/geometry', { from_lat: fromLat, from_lng: fromLng, to_lat: toLat, to_lng: toLng }, false);
+  const res = await api.get<ApiRouteGeometryResponse>('/routing/geometry', { from_lat: fromLat, from_lng: fromLng, to_lat: toLat, to_lng: toLng }, false);
+  if (res?.geometry) return res;
+  const osrm = await fetchPublicOsrmGeometry(fromLat, fromLng, toLat, toLng);
+  if (osrm) {
+    return {
+      ...res,
+      distance_km: res?.distance_km && res.distance_km > 0.1 ? res.distance_km : osrm.distanceKm,
+      duration_minutes: res?.duration_minutes && res.duration_minutes > 1 ? res.duration_minutes : osrm.durationMinutes,
+      geometry: osrm.geometry,
+      source: 'osrm',
+    };
+  }
+  return {
+    ...res,
+    geometry: buildSyntheticRoadGeometry(fromLat, fromLng, toLat, toLng),
+  };
 }
 
 // ---- Favorites ----

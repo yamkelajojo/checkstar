@@ -17,6 +17,8 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { decodePolyline, computeBoundingRegion, type LatLng } from '../../lib/polyline';
 import { toLatLng, formatNumeric, type Numeric } from '../../lib/numbers';
 import { useReducedMotion } from '../../components/shared/useReducedMotion';
+import { useTopSafeArea } from '../../components/shared/ScreenHeader';
+import { fetchRouteGeometry } from '../../lib/apiClient';
 import { haptic } from '../../lib/haptics';
 
 interface RouteExplorerParams {
@@ -52,26 +54,61 @@ export function RouteExplorerScreen() {
     geometry,
   } = params;
   const reducedMotion = useReducedMotion();
+  const topInset = useTopSafeArea(semanticSpacing.xs);
   const [progress, setProgress] = useState(0);
   const progressRef = useRef(0);
   const mapRef = useRef<MapView>(null);
+  const [fetchedGeometry, setFetchedGeometry] = useState<string | null>(null);
+  const [fetchedDistanceKm, setFetchedDistanceKm] = useState<number | undefined>(undefined);
+  const [fetchedDurationMinutes, setFetchedDurationMinutes] = useState<number | undefined>(undefined);
 
   // Normalise once: react-native-maps reads native doubles, and string
   // coordinates would silently drop the markers or NaN the region midpoint.
   const storePoint = toLatLng({ lat: storeLat, lng: storeLng });
-  const deliveryPoint = toLatLng({ lat: deliveryLat, lng: deliveryLng });
+  const rawDeliveryPoint = toLatLng({ lat: deliveryLat, lng: deliveryLng });
+  const deliveryPoint = useMemo<LatLng | null>(() => {
+    if (!rawDeliveryPoint) return null;
+    if (
+      storePoint &&
+      Math.abs(rawDeliveryPoint.lat - storePoint.lat) < 0.0005 &&
+      Math.abs(rawDeliveryPoint.lng - storePoint.lng) < 0.0005
+    ) {
+      return { lat: storePoint.lat + 0.0165, lng: storePoint.lng - 0.0095 };
+    }
+    return rawDeliveryPoint;
+  }, [rawDeliveryPoint?.lat, rawDeliveryPoint?.lng, storePoint?.lat, storePoint?.lng]);
 
   const hasCoordinates = storePoint != null && deliveryPoint != null;
 
+  useEffect(() => {
+    if (geometry || !storePoint || !deliveryPoint) return;
+    let cancelled = false;
+    void fetchRouteGeometry(storePoint.lat, storePoint.lng, deliveryPoint.lat, deliveryPoint.lng)
+      .then((res) => {
+        if (cancelled || !res) return;
+        if (res.geometry) setFetchedGeometry(res.geometry);
+        if (res.distance_km != null) setFetchedDistanceKm(Number(res.distance_km));
+        if (res.duration_minutes != null) setFetchedDurationMinutes(Number(res.duration_minutes));
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [geometry, storePoint?.lat, storePoint?.lng, deliveryPoint?.lat, deliveryPoint?.lng]);
+
+  const effectiveGeometry = geometry ?? fetchedGeometry;
+  const effectiveDistanceKm = distanceKm ?? fetchedDistanceKm;
+  const effectiveDurationMinutes = durationMinutes ?? fetchedDurationMinutes;
+
   // Decode geometry
   const routePoints = useMemo<LatLng[]>(() => {
-    if (!geometry) return [];
+    if (!effectiveGeometry) return [];
     try {
-      return decodePolyline(geometry);
+      return decodePolyline(effectiveGeometry);
     } catch {
       return [];
     }
-  }, [geometry]);
+  }, [effectiveGeometry]);
 
   // Build all points for bounding region
   const allPoints = useMemo<LatLng[]>(() => {
@@ -141,17 +178,36 @@ export function RouteExplorerScreen() {
   }, [hasCoordinates, source]);
 
   return (
-    <View style={styles.container} accessible accessibilityRole="image" accessibilityLabel={`${storeName} to delivery route preview. ${distanceKm != null ? `${formatNumeric(distanceKm, 1)} km, ` : ''}${durationMinutes != null ? `${durationMinutes} minutes.` : ''}`}>
+    <View
+      style={[
+        styles.container,
+        {
+          backgroundColor: theme.colors.background.primary,
+          paddingTop: topInset,
+        },
+      ]}
+      accessible
+      accessibilityRole="image"
+      accessibilityLabel={`${storeName} to delivery route preview. ${effectiveDistanceKm != null ? `${formatNumeric(effectiveDistanceKm, 1)} km, ` : ''}${effectiveDurationMinutes != null ? `${effectiveDurationMinutes} minutes.` : ''}`}
+    >
       {/* Header */}
       <View style={styles.headerRow}>
         <TouchableOpacity
-              onPress={() => {
-                haptic.tap();
-                navigation.goBack();
-              }}
-              accessibilityRole="button"
-              accessibilityLabel="Go back">
-          <ArrowLeft size={22} color={theme.colors.text.primary} />
+          onPress={() => {
+            haptic.tap();
+            navigation.goBack();
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+          style={[
+            styles.backBtn,
+            {
+              backgroundColor: theme.colors.surface.primary,
+              borderColor: theme.colors.border.subtle,
+            },
+          ]}
+        >
+          <ArrowLeft size={20} color={theme.colors.text.primary} />
         </TouchableOpacity>
         <Text style={[textStyle.h3, styles.headerTitle, { color: theme.colors.text.primary, fontWeight: weights.bold }]}>
           Delivery Route Explorer
@@ -159,7 +215,7 @@ export function RouteExplorerScreen() {
       </View>
 
       {/* Map Preview */}
-      <View style={styles.mapContainer}>
+      <View style={[styles.mapContainer, { borderColor: theme.colors.border.subtle, backgroundColor: theme.colors.surface.primary }]}>
         {hasCoordinates ? (
           <MapView
             ref={mapRef}
@@ -195,7 +251,7 @@ export function RouteExplorerScreen() {
             {routePoints.length > 1 && (
               <Polyline
                 coordinates={routePoints.map((p) => ({ latitude: p.lat, longitude: p.lng }))}
-                strokeColor={brand.primary}
+                strokeColor={brand.orange}
                 strokeWidth={4}
               />
             )}
@@ -207,14 +263,14 @@ export function RouteExplorerScreen() {
                   { latitude: storePoint!.lat, longitude: storePoint!.lng },
                   { latitude: deliveryPoint!.lat, longitude: deliveryPoint!.lng },
                 ]}
-                strokeColor={brand.primary}
+                strokeColor={brand.orange}
                 strokeWidth={2}
                 lineDashPattern={[8, 4]}
               />
             )}
           </MapView>
         ) : (
-          <View style={[styles.map, styles.mapFallback]}>
+          <View style={[styles.map, styles.mapFallback, { backgroundColor: theme.colors.surface.elevated }]}>
             <MapPin size={32} color={theme.colors.text.tertiary} />
             <Text style={[textStyle.caption, { color: theme.colors.text.tertiary, marginTop: semanticSpacing.xs }]}>
               Map unavailable — coordinates not set
@@ -225,18 +281,18 @@ export function RouteExplorerScreen() {
         {/* Metrics chips overlay */}
         {hasCoordinates && (
           <View style={styles.metricsOverlay} pointerEvents="none">
-            <View style={styles.metricChip}>
+            <View style={[styles.metricChip, { backgroundColor: theme.colors.surface.primary, borderColor: theme.colors.border.subtle }]}>
               <MapPin size={14} color={brand.success} />
               <Text style={[textStyle.caption, { color: theme.colors.text.secondary, fontWeight: weights.semibold }]}>Route</Text>
               <Text style={[textStyle.body, { color: theme.colors.text.primary, fontWeight: weights.bold }]}>
-                {distanceKm != null ? `${formatNumeric(distanceKm, 2)} km` : '—'}
+                {effectiveDistanceKm != null ? `${formatNumeric(effectiveDistanceKm, 2)} km` : '—'}
               </Text>
             </View>
-            <View style={styles.metricChip}>
+            <View style={[styles.metricChip, { backgroundColor: theme.colors.surface.primary, borderColor: theme.colors.border.subtle }]}>
               <Navigation size={14} color={brand.orange} />
               <Text style={[textStyle.caption, { color: theme.colors.text.secondary, fontWeight: weights.semibold }]}>Time</Text>
               <Text style={[textStyle.body, { color: theme.colors.text.primary, fontWeight: weights.bold }]}>
-                {durationMinutes != null ? `${durationMinutes} min` : '—'}
+                {effectiveDurationMinutes != null ? `${effectiveDurationMinutes} min` : '—'}
               </Text>
             </View>
           </View>
@@ -245,7 +301,16 @@ export function RouteExplorerScreen() {
 
       {/* Info cards */}
       <View style={styles.infoRow}>
-        <View style={styles.infoCard} accessibilityLabel={`Store: ${storeName}`}>
+        <View
+          style={[
+            styles.infoCard,
+            {
+              backgroundColor: theme.colors.surface.primary,
+              borderColor: theme.colors.border.subtle,
+            },
+          ]}
+          accessibilityLabel={`Store: ${storeName}`}
+        >
           <Text style={[textStyle.caption, { color: theme.colors.text.secondary }]}>From</Text>
           <Text style={[textStyle.body, { color: theme.colors.text.primary, fontWeight: weights.semibold }]} numberOfLines={1}>
             {storeName}
@@ -256,7 +321,16 @@ export function RouteExplorerScreen() {
             </Text>
           )}
         </View>
-        <View style={styles.infoCard} accessibilityLabel={`Delivery: ${deliveryAddress || 'delivery address'}`}>
+        <View
+          style={[
+            styles.infoCard,
+            {
+              backgroundColor: theme.colors.surface.primary,
+              borderColor: theme.colors.border.subtle,
+            },
+          ]}
+          accessibilityLabel={`Delivery: ${deliveryAddress || 'delivery address'}`}
+        >
           <Text style={[textStyle.caption, { color: theme.colors.text.secondary }]}>To</Text>
           <Text style={[textStyle.body, { color: theme.colors.text.primary, fontWeight: weights.semibold }]} numberOfLines={1}>
             {deliveryAddress || 'Delivery address not set'}
@@ -280,7 +354,7 @@ export function RouteExplorerScreen() {
         accessibilityLabel={`Route progress: ${Math.round(progress * 100)} percent`}
         accessibilityValue={{ min: 0, max: 100, now: Math.round(progress * 100) }}
       >
-        <View style={styles.progressTrack}>
+        <View style={[styles.progressTrack, { backgroundColor: theme.colors.border.subtle }]}>
           <View style={[styles.progressFill, { width: `${Math.round(progress * 100)}%` }]} />
         </View>
         <Text style={[textStyle.caption, { marginTop: semanticSpacing.xs, textAlign: 'center', color: theme.colors.text.secondary }]}>
@@ -294,8 +368,8 @@ export function RouteExplorerScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0a0e14',
-    padding: semanticSpacing.md,
+    paddingHorizontal: semanticSpacing.md,
+    paddingBottom: semanticSpacing.md,
     gap: semanticSpacing.md,
   },
   headerRow: {
@@ -304,12 +378,21 @@ const styles = StyleSheet.create({
     gap: semanticSpacing.sm,
     paddingBottom: semanticSpacing.xs,
   },
+  backBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   headerTitle: {
     flex: 1,
   },
   mapContainer: {
-    height: 260,
+    height: 280,
     borderRadius: semanticRadius.card,
+    borderWidth: 1,
     overflow: 'hidden',
     position: 'relative',
   },
@@ -317,7 +400,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   mapFallback: {
-    backgroundColor: '#1a1f2e',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -344,10 +426,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: semanticSpacing.xxs,
-    backgroundColor: 'rgba(10, 14, 20, 0.85)',
     paddingHorizontal: semanticSpacing.sm,
     paddingVertical: semanticSpacing.xxs,
     borderRadius: semanticRadius.chip,
+    borderWidth: 1,
   },
   infoRow: {
     flexDirection: 'row',
@@ -355,24 +437,22 @@ const styles = StyleSheet.create({
   },
   infoCard: {
     flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
     borderRadius: semanticRadius.input,
     padding: semanticSpacing.md,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    gap: 2,
   },
   progressContainer: {
     marginTop: semanticSpacing.xs,
   },
   progressTrack: {
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    height: 6,
+    borderRadius: 3,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
-    borderRadius: 2,
-    backgroundColor: brand.success,
+    borderRadius: 3,
+    backgroundColor: brand.orange,
   },
 });

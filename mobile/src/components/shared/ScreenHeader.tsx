@@ -22,6 +22,7 @@ interface ScreenHeaderProps {
   showBackButton?: boolean;
   backButtonVariant?: BackButtonVariant;
   onBackPress?: () => void;
+  modal?: boolean;
   style?: object;
 }
 
@@ -40,10 +41,12 @@ export function ScreenHeader({
   showBackButton = false,
   backButtonVariant = 'back',
   onBackPress,
+  modal = false,
   style,
 }: ScreenHeaderProps) {
   const theme = useTheme();
-  const top = useTopSafeArea(semanticSpacing.sm);
+  const safeTop = useTopSafeArea(0);
+  const top = modal ? semanticSpacing.sm : Math.max(8, safeTop - 6);
   const hasControls = showBackButton || leading != null || trailing != null;
 
   if (hasControls) {
@@ -54,6 +57,7 @@ export function ScreenHeader({
           alignItems: 'center',
           justifyContent: 'space-between',
           paddingTop: top,
+          paddingBottom: semanticSpacing.xxs,
           paddingHorizontal: semanticSpacing.screenPadding,
           gap: semanticSpacing.inlineGap,
           ...style,
@@ -66,7 +70,7 @@ export function ScreenHeader({
           {leading}
           <Text
             accessibilityRole="header"
-            style={{ ...textStyle.h2, fontWeight: fontWeight.bold, color: theme.colors.text.primary, flex: 1 }}
+            style={{ fontSize: 22, lineHeight: 28, fontWeight: fontWeight.bold, color: theme.colors.text.primary, flex: 1 }}
           >
             {title}
           </Text>
@@ -77,21 +81,22 @@ export function ScreenHeader({
   }
 
   return (
-    <FadeSlideIn delay={60} distance={12}>
+    <FadeSlideIn delay={60} distance={8}>
       <View style={{ paddingTop: top, paddingHorizontal: semanticSpacing.screenPadding, gap: 2, ...style }}>
         <Text
           accessibilityRole="header"
           style={{
-            ...textStyle.h1,
+            fontSize: 26,
+            lineHeight: 32,
             color: theme.colors.text.primary,
-            letterSpacing: -0.3,
+            letterSpacing: -0.4,
             fontWeight: fontWeight.bold,
           }}
         >
           {title}
         </Text>
         {subtitle ? (
-          <Text style={{ ...textStyle.body, color: theme.colors.text.secondary, letterSpacing: -0.1 }}>
+          <Text style={{ fontSize: 14, lineHeight: 20, color: theme.colors.text.secondary, letterSpacing: -0.1 }}>
             {subtitle}
           </Text>
         ) : null}
@@ -110,7 +115,6 @@ export function ModalHeader({
   trailing?: React.ReactNode;
 }) {
   const theme = useTheme();
-  const top = useTopSafeArea(semanticSpacing.sm);
 
   return (
     <View
@@ -118,12 +122,13 @@ export function ModalHeader({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingTop: top,
+        paddingTop: semanticSpacing.sm,
+        paddingBottom: semanticSpacing.xxs,
         paddingHorizontal: semanticSpacing.screenPadding,
         gap: semanticSpacing.inlineGap,
       }}
     >
-      <Text style={{ ...textStyle.h2, fontWeight: fontWeight.bold, color: theme.colors.text.primary, flex: 1 }}>
+      <Text style={{ fontSize: 20, lineHeight: 26, fontWeight: fontWeight.bold, color: theme.colors.text.primary, flex: 1 }}>
         {title}
       </Text>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: semanticSpacing.inlineGap }}>
