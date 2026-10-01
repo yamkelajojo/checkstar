@@ -175,3 +175,30 @@ describe('error resilience', () => {
     expect(screen.queryByText('Baby Spinach')).toBeNull();
   });
 });
+
+describe('availability and out-of-stock states (White-Box)', () => {
+  it('renders nearest-store availability alert when product is only stocked at another store', async () => {
+    const otherStoreProduct = vo();
+    otherStoreProduct.stores = [
+      { storeProductId: 9, id: 2, name: 'Checkstar Umhlanga', slug: 'umhlanga', isAvailable: true, stockQuantity: 5 },
+    ];
+    mockUseProduct.mockReturnValue({ data: otherStoreProduct, isLoading: false });
+    await renderDetail();
+
+    expect(
+      screen.getByText(/Not available from your nearest store\. We'll check another nearby store at checkout\./),
+    ).toBeTruthy();
+  });
+
+  it('renders out-of-stock state in body and bottom bar when unavailable at all stores', async () => {
+    const outProduct = vo();
+    outProduct.stores = [];
+    mockUseProduct.mockReturnValue({ data: outProduct, isLoading: false });
+    await renderDetail();
+
+    expect(screen.getByText('Currently unavailable at all stores')).toBeTruthy();
+    expect(screen.getByText('Unavailable at all stores')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Add Baby Spinach to cart' })).toBeNull();
+  });
+});
+
