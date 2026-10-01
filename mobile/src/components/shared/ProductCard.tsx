@@ -19,6 +19,8 @@ import { useDeliveryStore } from '../../stores/deliveryStore';
 import type { RootStackParamList } from '../../navigation/types';
 import { SaveHeart } from './SaveHeart';
 import { haptic } from '../../lib/haptics';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, Easing } from 'react-native-reanimated';
+import { useReducedMotion } from './useReducedMotion';
 
 export interface BadgeRect {
   x: number;
@@ -56,6 +58,35 @@ export function ProductCard({ product, storeProductId = null, style, onRequestSu
   const add = useCart((s) => s.add);
   const decrement = useCart((s) => s.decrement);
   const badgeRef = useRef<View>(null);
+  const reduceMotion = useReducedMotion();
+
+  const inCart = quantity > 0;
+  const prevInCart = useRef(inCart);
+  const actionOpacity = useSharedValue(1);
+  const actionScale = useSharedValue(1);
+  const actionTranslateX = useSharedValue(0);
+
+  useEffect(() => {
+    if (prevInCart.current === inCart) return;
+    prevInCart.current = inCart;
+    if (reduceMotion) return;
+
+    actionOpacity.value = 0;
+    actionScale.value = 0.85;
+    actionTranslateX.value = inCart ? 6 : -6;
+
+    actionOpacity.value = withTiming(1, { duration: 160, easing: Easing.out(Easing.quad) });
+    actionScale.value = withSpring(1, { damping: 16, stiffness: 320, mass: 0.45 });
+    actionTranslateX.value = withSpring(0, { damping: 18, stiffness: 300, mass: 0.45 });
+  }, [inCart, reduceMotion]);
+
+  const actionTransitionStyle = useAnimatedStyle(() => ({
+    opacity: actionOpacity.value,
+    transform: [
+      { scale: actionScale.value },
+      { translateX: actionTranslateX.value },
+    ],
+  }));
 
   const resolveImage = (imgs: unknown): { uri: string } | null => {
     if (!imgs) return null;
@@ -191,34 +222,36 @@ export function ProductCard({ product, storeProductId = null, style, onRequestSu
         </View>
 
         <View style={{ height: 30, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto' }}>
-          {quantity === 0 ? (
-            <TactilePressable
-              variant="compact"
-              onPress={() => add(String(product.id), 1, storeProductId)}
-              haptic="tap"
-              accessibilityRole="button"
-              accessibilityLabel={`Add ${product.name} to cart`}
-              style={{
-                backgroundColor: brand.orange,
-                borderRadius: semanticRadius.buttonPill,
-                height: 30,
-                paddingHorizontal: 12,
-                minWidth: 68,
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Text style={{ color: theme.colors.text.inverse, fontWeight: fontWeight.bold, textTransform: 'uppercase', fontSize: 11, letterSpacing: 0.3 }}>
-                Add +
-              </Text>
-            </TactilePressable>
-          ) : (
-            <Stepper
-              quantity={quantity}
-              onIncrement={() => add(String(product.id), 1, storeProductId)}
-              onDecrement={() => decrement(String(product.id), storeProductId)}
-            />
-          )}
+          <Animated.View style={[{ flexDirection: 'row', alignItems: 'center' }, actionTransitionStyle]}>
+            {quantity === 0 ? (
+              <TactilePressable
+                variant="compact"
+                onPress={() => add(String(product.id), 1, storeProductId)}
+                haptic="tap"
+                accessibilityRole="button"
+                accessibilityLabel={`Add ${product.name} to cart`}
+                style={{
+                  backgroundColor: brand.orange,
+                  borderRadius: semanticRadius.buttonPill,
+                  height: 30,
+                  paddingHorizontal: 12,
+                  minWidth: 68,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Text style={{ color: theme.colors.text.inverse, fontWeight: fontWeight.bold, textTransform: 'uppercase', fontSize: 11, letterSpacing: 0.3 }}>
+                  Add +
+                </Text>
+              </TactilePressable>
+            ) : (
+              <Stepper
+                quantity={quantity}
+                onIncrement={() => add(String(product.id), 1, storeProductId)}
+                onDecrement={() => decrement(String(product.id), storeProductId)}
+              />
+            )}
+          </Animated.View>
         </View>
       </View>
     </TactilePressable>

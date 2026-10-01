@@ -46,9 +46,12 @@ export function EmptyState({ icon: Icon, title, caption, action }: EmptyStatePro
     <View
       style={{
         flex: 1,
+        minHeight: 320,
         alignItems: 'center',
         justifyContent: 'center',
-        padding: semanticSpacing.screenPadding,
+        paddingHorizontal: semanticSpacing.screenPadding,
+        paddingTop: semanticSpacing.lg,
+        paddingBottom: 72,
       }}
     >
       <View style={{ alignItems: 'center', gap: semanticSpacing.md, maxWidth: 320 }}>

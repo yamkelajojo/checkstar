@@ -38,7 +38,7 @@ export function CartScreen() {
     return (
       <View style={{ flex: 1, backgroundColor: theme.colors.background.primary }}>
         <ScreenHeader title="Cart" />
-        <FadeSlideIn delay={100} distance={12}>
+        <FadeSlideIn delay={100} distance={12} style={{ flex: 1 }}>
           <EmptyState
             icon={ShoppingCart}
             title={copy.cart.emptyTitle}

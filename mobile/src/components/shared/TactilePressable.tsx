@@ -131,8 +131,7 @@ export function TactilePressable({
         {...rest}
         style={{
           width: shouldStretch ? '100%' : undefined,
-          flexDirection:
-            flatStyle?.flexDirection ?? (variant === 'card' ? 'column' : 'row'),
+          flexDirection: flatStyle?.flexDirection ?? 'column',
           alignItems:
             variant === 'card' ? 'stretch' : (flatStyle?.alignItems ?? 'center'),
           justifyContent: flatStyle?.justifyContent ?? 'center',

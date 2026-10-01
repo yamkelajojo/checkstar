@@ -211,7 +211,7 @@ export function SearchScreen() {
           </View>
         </View>
       ) : results.length === 0 ? (
-        <FadeSlideIn delay={100} distance={12}>
+        <FadeSlideIn delay={100} distance={12} style={{ flex: 1 }}>
           <EmptyState icon={SearchX} title={`No matches for "${debounced}"`} caption="Try a different search — check spelling or browse categories." />
         </FadeSlideIn>
       ) : (

@@ -139,7 +139,7 @@ export default function Header() {
 
             {isAuthenticated ? (
               <div className="hidden sm:flex items-center gap-2">
-                <Link href={user?.role === 'rider' ? '/rider/dashboard' : '/account/orders'} className="p-2 text-gray-600 hover:text-primary transition-colors">
+                <Link href={user?.role === 'rider' ? '/rider/dashboard' : '/account/profile'} className="p-2 text-gray-600 hover:text-primary transition-colors">
                   <User size={20} />
                 </Link>
                 <button
@@ -253,8 +253,8 @@ export default function Header() {
                   ) : (
                     <div className="flex gap-3 w-full">
                       <Link
-                        href={user?.role === 'rider' ? '/rider/dashboard' : '/account/orders'}
-                        onClick={() => handleNavClick(user?.role === 'rider' ? '/rider/dashboard' : '/account/orders')}
+                        href={user?.role === 'rider' ? '/rider/dashboard' : '/account/profile'}
+                        onClick={() => handleNavClick(user?.role === 'rider' ? '/rider/dashboard' : '/account/profile')}
                         className="flex-1 inline-flex items-center justify-center gap-2 bg-gray-900 text-white px-4 py-3 rounded-xl text-sm font-medium"
                       >
                         <User size={16} /> Account

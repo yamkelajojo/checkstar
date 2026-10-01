@@ -102,7 +102,7 @@ export function FavoritesScreen() {
     return (
       <View style={{ flex: 1, backgroundColor: theme.colors.background.primary }}>
         <ScreenHeader title="Favorites" />
-        <FadeSlideIn delay={100} distance={12}>
+        <FadeSlideIn delay={100} distance={12} style={{ flex: 1 }}>
           <EmptyState
             icon={WifiOff}
             title="Couldn't load your favorites"
@@ -150,7 +150,7 @@ export function FavoritesScreen() {
     return (
       <View style={{ flex: 1, backgroundColor: theme.colors.background.primary }}>
         <ScreenHeader title="Favorites" />
-        <FadeSlideIn delay={100} distance={12}>
+        <FadeSlideIn delay={100} distance={12} style={{ flex: 1 }}>
           <EmptyState
             icon={Heart}
             title="No favorites yet"

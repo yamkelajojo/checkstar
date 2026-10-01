@@ -27,22 +27,26 @@ import { useToast } from '../../components/shared/GlassToast';
 import { trackProductView } from '../../services/trackingService';
 import { SaveHeart } from '../../components/shared/SaveHeart';
 import { haptic } from '../../lib/haptics';
-import Animated, { useSharedValue, useAnimatedStyle, withTiming, interpolate } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, withSpring, interpolate } from 'react-native-reanimated';
 
 function RelatedCard({ item, index }: { item: ProductVO; index: number }) {
   const theme = useTheme();
   const navigation = useNavigation<any>();
+  const src = mediaSource(item.images[0]);
   return (
     <CrashCascadeIn index={index}>
       <TactilePressable
+        variant="card"
         onPress={() => navigation.push('ProductDetail', { slug: item.slug, source: 'related' })}
         haptic="selection"
         style={{
-          width: 140,
+          width: 144,
+          flexDirection: 'column',
+          alignItems: 'stretch',
           backgroundColor: theme.colors.surface.primary,
           borderRadius: semanticRadius.card,
-          padding: 8,
-          gap: 6,
+          padding: 10,
+          gap: 8,
           borderWidth: 1,
           borderColor: theme.colors.border.subtle,
           shadowColor: '#000',
@@ -52,13 +56,45 @@ function RelatedCard({ item, index }: { item: ProductVO; index: number }) {
           elevation: 1,
         }}
       >
-        <View style={{ width: '100%', aspectRatio: 1, borderRadius: 12, backgroundColor: theme.colors.background.secondary, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-          {item.images[0] ? <RNImage source={{ uri: mediaUri(item.images[0]) }} style={{ width: '100%', height: '100%' }} resizeMode="cover" /> : <Text style={{ fontSize: 28 }}>🛒</Text>}
+        <View
+          style={{
+            width: '100%',
+            height: 112,
+            borderRadius: 12,
+            backgroundColor: theme.colors.background.secondary,
+            alignItems: 'center',
+            justifyContent: 'center',
+            overflow: 'hidden',
+            padding: 8,
+          }}
+        >
+          {src ? (
+            <Image
+              source={src}
+              style={{ width: '100%', height: '100%' }}
+              contentFit="contain"
+              transition={200}
+              cachePolicy="memory-disk"
+            />
+          ) : (
+            <Text style={{ fontSize: 28 }}>🛒</Text>
+          )}
         </View>
-        <Text numberOfLines={2} style={{ fontSize: 11, color: theme.colors.text.primary, fontWeight: '600', minHeight: 28, letterSpacing: -0.1, lineHeight: 13 }}>
-          {item.name}
-        </Text>
-        <PriceLabel priceCents={item.basePriceCents} salePriceCents={item.salePriceCents} unit={item.unit} size={12} />
+        <View style={{ height: 32, justifyContent: 'flex-start' }}>
+          <Text
+            numberOfLines={2}
+            style={{
+              fontSize: 12,
+              color: theme.colors.text.primary,
+              fontWeight: '600',
+              letterSpacing: -0.1,
+              lineHeight: 15,
+            }}
+          >
+            {item.name}
+          </Text>
+        </View>
+        <PriceLabel priceCents={item.basePriceCents} salePriceCents={item.salePriceCents} unit={item.unit} size={13} />
       </TactilePressable>
     </CrashCascadeIn>
   );
@@ -113,9 +149,28 @@ export function ProductDetailScreen() {
     morph.value = withTiming(relatedInView ? 1 : 0, { duration: 260 });
   }, [relatedInView]);
 
+  const inCart = quantity > 0;
+  const prevInCart = useRef(inCart);
+  const actionSwitch = useSharedValue(1);
+
+  useEffect(() => {
+    if (prevInCart.current === inCart) return;
+    prevInCart.current = inCart;
+    actionSwitch.value = 0;
+    actionSwitch.value = withSpring(1, { damping: 18, stiffness: 320, mass: 0.5 });
+  }, [inCart]);
+
+  const actionSwitchStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(actionSwitch.value, [0, 1], [0.25, 1]),
+    transform: [
+      { scale: interpolate(actionSwitch.value, [0, 1], [0.88, 1]) },
+      { translateY: interpolate(actionSwitch.value, [0, 1], [4, 0]) },
+    ],
+  }));
+
   const bottomBarStyle = useAnimatedStyle(() => {
-    const opacity = morph.value;
-    const translateY = interpolate(morph.value, [0, 1], [24, 0]);
+    const opacity = interpolate(morph.value, [0, 1], [1, 0]);
+    const translateY = interpolate(morph.value, [0, 1], [0, 24]);
     return {
       opacity,
       transform: [{ translateY }],
@@ -387,13 +442,15 @@ export function ProductDetailScreen() {
               <Text style={{ color: theme.colors.text.secondary, fontSize: 12 }}>Unavailable at all stores</Text>
             </View>
           ) : quantity === 0 ? (
-            <TactilePressable onPress={handleAddToCart} haptic="commit" accessibilityLabel={`Add ${product.name} to cart`} style={{ backgroundColor: theme.colors.text.primary, borderRadius: 999, width: '80%', alignSelf: 'center', paddingVertical: 14, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 8, elevation: 3 }}>
-              <Text style={{ color: theme.colors.text.inverse, fontWeight: '700', fontSize: 12, letterSpacing: 0.3, textTransform: 'uppercase' }}>{`Add to cart · ${formatZar(product.effectivePriceCents)}`}</Text>
-            </TactilePressable>
+            <Animated.View style={[{ width: '100%', alignItems: 'center' }, actionSwitchStyle]}>
+              <TactilePressable onPress={handleAddToCart} haptic="commit" accessibilityLabel={`Add ${product.name} to cart`} style={{ backgroundColor: theme.colors.text.primary, borderRadius: 999, width: '80%', alignSelf: 'center', paddingVertical: 14, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 8, elevation: 3 }}>
+                <Text style={{ color: theme.colors.text.inverse, fontWeight: '700', fontSize: 12, letterSpacing: 0.3, textTransform: 'uppercase' }}>{`Add to cart · ${formatZar(product.effectivePriceCents)}`}</Text>
+              </TactilePressable>
+            </Animated.View>
           ) : (
-            <View style={{ alignItems: 'center', width: '80%', alignSelf: 'center' }}>
+            <Animated.View style={[{ alignItems: 'center', width: '80%', alignSelf: 'center' }, actionSwitchStyle]}>
               <Stepper quantity={quantity} onIncrement={handleAddToCart} onDecrement={handleDecrement} />
-            </View>
+            </Animated.View>
           )}
         </Animated.View>
       ) : null}
