@@ -47,7 +47,7 @@ Zend Engine v4.4.26, Copyright (c) Zend Technologies
 ```
 #### phpunit.log
 ```
-  ✓ submit review success                                                0.01s  
+  ✓ submit review success                                                0.02s  
   ✓ submit review updates order rating                                   0.01s  
   ✓ submit review rejects order without rider                            0.01s  
   ✓ submit review rejects non delivered order                            0.01s  
@@ -57,7 +57,7 @@ Zend Engine v4.4.26, Copyright (c) Zend Technologies
   ✓ submit review throws on nonexistent order                            0.01s  
 
    PASS  Tests\Unit\RiderStatsRecorderTest
-  ✓ first review sets average rating                                     0.02s  
+  ✓ first review sets average rating                                     0.01s  
   ✓ second review computes weighted average                              0.01s  
   ✓ multiple reviews compute correct average                             0.01s  
   ✓ review count matches database                                        0.01s  
@@ -89,7 +89,7 @@ Zend Engine v4.4.26, Copyright (c) Zend Technologies
   ✓ negative signals have negative weights                               0.01s  
 
    PASS  Tests\Unit\Services\DispatchSuggestionServiceTest
-  ✓ returns nearest rider by distance                                    0.02s  
+  ✓ returns nearest rider by distance                                    0.01s  
   ✓ excludes unavailable riders                                          0.01s  
   ✓ excludes riders with insufficient radius                             0.01s  
   ✓ returns alternative riders                                           0.01s  
@@ -183,7 +183,7 @@ Zend Engine v4.4.26, Copyright (c) Zend Technologies
 
    PASS  Tests\Feature\AuthTest
   ✓ user can register                                                    0.02s  
-  ✓ user can login                                                       0.02s  
+  ✓ user can login                                                       0.01s  
   ✓ login fails with invalid credentials                                 0.01s  
   ✓ authenticated user can access user endpoint                          0.01s  
   ✓ unauthenticated user cannot access protected route                   0.01s  
@@ -200,8 +200,8 @@ Zend Engine v4.4.26, Copyright (c) Zend Technologies
   ✓ sync returns merged cart so device can replace draft                 0.01s  
 
    PASS  Tests\Feature\DatabaseSeedingTest
-  ✓ seed creates demo logins for every console                           0.55s  
-  ✓ seeding twice is idempotent                                          0.72s  
+  ✓ seed creates demo logins for every console                           0.88s  
+  ✓ seeding twice is idempotent                                          0.94s  
 
    PASS  Tests\Feature\EmailVerificationFlowTest
   ✓ registration sends the verification email with an spa link           0.01s  
@@ -237,7 +237,7 @@ Zend Engine v4.4.26, Copyright (c) Zend Technologies
   ✓ manager can manually dispatch order to specific rider                0.02s  
   ✓ operations assign rejects order from another store                   0.02s  
   ✓ operations suggestion hides other stores orders                      0.01s  
-  ✓ dispatch allows rider from another store                             0.02s  
+  ✓ dispatch allows rider from another store                             0.01s  
   ✓ manager can reassign already claimed order                           0.02s  
   ✓ dispatch rejects rider with deactivated account                      0.01s  
   ✓ reassign rejects rider already at concurrent cap                     0.02s  
@@ -246,7 +246,7 @@ Zend Engine v4.4.26, Copyright (c) Zend Technologies
   ✓ developer requires explicit store id                                 0.01s  
 
    PASS  Tests\Feature\MigrationRollbackTest
-  ✓ nullable store id migration can roll back                            0.03s  
+  ✓ nullable store id migration can roll back                            0.04s  
 
    PASS  Tests\Feature\OrderLifecycleApiTest
   ✓ customer order journey list show cancel                              0.03s  
@@ -276,7 +276,7 @@ Zend Engine v4.4.26, Copyright (c) Zend Technologies
 
    PASS  Tests\Feature\PickupOrderTest
   ✓ customer can place a pickup order without delivery details           0.02s  
-  ✓ pickup order does not notify riders and keeps the cart clearing      0.01s  
+  ✓ pickup order does not notify riders and keeps the cart clearing      0.02s  
   ✓ pickup requires a store                                              0.01s  
   ✓ pickup from a store that cannot fulfil the cart is rejected          0.01s  
   ✓ store moves a pickup order through ready and the customer confirms…  0.02s  
@@ -290,7 +290,7 @@ Zend Engine v4.4.26, Copyright (c) Zend Technologies
   ✓ customer can cancel a ready pickup order before collecting           0.01s  
 
    PASS  Tests\Feature\ProductCarouselTest
-  ✓ trending endpoint is not shadowed by slug route                      0.01s  
+  ✓ trending endpoint is not shadowed by slug route                      0.02s  
   ✓ popular returns delivered order products                             0.01s  
   ✓ new arrivals returns recent products without error                   0.01s  
   ✓ trending returns empty array when no orders                          0.01s  
@@ -298,7 +298,7 @@ Zend Engine v4.4.26, Copyright (c) Zend Technologies
    PASS  Tests\Feature\ProductIndexTest
   ✓ index respects per page param                                        0.02s  
   ✓ index filters by multiple category slugs                             0.02s  
-  ✓ index defaults to twenty per page                                    0.01s  
+  ✓ index defaults to twenty per page                                    0.02s  
   ✓ index caps per page at one hundred                                   0.04s  
   ✓ index ignores non numeric per page                                   0.02s  
 
@@ -342,7 +342,7 @@ Zend Engine v4.4.26, Copyright (c) Zend Technologies
   ✓ guest gets 401                                                       0.01s  
 
    PASS  Tests\Feature\ReconcileReservationsTest
-  ✓ consistent ledger is left alone                                      0.02s  
+  ✓ consistent ledger is left alone                                      0.01s  
   ✓ drift is corrected                                                   0.01s  
   ✓ oversubscribed stock reconciles to clamped value without failing     0.01s  
   ✓ bought items and terminal orders do not count                        0.01s  
@@ -354,11 +354,11 @@ Zend Engine v4.4.26, Copyright (c) Zend Technologies
   ✓ related returns 404 for unknown or inactive slug                     0.01s  
 
    PASS  Tests\Feature\RiderLocationTest
-  ✓ customer can view rider location for their order                     0.02s  
+  ✓ customer can view rider location for their order                     0.01s  
   ✓ returns null when order has no rider                                 0.01s  
-  ✓ returns null when rider has no location                              0.02s  
+  ✓ returns null when rider has no location                              0.01s  
   ✓ cannot view other customers order rider location                     0.01s  
-  ✓ returns most recent location when multiple exist                     0.02s  
+  ✓ returns most recent location when multiple exist                     0.01s  
   ✓ rider can update location                                            0.01s  
   ✓ rider location update sets recorded at                               0.01s  
   ✓ rider location update overwrites previous                            0.01s  
@@ -368,7 +368,7 @@ Zend Engine v4.4.26, Copyright (c) Zend Technologies
    PASS  Tests\Feature\RiderOrderGuardApiTest
   ✓ mark items bought returns 422 and keeps stock when order cancelled   0.02s  
   ✓ out for delivery returns 422 and order stays cancelled               0.01s  
-  ✓ rider cannot advance out for delivery with unbought items            0.01s  
+  ✓ rider cannot advance out for delivery with unbought items            0.39s  
 
    PASS  Tests\Feature\RoutingEndpointTest
   ✓ geometry returns metrics even when osrm is unavailable               0.01s  
@@ -393,14 +393,14 @@ Zend Engine v4.4.26, Copyright (c) Zend Technologies
   ✓ owner cannot link another stores sale                                0.01s  
 
    PASS  Tests\Feature\SeededCatalogueMediaTest
-  ✓ every seeded product image resolves to a real file                   0.22s  
-  ✓ every seeded product images array resolves to real files             0.21s  
-  ✓ no catalogue endpoint emits a dead or svg media url                  0.32s  
-  ✓ store inventory emits only resolvable media urls                     0.30s  
+  ✓ every seeded product image resolves to a real file                   0.30s  
+  ✓ every seeded product images array resolves to real files             0.29s  
+  ✓ no catalogue endpoint emits a dead or svg media url                  0.41s  
+  ✓ store inventory emits only resolvable media urls                     0.34s  
 
    PASS  Tests\Feature\SpecialsEndpointTest
-  ✓ index lists only active specials within their window                 0.02s  
-  ✓ products carry availability and effective price                      0.02s  
+  ✓ index lists only active specials within their window                 0.01s  
+  ✓ products carry availability and effective price                      0.01s  
   ✓ inactive products are hidden from specials                           0.01s  
 
    PASS  Tests\Feature\StaffManagementTest
@@ -445,15 +445,15 @@ Zend Engine v4.4.26, Copyright (c) Zend Technologies
 
 
   Tests:    1 failed, 476 passed (3005 assertions)
-  Duration: 8.18s
+  Duration: 9.49s
 
 ```
 ### bootstrap/cache
 ```
 total 40
-drwxr-xr-x 2 runner runner  4096 Oct  1 09:14 .
-drwxr-xr-x 3 runner runner  4096 Oct  1 09:14 ..
--rw-r--r-- 1 runner runner    14 Oct  1 09:14 .gitignore
--rwxr-xr-x 1 runner runner   960 Oct  1 09:14 packages.php
--rwxr-xr-x 1 runner runner 21492 Oct  1 09:14 services.php
+drwxr-xr-x 2 runner runner  4096 Oct  1 23:11 .
+drwxr-xr-x 3 runner runner  4096 Oct  1 23:11 ..
+-rw-r--r-- 1 runner runner    14 Oct  1 23:11 .gitignore
+-rwxr-xr-x 1 runner runner   960 Oct  1 23:11 packages.php
+-rwxr-xr-x 1 runner runner 21492 Oct  1 23:11 services.php
 ```
