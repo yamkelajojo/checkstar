@@ -123,7 +123,7 @@ const SALE = {
   description: "Fresh pick of the season",
   banner_image: null,
   start_date: "2026-09-01T00:00:00Z",
-  end_date: "2026-09-30T23:59:59Z",
+  end_date: "2027-09-30T23:59:59Z",
   is_active: true,
   store_id: 1,
   store: DUBAI,

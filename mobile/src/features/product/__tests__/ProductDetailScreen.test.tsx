@@ -19,9 +19,10 @@ jest.mock('react-native-safe-area-context', () => ({
 
 const mockUseRoute = jest.fn();
 const mockNavigate = jest.fn();
+const mockPush = jest.fn();
 jest.mock('@react-navigation/native', () => ({
   useRoute: () => mockUseRoute(),
-  useNavigation: () => ({ navigate: mockNavigate, goBack: jest.fn() }),
+  useNavigation: () => ({ navigate: mockNavigate, push: mockPush, goBack: jest.fn() }),
 }));
 
 const mockUseProduct = jest.fn();
@@ -146,6 +147,18 @@ describe('related items shelf', () => {
     await renderDetail();
     expect(screen.getByText('You might also like')).toBeTruthy();
     expect(screen.getByText('Baby Carrots 500g')).toBeTruthy();
+  });
+
+  it('navigates to related product detail when pressing a related product card', async () => {
+    const related = vo();
+    related.id = 99;
+    related.slug = 'baby-carrots-500g';
+    related.name = 'Baby Carrots 500g';
+    mockUseRelated.mockReturnValue({ data: [related] });
+    await renderDetail();
+
+    await fireEvent.press(screen.getByText('Baby Carrots 500g'));
+    expect(mockPush).toHaveBeenCalledWith('ProductDetail', { slug: 'baby-carrots-500g', source: 'related' });
   });
 
   it('renders no shelf when there are no related products', async () => {

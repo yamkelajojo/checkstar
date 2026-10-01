@@ -60,7 +60,7 @@ const SALE = {
   description: 'A fresh pick of the season at special prices.',
   banner_image: null,
   start_date: '2026-09-01T00:00:00Z',
-  end_date: '2026-09-30T23:59:59Z',
+  end_date: '2027-09-30T23:59:59Z',
   is_active: true,
   store_id: 1,
   store: STORE,
@@ -125,8 +125,8 @@ describe('SaleDetailClient', () => {
     apiMocks.getSaleBySlug.mockResolvedValue({
       data: {
         ...SALE,
-        start_date: '2026-10-01T00:00:00Z',
-        end_date: '2026-10-07T23:59:59Z',
+        start_date: '2027-10-01T00:00:00Z',
+        end_date: '2027-10-07T23:59:59Z',
         in_window: false,
       },
     })

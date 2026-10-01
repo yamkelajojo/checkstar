@@ -92,4 +92,10 @@ describe('Header mobile menu', () => {
     // Same-page click should close immediately, different page defers
     expect(src).toMatch(/href === pathname/)
   })
+
+  it('routes Account link to /account/profile first instead of /account/orders', () => {
+    expect(src).toMatch(/['"]\/account\/profile['"]/)
+    expect(src).toMatch(/handleNavClick\(user\?\.role === 'rider' \? '\/rider\/dashboard' : '\/account\/profile'\)/)
+    expect(src).not.toMatch(/\/account\/orders/)
+  })
 })
