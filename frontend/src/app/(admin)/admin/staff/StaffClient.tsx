@@ -12,6 +12,7 @@ import { toast } from 'sonner'
 import { Users, UserPlus, ShieldCheck, ShieldX, Loader2, Trash2, AlertCircle, RefreshCw, Store as StoreIcon, Lock } from 'lucide-react'
 import { fadeUpTight as fadeUp, staggerTight as stagger } from '@/lib/motion/variants'
 import Select from '@/components/ui/select'
+import Tooltip from '@/components/ui/tooltip'
 
 interface StaffMember {
   id: number
@@ -251,9 +252,11 @@ export default function StaffClient() {
                     <p className="text-xs text-gray-400 truncate">{member.user.email}</p>
                   </div>
                   {member.role === 'store_owner' ? (
-                    <span className="flex items-center gap-1 text-[11px] text-gray-300 shrink-0" title="Owners cannot be removed here">
-                      <ShieldCheck size={13} /> Owner
-                    </span>
+                    <Tooltip content="Owners cannot be removed here">
+                      <span className="flex items-center gap-1 text-[11px] text-gray-300 shrink-0">
+                        <ShieldCheck size={13} /> Owner
+                      </span>
+                    </Tooltip>
                   ) : (
                     <button
                       onClick={() => removeMutation.mutate(member.id)}

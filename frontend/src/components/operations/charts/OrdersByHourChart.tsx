@@ -3,6 +3,7 @@
 import { useMemo } from 'react'
 import { Bar } from 'react-chartjs-2'
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Tooltip, Legend } from 'chart.js'
+import { CHART_TOOLTIP_STYLE } from '@/components/ui/tooltip'
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend)
 
@@ -29,6 +30,7 @@ export default function OrdersByHourChart({ data }: { data: HourData[] }) {
     maintainAspectRatio: false,
     plugins: {
       legend: { display: false },
+      tooltip: CHART_TOOLTIP_STYLE,
     },
     scales: {
       x: {

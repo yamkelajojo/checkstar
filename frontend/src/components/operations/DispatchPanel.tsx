@@ -6,6 +6,7 @@ import { spring } from '@/lib/motion/tokens'
 import { X, Navigation, Clock, User, ChevronRight } from 'lucide-react'
 import { api, ApiError } from '@/lib/api'
 import { formatZar } from '@/lib/money'
+import Tooltip from '@/components/ui/tooltip'
 
 interface Rider {
   id: number
@@ -123,14 +124,15 @@ export default function DispatchPanel({ orderId, storeId, onClose, onAssigned }:
                   </p>
                 )}
               </div>
-              <button
-                onClick={onClose}
-                aria-label="Close dispatch suggestions"
-                title="Close"
-                className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-              >
-                <X size={16} />
-              </button>
+              <Tooltip content="Close" shortcut="Esc">
+                <button
+                  onClick={onClose}
+                  aria-label="Close dispatch suggestions"
+                  className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                >
+                  <X size={16} />
+                </button>
+              </Tooltip>
             </div>
 
             {/* Content */}

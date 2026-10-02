@@ -21,6 +21,7 @@ import { orderStatusLabel } from '@/lib/labels'
 import { useOperationsMetrics, useStores, useStoreOrders } from '@/lib/query'
 import { useAuthStore } from '@/stores/auth-store'
 import Select from '@/components/ui/select'
+import Tooltip from '@/components/ui/tooltip'
 
 export default function OperationsPage() {
   const { user } = useAuthStore()
@@ -165,7 +166,9 @@ export default function OperationsPage() {
             <motion.span layout transition={sharedSpring} className="text-xs text-gray-400 hidden md:inline">
               Press <kbd className="px-1 py-0.5 bg-gray-100 rounded text-[10px] font-mono">F</kbd> fullscreen
             </motion.span>
-            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" title="Live operations feed active" />
+            <Tooltip content="Live operations feed active" side="bottom">
+              <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            </Tooltip>
           </div>
         </motion.header>
 

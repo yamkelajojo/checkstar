@@ -285,7 +285,7 @@ describe("BannersClient — saving", () => {
     renderClient();
     await screen.findByText("Spring Freshness");
 
-    fireEvent.click(screen.getByTitle("Edit"));
+    fireEvent.click(screen.getByRole("button", { name: "Edit" }));
 
     const nameInput = await screen.findByDisplayValue("Spring Freshness");
     expect(screen.getByDisplayValue("2026-09-01")).toBeInTheDocument();

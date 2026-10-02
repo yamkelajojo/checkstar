@@ -31,6 +31,7 @@ import {
   staggerTight as stagger,
 } from "@/lib/motion/variants";
 import Select from "@/components/ui/select";
+import Tooltip from "@/components/ui/tooltip";
 import Link from "next/link";
 import type { Order } from "@/types";
 import { formatZar } from '@/lib/money'
@@ -445,18 +446,17 @@ export default function StoreOrdersClient() {
                           {formatZar(order.total)}
                         </span>
                         {order.rider ? (
-                          <span
-                            className="flex items-center gap-1"
-                            title={`Rider #${order.rider.id}`}
-                          >
-                            <Bike size={11} />
-                            {riderName(order.rider)}
-                            {Number(order.rider.average_rating) > 0 ? (
-                              <span className="text-gray-400">
-                                · ★ {Number(order.rider.average_rating).toFixed(1)}
-                              </span>
-                            ) : null}
-                          </span>
+                          <Tooltip content={`Rider #${order.rider.id}`}>
+                            <span className="flex items-center gap-1">
+                              <Bike size={11} />
+                              {riderName(order.rider)}
+                              {Number(order.rider.average_rating) > 0 ? (
+                                <span className="text-gray-400">
+                                  · ★ {Number(order.rider.average_rating).toFixed(1)}
+                                </span>
+                              ) : null}
+                            </span>
+                          </Tooltip>
                         ) : null}
                       </div>
                       {order.delivery_address && (

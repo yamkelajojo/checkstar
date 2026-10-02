@@ -18,6 +18,7 @@ import ColorPicker, {
   hexToHslString,
   generateHarmoniousColors,
 } from '../color-picker'
+import Tooltip, { CHART_TOOLTIP_STYLE } from '../tooltip'
 
 describe('DatePicker & ColorPicker (White-Box UI, State, Range & Spectrum Coverage)', () => {
   describe('DatePicker helper functions', () => {
@@ -201,6 +202,59 @@ describe('DatePicker & ColorPicker (White-Box UI, State, Range & Spectrum Covera
 
       expect(container.querySelector('input[type="date"]')).toBeNull()
       expect(container.querySelector('input[type="color"]')).toBeNull()
+    })
+  })
+
+  describe('Tooltip (Watermelon UI-style portal tooltip & Chart.js theme)', () => {
+    it('opens on hover/focus without native title attribute, links aria-describedby, renders shortcut badge, and dismisses on Escape or blur', () => {
+      render(
+        <Tooltip content="Close panel" shortcut="Esc" delayMs={0} side="bottom" variant="dark">
+          <button type="button">Trigger</button>
+        </Tooltip>,
+      )
+
+      const trigger = screen.getByRole('button', { name: 'Trigger' })
+      expect(trigger.getAttribute('title')).toBeNull()
+
+      // Hover opens portal tooltip immediately when delayMs=0
+      fireEvent.mouseEnter(trigger)
+      const tip = screen.getByRole('tooltip')
+      expect(tip).toHaveTextContent('Close panel')
+      expect(tip).toHaveTextContent('Esc')
+      expect(trigger.getAttribute('aria-describedby')).toBe(tip.id)
+
+      // Escape dismisses the tooltip
+      fireEvent.keyDown(document, { key: 'Escape' })
+      expect(screen.queryByRole('tooltip')).toBeNull()
+
+      // Focus opens and blur closes across variants & sides
+      fireEvent.focus(trigger)
+      expect(screen.getByRole('tooltip')).toBeInTheDocument()
+      fireEvent.blur(trigger)
+      expect(screen.queryByRole('tooltip')).toBeNull()
+    })
+
+    it('supports light and brand variants, left/right placement, and exports CHART_TOOLTIP_STYLE', () => {
+      render(
+        <div>
+          <Tooltip content="Brand tip" delayMs={0} side="left" variant="brand">
+            <button type="button">Left Btn</button>
+          </Tooltip>
+          <Tooltip content="Light tip" delayMs={0} side="right" variant="light">
+            <button type="button">Right Btn</button>
+          </Tooltip>
+        </div>,
+      )
+
+      fireEvent.mouseEnter(screen.getByRole('button', { name: 'Left Btn' }))
+      expect(screen.getByRole('tooltip')).toHaveTextContent('Brand tip')
+      fireEvent.mouseLeave(screen.getByRole('button', { name: 'Left Btn' }))
+
+      fireEvent.mouseEnter(screen.getByRole('button', { name: 'Right Btn' }))
+      expect(screen.getByRole('tooltip')).toHaveTextContent('Light tip')
+
+      expect(CHART_TOOLTIP_STYLE.backgroundColor).toBe('#0F172A')
+      expect(CHART_TOOLTIP_STYLE.cornerRadius).toBe(10)
     })
   })
 })

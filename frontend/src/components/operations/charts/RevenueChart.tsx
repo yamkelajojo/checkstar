@@ -5,6 +5,7 @@ import { Line } from 'react-chartjs-2'
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend, Filler } from 'chart.js'
 import { formatZar } from '@/lib/money'
 import { formatDayMonth } from '@/lib/dates'
+import { CHART_TOOLTIP_STYLE } from '@/components/ui/tooltip'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend, Filler)
 
@@ -34,6 +35,7 @@ export default function RevenueChart({ data }: { data: RevenuePoint[] }) {
     plugins: {
       legend: { display: false },
       tooltip: {
+        ...CHART_TOOLTIP_STYLE,
         callbacks: {
           label: (ctx: any) => formatZar(ctx.parsed.y),
         },

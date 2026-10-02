@@ -7,6 +7,7 @@ import { api, ApiError } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth-store'
 import { useStores } from '@/lib/query'
 import Select from '@/components/ui/select'
+import Tooltip from '@/components/ui/tooltip'
 import { toast } from 'sonner'
 import {
   Package, Search, AlertTriangle, Loader2, RefreshCw,
@@ -304,28 +305,32 @@ export default function InventoryClient() {
                             <p className="text-sm font-semibold text-gray-900">{item.stock_quantity}</p>
                             <p className="text-[11px] text-gray-400">in stock</p>
                           </div>
-                          <button
-                            onClick={() => {
-                              setEditingId(item.id)
-                              setEditQuantity(String(item.stock_quantity))
-                            }}
-                            className="p-2 text-gray-400 hover:text-primary rounded-lg hover:bg-primary/5 transition-colors"
-                            title="Edit stock"
-                          >
-                            <Edit3 size={14} />
-                          </button>
+                          <Tooltip content="Edit stock">
+                            <button
+                              onClick={() => {
+                                setEditingId(item.id)
+                                setEditQuantity(String(item.stock_quantity))
+                              }}
+                              aria-label="Edit stock"
+                              className="p-2 text-gray-400 hover:text-primary rounded-lg hover:bg-primary/5 transition-colors"
+                            >
+                              <Edit3 size={14} />
+                            </button>
+                          </Tooltip>
                         </>
                       )}
 
                       {/* Availability toggle */}
-                      <button
-                        onClick={() => updateMutation.mutate({ productId: item.product_id, data: { is_available: !item.is_available } })}
-                        disabled={updateMutation.isPending}
-                        className={`p-2 rounded-lg transition-colors ${item.is_available ? 'text-success hover:bg-success/10' : 'text-gray-300 hover:bg-gray-50'}`}
-                        title={item.is_available ? 'Hide product' : 'Make available'}
-                      >
-                        {item.is_available ? <Eye size={16} /> : <EyeOff size={16} />}
-                      </button>
+                      <Tooltip content={item.is_available ? 'Hide product' : 'Make available'}>
+                        <button
+                          onClick={() => updateMutation.mutate({ productId: item.product_id, data: { is_available: !item.is_available } })}
+                          disabled={updateMutation.isPending}
+                          aria-label={item.is_available ? 'Hide product' : 'Make available'}
+                          className={`p-2 rounded-lg transition-colors ${item.is_available ? 'text-success hover:bg-success/10' : 'text-gray-300 hover:bg-gray-50'}`}
+                        >
+                          {item.is_available ? <Eye size={16} /> : <EyeOff size={16} />}
+                        </button>
+                      </Tooltip>
                     </div>
                   </div>
                 </div>

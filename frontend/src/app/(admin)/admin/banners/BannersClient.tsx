@@ -36,6 +36,7 @@ import { BannerStatusBadge } from "@/components/admin/StatusBadge";
 import Select from "@/components/ui/select";
 import DatePicker from "@/components/ui/date-picker";
 import ColorPicker from "@/components/ui/color-picker";
+import Tooltip from "@/components/ui/tooltip";
 import type { Banner, BannerSlide } from "@/types";
 import { formatDate } from '@/lib/dates'
 
@@ -599,21 +600,21 @@ export default function BannersClient() {
                     {/* Slide preview thumbnails */}
                     <div className="flex gap-2 mt-2">
                       {banner.slides.slice(0, 4).map((slide, i) => (
-                        <div
-                          key={i}
-                          className="h-10 w-20 rounded-md flex items-center justify-center text-white text-xs font-medium truncate px-2"
-                          style={{
-                            background:
-                              slide.bgType === "gradient"
-                                ? `linear-gradient(135deg, ${slide.colors.join(", ")})`
-                                : slide.bgType === "radial"
-                                  ? `radial-gradient(circle, ${slide.colors.join(", ")})`
-                                  : slide.colors[0],
-                          }}
-                          title={slide.title}
-                        >
-                          {slide.title}
-                        </div>
+                        <Tooltip key={i} content={slide.title}>
+                          <div
+                            className="h-10 w-20 rounded-md flex items-center justify-center text-white text-xs font-medium truncate px-2"
+                            style={{
+                              background:
+                                slide.bgType === "gradient"
+                                  ? `linear-gradient(135deg, ${slide.colors.join(", ")})`
+                                  : slide.bgType === "radial"
+                                    ? `radial-gradient(circle, ${slide.colors.join(", ")})`
+                                    : slide.colors[0],
+                            }}
+                          >
+                            {slide.title}
+                          </div>
+                        </Tooltip>
                       ))}
                       {banner.slides.length > 4 && (
                         <div className="h-10 w-10 rounded-md bg-gray-100 flex items-center justify-center text-xs text-gray-400">
@@ -625,24 +626,27 @@ export default function BannersClient() {
 
                   {/* Actions */}
                   <div className="flex items-center gap-2 ml-4">
-                    <button
-                      onClick={() => {
-                        setEditingBanner(banner);
-                        setShowForm(true);
-                      }}
-                      className="p-2 text-gray-400 hover:text-primary rounded-lg hover:bg-primary/5 transition-colors"
-                      title="Edit"
-                    >
-                      <Edit3 size={16} />
-                    </button>
-                    <button
-                      onClick={() => setDeleting(banner)}
-                      className="p-2 text-gray-500 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors"
-                      title="Delete"
-                      aria-label={`Delete ${banner.name}`}
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                    <Tooltip content="Edit">
+                      <button
+                        onClick={() => {
+                          setEditingBanner(banner);
+                          setShowForm(true);
+                        }}
+                        aria-label="Edit"
+                        className="p-2 text-gray-400 hover:text-primary rounded-lg hover:bg-primary/5 transition-colors"
+                      >
+                        <Edit3 size={16} />
+                      </button>
+                    </Tooltip>
+                    <Tooltip content="Delete">
+                      <button
+                        onClick={() => setDeleting(banner)}
+                        className="p-2 text-gray-500 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors"
+                        aria-label={`Delete ${banner.name}`}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </Tooltip>
                   </div>
                 </div>
               </div>

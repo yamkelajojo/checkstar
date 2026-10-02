@@ -4,6 +4,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Eye, EyeOff, Lock } from 'lucide-react';
 import { spring, ease, time } from '@/lib/motion/tokens';
+import Tooltip from '@/components/ui/tooltip';
 
 /**
  * PasswordField — Checkstar's password input with a single, animated reveal toggle.
@@ -92,29 +93,30 @@ export default function PasswordField({
           className={`w-full ${showIcon ? 'pl-10' : 'pl-3.5'} pr-12 py-2.5 border border-gray-200 rounded-lg bg-white text-sm text-gray-900 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none`}
         />
         {/* The ONLY reveal control for this field — type="button" so it never submits forms. */}
-        <button
-          type="button"
-          onClick={() => setShow((s) => !s)}
-          aria-label={show ? 'Hide password' : 'Show password'}
-          aria-pressed={show}
-          title={show ? 'Hide password' : 'Show password'}
-          className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600"
-        >
-          {/* Fixed-size stage so the exiting and entering icons trade places without layout shift. */}
-          <span className="relative w-4 h-4 block" aria-hidden="true">
-            <AnimatePresence initial={false} mode="popLayout">
-              <motion.span
-                key={show ? 'eye-off' : 'eye'}
-                initial={{ opacity: 0, scale: 0.55, rotate: -40 }}
-                animate={iconEnter}
-                exit={iconExit}
-                className="absolute inset-0 flex items-center justify-center"
-              >
-                {show ? <EyeOff size={16} /> : <Eye size={16} />}
-              </motion.span>
-            </AnimatePresence>
-          </span>
-        </button>
+        <Tooltip content={show ? 'Hide password' : 'Show password'}>
+          <button
+            type="button"
+            onClick={() => setShow((s) => !s)}
+            aria-label={show ? 'Hide password' : 'Show password'}
+            aria-pressed={show}
+            className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600"
+          >
+            {/* Fixed-size stage so the exiting and entering icons trade places without layout shift. */}
+            <span className="relative w-4 h-4 block" aria-hidden="true">
+              <AnimatePresence initial={false} mode="popLayout">
+                <motion.span
+                  key={show ? 'eye-off' : 'eye'}
+                  initial={{ opacity: 0, scale: 0.55, rotate: -40 }}
+                  animate={iconEnter}
+                  exit={iconExit}
+                  className="absolute inset-0 flex items-center justify-center"
+                >
+                  {show ? <EyeOff size={16} /> : <Eye size={16} />}
+                </motion.span>
+              </AnimatePresence>
+            </span>
+          </button>
+        </Tooltip>
       </div>
     </div>
   );

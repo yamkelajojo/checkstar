@@ -10,6 +10,7 @@ import { fadeUpTight as fadeUp, staggerTight as stagger } from '@/lib/motion/var
 import Link from 'next/link'
 import type { Rider } from '@/types'
 import Select from '@/components/ui/select'
+import Tooltip from '@/components/ui/tooltip'
 
 export default function RidersClient() {
   const { user } = useAuthStore()
@@ -69,12 +70,13 @@ export default function RidersClient() {
                   <div className="flex items-center gap-2"><span className="font-medium text-sm">{r.user?.name ?? `Rider #${r.id}`}</span><span className={`text-[10px] px-2 py-0.5 rounded-full ${r.is_available ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>{r.is_available ? 'Available' : 'Offline'}</span></div>
                   <div className="text-xs text-gray-400 flex items-center gap-3 mt-0.5"><span className="flex items-center gap-1"><MapPin size={11} />Store {r.store_id ?? '—'}</span><span className="flex items-center gap-1"><Package size={11} />{r.total_deliveries} deliveries</span><span className="flex items-center gap-1"><Star size={11} />{r.average_rating != null ? Number(r.average_rating).toFixed(1) : '—'}</span><span>{r.vehicle_type ?? 'No vehicle'}</span></div>
                 </div>
-                <button
-                  onClick={() => openEdit(r)}
-                  aria-label={`Edit ${r.user?.name ?? `rider ${r.id}`}`}
-                  title="Edit rider"
-                  className="p-2 text-gray-400 hover:text-primary rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-                ><Edit3 size={14} /></button>
+                <Tooltip content="Edit rider">
+                  <button
+                    onClick={() => openEdit(r)}
+                    aria-label={`Edit ${r.user?.name ?? `rider ${r.id}`}`}
+                    className="p-2 text-gray-400 hover:text-primary rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                  ><Edit3 size={14} /></button>
+                </Tooltip>
               </div>
             ))}
           </motion.div>
