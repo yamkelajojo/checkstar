@@ -45,6 +45,8 @@ import {
 import { formatZar } from '@/lib/money';
 import { formatDate } from '@/lib/dates'
 import Select from '@/components/ui/select'
+import DatePicker from '@/components/ui/date-picker'
+import ColorPicker from '@/components/ui/color-picker'
 
 const SALE_ROLES = ["developer", "store_owner", "store_manager"];
 
@@ -110,6 +112,10 @@ function SaleEditor({
     return map;
   });
   const [withBanner, setWithBanner] = useState(false);
+  const [bannerColors, setBannerColors] = useState<string[]>([
+    "#EB6522",
+    "#CC4400",
+  ]);
   const [productSearch, setProductSearch] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -213,7 +219,7 @@ function SaleEditor({
                 ctaLabel: "View sale",
                 url: `/specials/${saved.slug}`,
                 bgType: "gradient",
-                colors: ["#EB6522", "#CC4400"],
+                colors: bannerColors,
               },
             ],
           });
@@ -362,7 +368,7 @@ function SaleEditor({
                 </div>
               )}
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label
                   htmlFor="sale-start"
@@ -370,12 +376,14 @@ function SaleEditor({
                 >
                   Start date *
                 </label>
-                <input
+                <DatePicker
                   id="sale-start"
-                  type="date"
+                  placeholder="Start date"
                   value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                  onChange={setStartDate}
+                  rangeStart={startDate}
+                  rangeEnd={endDate}
+                  maxDate={endDate || undefined}
                 />
               </div>
               <div>
@@ -385,12 +393,14 @@ function SaleEditor({
                 >
                   End date *
                 </label>
-                <input
+                <DatePicker
                   id="sale-end"
-                  type="date"
+                  placeholder="End date"
                   value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                  onChange={setEndDate}
+                  rangeStart={startDate}
+                  rangeEnd={endDate}
+                  minDate={startDate || undefined}
                 />
               </div>
             </div>
@@ -528,13 +538,32 @@ function SaleEditor({
                 Also create a home-page banner for this sale
               </label>
               {withBanner && (
-                <div
-                  className="mt-3 h-20 rounded-lg flex items-center justify-center text-white text-sm font-semibold"
-                  style={{
-                    background: "linear-gradient(135deg, #EB6522, #CC4400)",
-                  }}
-                >
-                  {title || "Sale title"} — View sale → /specials/{slug || "…"}
+                <div className="mt-3 space-y-2.5">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs text-gray-500 font-medium">
+                      Banner gradient:
+                    </span>
+                    {bannerColors.map((col, ci) => (
+                      <ColorPicker
+                        key={ci}
+                        value={col}
+                        ariaLabel={`Sale banner colour ${ci + 1}`}
+                        onChange={(nextHex) =>
+                          setBannerColors((prev) =>
+                            prev.map((c, idx) => (idx === ci ? nextHex : c)),
+                          )
+                        }
+                      />
+                    ))}
+                  </div>
+                  <div
+                    className="h-20 rounded-lg flex items-center justify-center text-white text-sm font-semibold"
+                    style={{
+                      background: `linear-gradient(135deg, ${bannerColors.join(", ")})`,
+                    }}
+                  >
+                    {title || "Sale title"} — View sale → /specials/{slug || "…"}
+                  </div>
                 </div>
               )}
               <p className="text-[11px] text-gray-400 mt-2">

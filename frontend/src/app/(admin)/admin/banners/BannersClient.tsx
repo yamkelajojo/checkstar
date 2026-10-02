@@ -34,6 +34,8 @@ import EmptyState from "@/components/admin/EmptyState";
 import ErrorState from "@/components/admin/ErrorState";
 import { BannerStatusBadge } from "@/components/admin/StatusBadge";
 import Select from "@/components/ui/select";
+import DatePicker from "@/components/ui/date-picker";
+import ColorPicker from "@/components/ui/color-picker";
 import type { Banner, BannerSlide } from "@/types";
 import { formatDate } from '@/lib/dates'
 
@@ -155,18 +157,17 @@ function SlideEditor({
           {/* Colors */}
           <div>
             <label className="text-xs text-gray-500 mb-1 block">Colors</label>
-            <div className="flex gap-2 flex-wrap">
+            <div className="flex gap-2 flex-wrap items-center">
               {slide.colors.map((color, ci) => (
                 <div key={ci} className="flex items-center gap-1">
-                  <input
-                    type="color"
+                  <ColorPicker
                     value={color}
-                    onChange={(e) => {
+                    ariaLabel={`Slide ${index + 1} colour ${ci + 1}`}
+                    onChange={(nextHex) => {
                       const colors = [...slide.colors];
-                      colors[ci] = e.target.value;
+                      colors[ci] = nextHex;
                       onChange(index, { ...slide, colors });
                     }}
-                    className="w-8 h-8 rounded border border-gray-200 cursor-pointer"
                   />
                   <button
                     type="button"
@@ -176,7 +177,7 @@ function SlideEditor({
                         onChange(index, { ...slide, colors });
                     }}
                     aria-label="Remove colour"
-                    className="text-gray-400 hover:text-red-500"
+                    className="text-gray-400 hover:text-red-500 p-1 rounded-md hover:bg-red-50 transition-colors"
                   >
                     <X size={13} />
                   </button>
@@ -187,13 +188,13 @@ function SlideEditor({
                 onClick={() =>
                   onChange(index, {
                     ...slide,
-                    colors: [...slide.colors, "#000000"],
+                    colors: [...slide.colors, "#1E293B"],
                   })
                 }
                 aria-label="Add a colour"
-                className="w-8 h-8 rounded border border-dashed border-gray-300 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:border-gray-400"
+                className="h-8 px-2.5 rounded-xl border border-dashed border-gray-300 flex items-center justify-center gap-1 text-xs font-medium text-gray-500 hover:text-gray-700 hover:border-gray-400 transition-colors"
               >
-                <Plus size={14} />
+                <Plus size={14} /> Add
               </button>
             </div>
           </div>
@@ -384,27 +385,37 @@ function BannerForm({
             />
           </div>
           <div className="space-y-2">
-            <label className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500">
+            <label
+              htmlFor="banner-start-date"
+              className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500"
+            >
               Start date
             </label>
-            <input
-              type="date"
+            <DatePicker
+              id="banner-start-date"
               placeholder="Start date"
               value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+              onChange={setStartDate}
+              rangeStart={startDate}
+              rangeEnd={endDate}
+              maxDate={endDate || undefined}
             />
           </div>
           <div className="space-y-2">
-            <label className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500">
+            <label
+              htmlFor="banner-end-date"
+              className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500"
+            >
               End date
             </label>
-            <input
-              type="date"
+            <DatePicker
+              id="banner-end-date"
               placeholder="End date"
               value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+              onChange={setEndDate}
+              rangeStart={startDate}
+              rangeEnd={endDate}
+              minDate={startDate || undefined}
             />
           </div>
         </div>
